@@ -756,7 +756,7 @@ final class ShareViewController: UIViewController {
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let secureStorage = KeychainSecureStorage()
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
-        let documentWorkerController = DocumentWorkerController(fileStorage: fileStorage)
+        let documentWorkerController = DocumentWorkerController(fileStorage: fileStorage, configuration: .shareExtension)
 
         apiClient.set(authToken: ("Bearer " + session.apiToken))
         translatorsController.updateFromRepo(type: .shareExtension)

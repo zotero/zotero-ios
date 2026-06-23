@@ -54,7 +54,6 @@
 		615C10E32D5E230D001F1E8E /* DocumentWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */; };
 		615C10E42D5E3229001F1E8E /* LookupWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */; };
 		615C10E62D5E329F001F1E8E /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 615C10E52D5E329F001F1E8E /* OrderedCollections */; };
-		615C10E72D5E230D001F1E8E /* DocumentWorkerRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F622D50D4B6005495E8 /* DocumentWorkerRecorder.swift */; };
 		615FD8772C8B475A00808C1D /* ReaderCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615FD8762C8B475A00808C1D /* ReaderCoordinator.swift */; };
 		6162F2512D076A990096FEEE /* ReaderAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6162F2502D076A990096FEEE /* ReaderAnnotation.swift */; };
 		61639F852AE03B8500026003 /* InstantPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61639F842AE03B8500026003 /* InstantPresenter.swift */; };
@@ -6407,7 +6406,6 @@
 				B305676A23FC0A0B003304F2 /* SyncableObject.swift in Sources */,
 				615C10E32D5E230D001F1E8E /* DocumentWorkerController.swift in Sources */,
 				61C0DE132FBD000100000002 /* SDTPack.swift in Sources */,
-				615C10E72D5E230D001F1E8E /* DocumentWorkerRecorder.swift in Sources */,
 				61F0A1AD2F9C0F1B00ABCDEF /* DocumentWorkerHandling.swift in Sources */,
 				61F0A1AB2F9C0F1B00ABCDEF /* DocumentWorkerJSHandler.swift in Sources */,
 				61F0A1B12F9C0F1B00ABCDEF /* DocumentWorkerWebViewHandler.swift in Sources */,
@@ -7315,7 +7313,6 @@
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
-				EXCLUDED_SOURCE_FILE_NAMES = ONNXRuntime;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -7351,7 +7348,6 @@
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
-				EXCLUDED_SOURCE_FILE_NAMES = ONNXRuntime;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",

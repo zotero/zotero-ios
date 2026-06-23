@@ -26,6 +26,44 @@ final class DocumentWorkerController {
         case cloneFirst
     }
 
+    struct Configuration {
+        let supportedWorkKinds: Set<Work.Kind>
+        var usesNativeONNXForStructuredDocumentText: Bool
+
+        static let allWorks = Configuration(supportedWorkKinds: Set(Work.Kind.allCases), usesNativeONNXForStructuredDocumentText: false)
+
+        static var mainApp: Configuration {
+#if MAINAPP
+            return Configuration(supportedWorkKinds: Set(Work.Kind.allCases), usesNativeONNXForStructuredDocumentText: true)
+#else
+            return allWorks
+#endif
+        }
+
+        static let shareExtension = Configuration(supportedWorkKinds: [.recognizer], usesNativeONNXForStructuredDocumentText: false)
+
+        fileprivate func supports(_ work: Work) -> Bool {
+            supportedWorkKinds.contains(work.kind)
+        }
+
+        fileprivate func preferredRuntime(for workKind: Work.Kind) -> HandlerRuntime {
+            switch workKind {
+            case .structuredDocumentText where usesNativeONNXForStructuredDocumentText:
+                return .jsContext
+
+            case .structuredDocumentText:
+                return .webView
+
+            case .recognizer, .fullText:
+                return .jsContext
+            }
+        }
+
+        fileprivate func shouldPreload(_ runtime: HandlerRuntime) -> Bool {
+            supportedWorkKinds.contains(where: { preferredRuntime(for: $0) == runtime })
+        }
+    }
+
     enum Priority {
         case `default`
         case high
@@ -100,6 +138,12 @@ final class DocumentWorkerController {
     }
 
     enum Work: Hashable {
+        enum Kind: CaseIterable, Hashable {
+            case recognizer
+            case fullText
+            case structuredDocumentText
+        }
+
         fileprivate struct CacheLocation {
             let path: String
             let version: Int
@@ -311,6 +355,19 @@ final class DocumentWorkerController {
         case fullText(pages: [Int]?)
         case structuredDocumentText
 
+        var kind: Kind {
+            switch self {
+            case .recognizer:
+                return .recognizer
+
+            case .fullText:
+                return .fullText
+
+            case .structuredDocumentText:
+                return .structuredDocumentText
+            }
+        }
+
         var id: String {
             switch self {
             case .recognizer:
@@ -350,17 +407,6 @@ final class DocumentWorkerController {
             }
             self = .fullText(pages: pageIndexes)
         }
-
-        fileprivate var defaultPreferredRuntime: HandlerRuntime {
-            switch self {
-            case .structuredDocumentText:
-                return .webView
-
-            case .recognizer, .fullText:
-                return .jsContext
-            }
-        }
-
         fileprivate var cache: Cache? {
             switch self {
             case .fullText:
@@ -429,8 +475,10 @@ final class DocumentWorkerController {
     private let disposeBag: DisposeBag
     private let workerFileCopyStrategy: WorkerFileCopyStrategy = .cloneFirst
 
+#if MAINAPP
     let recorder: DocumentWorkerRecorder?
-    private var usesNativeONNXForStructuredDocumentText: Bool
+#endif
+    private var configuration: Configuration
 
     weak var webViewProvider: WebViewProvider? {
         didSet {
@@ -452,25 +500,34 @@ final class DocumentWorkerController {
     private var preparingPreloadedWebViewDocumentWorkerHandler: Bool = false
 
     // MARK: Object Lifecycle
-    init(fileStorage: FileStorage, usesNativeONNXForStructuredDocumentText: Bool = false) {
+    init(fileStorage: FileStorage, configuration: Configuration) {
         dispatchSpecificKey = DispatchSpecificKey<String>()
         accessQueueLabel = "org.zotero.DocumentWorkerController.accessQueue"
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
         self.fileStorage = fileStorage
-        self.usesNativeONNXForStructuredDocumentText = usesNativeONNXForStructuredDocumentText
+#if MAINAPP
+        self.configuration = configuration
+#else
+        var configuration = configuration
+        configuration.usesNativeONNXForStructuredDocumentText = false
+        self.configuration = configuration
+#endif
         disposeBag = DisposeBag()
+#if MAINAPP
         recorder = FeatureGates.enabled.contains(.documentWorkerDebugging) ? DocumentWorkerRecorder() : nil
+#endif
         accessQueue.async(flags: .barrier) { [weak self] in
             self?.preloadDocumentWorkerIfIdle()
         }
     }
 
     // MARK: Actions
+#if MAINAPP
     func getUsesNativeONNXForStructuredDocumentText(completion: @escaping (Bool) -> Void) {
         accessQueue.async { [weak self] in
             guard let self else { return }
-            let value = usesNativeONNXForStructuredDocumentText
+            let value = configuration.usesNativeONNXForStructuredDocumentText
             DispatchQueue.main.async {
                 completion(value)
             }
@@ -479,23 +536,18 @@ final class DocumentWorkerController {
 
     func setUsesNativeONNXForStructuredDocumentText(_ newValue: Bool) {
         accessQueue.async(flags: .barrier) { [weak self] in
-            guard let self, usesNativeONNXForStructuredDocumentText != newValue else { return }
+            guard let self, configuration.usesNativeONNXForStructuredDocumentText != newValue else { return }
 
-            usesNativeONNXForStructuredDocumentText = newValue
+            configuration.usesNativeONNXForStructuredDocumentText = newValue
             preloadDocumentWorkerIfIdle()
             preloadWebViewDocumentWorkerIfNeeded()
-            DDLogInfo("DocumentWorkerController: structured document text runtime changed to \(usesNativeONNXForStructuredDocumentText ? "native ONNX" : "WebView")")
+            DDLogInfo("DocumentWorkerController: structured document text runtime changed to \(configuration.usesNativeONNXForStructuredDocumentText ? "native ONNX" : "WebView")")
         }
     }
+#endif
 
     private func preferredRuntime(for work: Work) -> HandlerRuntime {
-        switch work {
-        case .structuredDocumentText where usesNativeONNXForStructuredDocumentText:
-            return .jsContext
-
-        case .recognizer, .fullText, .structuredDocumentText:
-            return work.defaultPreferredRuntime
-        }
+        return configuration.preferredRuntime(for: work.kind)
     }
 
     private func updateStateAndQueues(for worker: Worker, state: Worker.State) {
@@ -543,8 +595,12 @@ final class DocumentWorkerController {
         let subject = PublishSubject<Update>()
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
+            guard configuration.supports(work) else {
+                reject(work: work, in: worker, to: subject, reason: "unsupported work")
+                return
+            }
             if worker.isFinished {
-                reject(work: work, in: worker, to: subject)
+                reject(work: work, in: worker, to: subject, reason: "finished worker")
                 return
             }
             if let existingSubject = worker.subjectsByWork[work] {
@@ -552,11 +608,13 @@ final class DocumentWorkerController {
                 return
             }
             if worker.kind == .oneOff && !worker.subjectsByWork.isEmpty {
-                reject(work: work, in: worker, to: subject)
+                reject(work: work, in: worker, to: subject, reason: "busy one-off worker")
                 return
             }
             worker.subjectsByWork[work] = subject
+#if MAINAPP
             recorder?.bind(subject)
+#endif
             subject.send(work: work, kind: .queued, worker: worker, runtime: preferredRuntime(for: work))
             if let cachedData = work.cache?.cachedData(for: work, in: worker, fileStorage: fileStorage) {
                 worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
@@ -596,9 +654,11 @@ final class DocumentWorkerController {
         }
         return subject.asObservable()
 
-        func reject(work: Work, in worker: Worker, to subject: PublishSubject<Update>) {
-            DDLogWarn("DocumentWorkerController: rejected \(work) in finished or busy one-off \(worker)")
+        func reject(work: Work, in worker: Worker, to subject: PublishSubject<Update>, reason: String) {
+            DDLogWarn("DocumentWorkerController: rejected \(work) in \(worker) - \(reason)")
+#if MAINAPP
             recorder?.bind(subject)
+#endif
             subject.send(work: work, kind: .failed, worker: worker, runtime: preferredRuntime(for: work))
             subject.onCompleted()
         }
@@ -934,6 +994,7 @@ final class DocumentWorkerController {
 
     private func preloadDocumentWorkerIfIdle() {
         guard preloadedDocumentWorkerHandler == nil,
+              configuration.shouldPreload(.jsContext),
               ready.isEmpty,
               preparing.isEmpty,
               !Priority.inDescendingOrder.contains(where: { !queuedByPriority[$0, default: []].isEmpty || !runningByPriority[$0, default: []].isEmpty })
@@ -942,11 +1003,12 @@ final class DocumentWorkerController {
     }
 
     private func createDocumentWorkerJSHandler() -> DocumentWorkerJSHandler {
+#if MAINAPP
         return DocumentWorkerJSHandler(
             nativeONNXModelDataProvider: { model in
                 try nativeONNXModelData(for: model)
             },
-            usesNativeONNXForStructuredDocumentText: usesNativeONNXForStructuredDocumentText
+            usesNativeONNXForStructuredDocumentText: configuration.usesNativeONNXForStructuredDocumentText
         )
 
         func nativeONNXModelData(for model: String) throws -> Data {
@@ -977,11 +1039,14 @@ final class DocumentWorkerController {
             }
             return try Data(contentsOf: url)
         }
+#else
+        return DocumentWorkerJSHandler()
+#endif
     }
 
     private func preloadWebViewDocumentWorkerIfNeeded() {
         guard webViewProvider != nil,
-              !usesNativeONNXForStructuredDocumentText,
+              configuration.shouldPreload(.webView),
               preloadedWebViewDocumentWorkerHandler == nil,
               !preparingPreloadedWebViewDocumentWorkerHandler
         else { return }
@@ -1034,9 +1099,10 @@ final class DocumentWorkerController {
                 cleanupClosure()
                 return
             }
-            let configuration = WKWebViewConfiguration()
-            configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-            let webView = webViewProvider.addWebView(configuration: configuration)
+            let webViewConfiguration = WKWebViewConfiguration()
+            webViewConfiguration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+            let webView = webViewProvider.addWebView(configuration: webViewConfiguration)
+#if MAINAPP
             let documentWorkerHandler = DocumentWorkerWebViewHandler(
                 webView: webView,
                 temporaryDirectory: temporaryDirectory,
@@ -1044,13 +1110,21 @@ final class DocumentWorkerController {
                 nativeONNXModelDataProvider: { model in
                     try nativeONNXModelData(for: model, in: temporaryDirectory)
                 },
-                usesNativeONNXForStructuredDocumentText: usesNativeONNXForStructuredDocumentText
+                usesNativeONNXForStructuredDocumentText: configuration.usesNativeONNXForStructuredDocumentText
             )
+#else
+            let documentWorkerHandler = DocumentWorkerWebViewHandler(
+                webView: webView,
+                temporaryDirectory: temporaryDirectory,
+                cleanup: cleanupClosure
+            )
+#endif
             accessQueue.async(flags: .barrier) {
                 completion(documentWorkerHandler)
             }
         }
 
+#if MAINAPP
         func nativeONNXModelData(for model: String, in temporaryDirectory: File) throws -> Data {
             guard !model.isEmpty, !model.hasPrefix("/"), !model.split(separator: "/").contains("..") else {
                 throw DocumentWorkerWebViewHandler.Error.invalidNativeONNXBridgePayload("invalid model path")
@@ -1062,6 +1136,7 @@ final class DocumentWorkerController {
             }
             return try Data(contentsOf: modelURL)
         }
+#endif
 
         func prepareTemporaryWorkerDirectory(fileStorage: FileStorage) -> File? {
             let startTime = CFAbsoluteTimeGetCurrent()
@@ -1151,7 +1226,7 @@ private extension PublishSubject where Element == DocumentWorkerController.Updat
         work: DocumentWorkerController.Work,
         kind: DocumentWorkerController.Update.Kind,
         worker: DocumentWorkerController.Worker,
-        runtime: DocumentWorkerController.HandlerRuntime? = nil,
+        runtime: DocumentWorkerController.HandlerRuntime,
         duration: CFTimeInterval? = nil
     ) {
         on(.next(DocumentWorkerController.Update(
@@ -1160,7 +1235,7 @@ private extension PublishSubject where Element == DocumentWorkerController.Updat
             fileName: worker.file.fileName,
             fileURL: worker.fileURL,
             priority: worker.priority,
-            runtime: runtime ?? work.defaultPreferredRuntime,
+            runtime: runtime,
             kind: kind,
             startTime: worker.workStartTimes[work],
             duration: duration

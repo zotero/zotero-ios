@@ -6,6 +6,7 @@
 //  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if MAINAPP
 import Foundation
 
 enum ONNXRuntimeError: Error {
@@ -342,3 +343,4 @@ private extension Data {
         }
     }
 }
+#endif

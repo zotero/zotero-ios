@@ -395,7 +395,7 @@ final class UserControllers {
             dateParser: controllers.dateParser,
             remoteFileDownloader: remoteFileDownloader
         )
-        documentWorkerController = DocumentWorkerController(fileStorage: controllers.fileStorage, usesNativeONNXForStructuredDocumentText: true)
+        documentWorkerController = DocumentWorkerController(fileStorage: controllers.fileStorage, configuration: .mainApp)
         recognizerController = RecognizerController(
             documentWorkerController: documentWorkerController,
             apiClient: controllers.apiClient,

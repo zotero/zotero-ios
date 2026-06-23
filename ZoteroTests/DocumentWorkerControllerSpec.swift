@@ -22,7 +22,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
         var disposeBag: DisposeBag!
 
         beforeSuite {
-            documentWorkerController = DocumentWorkerController(fileStorage: TestControllers.fileStorage)
+            documentWorkerController = DocumentWorkerController(fileStorage: TestControllers.fileStorage, configuration: .allWorks)
             webViewProvider = TestDocumentWorkerWebViewProvider()
             documentWorkerController.webViewProvider = webViewProvider
             disposeBag = DisposeBag()
@@ -554,7 +554,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 it("can extract structured document text for PDF with JavaScriptCore and native ONNX") {
                     let nativeDocumentWorkerController = DocumentWorkerController(
                         fileStorage: TestControllers.fileStorage,
-                        usesNativeONNXForStructuredDocumentText: true
+                        configuration: .mainApp
                     )
 
                     let work: DocumentWorkerController.Work = .structuredDocumentText
