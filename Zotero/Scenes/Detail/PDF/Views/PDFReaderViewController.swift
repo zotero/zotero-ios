@@ -1034,7 +1034,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
         }
         let speechWorker = speechWorker ?? DocumentWorkerController.Worker(
             file: file as! FileData,
-            shouldCacheData: true,
+            kind: .multipleWorks,
             priority: .high,
             password: viewModel.state.unlockPassword
         )
@@ -1048,16 +1048,16 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
                     DDLogError("PDFReaderViewController: full data extraction failed")
                     completion(nil)
 
-                case .inProgress:
+                case .queued, .inProgress:
                     break
 
-                case .extractedData(let data):
+                case .extractedData(let data, _):
                     guard let text = data["text"] as? String else {
                         DDLogError("PDFReaderViewController: full text extraction incorrect data - \(data)")
                         completion(nil)
                         return
                     }
-                    let textParts = text.components(separatedBy: "\u{000C}")
+                    let textParts = text.components(separatedBy: DocumentWorkerController.Work.FullText.pageDelimiter)
                     guard textParts.count == indices.count else {
                         DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
                         completion(nil)

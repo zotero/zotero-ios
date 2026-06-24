@@ -182,31 +182,28 @@ final class RecognizerController {
             statesByTask[task] = .recognitionInProgress
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
-            let worker = DocumentWorkerController.Worker(file: task.file, shouldCacheData: false, priority: .default)
+            let worker = DocumentWorkerController.Worker(file: task.file, kind: .oneOff, priority: .default)
             documentWorkerController.queue(work: .recognizer, in: worker)
                 .subscribe(onNext: { [weak self] update in
                     guard let self else { return }
                     switch update.kind {
                     case .failed:
-                        documentWorkerController.cleanupWorker(worker)
                         DDLogError("RecognizerController: \(task) - recognizer failed")
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.recognizerFailed)))) }
 
                     case .cancelled:
-                        documentWorkerController.cleanupWorker(worker)
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .cancelled))) }
 
-                    case .inProgress:
+                    case .queued, .inProgress:
                         break
 
-                    case .extractedData(let data):
-                        documentWorkerController.cleanupWorker(worker)
+                    case .extractedData(let data, _):
                         switch update.work {
                         case .recognizer:
                             DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
                             startRemoteRecognition(for: task, with: data)
 
-                        case .fullText:
+                        case .fullText, .structuredDocumentText:
                             DDLogError("RecognizerController: \(task) - Document worker error")
                             cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.documentWorkerError)))) }
                         }
@@ -471,6 +468,8 @@ final class RecognizerController {
                                 let oldFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.oldName, contentType: change.contentType)
                                 if fileStorage.has(oldFile) {
                                     let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
+                                    removeDerivedSidecars(for: oldFile.createUrl(), using: fileStorage.fileManager)
+                                    removeDerivedSidecars(for: newFile.createUrl(), using: fileStorage.fileManager)
                                     try fileStorage.move(from: oldFile, to: newFile)
                                 }
                             }

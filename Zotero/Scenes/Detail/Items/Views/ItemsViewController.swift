@@ -362,6 +362,27 @@ final class ItemsViewController: BaseItemsViewController {
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .removeFromRecentlyRead(selectedKeys))
             completed = true
+
+        case .getStructuredText:
+            guard let key = selectedKeys.first,
+                  case .attachment(let attachment, let parentKey) = viewModel.state.itemAccessories[key],
+                  attachment.supportsStructuredDocumentTextExtraction,
+                  let file = attachment.file as? FileData,
+                  attachment.location != nil,
+                  let downloader = controllers.userControllers?.fileDownloader,
+                  let documentWorkerController = controllers.userControllers?.documentWorkerController
+            else { return }
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey) { [weak coordinatorDelegate] result in
+                switch result {
+                case .success:
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
+                    _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
+
+                case .failure(let error):
+                    coordinatorDelegate?.showAttachmentError(error)
+                }
+            }
+            completed = true
         }
     }
 
@@ -440,6 +461,7 @@ final class ItemsViewController: BaseItemsViewController {
             downloadBatchData: state.downloadBatchData,
             remoteDownloadBatchData: state.remoteDownloadBatchData,
             identifierLookupBatchData: state.identifierLookupBatchData,
+            showsDocumentWorkerRecorder: controllers.userControllers?.documentWorkerController.recorder != nil,
             itemCount: state.results?.count ?? 0
         )
     }

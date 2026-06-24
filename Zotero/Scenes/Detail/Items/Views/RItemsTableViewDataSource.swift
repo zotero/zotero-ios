@@ -178,6 +178,10 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
             break
         }
 
+        if FeatureGates.enabled.contains(.documentWorkerDebugging), attachment?.supportsStructuredDocumentTextExtraction == true {
+            actions.append(ItemAction(type: .getStructuredText))
+        }
+
         if viewModel.state.library.metadataEditable {
             actions.append(ItemAction(type: .addToCollection))
 

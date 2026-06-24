@@ -6,6 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SwiftUI
 import UIKit
 
 import CocoaLumberjackSwift
@@ -123,6 +124,24 @@ class BaseItemsViewController: UIViewController {
 
     func updateTagFilter(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) {
         tagFilterDelegate?.itemsDidChange(filters: filters, collectionId: collection.identifier, libraryId: library.identifier)
+    }
+
+    func showDocumentWorkerRecorder(button: UIBarButtonItem) {
+        guard let documentWorkerController = controllers.userControllers?.documentWorkerController,
+              let recorder = documentWorkerController.recorder
+        else { return }
+        let controller = UIHostingController(
+            rootView: DocumentWorkerRecorderView(
+                documentWorkerController: documentWorkerController,
+                recorder: recorder
+            )
+        )
+        controller.modalPresentationStyle = .pageSheet
+        if let sheetPresentationController = controller.sheetPresentationController {
+            sheetPresentationController.detents = [.medium(), .large()]
+            sheetPresentationController.prefersGrabberVisible = true
+        }
+        present(controller, animated: true)
     }
 
     /// Starts observing progress of sync. The sync progress needs to be observed to optimize `UITableView` reloads for big syncs of items in current library.
@@ -295,6 +314,7 @@ class BaseItemsViewController: UIViewController {
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
             identifierLookupBatchData: .zero,
+            showsDocumentWorkerRecorder: false,
             itemCount: 0
         )
     }
