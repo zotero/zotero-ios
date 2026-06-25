@@ -148,15 +148,8 @@ final class ONNXRuntime {
 
     private final class OrtTensor {
         let value: OpaquePointer?
-        private let memoryInfo: OpaquePointer
-        private let data: Data
 
         init(input: Tensor) throws {
-            var memoryInfo: OpaquePointer?
-            try ONNXRuntime.check(ONNXRuntime.api.pointee.CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &memoryInfo))
-            guard let memoryInfo else { throw ONNXRuntimeError.apiUnavailable }
-            self.memoryInfo = memoryInfo
-
             let tensorData: Data
             let dimensions: [Int64]
             let elementType: ONNXTensorElementDataType
@@ -177,46 +170,51 @@ final class ONNXRuntime {
                 elementType = ONNX_TENSOR_ELEMENT_DATA_TYPE_BOOL
             }
             guard dimensions.reduce(1, *) == tensorData.elementCount(for: elementType) else {
-                ONNXRuntime.api.pointee.ReleaseMemoryInfo(memoryInfo)
                 throw ONNXRuntimeError.invalidTensorData
             }
+
+            var allocator: UnsafeMutablePointer<OrtAllocator>?
+            try ONNXRuntime.check(ONNXRuntime.api.pointee.GetAllocatorWithDefaultOptions(&allocator))
+            guard let allocator else { throw ONNXRuntimeError.apiUnavailable }
+
             var value: OpaquePointer?
-            let status = try tensorData.withUnsafeBytes { bytes -> OrtStatusPtr? in
-                guard let baseAddress = bytes.baseAddress else {
-                    throw ONNXRuntimeError.invalidTensorData
-                }
-                var dimensions = dimensions
-                return dimensions.withUnsafeMutableBufferPointer { dimensions in
-                    ONNXRuntime.api.pointee.CreateTensorWithDataAsOrtValue(
-                        memoryInfo,
-                        UnsafeMutableRawPointer(mutating: baseAddress),
-                        tensorData.count,
+            var tensorDimensions = dimensions
+            try tensorDimensions.withUnsafeMutableBufferPointer { dimensions in
+                try ONNXRuntime.check(
+                    ONNXRuntime.api.pointee.CreateTensorAsOrtValue(
+                        allocator,
                         dimensions.baseAddress,
                         dimensions.count,
                         elementType,
                         &value
                     )
-                }
-            }
-            do {
-                try ONNXRuntime.check(status)
-            } catch {
-                ONNXRuntime.api.pointee.ReleaseMemoryInfo(memoryInfo)
-                throw error
+                )
             }
             guard let value else {
-                ONNXRuntime.api.pointee.ReleaseMemoryInfo(memoryInfo)
                 throw ONNXRuntimeError.apiUnavailable
             }
+
+            var dataPointer: UnsafeMutableRawPointer?
+            do {
+                try ONNXRuntime.check(ONNXRuntime.api.pointee.GetTensorMutableData(value, &dataPointer))
+                guard let dataPointer else { throw ONNXRuntimeError.invalidTensorData }
+                tensorData.withUnsafeBytes { bytes in
+                    if let baseAddress = bytes.baseAddress, !tensorData.isEmpty {
+                        dataPointer.copyMemory(from: baseAddress, byteCount: tensorData.count)
+                    }
+                }
+            } catch {
+                ONNXRuntime.api.pointee.ReleaseValue(value)
+                throw error
+            }
+
             self.value = value
-            data = tensorData
         }
 
         func release() {
             if let value {
                 ONNXRuntime.api.pointee.ReleaseValue(value)
             }
-            ONNXRuntime.api.pointee.ReleaseMemoryInfo(memoryInfo)
         }
     }
 
@@ -242,6 +240,10 @@ final class ONNXRuntime {
         defer {
             api.pointee.ReleaseSessionOptions(sessionOptions)
         }
+        try check(api.pointee.SetSessionGraphOptimizationLevel(sessionOptions, ORT_ENABLE_ALL))
+        try check(api.pointee.SetSessionExecutionMode(sessionOptions, ORT_SEQUENTIAL))
+        try check(api.pointee.SetIntraOpNumThreads(sessionOptions, 1))
+        try check(api.pointee.SetInterOpNumThreads(sessionOptions, 1))
 
         var session: OpaquePointer?
         let status = try modelData.withUnsafeBytes { modelBytes -> OrtStatusPtr? in

@@ -29,6 +29,7 @@ final class DocumentWorkerController {
     struct Configuration {
         let supportedWorkKinds: Set<Work.Kind>
         var usesNativeONNXForStructuredDocumentText: Bool
+        var structuredDocumentTextRuntime: HandlerRuntime?
 
         static let allWorks = Configuration(supportedWorkKinds: Set(Work.Kind.allCases), usesNativeONNXForStructuredDocumentText: false)
 
@@ -49,10 +50,10 @@ final class DocumentWorkerController {
         fileprivate func preferredRuntime(for workKind: Work.Kind) -> HandlerRuntime {
             switch workKind {
             case .structuredDocumentText where usesNativeONNXForStructuredDocumentText:
-                return .jsContext
+                return structuredDocumentTextRuntime ?? .jsContext
 
             case .structuredDocumentText:
-                return .webView
+                return structuredDocumentTextRuntime ?? .webView
 
             case .recognizer, .fullText:
                 return .jsContext
@@ -297,7 +298,7 @@ final class DocumentWorkerController {
 
         struct StructuredDocumentText {
             fileprivate struct Cache: Work.Cache {
-                let location = CacheLocation(path: "sdt", version: 1)
+                let location = CacheLocation(path: "sdt", version: 2)
 
                 func cachedData(for work: Work, in worker: Worker, fileStorage: FileStorage) -> [String: Any]? {
                     guard case .structuredDocumentText = work else { return nil }

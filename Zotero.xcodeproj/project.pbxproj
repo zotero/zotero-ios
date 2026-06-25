@@ -98,6 +98,12 @@
 		61C0DE122F9D000100000005 /* 3.epub in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000005 /* 3.epub */; };
 		61C0DE122F9D000100000006 /* 2.html in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000006 /* 2.html */; };
 		61C0DE122F9D000100000007 /* bitcoin_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000007 /* bitcoin_pdf_structured_text.json */; };
+		61C0DE122F9D00010000000D /* cocaine-related-ischemic-strokes.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000000D /* cocaine-related-ischemic-strokes.pdf */; };
+		61C0DE122F9D00010000000E /* ethics-in-law-enforcement.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000000E /* ethics-in-law-enforcement.pdf */; };
+		61C0DE122F9D00010000000F /* frai-06-1128212.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000000F /* frai-06-1128212.pdf */; };
+		61C0DE122F9D000100000010 /* cocaine_related_ischemic_strokes_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000010 /* cocaine_related_ischemic_strokes_pdf_structured_text.json */; };
+		61C0DE122F9D000100000011 /* ethics_in_law_enforcement_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000011 /* ethics_in_law_enforcement_pdf_structured_text.json */; };
+		61C0DE122F9D000100000012 /* frai_06_1128212_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000012 /* frai_06_1128212_pdf_structured_text.json */; };
 		61C0DE122F9D000100000008 /* 1_advanced_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000008 /* 1_advanced_epub_structured_text.json */; };
 		61C0DE122F9D000100000009 /* 2_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000009 /* 2_epub_structured_text.json */; };
 		61C0DE122F9D00010000000A /* 2_advanced_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000000A /* 2_advanced_epub_structured_text.json */; };
@@ -1470,6 +1476,12 @@
 		61C0DE112F9D000100000005 /* 3.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = 3.epub; sourceTree = "<group>"; };
 		61C0DE112F9D000100000006 /* 2.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = 2.html; sourceTree = "<group>"; };
 		61C0DE112F9D000100000007 /* bitcoin_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D00010000000D /* cocaine-related-ischemic-strokes.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "cocaine-related-ischemic-strokes.pdf"; sourceTree = "<group>"; };
+		61C0DE112F9D00010000000E /* ethics-in-law-enforcement.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "ethics-in-law-enforcement.pdf"; sourceTree = "<group>"; };
+		61C0DE112F9D00010000000F /* frai-06-1128212.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "frai-06-1128212.pdf"; sourceTree = "<group>"; };
+		61C0DE112F9D000100000010 /* cocaine_related_ischemic_strokes_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cocaine_related_ischemic_strokes_pdf_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D000100000011 /* ethics_in_law_enforcement_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ethics_in_law_enforcement_pdf_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D000100000012 /* frai_06_1128212_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = frai_06_1128212_pdf_structured_text.json; sourceTree = "<group>"; };
 		61C0DE112F9D000100000008 /* 1_advanced_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 1_advanced_epub_structured_text.json; sourceTree = "<group>"; };
 		61C0DE112F9D000100000009 /* 2_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 2_epub_structured_text.json; sourceTree = "<group>"; };
 		61C0DE112F9D00010000000A /* 2_advanced_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 2_advanced_epub_structured_text.json; sourceTree = "<group>"; };
@@ -3485,6 +3497,9 @@
 				61C0DE112F9D00010000000B /* 3_epub_structured_text.json */,
 				61C0DE012F9D000100000004 /* 1_pdf_structured_text.json */,
 				61C0DE112F9D000100000007 /* bitcoin_pdf_structured_text.json */,
+				61C0DE112F9D000100000010 /* cocaine_related_ischemic_strokes_pdf_structured_text.json */,
+				61C0DE112F9D000100000011 /* ethics_in_law_enforcement_pdf_structured_text.json */,
+				61C0DE112F9D000100000012 /* frai_06_1128212_pdf_structured_text.json */,
 				61C0DE012F9D000100000006 /* 1_html_structured_text.json */,
 				61C0DE112F9D00010000000C /* 2_html_structured_text.json */,
 				6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */,
@@ -4222,6 +4237,9 @@
 				61A9B1642F471F75004FF769 /* cmap.pdf */,
 				61A9B1682F476D36004FF769 /* font_data.pdf */,
 				61C0DE012F9D000100000001 /* 1.pdf */,
+				61C0DE112F9D00010000000D /* cocaine-related-ischemic-strokes.pdf */,
+				61C0DE112F9D00010000000E /* ethics-in-law-enforcement.pdf */,
+				61C0DE112F9D00010000000F /* frai-06-1128212.pdf */,
 			);
 			path = PDFs;
 			sourceTree = "<group>";
@@ -5214,6 +5232,12 @@
 				B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */,
 				61C0DE022F9D000100000004 /* 1_pdf_structured_text.json in Resources */,
 				61C0DE122F9D000100000007 /* bitcoin_pdf_structured_text.json in Resources */,
+				61C0DE122F9D00010000000D /* cocaine-related-ischemic-strokes.pdf in Resources */,
+				61C0DE122F9D00010000000E /* ethics-in-law-enforcement.pdf in Resources */,
+				61C0DE122F9D00010000000F /* frai-06-1128212.pdf in Resources */,
+				61C0DE122F9D000100000010 /* cocaine_related_ischemic_strokes_pdf_structured_text.json in Resources */,
+				61C0DE122F9D000100000011 /* ethics_in_law_enforcement_pdf_structured_text.json in Resources */,
+				61C0DE122F9D000100000012 /* frai_06_1128212_pdf_structured_text.json in Resources */,
 				B32A3C8D248008A2009E2C5D /* test_search.json in Resources */,
 				B3B1EDFD2502498100D8BC1E /* collectionresponse_knownfields.json in Resources */,
 				B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */,
