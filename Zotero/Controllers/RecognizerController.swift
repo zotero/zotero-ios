@@ -197,9 +197,9 @@ final class RecognizerController {
                     case .queued, .inProgress:
                         break
 
-                    case .extractedData(let data, _):
-                        switch update.work {
-                        case .recognizer:
+                    case .extractedData(let result, _):
+                        switch result {
+                        case .recognizerData(let data):
                             DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
                             startRemoteRecognition(for: task, with: data)
 

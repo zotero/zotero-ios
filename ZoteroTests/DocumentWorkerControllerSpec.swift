@@ -547,7 +547,6 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(timeout))
-                    let runtime = expectedRuntime.map { "\($0)" } ?? "default"
                     assertStructuredDocumentTextPack(updates: emittedUpdates, expectedURL: expectedURL)
                 }
 
@@ -734,16 +733,17 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     case .inProgress:
                         expect(index).to(equal(1))
 
-                    case .extractedData(let data, _):
+                    case .extractedData(let result, _):
                         expect(index).to(equal(2))
-                        guard let buf = data["buf"] as? Data else {
-                            fail("expected SDT pack data, got \(data)")
+                        guard case .structuredDocumentText(let structuredDocumentText) = result else {
+                            fail("expected structured document text result, got \(result)")
                             return
                         }
-                        expect(buf.count).to(beGreaterThan(magic.count))
-                        expect(Data(buf.prefix(magic.count))).to(equal(magic))
+                        let data = structuredDocumentText.data
+                        expect(data.count).to(beGreaterThan(magic.count))
+                        expect(Data(data.prefix(magic.count))).to(equal(magic))
                         do {
-                            let pack = try SDTPack(data: buf)
+                            let pack = try structuredDocumentText.pack()
                             let metadata = try pack.getMetadata()
                             let catalog = try pack.getCatalog()
                             let materialized = try pack.materialize()
@@ -774,7 +774,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     return
                 }
                 if let expectedURL {
-                    process(updates: [.queued, .inProgress, .extractedData(data: materializedData)], ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
+                    compareJSON(actual: materializedData, expectedURL: expectedURL, ignoreKeys: ["dateCreated"])
                 }
             }
 
@@ -979,16 +979,37 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     case .inProgress:
                         expect(index).to(equal(1))
 
-                    case .extractedData(let data, _):
+                    case .extractedData(let result, _):
                         expect(index).to(equal(2))
-                        let expectedData = try! Data(contentsOf: jsonURL)
-                        let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
-                        compareJSONObjects(actual: data, expected: expectedJSONData, ignoreKeys: ignoreKeys, context: jsonURL.lastPathComponent)
+                        guard let data = jsonData(from: result) else {
+                            fail("expected JSON-compatible result at \(jsonURL.lastPathComponent)")
+                            return
+                        }
+                        compareJSON(actual: data, expectedURL: jsonURL, ignoreKeys: ignoreKeys)
 
                     default:
                         fail("unexpected update \(index): \(update)")
                     }
                 }
+
+                func jsonData(from result: DocumentWorkerController.Result) -> [String: Any]? {
+                    switch result {
+                    case .recognizerData(let data):
+                        return data
+
+                    case .fullText(let result):
+                        return result.data
+
+                    case .structuredDocumentText:
+                        return nil
+                    }
+                }
+            }
+
+            func compareJSON(actual: [String: Any], expectedURL: URL, ignoreKeys: Set<String>) {
+                let expectedData = try! Data(contentsOf: expectedURL)
+                let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
+                compareJSONObjects(actual: actual, expected: expectedJSONData, ignoreKeys: ignoreKeys, context: expectedURL.lastPathComponent)
 
                 func compareJSONObjects(actual: [String: Any], expected: [String: Any], ignoreKeys: Set<String>, context: String) {
                     let actualKeys = Set(actual.keys).subtracting(ignoreKeys)
@@ -999,7 +1020,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     }
                 }
 
-            func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
+                func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
                     if let expected = expected as? [String: Any] {
                         guard let actual = actual as? [String: Any] else {
                             fail("expected object at \(context), got \(String(describing: actual))")

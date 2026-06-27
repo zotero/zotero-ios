@@ -1051,13 +1051,13 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
                 case .queued, .inProgress:
                     break
 
-                case .extractedData(let data, _):
-                    guard let text = data["text"] as? String else {
-                        DDLogError("PDFReaderViewController: full text extraction incorrect data - \(data)")
+                case .extractedData(let result, _):
+                    guard case .fullText(let fullText) = result else {
+                        DDLogError("PDFReaderViewController: full text extraction returned incorrect result - \(result)")
                         completion(nil)
                         return
                     }
-                    let textParts = text.components(separatedBy: DocumentWorkerController.Work.FullText.pageDelimiter)
+                    let textParts = fullText.text.components(separatedBy: DocumentWorkerController.Work.FullText.pageDelimiter)
                     guard textParts.count == indices.count else {
                         DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
                         completion(nil)
