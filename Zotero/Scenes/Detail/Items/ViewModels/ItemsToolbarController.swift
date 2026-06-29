@@ -158,27 +158,27 @@ final class ItemsToolbarController {
                 .disposed(by: disposeBag)
                 return item
             })
-            let innerFlexibleSpace = UIBarButtonItem.flexibleSpace()
-            if #available(iOS 26.0, *) {
-                innerFlexibleSpace.hidesSharedBackground = false
-            }
             return [.flexibleSpace()] + items.enumerated().flatMap({ index, item in
-                [item, index < items.count - 1 ? innerFlexibleSpace : .flexibleSpace()]
+                [item, index < items.count - 1 ? createInnerFlexibleSpace() : .flexibleSpace()]
             })
+
+            func createInnerFlexibleSpace() -> UIBarButtonItem {
+                let flexibleSpace: UIBarButtonItem = .flexibleSpace()
+                if #available(iOS 26.0, *) {
+                    flexibleSpace.hidesSharedBackground = false
+                }
+                return flexibleSpace
+            }
         }
 
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
-            let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-            fixedSpacer.width = 16
-            let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+            let fixedSpaceWidth: CGFloat = 16
 
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            let filterImage = UIImage(systemName: filterImageName)
+            let filterButton = UIBarButtonItem(image: filterImage, style: .plain, target: nil, action: nil)
             if isCompact {
-                filterButton.primaryAction = UIAction { [weak self, weak filterButton] _ in
-                    guard let filterButton else { return }
-                    self?.delegate?.showFilters(button: filterButton)
-                }
+                filterButton.primaryAction = createFilterPrimaryAction(image: filterImage)
             } else {
                 let downloadsFilterEnabled = data.filters.contains(where: { $0.isDownloadedFilesFilter })
                 filterButton.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
@@ -189,13 +189,14 @@ final class ItemsToolbarController {
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag
 
-            var items: [UIBarButtonItem] = [fixedSpacer, filterButton, flexibleSpacer, titleButton]
+            var items: [UIBarButtonItem] = [.fixedSpace(fixedSpaceWidth), filterButton, .flexibleSpace(), titleButton]
 
             if data.showsDocumentWorkerRecorder {
-                let documentWorkerButton = UIBarButtonItem(image: UIImage(systemName: "ladybug"), style: .plain, target: nil, action: nil)
-                documentWorkerButton.primaryAction = UIAction { [weak self, weak documentWorkerButton] _ in
-                    guard let documentWorkerButton else { return }
-                    self?.delegate?.showDocumentWorkerRecorder(button: documentWorkerButton)
+                let documentWorkerImage = UIImage(systemName: "ladybug")
+                let documentWorkerButton = UIBarButtonItem(image: documentWorkerImage, style: .plain, target: nil, action: nil)
+                documentWorkerButton.primaryAction = UIAction(image: documentWorkerImage) { [weak self] action in
+                    guard let button = action.sender as? UIBarButtonItem else { return }
+                    self?.delegate?.showDocumentWorkerRecorder(button: button)
                 }
                 documentWorkerButton.tag = ToolbarItem.documentWorkerRecorder.tag
                 documentWorkerButton.accessibilityLabel = "Document Worker"
@@ -207,9 +208,9 @@ final class ItemsToolbarController {
                 let sortButton = UIBarButtonItem(image: action.image, menu: createSortMenu(for: data.sortType))
                 sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-                items.append(contentsOf: [flexibleSpacer, sortButton, fixedSpacer])
+                items.append(contentsOf: [.flexibleSpace(), sortButton, .fixedSpace(fixedSpaceWidth)])
             } else {
-                items.append(contentsOf: [flexibleSpacer, fixedSpacer])
+                items.append(contentsOf: [.flexibleSpace(), .fixedSpace(fixedSpaceWidth)])
             }
 
             return items
@@ -283,6 +284,13 @@ final class ItemsToolbarController {
         return UIMenu(title: L10n.Items.Filters.title, children: [downloadsAction])
     }
 
+    private func createFilterPrimaryAction(image: UIImage?) -> UIAction {
+        return UIAction(image: image) { [weak self] action in
+            guard let button = action.sender as? UIBarButtonItem else { return }
+            self?.delegate?.showFilters(button: button)
+        }
+    }
+
     private func createSortMenu(for sortType: ItemsSortType) -> UIMenu {
         let ascendingAction = UIAction(title: L10n.Items.ascending, state: sortType.ascending ? .on : .off) { [weak self] _ in
             var newSortType = sortType
@@ -338,13 +346,11 @@ final class ItemsToolbarController {
 
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            item.image = UIImage(systemName: filterImageName)
+            let filterImage = UIImage(systemName: filterImageName)
+            item.image = filterImage
             if isCompact {
                 item.menu = nil
-                item.primaryAction = UIAction { [weak self, weak item] _ in
-                    guard let item else { return }
-                    self?.delegate?.showFilters(button: item)
-                }
+                item.primaryAction = createFilterPrimaryAction(image: filterImage)
             } else {
                 item.primaryAction = nil
                 let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })

@@ -541,8 +541,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
         guard !toolbarContainer.isHidden else { return }
 
-        var items: [UIBarButtonItem] = []
-        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+        var items: [UIBarButtonItem] = [.flexibleSpace()]
 
         if editingEnabled {
             let merge = UIBarButtonItem(title: L10n.Pdf.AnnotationsSidebar.merge, style: .plain, target: nil, action: nil)

@@ -139,9 +139,6 @@ class ManualLookupViewController: UIViewController {
     private func setupCloseCancelAllBarButtons() {
         navigationItem.rightBarButtonItem = nil
 
-        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-        fixedSpacer.width = 16
-
         let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
         closeItem.rx.tap.subscribe(onNext: { [weak self] in
             guard let self else { return }
@@ -155,7 +152,7 @@ class ManualLookupViewController: UIViewController {
             self?.close()
         }).disposed(by: self.disposeBag)
 
-        navigationItem.leftBarButtonItems = [closeItem, fixedSpacer, cancelAllItem]
+        navigationItem.leftBarButtonItems = [closeItem, .fixedSpace(16), cancelAllItem]
     }
 
     private func setupCancelDoneBarButtons() {
