@@ -189,6 +189,25 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     expect(try? engine.evaluate(script: script)?.toBool()).to(beTrue())
                 }
 
+                it("provides URL.parse") {
+                    let engine = try! makeShimEngine()
+                    let script = """
+                    (function () {
+                      var parsed = URL.parse('https://www.frontiersin.org');
+                      var hashed = URL.parse('https://example.org/path#section');
+                      return parsed.href === 'https://www.frontiersin.org/' &&
+                        parsed.origin === 'https://www.frontiersin.org' &&
+                        parsed.host === 'www.frontiersin.org' &&
+                        parsed.protocol === 'https:' &&
+                        hashed.hash === '#section' &&
+                        URL.parse(null) === null &&
+                        URL.parse('not a url') === null;
+                    })()
+                    """
+
+                    expect(try? engine.evaluate(script: script)?.toBool()).to(beTrue())
+                }
+
                 it("provides Blob-backed object URLs") {
                     let engine = try! makeShimEngine()
                     let script = """
@@ -496,15 +515,25 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     return file
                 }
 
-                func processStructuredDocumentText(file: FileData, expectedURL: URL, timeout: Int) {
+                func processStructuredDocumentText(
+                    file: FileData,
+                    expectedURL: URL,
+                    timeout: Int,
+                    controller: DocumentWorkerController? = nil,
+                    expectedRuntime: DocumentWorkerController.HandlerRuntime? = nil
+                ) {
+                    let controller = controller ?? documentWorkerController!
                     let work: DocumentWorkerController.Work = .structuredDocumentText
                     let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(timeout)) { completion in
-                        documentWorkerController.queue(work: work, in: worker)
+                        controller.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
+                                if let expectedRuntime {
+                                    expect(update.runtime).to(equal(expectedRuntime))
+                                }
                                 emittedUpdates.append(update.kind)
                                 switch update.kind {
                                 case .failed, .cancelled, .extractedData:
@@ -524,6 +553,9 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 let structuredTextFixtures = [
                     (description: "PDF", resource: "1", fileExtension: "pdf", key: "dddddddd", contentType: "application/pdf", expected: "1_pdf_structured_text", timeout: 120),
                     (description: "bitcoin PDF", resource: "bitcoin", fileExtension: "pdf", key: "ddddddd2", contentType: "application/pdf", expected: "bitcoin_pdf_structured_text", timeout: 120),
+                    (description: "cocaine-related ischemic strokes PDF", resource: "cocaine-related-ischemic-strokes", fileExtension: "pdf", key: "ddddddd3", contentType: "application/pdf", expected: "cocaine_related_ischemic_strokes_pdf_structured_text", timeout: 240),
+                    (description: "ethics in law enforcement PDF", resource: "ethics-in-law-enforcement", fileExtension: "pdf", key: "ddddddd4", contentType: "application/pdf", expected: "ethics_in_law_enforcement_pdf_structured_text", timeout: 240),
+                    (description: "FRAI 06 1128212 PDF", resource: "frai-06-1128212", fileExtension: "pdf", key: "ddddddd5", contentType: "application/pdf", expected: "frai_06_1128212_pdf_structured_text", timeout: 240),
                     (description: "EPUB", resource: "1", fileExtension: "epub", key: "eeeeeeee", contentType: "application/epub+zip", expected: "1_epub_structured_text", timeout: 30),
                     (description: "advanced EPUB", resource: "1_advanced", fileExtension: "epub", key: "eeeeeee1", contentType: "application/epub+zip", expected: "1_advanced_epub_structured_text", timeout: 60),
                     (description: "EPUB 2", resource: "2", fileExtension: "epub", key: "eeeeeee2", contentType: "application/epub+zip", expected: "2_epub_structured_text", timeout: 60),
@@ -532,8 +564,9 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     (description: "snapshot HTML", resource: "1", fileExtension: "html", key: "ffffffff", contentType: "text/html", expected: "1_html_structured_text", timeout: 20),
                     (description: "snapshot HTML 2", resource: "2", fileExtension: "html", key: "fffffff2", contentType: "text/html", expected: "2_html_structured_text", timeout: 20)
                 ]
+                let pdfStructuredTextFixtures = structuredTextFixtures.filter { $0.fileExtension == "pdf" }
 
-                for fixture in structuredTextFixtures {
+                for fixture in pdfStructuredTextFixtures {
                     it("can extract structured document text for \(fixture.description)") {
                         let file = makeFile(
                             resource: fixture.resource,
@@ -551,43 +584,60 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     }
                 }
 
-                it("can extract structured document text for PDF with JavaScriptCore and native ONNX") {
-                    let nativeDocumentWorkerController = DocumentWorkerController(
-                        fileStorage: TestControllers.fileStorage,
-                        configuration: .mainApp
-                    )
+                for fixture in pdfStructuredTextFixtures {
+                    it("can extract structured document text for \(fixture.description) with JavaScriptCore and native ONNX") {
+                        let nativeDocumentWorkerController = DocumentWorkerController(
+                            fileStorage: TestControllers.fileStorage,
+                            configuration: .mainApp
+                        )
+                        let key = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8))
+                        let file = makeFile(
+                            resource: fixture.resource,
+                            fileExtension: fixture.fileExtension,
+                            key: key,
+                            filename: fixture.resource,
+                            contentType: fixture.contentType
+                        )
 
-                    let work: DocumentWorkerController.Work = .structuredDocumentText
-                    let key = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8))
-                    let file = makeFile(
-                        resource: "1",
-                        fileExtension: "pdf",
-                        key: key,
-                        filename: "1",
-                        contentType: "application/pdf"
-                    )
-                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
-                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
-
-                    waitUntil(timeout: .seconds(120)) { completion in
-                        nativeDocumentWorkerController.queue(work: work, in: worker)
-                            .subscribe(onNext: { update in
-                                expect(update.work).to(equal(work))
-                                expect(update.runtime).to(equal(.jsContext))
-                                emittedUpdates.append(update.kind)
-                                switch update.kind {
-                                case .failed, .cancelled, .extractedData:
-                                    completion()
-
-                                case .queued, .inProgress:
-                                    break
-                                }
-                            })
-                            .disposed(by: disposeBag)
+                        processStructuredDocumentText(
+                            file: file,
+                            expectedURL: fixtureURL(forResource: fixture.expected, withExtension: "json"),
+                            timeout: fixture.timeout,
+                            controller: nativeDocumentWorkerController,
+                            expectedRuntime: .jsContext
+                        )
                     }
+                }
 
-                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(120))
-                    assertStructuredDocumentTextPack(updates: emittedUpdates)
+                for fixture in pdfStructuredTextFixtures {
+                    it("can extract structured document text for \(fixture.description) with WebView and native ONNX") {
+                        let configuration = DocumentWorkerController.Configuration(
+                            supportedWorkKinds: [.structuredDocumentText],
+                            usesNativeONNXForStructuredDocumentText: true,
+                            structuredDocumentTextRuntime: .webView
+                        )
+                        let webViewNativeONNXDocumentWorkerController = DocumentWorkerController(
+                            fileStorage: TestControllers.fileStorage,
+                            configuration: configuration
+                        )
+                        webViewNativeONNXDocumentWorkerController.webViewProvider = webViewProvider
+                        let key = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8))
+                        let file = makeFile(
+                            resource: fixture.resource,
+                            fileExtension: fixture.fileExtension,
+                            key: key,
+                            filename: fixture.resource,
+                            contentType: fixture.contentType
+                        )
+
+                        processStructuredDocumentText(
+                            file: file,
+                            expectedURL: fixtureURL(forResource: fixture.expected, withExtension: "json"),
+                            timeout: fixture.timeout,
+                            controller: webViewNativeONNXDocumentWorkerController,
+                            expectedRuntime: .webView
+                        )
+                    }
                 }
             }
 
@@ -683,16 +733,17 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     case .inProgress:
                         expect(index).to(equal(1))
 
-                    case .extractedData(let data, _):
+                    case .extractedData(let result, _):
                         expect(index).to(equal(2))
-                        guard let buf = data["buf"] as? Data else {
-                            fail("expected SDT pack data, got \(data)")
+                        guard case .structuredDocumentText(let structuredDocumentText) = result else {
+                            fail("expected structured document text result, got \(result)")
                             return
                         }
-                        expect(buf.count).to(beGreaterThan(magic.count))
-                        expect(Data(buf.prefix(magic.count))).to(equal(magic))
+                        let data = structuredDocumentText.data
+                        expect(data.count).to(beGreaterThan(magic.count))
+                        expect(Data(data.prefix(magic.count))).to(equal(magic))
                         do {
-                            let pack = try SDTPack(data: buf)
+                            let pack = try structuredDocumentText.pack()
                             let metadata = try pack.getMetadata()
                             let catalog = try pack.getCatalog()
                             let materialized = try pack.materialize()
@@ -723,7 +774,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     return
                 }
                 if let expectedURL {
-                    process(updates: [.queued, .inProgress, .extractedData(data: materializedData)], ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
+                    compareJSON(actual: materializedData, expectedURL: expectedURL, ignoreKeys: ["dateCreated"])
                 }
             }
 
@@ -928,16 +979,37 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     case .inProgress:
                         expect(index).to(equal(1))
 
-                    case .extractedData(let data, _):
+                    case .extractedData(let result, _):
                         expect(index).to(equal(2))
-                        let expectedData = try! Data(contentsOf: jsonURL)
-                        let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
-                        compareJSONObjects(actual: data, expected: expectedJSONData, ignoreKeys: ignoreKeys, context: jsonURL.lastPathComponent)
+                        guard let data = jsonData(from: result) else {
+                            fail("expected JSON-compatible result at \(jsonURL.lastPathComponent)")
+                            return
+                        }
+                        compareJSON(actual: data, expectedURL: jsonURL, ignoreKeys: ignoreKeys)
 
                     default:
                         fail("unexpected update \(index): \(update)")
                     }
                 }
+
+                func jsonData(from result: DocumentWorkerController.Result) -> [String: Any]? {
+                    switch result {
+                    case .recognizerData(let data):
+                        return data
+
+                    case .fullText(let result):
+                        return result.data
+
+                    case .structuredDocumentText:
+                        return nil
+                    }
+                }
+            }
+
+            func compareJSON(actual: [String: Any], expectedURL: URL, ignoreKeys: Set<String>) {
+                let expectedData = try! Data(contentsOf: expectedURL)
+                let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
+                compareJSONObjects(actual: actual, expected: expectedJSONData, ignoreKeys: ignoreKeys, context: expectedURL.lastPathComponent)
 
                 func compareJSONObjects(actual: [String: Any], expected: [String: Any], ignoreKeys: Set<String>, context: String) {
                     let actualKeys = Set(actual.keys).subtracting(ignoreKeys)
@@ -948,7 +1020,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     }
                 }
 
-            func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
+                func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
                     if let expected = expected as? [String: Any] {
                         guard let actual = actual as? [String: Any] else {
                             fail("expected object at \(context), got \(String(describing: actual))")

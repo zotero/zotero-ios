@@ -601,6 +601,48 @@
       this.origin = "null";
     };
   }
+  if (typeof g.URL.parse !== "function") {
+    g.URL.parse = function (url, base) {
+      if (url == null) {
+        return null;
+      }
+      var href = String(url);
+      if (base && !/^[a-z][a-z0-9+.-]*:/i.test(href)) {
+        var baseHref = String(base);
+        href = baseHref.replace(/[#?].*$/, "").replace(/\/?$/, "/") + href.replace(/^\//, "");
+      }
+
+      var match = /^([a-z][a-z0-9+.-]*:)(.*)$/i.exec(href);
+      if (!match) {
+        return null;
+      }
+
+      var parsed = {
+        href: href,
+        protocol: match[1].toLowerCase(),
+        hash: ""
+      };
+
+      var hashIndex = href.indexOf("#");
+      if (hashIndex >= 0) {
+        parsed.hash = href.slice(hashIndex);
+      }
+
+      if (parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "ftp:") {
+        var hostMatch = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i.exec(href);
+        parsed.host = hostMatch ? hostMatch[1] : "";
+        parsed.origin = parsed.host ? parsed.protocol + "//" + parsed.host : "null";
+        if (parsed.host && href === parsed.origin) {
+          parsed.href = href + "/";
+        }
+      } else {
+        parsed.host = "";
+        parsed.origin = "null";
+      }
+
+      return parsed;
+    };
+  }
   g.URL.createObjectURL = function (blob) {
     var url = "blob:zotero-ios-jsc/" + (++blobId);
     blobStore[url] = blob;
