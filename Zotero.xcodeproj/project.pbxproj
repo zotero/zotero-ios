@@ -7672,7 +7672,7 @@
 			repositoryURL = "https://github.com/apple/swift-collections.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.5.1;
+				version = 1.6.0;
 			};
 		};
 		B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */ = {
@@ -7760,7 +7760,7 @@
 			repositoryURL = "https://github.com/realm/realm-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 20.0.4;
+				version = 20.0.5;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
