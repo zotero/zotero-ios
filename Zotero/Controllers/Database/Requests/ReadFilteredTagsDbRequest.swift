@@ -39,8 +39,11 @@ struct ReadFilteredTagsDbRequest: DbResponseRequest {
 
         case .custom(let customType):
             switch customType {
-            case .all, .publications:
+            case .all:
                 break
+
+            case .publications:
+                predicates.append(NSPredicate(format: "item.inPublications = true"))
 
             case .unfiled:
                 predicates.append(NSPredicate(format: "any item.collections.@count == 0"))
