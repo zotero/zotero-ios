@@ -467,8 +467,11 @@ final class ItemsViewController: BaseItemsViewController {
     }
 
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        let selectItems = rightBarButtonSelectItemTypes(for: state)
-        return state.library.metadataEditable ? [.add] + selectItems : selectItems
+        var selectItems = rightBarButtonSelectItemTypes(for: state)
+        if state.library.metadataEditable, state.collection.identifier != .custom(.publications) {
+            selectItems.insert(.add, at: 0)
+        }
+        return selectItems
 
         func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
             if !state.isEditing {
