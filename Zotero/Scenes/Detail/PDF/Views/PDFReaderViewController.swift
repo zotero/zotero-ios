@@ -45,7 +45,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     weak var documentControllerLeft: NSLayoutConstraint?
     weak var documentControllerBottom: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
-    private var speechWorker: DocumentWorkerController.Worker?
     private var documentTop: NSLayoutConstraint!
     var annotationToolbarHandler: AnnotationToolbarHandler?
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler?
@@ -227,7 +226,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 documentContainer: documentController!.view,
                 delegate: self,
                 dbStorage: viewModel.handler.dbStorage,
-                remoteVoicesController: remoteVoicesController
+                remoteVoicesController: remoteVoicesController,
+                documentWorkerController: documentWorkerController
             )
             readAloudHandler?.delegate = self
         }
@@ -376,14 +376,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         applyNavigationBarButtons(windowSize: windowSize)
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-    }
-
     deinit {
-        if let speechWorker {
-            documentWorkerController.cleanupWorker(speechWorker)
-        }
         viewModel.process(action: .changeIdleTimerDisabled(false))
         DDLogInfo("PDFReaderViewController deinitialized")
     }
@@ -1156,60 +1149,17 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         return currentPageIndex - 1
     }
 
-    func getInitialPageIndices(count: Int) -> [UInt] {
-        let pageCount = UInt(viewModel.state.document.pageCount)
-        guard pageCount > 0 else { return [] }
-        let limit = min(UInt(count), pageCount)
-        return Array(0..<limit)
+    var documentFile: FileData? {
+        return viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) as? FileData
     }
 
-    func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
-        DDLogInfo("PDFReaderViewController: text for \(indices)")
-        guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
-            DDLogInfo("PDFReaderViewController: document url not found")
-            completion(nil)
-            return
-        }
-        let speechWorker = speechWorker ?? DocumentWorkerController.Worker(
-            file: file as! FileData,
-            kind: .multipleWorks,
-            priority: .high,
-            password: viewModel.state.unlockPassword
-        )
-        self.speechWorker = speechWorker
-        let start = CFAbsoluteTimeGetCurrent()
-        documentWorkerController.queue(work: .fullText(pages: indices.map({ Int($0) })), in: speechWorker)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { update in
-                switch update.kind {
-                case .failed, .cancelled:
-                    DDLogError("PDFReaderViewController: full data extraction failed")
-                    completion(nil)
+    var documentPassword: String? {
+        return viewModel.state.unlockPassword
+    }
 
-                case .queued, .inProgress:
-                    break
-
-                case .extractedData(let result, _):
-                    guard case .fullText(let fullText) = result else {
-                        DDLogError("PDFReaderViewController: full text extraction returned incorrect result - \(result)")
-                        completion(nil)
-                        return
-                    }
-                    let textParts = fullText.text.components(separatedBy: DocumentWorkerController.Work.FullText.pageDelimiter)
-                    guard textParts.count == indices.count else {
-                        DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
-                        completion(nil)
-                        return
-                    }
-                    var result: [UInt: String] = [:]
-                    for idx in 0..<indices.count {
-                        result[indices[idx]] = String(textParts[idx])
-                    }
-                    DDLogInfo("PDFReaderViewController: speech text extracted in \(CFAbsoluteTimeGetCurrent() - start)")
-                    completion(result)
-                }
-            })
-            .disposed(by: disposeBag)
+    func pageIndex(forStructuredDocumentTextPage page: Int) -> UInt? {
+        guard page >= 0, page < Int(viewModel.state.document.pageCount) else { return nil }
+        return UInt(page)
     }
 
     func moved(to pageIndex: UInt, from previousPageIndex: UInt) {
