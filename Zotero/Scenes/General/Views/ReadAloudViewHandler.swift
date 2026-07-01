@@ -100,7 +100,8 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         documentContainer: UIView,
         delegate: Delegate,
         dbStorage: DbStorage,
-        remoteVoicesController: RemoteVoicesController
+        remoteVoicesController: RemoteVoicesController,
+        documentWorkerController: DocumentWorkerController
     ) {
         self.key = key
         self.libraryId = libraryId
@@ -114,7 +115,8 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             delegate: delegate,
             voiceLanguage: language,
             remoteVoiceTier: Defaults.shared.remoteVoiceTier,
-            remoteVoicesController: remoteVoicesController
+            remoteVoicesController: remoteVoicesController,
+            documentWorkerController: documentWorkerController
         )
 
         speechManager.onSpeakingPositionChanged = { [weak self] pageIndex, characterIndex in
