@@ -260,7 +260,11 @@ extension NSPredicate {
                 let lastDate = Calendar.current.date(byAdding: .day, value: -14, to: Date())!
                 predicates.append(NSPredicate(format: "lastRead >= %@ or any children.lastRead >= %@", lastDate as NSDate, lastDate as NSDate))
 
-            case .all, .publications, .trash: break
+            case .publications:
+                predicates.append(NSPredicate(format: "inPublications = true"))
+
+            case .all, .trash:
+                break
             }
 
         case .search: break
@@ -296,7 +300,19 @@ extension NSPredicate {
             let parentInCollection = NSPredicate(format: "any parent.collections.key = %@", key)
             predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: [selfInCollection, parentInCollection]))
 
-        case .search, .custom: break
+        case .custom(let type):
+            switch type {
+            case .publications:
+                let selfInPublications = NSPredicate(format: "inPublications = true")
+                let parentInPublications = NSPredicate(format: "parent.inPublications = true")
+                predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: [selfInPublications, parentInPublications]))
+
+            case .all, .trash, .unfiled, .recentlyRead:
+                break
+            }
+
+        case .search:
+            break
         }
 
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)

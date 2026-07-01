@@ -14,9 +14,9 @@ typealias CollectionStateEditingData = (key: String?, name: String, parent: Coll
 
 struct CollectionsState: ViewModelState {
     struct Changes: OptionSet {
-        typealias RawValue = UInt8
+        typealias RawValue = UInt16
 
-        let rawValue: UInt8
+        let rawValue: UInt16
 
         static let results = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
@@ -26,6 +26,7 @@ struct CollectionsState: ViewModelState {
         static let collapsedState = Changes(rawValue: 1 << 5)
         static let library = Changes(rawValue: 1 << 6)
         static let recentlyReadCount = Changes(rawValue: 1 << 7)
+        static let publicationsItemCount = Changes(rawValue: 1 << 8)
     }
 
     enum EditingType {
@@ -43,6 +44,7 @@ struct CollectionsState: ViewModelState {
     var collectionsToken: NotificationToken?
     var searchesToken: NotificationToken?
     var allItemsCountToken: NotificationToken?
+    var publicationsItemsCountToken: NotificationToken?
     var recentlyReadCountToken: NotificationToken?
     var unfiledItemsCountToken: NotificationToken?
     var trashItemsCountToken: NotificationToken?

@@ -197,6 +197,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
         let includeItemCounts = Defaults.shared.showCollectionItemCounts
         let libraryId = viewModel.state.library.identifier
+        let isMyLibrary = libraryId.isMyLibrary
 
         do {
             try dbStorage.perform(on: .main, with: { [weak self, weak viewModel] coordinator in
@@ -211,6 +212,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 })
 
                 var allItemsCount = 0
+                var publicationsItemsCount = 0
                 var recentlyReadCount = 0
                 var unfiledItemsCount = 0
                 // If not showing item counts, trashItemsCount is set to -1, in order for the trash icon to not be shown as empty.
@@ -218,6 +220,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 var cachedTrashItemsCount = 0
                 var cachedTrashCollectionsCount = 0
                 var allItemsCountToken: NotificationToken?
+                var publicationsItemsCountToken: NotificationToken?
                 var unfiledItemsCountToken: NotificationToken?
                 var trashItemsCountToken: NotificationToken?
                 var trashCollectionsCountToken: NotificationToken?
@@ -227,6 +230,12 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 if includeItemCounts {
                     let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
                     allItemsCount = allItems.count
+
+                    if isMyLibrary {
+                        let publicationsItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.publications), libraryId: libraryId))
+                        publicationsItemsCount = publicationsItems.count
+                        publicationsItemsCountToken = observeItemCount(in: publicationsItems, for: .publications, in: viewModel, handler: self)
+                    }
 
                     let recentlyRead = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.recentlyRead), libraryId: libraryId))
                     recentlyReadCount = recentlyRead.count
@@ -253,6 +262,9 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: includeItemCounts)
                 collectionTree.insert(collection: Collection(custom: .all, itemCount: allItemsCount), at: 0)
                 collectionTree.insert(collection: Collection(custom: .recentlyRead, itemCount: recentlyReadCount), at: 1)
+                if isMyLibrary {
+                    collectionTree.append(collection: Collection(custom: .publications, itemCount: publicationsItemsCount))
+                }
                 collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItemsCount))
                 collectionTree.append(collection: Collection(custom: .trash, itemCount: trashTotalCount))
 
@@ -274,6 +286,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     state.libraryToken = libraryToken
                     state.collectionsToken = collectionsToken
                     state.allItemsCountToken = allItemsCountToken
+                    state.publicationsItemsCountToken = publicationsItemsCountToken
                     state.recentlyReadCountToken = recentlyReadCountToken
                     state.unfiledItemsCountToken = unfiledItemsCountToken
                     state.trashItemsCountToken = trashItemsCountToken
@@ -335,7 +348,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                         state.changes = .recentlyReadCount
 
                     case .publications:
-                        break
+                        state.changes = .publicationsItemCount
                     }
                 }
             }
