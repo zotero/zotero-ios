@@ -351,8 +351,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
     private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool) {
         guard !toolbarContainer.isHidden else { return }
 
-        var items: [UIBarButtonItem] = []
-        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+        var items: [UIBarButtonItem] = [.flexibleSpace()]
 
         if editingEnabled {
             let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)

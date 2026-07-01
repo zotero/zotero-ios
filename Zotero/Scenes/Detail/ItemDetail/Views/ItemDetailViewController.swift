@@ -383,9 +383,7 @@ final class ItemDetailViewController: UIViewController {
                 func attachmentButtonItems(for state: MainAttachmentButtonState?) -> [UIBarButtonItem] {
                     guard let state else { return [] }
 
-                    let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-                    spacer.width = 16
-                    var items: [UIBarButtonItem] = [spacer]
+                    var items: [UIBarButtonItem] = [.fixedSpace(16)]
 
                     switch state {
                     case .ready(let key), .error(let key, _):
