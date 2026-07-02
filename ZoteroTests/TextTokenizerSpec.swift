@@ -168,12 +168,12 @@ final class TextTokenizerSpec: QuickSpec {
                 }
             }
 
-            describe("findIndex ofNext") {
+            describe("nextSentenceStart") {
                 context("with sentences") {
                     it("finds start of next sentence from end of current") {
                         let text = "First sentence. Second sentence."
                         // After reading "First sentence. " (positions 0..16), forward starts at 16
-                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 16, in: text)
+                        let result = TextTokenizer.nextSentenceStart(after: 16, in: text)
 
                         expect(result).notTo(beNil())
                         expect(result).to(equal(16)) // Start of "Second sentence."
@@ -181,7 +181,7 @@ final class TextTokenizerSpec: QuickSpec {
 
                     it("returns end of current sentence when starting in the middle") {
                         let text = "First sentence. Second sentence. Third."
-                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 5, in: text)
+                        let result = TextTokenizer.nextSentenceStart(after: 5, in: text)
 
                         expect(result).notTo(beNil())
                         expect(result).to(equal(16))
@@ -190,7 +190,7 @@ final class TextTokenizerSpec: QuickSpec {
                     it("returns startIndex when at start of a sentence") {
                         let text = "First. Second. Third."
                         // Position 7 is the start of "Second." — must not skip past it
-                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 7, in: text)
+                        let result = TextTokenizer.nextSentenceStart(after: 7, in: text)
 
                         expect(result).notTo(beNil())
                         expect(result).to(equal(7))
@@ -198,61 +198,21 @@ final class TextTokenizerSpec: QuickSpec {
 
                     it("returns nil when starting past end of text") {
                         let text = "First sentence."
-                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 100, in: text)
+                        let result = TextTokenizer.nextSentenceStart(after: 100, in: text)
 
                         expect(result).to(beNil())
                     }
 
                     it("returns nil for empty text") {
-                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 0, in: "")
+                        let result = TextTokenizer.nextSentenceStart(after: 0, in: "")
 
                         expect(result).to(beNil())
                     }
 
                     it("returns nil for whitespace-only text") {
-                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 0, in: "   \n\n   ")
+                        let result = TextTokenizer.nextSentenceStart(after: 0, in: "   \n\n   ")
 
                         expect(result).to(beNil())
-                    }
-                }
-
-                context("with paragraphs") {
-                    it("finds start of next paragraph from end of current") {
-                        let text = "First paragraph.\n\nSecond paragraph."
-                        // After reading "First paragraph.\n\n" (positions 0..18), forward starts at 18
-                        let result = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 18, in: text)
-
-                        expect(result).notTo(beNil())
-                        expect(result).to(equal(18)) // Start of "Second paragraph."
-                    }
-
-                    it("returns startIndex when at exact paragraph boundary") {
-                        // Regression: at the start of a paragraph, must return that position rather than
-                        // skipping ahead to the start of the paragraph after.
-                        let text = "Para 1.\n\nPara 2.\n\nPara 3."
-                        let result = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 9, in: text)
-
-                        expect(result).notTo(beNil())
-                        expect(result).to(equal(9)) // Start of "Para 2.\n\n"
-                    }
-
-                    it("returns end of current paragraph when starting inside it") {
-                        let text = "Para 1.\n\nPara 2.\n\nPara 3."
-                        // Position 3 is inside "Para 1."
-                        let result = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 3, in: text)
-
-                        expect(result).notTo(beNil())
-                        expect(result).to(equal(9))
-                    }
-
-                    it("steps forward through paragraphs from boundary positions") {
-                        let text = "Para 1.\n\nPara 2.\n\nPara 3.\n\nPara 4."
-                        // Each call passes the end of the previous paragraph (= start of the next one)
-                        // and expects that same position back — i.e. no paragraph is skipped.
-                        expect(TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 9, in: text)).to(equal(9))
-                        expect(TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 18, in: text)).to(equal(18))
-                        expect(TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 27, in: text)).to(equal(27))
-                        expect(TextTokenizer.findIndex(ofNext: .paragraph, startingAt: text.count, in: text)).to(beNil())
                     }
                 }
             }
@@ -277,22 +237,22 @@ final class TextTokenizerSpec: QuickSpec {
                 }
             }
 
-            describe("findIndex ofNext with footnotes") {
+            describe("nextSentenceStart with footnotes") {
                 it("finds next sentence index past footnote") {
                     let text = "First sentence.5 Second sentence."
                     // After reading "First sentence.5 " (positions 0..17), forward starts at 17
-                    let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 17, in: text)
+                    let result = TextTokenizer.nextSentenceStart(after: 17, in: text)
 
                     expect(result).notTo(beNil())
                     expect(result).to(equal(17)) // Start of "Second sentence."
                 }
             }
 
-            describe("findIndex ofPreviousWhole with footnotes") {
+            describe("previousSentenceStart with footnotes") {
                 it("finds previous sentence start past footnote") {
                     let text = "First sentence.5 Second sentence.2 Third sentence."
                     // From end of text, should find start of last sentence
-                    let result = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: text.count, in: text)
+                    let result = TextTokenizer.previousSentenceStart(before: text.count, in: text)
 
                     expect(result).notTo(beNil())
                 }
@@ -300,7 +260,7 @@ final class TextTokenizerSpec: QuickSpec {
                 it("finds previous sentence when footnote is followed by newline") {
                     let text = "Test sentence.5\nNext sentence"
                     // beforeIndex 18 is inside "Next sentence", should return 0 (start of first sentence)
-                    let result = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: 18, in: text)
+                    let result = TextTokenizer.previousSentenceStart(before: 18, in: text)
 
                     expect(result).notTo(beNil())
                     expect(result).to(equal(0))
@@ -360,78 +320,12 @@ final class TextTokenizerSpec: QuickSpec {
                 }
             }
 
-            describe("find previous index") {
-                context("with paragraphs") {
-                    it("finds previous paragraph when in middle of current") {
-                        let text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
-                        // Position in middle of second paragraph (index 25)
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: 25, in: text)
-
-                        expect(result).notTo(beNil())
-                        expect(result).to(equal(0)) // Start of first paragraph
-                    }
-
-                    it("finds previous paragraph when at start of current") {
-                        let text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
-                        // Position at start of third paragraph (index 37)
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: 37, in: text)
-
-                        expect(result).notTo(beNil())
-                        expect(result).to(equal(18)) // Start of second paragraph
-                    }
-
-                    it("returns current paragraph when at end of it") {
-                        let text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
-                        // Position at end of text (end of third paragraph)
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: text.count, in: text)
-
-                        expect(result).notTo(beNil())
-                        expect(result).to(equal(37)) // Start of third paragraph
-                    }
-
-                    it("returns first paragraph when at start of second") {
-                        let text = "First paragraph.\n\nSecond paragraph."
-                        // Position at start of second paragraph
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: 18, in: text)
-
-                        expect(result).notTo(beNil())
-                        expect(result).to(equal(0)) // Start of first paragraph
-                    }
-
-                    it("returns nil when in middle of first paragraph") {
-                        let text = "First paragraph.\n\nSecond paragraph."
-                        // Position in middle of first paragraph
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: 5, in: text)
-
-                        expect(result).to(beNil())
-                    }
-
-                    it("returns nil when index is 0") {
-                        let text = "First paragraph."
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: 0, in: text)
-
-                        expect(result).to(beNil())
-                    }
-
-                    it("returns nil for empty text") {
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: 0, in: "")
-
-                        expect(result).to(beNil())
-                    }
-
-                    it("returns nil when only whitespace before index") {
-                        let text = "   \n\n   First paragraph."
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: 5, in: text)
-
-                        expect(result).to(beNil())
-                    }
-                }
-
+            describe("previousSentenceStart") {
                 context("with sentences") {
                     it("finds previous sentence when in middle of current") {
                         let text = "First. Second. Third."
                         // Position in middle of "Third" (index 17)
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: 17, in: text)
+                        let result = TextTokenizer.previousSentenceStart(before: 17, in: text)
 
                         expect(result).notTo(beNil())
                         expect(result).to(equal(7)) // Start of "Second"
@@ -440,7 +334,7 @@ final class TextTokenizerSpec: QuickSpec {
                     it("finds previous sentence when at start of current") {
                         let text = "First. Second. Third."
                         // Position at start of "Third" (index 15)
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: 15, in: text)
+                        let result = TextTokenizer.previousSentenceStart(before: 15, in: text)
 
                         expect(result).notTo(beNil())
                         expect(result).to(equal(7)) // Start of "Second"
@@ -449,45 +343,8 @@ final class TextTokenizerSpec: QuickSpec {
                     it("returns nil when in first sentence") {
                         let text = "First. Second."
                         // Position in middle of first sentence
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: 3, in: text)
+                        let result = TextTokenizer.previousSentenceStart(before: 3, in: text)
 
-                        expect(result).to(beNil())
-                    }
-                }
-
-                context("navigation behavior") {
-                    it("allows stepping back through multiple paragraphs from end") {
-                        let text = "Para 1.\n\nPara 2.\n\nPara 3.\n\nPara 4."
-
-                        // Start from end - should find Para 4
-                        var index = text.count
-
-                        // First backward from end: should go to start of Para 4
-                        if let prevIndex = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: index, in: text) {
-                            index = prevIndex
-                            expect(index).to(equal(27)) // Start of "Para 4"
-                        }
-
-                        // Second backward: should go to Para 3
-                        if let prevIndex = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: index, in: text) {
-                            index = prevIndex
-                            expect(index).to(equal(18)) // Start of "Para 3"
-                        }
-
-                        // Third backward: should go to Para 2
-                        if let prevIndex = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: index, in: text) {
-                            index = prevIndex
-                            expect(index).to(equal(9)) // Start of "Para 2"
-                        }
-
-                        // Fourth backward: should go to Para 1
-                        if let prevIndex = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: index, in: text) {
-                            index = prevIndex
-                            expect(index).to(equal(0)) // Start of "Para 1"
-                        }
-
-                        // Fifth backward: should return nil (no more paragraphs)
-                        let result = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: index, in: text)
                         expect(result).to(beNil())
                     }
                 }

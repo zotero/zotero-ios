@@ -617,9 +617,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     func speak(glyphs: GlyphSequence, pageIndex: PageIndex) {
         let text = glyphs.text
         let approximateOffset = documentController?.textOffset(rect: glyphs.boundingBox, page: pageIndex)
-        readAloudHandler?.speechManager.start(mapStartIndexToPage: { page in
+        // Map PSDPFKit's textOffset to DocumentWorker's page text offset
+        let getDocumentWorkerTextOffset: (String) -> Int = { page in
             return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
-        })
+        }
+        readAloudHandler?.speechManager.start(.pageTextOffset(getDocumentWorkerTextOffset))
 
         func textOffset(for selectedText: String?, approximateOffset: Int?, in pageText: String) -> Int? {
             guard let selectedText, let approximateOffset else { return nil }
