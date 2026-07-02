@@ -70,9 +70,9 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     private let libraryId: LibraryIdentifier
     private let disposeBag: DisposeBag
 
-    /// Stores the last speaking position (page index + character offset) so that speech can resume from where it left off
-    /// when the user returns to the same page. In-memory only, not persisted to disk.
-    private var lastSpeakingPosition: (index: Delegate.Index, characterIndex: Int)?
+    /// Stores the last speaking position (a paragraph anchor) so that speech can resume from where it left off when the
+    /// user returns to the same page. In-memory only, not persisted to disk.
+    private var lastSpeakingPosition: SpeechManager<Delegate>.ResumePosition?
     /// This flag is used to resume playing read-aloud after a voice has been changed in voice picker.
     private var wasPlayingBeforeVoiceChange: Bool
     private weak var activeOverlay: ReadAloudControlsView<Delegate>?
@@ -119,8 +119,8 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             documentWorkerController: documentWorkerController
         )
 
-        speechManager.onSpeakingPositionChanged = { [weak self] pageIndex, characterIndex in
-            self?.lastSpeakingPosition = (index: pageIndex, characterIndex: characterIndex)
+        speechManager.onSpeakingPositionChanged = { [weak self] position in
+            self?.lastSpeakingPosition = position
         }
 
         speechManager.state
@@ -384,14 +384,11 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     func startOrResumeSpeech() {
         if speechManager.state.value.isPaused {
             speechManager.resume()
+        } else if let lastSpeakingPosition, lastSpeakingPosition.page == speechManager.currentPageIndex {
+            // Resume from where reading left off, but only if the user is still on the same page.
+            speechManager.start(.resume(lastSpeakingPosition))
         } else {
-            let startIndex = resolvedStartIndex()
-            speechManager.start(startIndex: startIndex)
-        }
-
-        func resolvedStartIndex() -> Int {
-            guard let lastSpeakingPosition, let currentPage = speechManager.currentPageIndex, lastSpeakingPosition.index == currentPage else { return 0 }
-            return lastSpeakingPosition.characterIndex
+            speechManager.start(.currentPage)
         }
     }
 
