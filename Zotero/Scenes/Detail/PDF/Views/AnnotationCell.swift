@@ -8,6 +8,7 @@
 
 import UIKit
 
+import PSPDFKit
 import RxSwift
 
 final class AnnotationCell: UITableViewCell {
@@ -133,14 +134,15 @@ final class AnnotationCell: UITableViewCell {
         preview: UIImage?,
         selected: Bool,
         availableWidth: CGFloat,
+        document: PSPDFKit.Document,
+        attachmentKey: String,
         library: Library,
         isEditing: Bool,
         currentUserId: Int,
         displayName: String,
         username: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter,
-        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate,
-        state: PDFReaderState
+        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate
     ) {
         if !selected {
             annotationView.resignFirstResponder()
@@ -157,13 +159,14 @@ final class AnnotationCell: UITableViewCell {
             preview: preview,
             selected: selected,
             availableWidth: availableWidth,
+            document: document,
+            attachmentKey: attachmentKey,
             library: library,
             currentUserId: currentUserId,
             displayName: displayName,
             username: username,
             boundingBoxConverter: boundingBoxConverter,
-            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate,
-            state: state
+            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate
         )
         if !reconfiguringForSameAnnotation {
             annotationView.setupObserving()

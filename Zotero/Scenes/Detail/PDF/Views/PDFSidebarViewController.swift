@@ -81,6 +81,11 @@ class PDFSidebarViewController: UIViewController {
     private func show(tab: Tab) {
         view.endEditing(true)
 
+        if tab != .annotations {
+            // Showing a tab other than annotations, so setting sidebar editing to false, in case annotations were edited previously.
+            viewModel.process(action: .setSidebarEditingEnabled(false))
+        }
+        
         if let controller = currentController {
             controllerDisposeBag = nil
             controller.willMove(toParent: nil)
@@ -117,7 +122,123 @@ class PDFSidebarViewController: UIViewController {
         ])
 
         func createAnnotationsController() -> PDFAnnotationsViewController {
-            let annotationsController = PDFAnnotationsViewController(viewModel: viewModel)
+            let initialState = viewModel.state
+            let annotationProvider = viewModel.handler.annotationProvider
+            let annotationsViewModel = ViewModel(
+                initialState: PDFAnnotationsState(
+                    key: initialState.key,
+                    document: initialState.document,
+                    userId: initialState.userId,
+                    username: initialState.username,
+                    library: initialState.library,
+                    settings: initialState.settings,
+                    interfaceStyle: initialState.interfaceStyle,
+                    annotationPages: initialState.annotationPages,
+                    selectedAnnotationKey: initialState.selectedAnnotationKey,
+                    selectedAnnotationCommentActive: initialState.selectedAnnotationCommentActive,
+                    sidebarEditingEnabled: initialState.sidebarEditingEnabled,
+                    searchTerm: initialState.searchTerm,
+                    filter: initialState.filter,
+                    databaseAnnotations: initialState.databaseAnnotations,
+                    documentAnnotations: initialState.documentAnnotations,
+                    documentAnnotationKeys: annotationProvider?.keys ?? [],
+                    documentAnnotationUniqueBaseColors: annotationProvider?.uniqueBaseColors ?? []
+                ),
+                handler: PDFAnnotationsActionHandler()
+            )
+            annotationsViewModel.process(action: .initializeSortedKeys)
+            let disposeBag = DisposeBag()
+            controllerDisposeBag = disposeBag
+
+            viewModel
+                .stateObservable
+                .subscribe(onNext: { [weak annotationsViewModel] state in
+                    guard let annotationsViewModel else { return }
+                    if state.changes.contains(.annotations) {
+                        let updatesSelection = state.changes.contains(.selection) && state.selectionFromDocument
+                        annotationsViewModel.process(action: .setAnnotations(
+                            annotationPages: state.annotationPages,
+                            changedAnnotationKeys: state.changedAnnotationKeys,
+                            selectedAnnotationKey: updatesSelection ? state.selectedAnnotationKey : nil,
+                            selectionFromDocument: updatesSelection,
+                            databaseAnnotations: state.databaseAnnotations
+                        ))
+                    } else if state.changes.contains(.selection), state.selectionFromDocument {
+                        annotationsViewModel.process(action: .setSelection(
+                            selectedAnnotationKey: state.selectedAnnotationKey,
+                            selectionFromDocument: state.selectionFromDocument
+                        ))
+                    }
+                    if state.changes.contains(.library) {
+                        annotationsViewModel.process(action: .setLibrary(state.library))
+                    }
+                    if state.changes.contains(.appearance) {
+                        annotationsViewModel.process(action: .setAppearance(settings: state.settings, interfaceStyle: state.interfaceStyle))
+                    } else if state.changes.contains(.settings) {
+                        annotationsViewModel.process(action: .setSettings(state.settings))
+                    }
+                })
+                .disposed(by: disposeBag)
+
+            annotationsViewModel
+                .stateObservable
+                .subscribe(onNext: { [weak viewModel] state in
+                    guard let viewModel else { return }
+                    if state.changes.contains(.activeComment) {
+                        viewModel.process(action: .setCommentActive(state.selectedAnnotationCommentActive))
+                    }
+                    if state.changes.contains(.sidebarEditing) {
+                        viewModel.process(action: .setSidebarEditingEnabled(state.sidebarEditingEnabled))
+                    }
+                    if state.changes.contains(.filter) {
+                        viewModel.process(action: .filterAnnotations(searchTerm: state.searchTerm, filter: state.filter))
+                    }
+                    if state.changes.contains(.selection), state.selectionFromSidebar {
+                        if let selectedAnnotationKey = state.selectedAnnotationKey {
+                            viewModel.process(action: .selectAnnotation(selectedAnnotationKey))
+                        } else {
+                            viewModel.process(action: .deselectSelectedAnnotationFromDocument)
+                        }
+                    }
+                    guard let action = state.outgoingAction else { return }
+                    switch action {
+                    case .setTags(let key, let tags):
+                        viewModel.process(action: .setTags(key: key, tags: tags))
+
+                    case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let fontSize, let pageLabel, let updateSubsequentLabels, let highlightText, let higlightFont):
+                        viewModel.process(action: .updateAnnotationProperties(
+                            key: key,
+                            type: type,
+                            color: color,
+                            lineWidth: lineWidth,
+                            fontSize: fontSize,
+                            pageLabel: pageLabel,
+                            updateSubsequentLabels: updateSubsequentLabels,
+                            highlightText: highlightText,
+                            higlightFont: higlightFont
+                        ))
+
+                    case .removeAnnotation(let key):
+                        viewModel.process(action: .removeAnnotation(key))
+
+                    case .setComment(let key, let comment):
+                        viewModel.process(action: .setComment(key: key, comment: comment))
+
+                    case .mergeAnnotations(let annotations):
+                        viewModel.process(action: .mergeAnnotations(annotations))
+
+                    case .removeAnnotations(let annotations):
+                        viewModel.process(action: .removeAnnotations(annotations))
+                    }
+                })
+                .disposed(by: disposeBag)
+
+            let annotationsController = PDFAnnotationsViewController(
+                viewModel: annotationsViewModel,
+                annotationProvider: viewModel.handler.annotationProvider,
+                annotationPreviewController: viewModel.handler.annotationPreviewController,
+                initialAppearance: viewModel.handler.appearance
+            )
             annotationsController.parentDelegate = parentDelegate
             annotationsController.coordinatorDelegate = coordinatorDelegate
             annotationsController.boundingBoxConverter = boundingBoxConverter
@@ -155,7 +276,7 @@ class PDFSidebarViewController: UIViewController {
                 libraryId: viewModel.state.library.identifier,
                 document: viewModel.state.document,
                 selectedPageIndex: viewModel.state.visiblePage,
-                appearance: .from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+                appearance: viewModel.handler.appearance
             )
             let thumbnailsViewModel = ViewModel(initialState: thumbnailsState, handler: PDFThumbnailsActionHandler(thumbnailController: viewModel.handler.pdfThumbnailController))
             let thumbnailsController = PDFThumbnailsViewController(viewModel: thumbnailsViewModel)
@@ -180,9 +301,11 @@ class PDFSidebarViewController: UIViewController {
 
             thumbnailsViewModel
                 .stateObservable
-                .subscribe(with: viewModel, onNext: { viewModel, state in
-                    guard state.changes.contains(.selection) else { return }
-                    viewModel.process(action: .setVisiblePage(page: state.selectedPageIndex, userActionFromDocument: false, fromThumbnailList: true))
+                .subscribe(onNext: { [weak viewModel] state in
+                    guard let viewModel else { return }
+                    if state.changes.contains(.selection) {
+                        viewModel.process(action: .setVisiblePage(page: state.selectedPageIndex, userActionFromDocument: false, fromThumbnailList: true))
+                    }
                 })
                 .disposed(by: disposeBag)
 
