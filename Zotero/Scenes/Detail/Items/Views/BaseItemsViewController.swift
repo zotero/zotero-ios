@@ -6,12 +6,14 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SwiftUI
 import UIKit
 
 import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 import WebKit
+import ZIPFoundation
 
 class BaseItemsViewController: UIViewController {
     enum RightBarButtonItem: Int {
@@ -33,11 +35,18 @@ class BaseItemsViewController: UIViewController {
     var handler: ItemsTableViewHandler?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
+    private let debugReaderQueue: DispatchQueue?
+    private var readerURL: URL?
 
     init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
+        #if DEBUG
+        debugReaderQueue = DispatchQueue(label: "org.zotero.DebugReaderQueue", qos: .userInteractive)
+        #else
+        debugReaderQueue = nil
+        #endif
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -49,9 +58,11 @@ class BaseItemsViewController: UIViewController {
         super.viewDidLoad()
 
         createTableView()
-        navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .dark ? .black : .white
+            })
+        }
         setupTitle()
         setupSearchBar()
         if let scheduler = controllers.userControllers?.syncScheduler {
@@ -64,12 +75,21 @@ class BaseItemsViewController: UIViewController {
             tableView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(tableView)
 
-            NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-            ])
+            if #available(iOS 26.0.0, *) {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            }
 
             self.tableView = tableView
         }
@@ -78,13 +98,21 @@ class BaseItemsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         if #available(iOS 18, *) {
-            // In some cases in iOS 18, where the horizontal size class changes, e.g. when switching to a scene with a PDF reader and dismissing it,
-            // this error is logged multiple times, and leaves the search bar in stack placement, but overlapping the table view:
-            // "UINavigationBar has changed horizontal size class without updating search bar to new placement. Fixing, but delegate searchBarPlacement callbacks have been skipped."
-            // Setting "navigationItem.preferredSearchBarPlacement = .inline" explicitly, would even freeze the app and crash it.
-            // Instead, hiding and showing the navigation bar momentarily when the view will appear, fixes the issue.
-            navigationController?.setNavigationBarHidden(true, animated: false)
-            navigationController?.setNavigationBarHidden(false, animated: false)
+            if #unavailable(iOS 26.0) {
+                // In some cases in iOS 18, where the horizontal size class changes, e.g. when switching to a scene with a PDF reader and dismissing it,
+                // this error is logged multiple times, and leaves the search bar in stack placement, but overlapping the table view:
+                // "UINavigationBar has changed horizontal size class without updating search bar to new placement. Fixing, but delegate searchBarPlacement callbacks have been skipped."
+                // Setting "navigationItem.preferredSearchBarPlacement = .inline" explicitly, would even freeze the app and crash it.
+                // Instead, hiding and showing the navigation bar momentarily when the view will appear, fixes the issue.
+                navigationController?.setNavigationBarHidden(true, animated: false)
+                navigationController?.setNavigationBarHidden(false, animated: false)
+            }
+            // In iOS 26 this fix doesn't seem necessary and also causes a crash if design compatibility is off.
+            // The crsh can be reproduced as following:
+            // - Make a search in items.
+            // - Go to an item's details from the search results.
+            // - Go back, where it crases with error
+                //   "Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'The view should already be in the window before adding a _UIPassthroughScrollInteraction'".
         }
         toolbarController?.willAppear()
     }
@@ -94,6 +122,9 @@ class BaseItemsViewController: UIViewController {
 
         // willTransition(to:with:) seems to not be not called for all transitions, so instead traitCollectionDidChange(_:) is used w/ a short animation block.
         guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass else { return }
+        if traitCollection.horizontalSizeClass == .regular {
+            coordinatorDelegate?.dismissFilters()
+        }
         setupTitle()
         UIView.animate(withDuration: 0.1) {
             self.toolbarController?.reloadToolbarItems(for: self.toolbarData)
@@ -112,6 +143,24 @@ class BaseItemsViewController: UIViewController {
 
     func updateTagFilter(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) {
         tagFilterDelegate?.itemsDidChange(filters: filters, collectionId: collection.identifier, libraryId: library.identifier)
+    }
+
+    func showDocumentWorkerRecorder(button: UIBarButtonItem) {
+        guard let documentWorkerController = controllers.userControllers?.documentWorkerController,
+              let recorder = documentWorkerController.recorder
+        else { return }
+        let controller = UIHostingController(
+            rootView: DocumentWorkerRecorderView(
+                documentWorkerController: documentWorkerController,
+                recorder: recorder
+            )
+        )
+        controller.modalPresentationStyle = .pageSheet
+        if let sheetPresentationController = controller.sheetPresentationController {
+            sheetPresentationController.detents = [.medium(), .large()]
+            sheetPresentationController.prefersGrabberVisible = true
+        }
+        present(controller, animated: true)
     }
 
     /// Starts observing progress of sync. The sync progress needs to be observed to optimize `UITableView` reloads for big syncs of items in current library.
@@ -154,13 +203,113 @@ class BaseItemsViewController: UIViewController {
 
         switch update.kind {
         case .ready:
-            coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+            coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: readerURL)
+            readerURL = nil
 
         case .failed(let error):
             coordinatorDelegate?.showAttachmentError(error)
 
         case .progress, .cancelled:
             break
+        }
+    }
+
+    private enum DebugReaderError: LocalizedError {
+        case invalidInput
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidInput:
+                return "Please enter a valid reader commit hash or build zip URL."
+            }
+        }
+    }
+
+    func processDebugReaderAction(tapAction: ItemsTableViewHandler.TapAction, completion: @escaping (() -> Void)) {
+        guard case .attachment = tapAction else { return }
+        let alertController = UIAlertController(title: "Debug Reader", message: "Enter <reader commit hash> or <build zip URL>", preferredStyle: .alert)
+        alertController.addTextField { textField in
+            textField.placeholder = "<reader commit hash> or <build zip URL>"
+            textField.autocapitalizationType = .none
+            textField.autocorrectionType = .no
+            textField.keyboardType = .default
+            textField.text = Defaults.shared.lastDebugReaderHashOrURL
+        }
+        alertController.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
+        alertController.addAction(UIAlertAction(title: L10n.ok, style: .default) { [weak self, weak alertController] _ in
+            guard let self, let hashOrURL = alertController?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines), !hashOrURL.isEmpty else {
+                showError(DebugReaderError.invalidInput)
+                return
+            }
+            let url: URL?
+            var hash: String?
+            if hashOrURL.starts(with: "http://") || hashOrURL.starts(with: "https://") {
+                url = URL(string: hashOrURL)
+            } else if let uuidString = Defaults.shared.debugReaderUUIDByHash[hashOrURL] {
+                Defaults.shared.lastDebugReaderHashOrURL = hashOrURL
+                readerURL = FileData.directory(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", uuidString, "ios"]).createUrl()
+                completion()
+                return
+            } else {
+                url = URL(string: "https://zotero-download.s3.amazonaws.com/ci/reader/\(hashOrURL).zip")
+                hash = hashOrURL
+            }
+            guard let url, let debugReaderQueue else {
+                cache(uuidString: nil, for: hash, hashOrURL: nil)
+                showError(DebugReaderError.invalidInput)
+                return
+            }
+            let temporaryDirectory = Files.temporaryDirectory
+            let fileExtension = url.pathExtension
+            let fileName = url.deletingPathExtension().lastPathComponent
+            let zipFile = FileData(rootPath: temporaryDirectory.rootPath, relativeComponents: temporaryDirectory.relativeComponents, name: fileName, ext: fileExtension)
+            let request = FileRequest(url: url, destination: zipFile)
+            controllers.apiClient
+                .download(request: request, queue: debugReaderQueue)
+                .subscribe(onNext: { request in
+                    request.resume()
+                }, onError: { [weak self] error in
+                    cache(uuidString: nil, for: hash, hashOrURL: nil)
+                    guard let self else { return }
+                    readerURL = nil
+                    showError(error)
+                }, onCompleted: { [weak self] in
+                    guard let self else { return }
+                    do {
+                        let destinationURL = zipFile.createRelativeUrl()
+                        try FileManager.default.unzipItem(at: zipFile.createUrl(), to: destinationURL)
+                        try? controllers.fileStorage.remove(zipFile)
+                        cache(uuidString: destinationURL.lastPathComponent, for: hash, hashOrURL: hashOrURL)
+                        readerURL = destinationURL.appending(path: "ios")
+                        DispatchQueue.main.async {
+                            completion()
+                        }
+                    } catch {
+                        cache(uuidString: nil, for: hash, hashOrURL: nil)
+                        readerURL = nil
+                        showError(error)
+                    }
+                })
+                .disposed(by: disposeBag)
+        })
+        present(alertController, animated: true)
+
+        func cache(uuidString: String?, for hash: String?, hashOrURL: String?) {
+            if let hash {
+                var debugReaderUUIDByHash = Defaults.shared.debugReaderUUIDByHash
+                debugReaderUUIDByHash[hash] = uuidString
+                Defaults.shared.debugReaderUUIDByHash = debugReaderUUIDByHash
+            }
+            Defaults.shared.lastDebugReaderHashOrURL = hashOrURL
+        }
+
+        func showError(_ error: Error) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                let alert = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: L10n.ok, style: .cancel))
+                present(alert, animated: true)
+            }
         }
     }
 
@@ -179,9 +328,12 @@ class BaseItemsViewController: UIViewController {
             isEditing: false,
             selectedItems: [],
             filters: [],
+            sortType: .default,
+            allowsManualSort: true,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
-            identifierLookupBatchData: ItemsState.IdentifierLookupBatchData(saved: 0, total: 0),
+            identifierLookupBatchData: .zero,
+            showsDocumentWorkerRecorder: false,
             itemCount: 0
         )
     }
@@ -224,7 +376,7 @@ class BaseItemsViewController: UIViewController {
 
         func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem? {
             var image: UIImage?
-            var title: String?
+            let title: String
             let accessibilityLabel: String
 
             switch type {
@@ -254,11 +406,23 @@ class BaseItemsViewController: UIViewController {
                 accessibilityLabel = L10n.Collections.emptyTrash
             }
 
-            let primaryAction = UIAction { [weak self] action in
+            let primaryAction = UIAction(title: title, image: image) { [weak self] action in
                 guard let self, let sender = action.sender as? UIBarButtonItem else { return }
                 process(barButtonItemAction: type, sender: sender)
             }
-            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
+            let item: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                switch type {
+                case .select, .selectAll, .deselectAll, .add, .emptyTrash:
+                    item = UIBarButtonItem(primaryAction: primaryAction)
+
+                case .done:
+                    item = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                    item.tintColor = Asset.Colors.zoteroBlue.color
+                }
+            } else {
+                item = UIBarButtonItem(primaryAction: primaryAction)
+            }
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

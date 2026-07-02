@@ -12,8 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol HtmlEpubReaderContainerDelegate: AnyObject {
-    var statusBarHeight: CGFloat { get }
-    var navigationBarHeight: CGFloat { get }
+    var containerTopInset: CGFloat { get }
     var isSidebarVisible: Bool { get }
 
     func show(url: URL)
@@ -34,6 +33,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     weak var documentController: HtmlEpubDocumentViewController?
     private weak var documentControllerTop: NSLayoutConstraint!
     weak var documentControllerLeft: NSLayoutConstraint?
+    private weak var pageIndicator: UIView?
+    private weak var pageIndicatorLabel: UILabel?
+    private var documentBottomToSafeArea: NSLayoutConstraint?
+    private var documentBottomToIndicator: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
     var annotationToolbarHandler: AnnotationToolbarHandler?
     weak var sidebarController: HtmlEpubSidebarViewController?
@@ -43,6 +46,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     }
     private(set) var isCompactWidth: Bool
     var statusBarHeight: CGFloat
+    private var lastLayoutSize: CGSize?
+    private var lastContainerInsets: NSDirectionalEdgeInsets?
+    private var isChangingInterfaceVisibility: Bool
+    var containerTopInset: CGFloat {
+        return lastContainerInsets?.top ?? currentContainerInsets().top
+    }
     var key: String { return viewModel.state.key }
     
     weak var coordinatorDelegate: HtmlEpubReaderCoordinatorDelegate?
@@ -66,15 +75,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         return createToolbarButton()
     }()
     private lazy var settingsButton: UIBarButtonItem = {
-        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
+        let primaryAction = UIAction(title: L10n.Accessibility.Pdf.settings, image: UIImage(systemName: "gearshape")) { [weak self] action in
+            guard let self, let settings = action.sender as? UIBarButtonItem else { return }
+            showSettings(sender: settings)
+        }
+        let settings = UIBarButtonItem(primaryAction: primaryAction)
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
-        settings.title = L10n.Accessibility.Pdf.settings
-        settings.rx.tap
-            .subscribe(onNext: { [weak self, weak settings] _ in
-                guard let self, let settings else { return }
-                showSettings(sender: settings)
-            })
-            .disposed(by: disposeBag)
         return settings
     }()
     private lazy var searchButton: UIBarButtonItem = {
@@ -84,7 +90,13 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         search.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let documentController else { return }
-                coordinatorDelegate?.showSearch(viewModel: viewModel, documentController: documentController, text: nil, sender: searchButton, userInterfaceStyle: viewModel.state.interfaceStyle)
+                coordinatorDelegate?.showSearch(
+                    viewModel: viewModel,
+                    documentController: documentController,
+                    text: nil,
+                    sender: searchButton,
+                    userInterfaceStyle: presentedUserInterfaceStyle(for: viewModel.state.settings.appearance)
+                )
             })
             .disposed(by: disposeBag)
         return search
@@ -96,6 +108,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         self.viewModel = viewModel
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
+        isChangingInterfaceVisibility = false
         statusBarHeight = UIApplication
             .shared
             .connectedScenes
@@ -137,15 +150,18 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         }
 
         func setupNavigationBar() {
-            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
-            closeButton.title = L10n.close
+            let closePrimaryAction = UIAction(title: L10n.close, image: UIImage(systemName: "chevron.left")) { [weak self] _ in
+                self?.close()
+            }
+            let closeButton = UIBarButtonItem(primaryAction: closePrimaryAction)
             closeButton.accessibilityLabel = L10n.close
-            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
+            let sidebarPrimaryAction = UIAction(image: UIImage(systemName: "sidebar.left")) { [weak self] _ in
+                self?.toggleSidebar(animated: true)
+            }
+            let sidebarButton = UIBarButtonItem(primaryAction: sidebarPrimaryAction)
             setupAccessibility(forSidebarButton: sidebarButton)
             sidebarButton.tag = NavigationBarButton.sidebar.rawValue
-            sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
         }
@@ -155,7 +171,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             documentController.parentDelegate = self
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
 
-            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .underline, .note], undoRedoEnabled: false, size: navigationBarHeight)
+            let annotationToolbar = AnnotationToolbarViewController(tools: Defaults.shared.htmlEpubAnnotationTools.map({ $0.type }), undoRedoEnabled: false, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
             let sidebarController = HtmlEpubSidebarViewController(viewModel: viewModel)
@@ -167,6 +183,19 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
+            let pageIndicator = UIView()
+            pageIndicator.translatesAutoresizingMaskIntoConstraints = false
+            pageIndicator.backgroundColor = .systemGray6
+            pageIndicator.layer.cornerRadius = 6
+            pageIndicator.layer.masksToBounds = true
+            pageIndicator.alpha = 0
+            let pageIndicatorLabel = UILabel()
+            pageIndicatorLabel.translatesAutoresizingMaskIntoConstraints = false
+            pageIndicatorLabel.textColor = .label
+            pageIndicatorLabel.font = .preferredFont(forTextStyle: .body)
+            pageIndicatorLabel.textAlignment = .center
+            pageIndicator.addSubview(pageIndicatorLabel)
+
             add(controller: documentController)
             add(controller: annotationToolbar)
             add(controller: sidebarController)
@@ -174,14 +203,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             view.addSubview(annotationToolbar.view)
             view.addSubview(sidebarController.view)
             view.addSubview(separator)
+            view.addSubview(pageIndicator)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
             let documentTopConstraint = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
+            let documentBottomToSafeArea = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
+            let documentBottomToIndicator = pageIndicator.topAnchor.constraint(equalTo: documentController.view.bottomAnchor, constant: 12)
 
             NSLayoutConstraint.activate([
                 documentTopConstraint,
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor),
+                documentBottomToSafeArea,
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor),
                 sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
                 sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -191,7 +223,13 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
                 separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
                 separator.topAnchor.constraint(equalTo: view.topAnchor),
                 separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                documentLeftConstraint
+                documentLeftConstraint,
+                pageIndicator.centerXAnchor.constraint(equalTo: documentController.view.centerXAnchor),
+                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 12),
+                pageIndicatorLabel.topAnchor.constraint(equalTo: pageIndicator.topAnchor, constant: 6),
+                pageIndicator.bottomAnchor.constraint(equalTo: pageIndicatorLabel.bottomAnchor, constant: 6),
+                pageIndicatorLabel.leadingAnchor.constraint(equalTo: pageIndicator.leadingAnchor, constant: 12),
+                pageIndicator.trailingAnchor.constraint(equalTo: pageIndicatorLabel.trailingAnchor, constant: 12)
             ])
 
             self.documentController = documentController
@@ -200,6 +238,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             documentControllerTop = documentTopConstraint
             documentControllerLeft = documentLeftConstraint
             sidebarControllerLeft = sidebarLeftConstraint
+            self.pageIndicator = pageIndicator
+            self.pageIndicatorLabel = pageIndicatorLabel
+            self.documentBottomToSafeArea = documentBottomToSafeArea
+            self.documentBottomToIndicator = documentBottomToIndicator
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler!.performInitialLayout()
 
@@ -230,6 +272,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: viewModel.state.library.metadataEditable)
+        updateContainerInsets(force: true)
     }
 
     deinit {
@@ -241,11 +284,25 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
+        let layoutSize = view.bounds.size
+        let isSizeChange = lastLayoutSize != layoutSize
+        lastLayoutSize = layoutSize
+        updateStatusBarHeight(allowZero: isSizeChange)
+        if isSizeChange || !isChangingInterfaceVisibility || isTopToolbarVisible(forToolbarState: toolbarState) {
+            updateContainerInsets()
+        }
+
         guard let documentController else { return }
 
         if documentController.view.frame.width < AnnotationToolbarHandler.minToolbarWidth && toolbarState.visible && toolbarState.position == .top {
             closeAnnotationToolbar()
         }
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        viewModel.process(action: .userInterfaceStyleChanged(currentSystemUserInterfaceStyle))
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -257,9 +314,14 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
 
         coordinator.animate(alongsideTransition: { [weak self] _ in
             guard let self else { return }
-            statusBarHeight = view.safeAreaInsets.top - (navigationController?.isNavigationBarHidden == true ? 0 : navigationBarHeight)
+            updateStatusBarHeight(allowZero: true)
             annotationToolbarHandler?.viewWillTransitionToNewSize()
-        }, completion: nil)
+            updateContainerInsets(force: true)
+        }, completion: { [weak self] _ in
+            guard let self else { return }
+            updateStatusBarHeight(allowZero: true)
+            updateContainerInsets(force: true)
+        })
     }
 
     override var prefersStatusBarHidden: Bool {
@@ -297,6 +359,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
+        }
+
+        if state.changes.contains(.pages) {
+            updatePageIndicator(from: state)
         }
 
         if state.changes.contains(.popover) {
@@ -372,19 +438,79 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         }
     }
 
+    private func updatePageIndicator(from state: HtmlEpubReaderState) {
+        if let page = state.currentPage, let pagesCount = state.pagesCount {
+            pageIndicatorLabel?.text = "\(page.label) of \(pagesCount)"
+        }
+        setPageIndicator(navBarHidden: navigationController?.navigationBar.isHidden ?? false, animated: true)
+    }
+
+    private func applyPageIndicator(navBarHidden: Bool) {
+        guard let pageIndicator else { return }
+        let hasInfo = viewModel.state.currentPage != nil && viewModel.state.pagesCount != nil
+        let shouldShow = hasInfo && !navBarHidden
+        if shouldShow {
+            documentBottomToSafeArea?.isActive = false
+            documentBottomToIndicator?.isActive = true
+        } else {
+            documentBottomToIndicator?.isActive = false
+            documentBottomToSafeArea?.isActive = true
+        }
+        pageIndicator.alpha = shouldShow ? 1 : 0
+    }
+
+    private func setPageIndicator(navBarHidden: Bool, animated: Bool) {
+        if animated {
+            UIView.animate(withDuration: 0.15) { [weak self] in
+                self?.applyPageIndicator(navBarHidden: navBarHidden)
+                self?.view.layoutIfNeeded()
+            }
+        } else {
+            applyPageIndicator(navBarHidden: navBarHidden)
+        }
+    }
+
     // MARK: - Actions
 
     private func updateInterface(to settings: HtmlEpubSettings) {
-        switch settings.appearance {
+        navigationController?.overrideUserInterfaceStyle = readerUserInterfaceStyle(for: settings.appearance)
+        updatePresentedReaderInterface(to: settings)
+
+        func readerUserInterfaceStyle(for appearance: ReaderSettingsState.Appearance) -> UIUserInterfaceStyle {
+            switch appearance {
+            case .automatic:
+                return .unspecified
+
+            case .light, .sepia:
+                return .light
+
+            case .dark:
+                return .dark
+            }
+        }
+    }
+
+    private func presentedUserInterfaceStyle(for appearance: ReaderSettingsState.Appearance) -> UIUserInterfaceStyle {
+        switch appearance {
         case .automatic:
-            navigationController?.overrideUserInterfaceStyle = .unspecified
+            return currentSystemUserInterfaceStyle
 
         case .light, .sepia:
-            navigationController?.overrideUserInterfaceStyle = .light
+            return .light
 
         case .dark:
-            navigationController?.overrideUserInterfaceStyle = .dark
+            return .dark
         }
+    }
+
+    private func updatePresentedReaderInterface(to settings: HtmlEpubSettings) {
+        navigationController?.presentedViewController?.overrideUserInterfaceStyle = presentedUserInterfaceStyle(for: settings.appearance)
+    }
+
+    private var currentSystemUserInterfaceStyle: UIUserInterfaceStyle {
+        let windowSceneStyle = view.window?.windowScene?.traitCollection.userInterfaceStyle
+        let traitStyle = traitCollection.userInterfaceStyle
+        return windowSceneStyle ?? traitStyle
     }
 
     private func toggleSidebar(animated: Bool) {
@@ -392,18 +518,50 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     }
 
     private func showSettings(sender: UIBarButtonItem) {
-        guard let viewModel = coordinatorDelegate?.showSettings(with: viewModel.state.settings, sender: sender) else { return }
-        viewModel.stateObservable
+        guard let settingsViewModel = coordinatorDelegate?.showSettings(with: viewModel.state.settings, sender: sender) else { return }
+        updatePresentedReaderInterface(to: viewModel.state.settings)
+        settingsViewModel.stateObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
+                guard let self else { return }
                 let settings = HtmlEpubSettings(appearance: state.appearance)
-                self?.viewModel.process(action: .setSettings(settings))
+                if settings.appearance == .automatic {
+                    self.viewModel.process(action: .userInterfaceStyleChanged(currentSystemUserInterfaceStyle))
+                }
+                self.viewModel.process(action: .setSettings(settings))
             })
             .disposed(by: disposeBag)
     }
 
     private func close() {
         navigationController?.presentingViewController?.dismiss(animated: true)
+    }
+
+    private func updateStatusBarHeight(allowZero: Bool = false) {
+        guard let newStatusBarHeight = (view.scene as? UIWindowScene)?.statusBarManager?.statusBarFrame.height else { return }
+        let shouldUpdate = newStatusBarHeight > 0 || allowZero
+        guard shouldUpdate else { return }
+        statusBarHeight = newStatusBarHeight
+    }
+
+    private func currentContainerInsets(forToolbarState state: AnnotationToolbarHandler.State? = nil) -> NSDirectionalEdgeInsets {
+        let state = state ?? toolbarState
+        let toolbarHeight = isTopToolbarVisible(forToolbarState: state) ? (annotationToolbarController?.size ?? 0) : 0
+        let top = statusBarHeight + navigationBarHeight + toolbarHeight
+
+        return NSDirectionalEdgeInsets(top: top, leading: 0, bottom: 0, trailing: 0)
+    }
+
+    private func isTopToolbarVisible(forToolbarState state: AnnotationToolbarHandler.State) -> Bool {
+        return state.visible && viewModel.state.library.metadataEditable && state.position == .top
+    }
+
+    private func updateContainerInsets(forToolbarState state: AnnotationToolbarHandler.State? = nil, force: Bool = false) {
+        let insets = currentContainerInsets(forToolbarState: state)
+        guard force || (insets != lastContainerInsets) else { return }
+
+        lastContainerInsets = insets
+        documentController?.containerInsets = insets
     }
 
     private func createRightBarButtonItems() -> [UIBarButtonItem] {
@@ -444,6 +602,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
 
     func setNavigationBar(hidden: Bool, animated: Bool) {
         navigationController?.setNavigationBarHidden(hidden, animated: animated)
+        setPageIndicator(navBarHidden: hidden, animated: animated)
     }
 
     func setNavigationBar(alpha: CGFloat) {
@@ -452,26 +611,17 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
 
     func setDocumentInterface(hidden: Bool) {
     }
+    
+    func annotationToolbarWillChange(state: AnnotationToolbarHandler.State, statusBarVisible: Bool) {
+        updateContainerInsets(forToolbarState: state)
+    }
 
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State) {
-        guard let annotationToolbarHandler, let annotationToolbarController else { return }
-        let (statusBarOffset, _, totalOffset) = annotationToolbarHandler.topOffsets(statusBarVisible: statusBarVisible)
-
-        if !state.visible {
-            documentControllerTop.constant = totalOffset
+        documentControllerTop.constant = 0
+        if isChangingInterfaceVisibility && !isTopToolbarVisible(forToolbarState: state) {
             return
         }
-
-        switch state.position {
-        case .pinned:
-            documentControllerTop.constant = statusBarOffset + annotationToolbarController.size
-
-        case .top:
-            documentControllerTop.constant = totalOffset + annotationToolbarController.size
-
-        case .trailing, .leading:
-            documentControllerTop.constant = totalOffset
-        }
+        updateContainerInsets(forToolbarState: state)
     }
 
     func updateStatusBar() {
@@ -543,8 +693,12 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
             navigationController?.navigationBar.alpha = 0
         }
 
+        isChangingInterfaceVisibility = true
         statusBarVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
+        if isTopToolbarVisible(forToolbarState: toolbarState) {
+            updateContainerInsets(force: true)
+        }
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
             guard let self else { return }
@@ -554,7 +708,18 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
                 navigationController?.navigationBar.alpha = isHidden ? 0 : 1
                 navigationController?.setNavigationBarHidden(isHidden, animated: false)
             }
+            applyPageIndicator(navBarHidden: isHidden)
+            view.layoutIfNeeded()
             annotationToolbarHandler?.interfaceVisibilityDidChange()
+            if isTopToolbarVisible(forToolbarState: toolbarState) {
+                updateContainerInsets(force: true)
+            }
+        }, completion: { [weak self] _ in
+            guard let self else { return }
+            isChangingInterfaceVisibility = false
+            if isTopToolbarVisible(forToolbarState: toolbarState) {
+                updateContainerInsets(force: true)
+            }
         })
 
         if isHidden && isSidebarVisible {

@@ -26,6 +26,7 @@ protocol AnnotationToolbarHandlerDelegate: AnyObject {
     func setNavigationBar(hidden: Bool, animated: Bool)
     func setNavigationBar(alpha: CGFloat)
     func setDocumentInterface(hidden: Bool)
+    func annotationToolbarWillChange(state: AnnotationToolbarHandler.State, statusBarVisible: Bool)
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State)
     func updateStatusBar()
 }
@@ -258,6 +259,10 @@ final class AnnotationToolbarHandler: NSObject {
 
     // MARK: - Actions
 
+    func setLeadingView(view: AnnotationToolbarLeadingView?) {
+        controller.setLeadingView(view: view)
+    }
+
     func set(hidden: Bool, animated: Bool) {
         delegate.toolbarState = State(position: delegate.toolbarState.position, visible: !hidden)
 
@@ -271,6 +276,7 @@ final class AnnotationToolbarHandler: NSObject {
     private func showAnnotationToolbar(state: State, statusBarVisible: Bool, animated: Bool) {
         controller.prepareForSizeChange()
         setConstraints(for: state.position, statusBarVisible: statusBarVisible)
+        delegate.annotationToolbarWillChange(state: state, statusBarVisible: statusBarVisible)
         controller.view.isHidden = false
         delegate.layoutIfNeeded()
         controller.sizeDidChange()
@@ -306,6 +312,7 @@ final class AnnotationToolbarHandler: NSObject {
     }
 
     private func hideAnnotationToolbar(newState: State, statusBarVisible: Bool, animated: Bool) {
+        delegate.annotationToolbarWillChange(state: newState, statusBarVisible: statusBarVisible)
         delegate.topDidChange(forToolbarState: newState)
 
         if !animated {
@@ -549,7 +556,9 @@ final class AnnotationToolbarHandler: NSObject {
                 // Move from side to side or vertically
                 let velocity = velocity(from: velocityPoint, newPosition: newPosition)
                 setConstraints(for: newPosition, statusBarVisible: statusBarVisible)
-                delegate.topDidChange(forToolbarState: State(position: newPosition, visible: true))
+                let newState = State(position: newPosition, visible: true)
+                delegate.annotationToolbarWillChange(state: newState, statusBarVisible: statusBarVisible)
+                delegate.topDidChange(forToolbarState: newState)
                 delegate.setNeedsLayout()
 
                 delegate.hideSidebarIfNeeded(forPosition: newPosition, isToolbarSmallerThanMinWidth: controller.view.frame.width < Self.minToolbarWidth, animated: true)
@@ -590,11 +599,13 @@ final class AnnotationToolbarHandler: NSObject {
                     }
 
                     controller.prepareForSizeChange()
+                    let newState = State(position: newPosition, visible: true)
                     setConstraints(for: newPosition, statusBarVisible: statusBarVisible)
+                    delegate.annotationToolbarWillChange(state: newState, statusBarVisible: statusBarVisible)
                     delegate.layoutIfNeeded()
                     controller.sizeDidChange()
                     delegate.layoutIfNeeded()
-                    delegate.topDidChange(forToolbarState: State(position: newPosition, visible: true))
+                    delegate.topDidChange(forToolbarState: newState)
 
                     delegate.hideSidebarIfNeeded(forPosition: newPosition, isToolbarSmallerThanMinWidth: controller.view.frame.width < Self.minToolbarWidth, animated: true)
 

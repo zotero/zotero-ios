@@ -21,6 +21,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     private unowned let dateParser: DateParser
     private unowned let fileStorage: FileStorage
     private unowned let idleTimerController: IdleTimerController
+    private unowned let lastReadWatcher: LastReadWatcher
     let backgroundQueue: DispatchQueue
 
     init(
@@ -29,7 +30,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
         dateParser: DateParser,
         fileStorage: FileStorage,
-        idleTimerController: IdleTimerController
+        idleTimerController: IdleTimerController,
+        lastReadWatcher: LastReadWatcher
     ) {
         self.dbStorage = dbStorage
         self.schemaController = schemaController
@@ -37,6 +39,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         self.dateParser = dateParser
         self.fileStorage = fileStorage
         self.idleTimerController = idleTimerController
+        self.lastReadWatcher = lastReadWatcher
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
 
@@ -118,6 +121,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .setViewState(let params):
             setViewState(params: params, in: viewModel)
+
+        case .setViewStats(let stats):
+            setViewStats(stats: stats, in: viewModel)
+
+        case .setCurrentOutline(let id):
+            setCurrentOutline(id: id, in: viewModel)
 
         case .setToolOptions(let color, let size, let tool):
             setTool(color: color, size: size, tool: tool, in: viewModel)
@@ -216,8 +225,66 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         func parseOutline(from data: [String: Any]) -> HtmlEpubReaderState.Outline? {
             guard let title = data["title"] as? String, let location = data["location"] as? [String: Any], let rawChildren = data["items"] as? [[String: Any]] else { return nil }
             let children = rawChildren.compactMap({ parseOutline(from: $0) })
-            return HtmlEpubReaderState.Outline(title: title.trimmingCharacters(in: .whitespacesAndNewlines), location: location, children: children)
+            return HtmlEpubReaderState.Outline(id: UUID(), title: title.trimmingCharacters(in: .whitespacesAndNewlines), location: location, children: children)
         }
+    }
+
+    private func setViewStats(stats: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        let outlinePath = stats["outlinePath"] as? [Int]
+        let pageIndex = stats["pageIndex"] as? Int
+        let pageLabel = stats["pageLabel"] as? String
+        let pagesCount = stats["pagesCount"] as? Int
+        let resolvedOutline = outlinePath.flatMap({ resolve(path: $0, in: viewModel.state.outlines) })
+        let newPage: HtmlEpubReaderState.PageInfo? = {
+            guard let pageIndex, let pageLabel else { return nil }
+            return HtmlEpubReaderState.PageInfo(index: pageIndex, label: pageLabel)
+        }()
+        let outlineChanged = outlinePath != nil && resolvedOutline?.id != viewModel.state.currentOutline?.id
+        let pageChanged = newPage != viewModel.state.currentPage || pagesCount != viewModel.state.pagesCount
+
+        guard outlineChanged || pageChanged else { return }
+
+        update(viewModel: viewModel) { state in
+            var changes: HtmlEpubReaderState.Changes = []
+            if outlineChanged {
+                state.currentOutline = resolvedOutline
+                changes.insert(.currentOutline)
+            }
+            if pageChanged {
+                state.currentPage = newPage
+                state.pagesCount = pagesCount
+                changes.insert(.pages)
+            }
+            state.changes = changes
+        }
+    }
+
+    private func setCurrentOutline(id: UUID, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard id != viewModel.state.currentOutline?.id, let outline = findOutline(id: id, in: viewModel.state.outlines) else { return }
+        update(viewModel: viewModel) { state in
+            state.currentOutline = outline
+            state.changes = .currentOutline
+        }
+    }
+
+    private func findOutline(id: UUID, in outlines: [HtmlEpubReaderState.Outline]) -> HtmlEpubReaderState.Outline? {
+        for outline in outlines {
+            if outline.id == id { return outline }
+            if let found = findOutline(id: id, in: outline.children) { return found }
+        }
+        return nil
+    }
+
+    private func resolve(path: [Int], in outlines: [HtmlEpubReaderState.Outline]) -> HtmlEpubReaderState.Outline? {
+        var current: HtmlEpubReaderState.Outline?
+        var nodes = outlines
+        for index in path {
+            guard index >= 0, index < nodes.count else { return nil }
+            let node = nodes[index]
+            current = node
+            nodes = node.children
+        }
+        return current
     }
 
     private func updateTextCache(key: String, text: String, font: UIFont, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -359,6 +426,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         } else {
             return
         }
+
+        lastReadWatcher.submitAfterDelay(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
 
         let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
         perform(request: request) { error in
@@ -716,8 +785,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func initialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
-            DDLogError("HtmlEpubReaderActionHandler: can't find reader view.html")
+        guard let readerURL = viewModel.state.readerURL else {
+            DDLogError("HtmlEpubReaderActionHandler: reader URL missing")
             return
         }
 
@@ -725,15 +794,17 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         do {
             // Copy reader files to temporary directory
-            let readerFiles: [File] = try fileStorage.contentsOfDirectory(at: Files.file(from: readerUrl).directory)
+            let readerFiles: [File] = try fileStorage.contentsOfDirectory(at: Files.file(from: readerURL))
             for file in readerFiles {
-                try fileStorage.copy(from: file, to: viewModel.state.readerFile.copy(withName: file.name, ext: file.ext))
+                try fileStorage.copy(from: file, to: viewModel.state.readerDirectory.copy(withName: file.name, ext: file.ext))
             }
             // Copy document files (in case of snapshot there can be multiple files) to temporary sub-directory
             let documentFiles: [File] = try fileStorage.contentsOfDirectory(at: viewModel.state.originalFile.directory)
             for file in documentFiles {
                 try fileStorage.copy(from: file, to: viewModel.state.documentFile.copy(withName: file.name, ext: file.ext))
             }
+
+            lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
 
             update(viewModel: viewModel) { state in
                 state.changes.insert(.readerInitialised)
@@ -744,7 +815,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func deinitialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        try? fileStorage.remove(viewModel.state.readerFile.directory)
+        lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
+        try? fileStorage.remove(viewModel.state.readerDirectory)
     }
 
     private func load(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -757,7 +829,13 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             let (sortedKeys, annotations, json) = processAnnotations(items: annotationItems)
             let (type, page) = try loadTypeAndPage(from: viewModel.state.documentFile, rawPage: rawPage)
-            let documentData = HtmlEpubReaderState.DocumentData(type: type, url: viewModel.state.documentFile.createUrl(), annotationsJson: json, page: page)
+            let documentData = HtmlEpubReaderState.DocumentData(
+                type: type,
+                url: viewModel.state.documentFile.createUrl(),
+                annotationsJson: json,
+                page: page,
+                selectedAnnotationKey: viewModel.state.selectedAnnotationKey
+            )
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
@@ -782,9 +860,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         func loadItemAnnotationsAndPage(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> (RItem, Results<RItem>, String)? {
             do {
+                let defaultPageValue = defaultPageValue(forExt: viewModel.state.documentFile.ext.lowercased())
                 let itemRequest = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
                 let item = try dbStorage.perform(request: itemRequest, on: .main)
-                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, defaultPageValue: defaultPageValue)
                 let pageIndex = try dbStorage.perform(request: pageIndexRequest, on: .main)
                 let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
                 let items = try dbStorage.perform(request: annotationsRequest, on: .main)
@@ -792,6 +871,19 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             } catch let error {
                 DDLogError("HtmlEpubReaderActionHandler: can't load annotations - \(error)")
                 return nil
+            }
+            
+            func defaultPageValue(forExt ext: String) -> String {
+                switch ext {
+                case "epub":
+                    return "_start"
+
+                case "html", "htm":
+                    return "0"
+
+                default:
+                    return ""
+                }
             }
         }
 

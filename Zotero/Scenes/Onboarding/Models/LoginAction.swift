@@ -10,7 +10,6 @@ import Foundation
 
 enum LoginAction {
     case login
-    case setError(LoginError?)
-    case setUsername(String)
-    case setPassword(String)
+    case createAccount
+    case cancelLoginSessionIfNeeded
 }

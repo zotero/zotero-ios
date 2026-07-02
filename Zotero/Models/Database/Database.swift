@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 49
+    private static let schemaVersion: UInt64 = 51
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(
@@ -43,7 +43,8 @@ struct Database {
             RWebDavDeletion.self,
             RVersions.self,
             RObjectChange.self,
-            RDownload.self
+            RDownload.self,
+            RLastReadDate.self
         ]
         return config
     }
@@ -150,7 +151,7 @@ struct Database {
             let itemChange = RItemChanges.fields
             let newChanges = List<RObjectChange>()
             newChanges.append(RObjectChange.create(changes: itemChange))
-            if let oldChanges = oldObject["changes"] as? List<MigrationObject> {
+            if oldObject.objectSchema.properties.contains(where: { $0.name == "changes" }), let oldChanges = oldObject["changes"] as? List<MigrationObject> {
                 for oldChange in oldChanges {
                     if let oldIdentifier = oldChange["identifier"] as? String, let oldRawChanges = oldChange["rawChanges"] as? Int16, oldRawChanges != itemChange.rawValue {
                         let existingChange = RObjectChange()
@@ -212,7 +213,7 @@ struct Database {
             let itemChange = RItemChanges.fields
             let newChanges = List<RObjectChange>()
             newChanges.append(RObjectChange.create(changes: itemChange))
-            if let oldChanges = oldObject["changes"] as? List<MigrationObject> {
+            if oldObject.objectSchema.properties.contains(where: { $0.name == "changes" }), let oldChanges = oldObject["changes"] as? List<MigrationObject> {
                 for oldChange in oldChanges {
                     if let oldIdentifier = oldChange["identifier"] as? String, let oldRawChanges = oldChange["rawChanges"] as? Int16, oldRawChanges != itemChange.rawValue {
                         let existingChange = RObjectChange()

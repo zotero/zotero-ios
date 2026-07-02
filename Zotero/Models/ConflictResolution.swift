@@ -14,7 +14,15 @@ enum ConflictResolution {
     case revertGroupChanges(LibraryIdentifier)
     case revertGroupFiles(LibraryIdentifier)
     case skipGroup(LibraryIdentifier)
-    case remoteDeletionOfActiveObject(libraryId: LibraryIdentifier, toDeleteCollections: [String], toRestoreCollections: [String],
-                                      toDeleteItems: [String], toRestoreItems: [String], searches: [String], tags: [String])
+    case remoteDeletionOfActiveObject(
+        libraryId: LibraryIdentifier,
+        toDeleteCollections: [String],
+        toRestoreCollections: [String],
+        toDeleteItems: [String],
+        toRestoreItems: [String],
+        searches: [String],
+        tags: [String],
+        settings: [String]
+    )
     case remoteDeletionOfChangedItem(libraryId: LibraryIdentifier, toDelete: [String], toRestore: [String])
 }

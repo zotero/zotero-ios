@@ -12,64 +12,97 @@ final class ContainerViewController: UIViewController {
     @IBOutlet private weak var containerView: UIView!
 
     private weak var containerHeight: NSLayoutConstraint?
+    private var constraints: [NSLayoutConstraint] = []
     private var didAppear = false
 
-    private static let padWidth: CGFloat = 500
+    private static let regularWidth: CGFloat = 500
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            self.setupForPad()
-        } else {
-            self.setupForPhone()
-        }
+        setupLayoutForCurrentTraits()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.didAppear = true
+        didAppear = true
     }
 
     override func preferredContentSizeDidChange(forChildContentContainer container: UIContentContainer) {
         super.preferredContentSizeDidChange(forChildContentContainer: container)
 
-        guard let height = self.containerHeight else { return }
+        guard let containerHeight else { return }
 
-        height.constant = container.preferredContentSize.height
+        containerHeight.constant = container.preferredContentSize.height
 
-        guard self.didAppear else { return }
+        guard didAppear else { return }
 
         UIView.animate(withDuration: 0.2) {
             self.view.layoutIfNeeded()
         }
     }
 
-    private func setupForPad() {
-        self.view.backgroundColor = ProcessInfo().operatingSystemVersion.majorVersion == 13 ? UIColor.black.withAlphaComponent(0.085) : .clear
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.horizontalSizeClass != traitCollection.horizontalSizeClass else { return }
+        clearLayout()
+        setupLayoutForCurrentTraits()
 
-        self.containerView.layer.cornerRadius = 8
-        self.containerView.layer.masksToBounds = true
-
-        let height = self.containerView.heightAnchor.constraint(equalToConstant: 100)
-        height.priority = .defaultHigh
-        self.containerHeight = height
-
-        NSLayoutConstraint.activate([
-            self.view.centerXAnchor.constraint(equalTo: self.containerView.centerXAnchor),
-            self.view.centerYAnchor.constraint(equalTo: self.containerView.centerYAnchor),
-            self.containerView.heightAnchor.constraint(lessThanOrEqualTo: self.view.heightAnchor),
-            height,
-            self.containerView.widthAnchor.constraint(equalToConstant: ContainerViewController.padWidth)
-        ])
+        func clearLayout() {
+            NSLayoutConstraint.deactivate(constraints)
+            constraints = []
+            containerHeight = nil
+        }
     }
 
-    private func setupForPhone() {
-        NSLayoutConstraint.activate([
-            self.containerView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            self.containerView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            self.containerView.topAnchor.constraint(equalTo: self.view.topAnchor),
-            self.containerView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-        ])
+    private func setupLayoutForCurrentTraits() {
+        switch traitCollection.horizontalSizeClass {
+        case .regular:
+            constraints = setupForHorizontalSizeClassRegular()
+
+        case .compact:
+            constraints = setupForHorizontalSizeClassCompact()
+
+        case .unspecified:
+            break
+
+        @unknown default:
+            break
+        }
+
+        func setupForHorizontalSizeClassRegular() -> [NSLayoutConstraint] {
+            view.backgroundColor = .clear
+
+            containerView.layer.cornerRadius = 8
+            containerView.layer.masksToBounds = true
+
+            let containerHeight = containerView.heightAnchor.constraint(equalToConstant: 100)
+            containerHeight.priority = .defaultHigh
+            self.containerHeight = containerHeight
+
+            let constraints = [
+                containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                containerView.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor),
+                containerHeight,
+                containerView.widthAnchor.constraint(equalToConstant: Self.regularWidth)
+            ]
+            NSLayoutConstraint.activate(constraints)
+            return constraints
+        }
+
+        func setupForHorizontalSizeClassCompact() -> [NSLayoutConstraint] {
+            containerView.layer.cornerRadius = 0
+            containerView.layer.masksToBounds = false
+
+            let constraints = [
+                containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                containerView.topAnchor.constraint(equalTo: view.topAnchor),
+                containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ]
+            NSLayoutConstraint.activate(constraints)
+            return constraints
+        }
     }
 }

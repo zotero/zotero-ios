@@ -23,12 +23,14 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     let viewModel: ViewModel<ReaderSettingsActionHandler>
     private let rows: [Row]
+    private let minimumPreferredContentSize: CGSize
     private let disposeBag: DisposeBag
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, Row>!
 
-    init(rows: [Row], viewModel: ViewModel<ReaderSettingsActionHandler>) {
+    init(rows: [Row], minimumPreferredContentSize: CGSize, viewModel: ViewModel<ReaderSettingsActionHandler>) {
         self.rows = rows
+        self.minimumPreferredContentSize = minimumPreferredContentSize
         self.viewModel = viewModel
         disposeBag = DisposeBag()
 
@@ -41,6 +43,9 @@ final class ReaderSettingsViewController: UICollectionViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        preferredContentSize = minimumPreferredContentSize
+        navigationController?.preferredContentSize = minimumPreferredContentSize
 
         setupNavigationBarIfNeeded()
         collectionView.allowsSelection = false
@@ -56,6 +61,20 @@ final class ReaderSettingsViewController: UICollectionViewController {
             .disposed(by: disposeBag)
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updatePreferredContentSizeIfNeeded()
+
+        func updatePreferredContentSizeIfNeeded() {
+            let contentHeight = max(collectionView.collectionViewLayout.collectionViewContentSize.height, minimumPreferredContentSize.height)
+            let contentWidth = minimumPreferredContentSize.width
+            let newPreferredContentSize = CGSize(width: contentWidth, height: contentHeight)
+            guard preferredContentSize != newPreferredContentSize else { return }
+            preferredContentSize = newPreferredContentSize
+            navigationController?.preferredContentSize = newPreferredContentSize
+        }
+    }
+
     // MARK: - Actions
 
     private func update(state: ReaderSettingsState) {
@@ -63,10 +82,6 @@ final class ReaderSettingsViewController: UICollectionViewController {
         var snapshot = dataSource.snapshot()
         snapshot.reconfigureItems(snapshot.itemIdentifiers)
         dataSource.apply(snapshot)
-    }
-
-    @objc private func done() {
-        presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Data Source
@@ -229,7 +244,13 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     private func setupNavigationBarIfNeeded() {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        let button = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(Self.done))
+        let primaryAction = UIAction { [weak self] _ in
+            self?.presentingViewController?.dismiss(animated: true)
+        }
+        let button = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+        if #available(iOS 26.0.0, *) {
+            button.tintColor = Asset.Colors.zoteroBlue.color
+        }
         navigationItem.rightBarButtonItem = button
     }
 }

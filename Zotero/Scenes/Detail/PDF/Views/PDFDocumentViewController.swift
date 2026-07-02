@@ -24,7 +24,7 @@ protocol PDFDocumentDelegate: AnyObject {
     )
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
-    func showToolOptions()
+    func toggleToolOptions()
     func pageIndexChanged(event: PDFViewController.PageIndexChangeEvent)
     func backActionExecuted()
     func forwardActionExecuted()
@@ -47,6 +47,12 @@ final class PDFDocumentViewController: UIViewController {
     private var selectedAnnotationWasSelectedBefore: Bool
     private var searchResults: [SearchResult] = []
     private var pageIndexCancellable: AnyCancellable?
+    // Holds the zoom scale captured right before a corner-tap (fast scroll) page navigation, so it can be re-applied
+    // to the page that becomes visible after the scroll. `nil` means there's no pending zoom to restore.
+    private var pendingCornerTapZoomScale: CGFloat?
+    var currentPage: UInt {
+        return pdfController?.pageIndex ?? 0
+    }
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?
@@ -412,7 +418,7 @@ final class PDFDocumentViewController: UIViewController {
               let pageView = pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let key = annotation.readerKey
-        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: viewModel.state.document), from: pageView.pdfCoordinateSpace)
         frame.origin.y += parentDelegate?.documentTopOffset ?? 0
         let observable = coordinatorDelegate?.showAnnotationPopover(
             state: state,
@@ -575,7 +581,7 @@ final class PDFDocumentViewController: UIViewController {
         guard let selection = annotation, let pageView = pdfController.visiblePageViews.first(where: { $0.pageIndex == PageIndex(selection.page) }) else { return nil }
         if selection.type == .highlight || selection.type == .underline {
             // Add custom highlight/underline selection view if needed
-            let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+            let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: viewModel.state.document), from: pageView.pdfCoordinateSpace)
             let selectionView = SelectionView(frame: frame)
             pageView.annotationContainerView.addSubview(selectionView)
             self.selectionView = selectionView
@@ -672,15 +678,27 @@ final class PDFDocumentViewController: UIViewController {
             }
 
             func setup(scrubberBar: ScrubberBar) {
-                let appearance = UIToolbarAppearance()
-                appearance.backgroundColor = Asset.Colors.pdfScrubberBarBackground.color
-
-                scrubberBar.standardAppearance = appearance
-                scrubberBar.compactAppearance = appearance
+                if #unavailable(iOS 26.0.0) {
+                    let appearance = UIToolbarAppearance()
+                    appearance.backgroundColor = Asset.Colors.pdfScrubberBarBackground.color
+                    
+                    scrubberBar.standardAppearance = appearance
+                    scrubberBar.compactAppearance = appearance
+                }
                 scrubberBar.delegate = self
             }
 
             func setup(interactions: DocumentViewInteractions) {
+                // Preserve zoom when tapping the edges of the document to scroll between pages.
+                // PSPDFKit's default fast scroll navigates via `scrollToNextSpread`, which resets zoom on the new
+                // spread. Capture the current zoom scale here so we can re-apply it once the new page becomes visible
+                // (see `pdfViewController(_:willBeginDisplaying:forPageAt:)`). Normal scrolling is unaffected since
+                // this only fires for edge-tap navigation.
+                interactions.fastScroll.addActivationCallback { [weak self] _, _, _ in
+                    guard let self, let zoomScale = self.pdfController?.visiblePageViews.first?.zoomView?.zoomScale, zoomScale > 1 else { return }
+                    self.pendingCornerTapZoomScale = zoomScale
+                }
+
                 // Only supported annotations can be selected
                 interactions.selectAnnotation.addActivationCondition { context, _, _ -> Bool in
                     return AnnotationsConfig.supported.contains(context.annotation.type)
@@ -716,6 +734,14 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         if !searchResults.isEmpty {
             pdfController.searchHighlightViewManager.addHighlight(searchResults, animated: false)
+        }
+        // Re-apply zoom captured from the previous page when the user navigated via a corner tap.
+        // We schedule the scale change asynchronously so PSPDFKit finishes its own zoom/layout pass first.
+        if let zoomScale = pendingCornerTapZoomScale {
+            pendingCornerTapZoomScale = nil
+            DispatchQueue.main.async { [weak pageView] in
+                pageView?.zoomView?.setZoomScale(zoomScale, animated: false)
+            }
         }
     }
 
@@ -952,7 +978,7 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
             toggle(annotationTool: previous, color: color, tappedWithStylus: true)
 
         case .showColorPalette, .showInkAttributes, .showContextualPalette:
-            parentDelegate?.showToolOptions()
+            parentDelegate?.toggleToolOptions()
 
         case .runSystemShortcut, .ignore:
             break
@@ -989,72 +1015,6 @@ extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
               type == .highlight || type == .underline
         else { return }
         viewModel.process(action: .deselectSelectedAnnotation)
-    }
-}
-
-extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
-    /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
-    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
-        return rect.applying(pageInfo.transform)
-    }
-
-    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
-        return convertFromDb(rect: tmpRect, page: page)?.origin
-    }
-
-    /// Converts from PSPDFKit to database rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
-    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
-        return rect.applying(pageInfo.transform.inverted())
-    }
-
-    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
-        return convertToDb(rect: tmpRect, page: page)?.origin
-    }
-
-    /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.
-    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
-        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
-
-        switch pageInfo.savedRotation {
-        case .rotation0:
-            return pageInfo.size.height - rect.maxY
-
-        case .rotation180:
-            return rect.minY
-
-        case .rotation90:
-            return pageInfo.size.width - rect.minX
-
-        case .rotation270:
-            return rect.minX
-        }
-    }
-
-    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
-        guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return nil }
-
-        var index = 0
-        var minDistance: CGFloat = .greatestFiniteMagnitude
-        var textOffset = 0
-
-        for glyph in parser.glyphs {
-            guard !glyph.isWordOrLineBreaker else { continue }
-
-            let distance = rect.distance(to: glyph.frame)
-
-            if distance < minDistance {
-                minDistance = distance
-                textOffset = index
-            }
-
-            index += 1
-        }
-
-        return textOffset
     }
 }
 

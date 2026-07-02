@@ -48,30 +48,49 @@ extension ParentWithSidebarController {
     }
 
     func createToolbarButton() -> UIBarButtonItem {
-        let image = UIImage(systemName: "pencil.and.outline")?.applyingSymbolConfiguration(.init(scale: .large))
-        let checkbox = CheckboxButton(image: image!, contentInsets: NSDirectionalEdgeInsets(top: 11, leading: 6, bottom: 9, trailing: 6))
-        checkbox.scalesLargeContentImage = true
-        checkbox.deselectedBackgroundColor = .clear
-        checkbox.deselectedTintColor = isDocumentLocked ? .gray : Asset.Colors.zoteroBlueWithDarkMode.color
-        checkbox.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
-        checkbox.selectedTintColor = .white
-        checkbox.isSelected = !isDocumentLocked && isToolbarVisible
-        checkbox.rx.controlEvent(.touchUpInside)
-            .subscribe(onNext: { [weak self, weak checkbox] _ in
-                guard let self, let checkbox else { return }
-                setAnnotationToolbar(hidden: checkbox.isSelected)
-            })
-            .disposed(by: disposeBag)
-        let barButton = UIBarButtonItem(customView: checkbox)
+        let barButton: UIBarButtonItem
+        let imageSystemName = "pencil.and.outline"
+        let image = UIImage(systemName: imageSystemName)
+        if #available(iOS 26.0.0, *) {
+            barButton = UIBarButtonItem(image: image)
+            barButton.changesSelectionAsPrimaryAction = true
+            barButton.isSelected = !isDocumentLocked && isToolbarVisible
+            barButton.tintColor = barButton.isSelected ? Asset.Colors.zoteroBlue.color : nil
+            barButton.primaryAction = UIAction(title: "", image: image) { [weak self] _ in
+                guard let self else { return }
+                setAnnotationToolbar(hidden: toolbarButton.isSelected)
+            }
+        } else {
+            image?.applyingSymbolConfiguration(.init(scale: .large))
+            let checkbox = CheckboxButton(image: image!, contentInsets: NSDirectionalEdgeInsets(top: 11, leading: 6, bottom: 9, trailing: 6))
+            checkbox.scalesLargeContentImage = true
+            checkbox.deselectedBackgroundColor = .clear
+            checkbox.deselectedTintColor = isDocumentLocked ? .gray : Asset.Colors.zoteroBlueWithDarkMode.color
+            checkbox.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
+            checkbox.selectedTintColor = .white
+            checkbox.isSelected = !isDocumentLocked && isToolbarVisible
+            checkbox.rx.controlEvent(.touchUpInside)
+                .subscribe(onNext: { [weak self, weak checkbox] _ in
+                    guard let self, let checkbox else { return }
+                    setAnnotationToolbar(hidden: checkbox.isSelected)
+                })
+                .disposed(by: disposeBag)
+            barButton = UIBarButtonItem(customView: checkbox)
+        }
         barButton.isEnabled = !isDocumentLocked
         barButton.accessibilityLabel = L10n.Accessibility.Pdf.toggleAnnotationToolbar
         barButton.title = L10n.Accessibility.Pdf.toggleAnnotationToolbar
-        barButton.largeContentSizeImage = UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        barButton.largeContentSizeImage = UIImage(systemName: imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .large))
         return barButton
     }
 
     private func setAnnotationToolbar(hidden: Bool) {
-        (toolbarButton.customView as? CheckboxButton)?.isSelected = !hidden
+        if #available(iOS 26.0.0, *) {
+            toolbarButton.isSelected = !hidden
+            toolbarButton.tintColor = toolbarButton.isSelected ? Asset.Colors.zoteroBlue.color : nil
+        } else {
+            (toolbarButton.customView as? CheckboxButton)?.isSelected = !hidden
+        }
         annotationToolbarHandler?.set(hidden: hidden, animated: true)
         if hidden {
             documentController?.disableAnnotationTools()
