@@ -34,6 +34,7 @@ final class DocumentWorkerJSHandler {
     private let queueLabel: String
     private var nextMessageId: Int
     private var pending: [Int: (Result<Any, Swift.Error>) -> Void]
+    private var pendingProgress: [Int: (Double) -> Void]
     private var loadError: Swift.Error?
     private var cachedWorkData: Data?
     private let usesNativeONNXForStructuredDocumentText: Bool
@@ -56,6 +57,7 @@ final class DocumentWorkerJSHandler {
         observable = PublishSubject()
         nextMessageId = 1
         pending = [:]
+        pendingProgress = [:]
         loadError = nil
         cachedWorkData = nil
         self.usesNativeONNXForStructuredDocumentText = usesNativeONNXForStructuredDocumentText
@@ -97,7 +99,14 @@ final class DocumentWorkerJSHandler {
     private func handlePostMessage(message: Any?) {
         guard let body = message as? [String: Any] else { return }
 
+        if let progressId = body["progressID"] as? Int {
+            guard let data = body["data"] as? [String: Any], let progress = data["progress"] as? Double else { return }
+            pendingProgress[progressId]?(progress)
+            return
+        }
+
         if let responseId = body["responseID"] as? Int {
+            pendingProgress[responseId] = nil
             if let error = body["error"] as? [String: Any], let name = error["name"] as? String {
                 pending.removeValue(forKey: responseId)?(.failure(Error.workerError(name)))
             } else if let data = body["data"] {
@@ -239,6 +248,10 @@ final class DocumentWorkerJSHandler {
                 var password: String?
                 var sourceHash: String?
                 var nativeONNX = false
+
+                let messageId = nextMessageId
+                nextMessageId += 1
+
                 switch action {
                 case .recognizePDF(let _password):
                     password = _password
@@ -251,9 +264,13 @@ final class DocumentWorkerJSHandler {
                     contentType = _contentType
                     password = _password
                     sourceHash = _sourceHash
+                    dataObject.setValue(true, forProperty: "reportProgress")
 #if MAINAPP
                     nativeONNX = usesNativeONNXForStructuredDocumentText && nativeONNXBridge != nil
 #endif
+                    pendingProgress[messageId] = { [weak self] progress in
+                        self?.observable.on(.next((workId: workId, result: .success(.progress(progress)))))
+                    }
                 }
                 if let pages {
                     dataObject.setValue(pages, forProperty: "pageIndexes")
@@ -271,9 +288,6 @@ final class DocumentWorkerJSHandler {
                     dataObject.setValue(true, forProperty: "nativeONNX")
                 }
                 message.setValue(dataObject, forProperty: "data")
-
-                let messageId = nextMessageId
-                nextMessageId += 1
 
                 pending[messageId] = { [weak self] result in
                     guard let self else { return }
@@ -306,7 +320,7 @@ final class DocumentWorkerJSHandler {
         }
     }
 
-    private static func bundledWorkerData(for path: String, in bundle: Bundle) throws -> Data {
+    static func bundledWorkerData(for path: String, in bundle: Bundle) throws -> Data {
         let normalizedPath = path.replacingOccurrences(of: "\\", with: "/")
         let components = normalizedPath.split(separator: "/", omittingEmptySubsequences: false)
         let hasUnsafeComponent = components.contains { $0.isEmpty || $0 == ".." }

@@ -231,6 +231,16 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     expect { try? engine.evaluate(script: "__blobFetchResult")?.toBool() }
                         .toEventually(equal(true), timeout: .seconds(2))
                 }
+
+                it("can load bundled worker data requested by the worker") {
+                    let bundle = Bundle(for: DocumentWorkerController.self)
+
+                    expect(try DocumentWorkerJSHandler.bundledWorkerData(for: "cmaps/UniJIS-UTF8-H.bcmap", in: bundle)).toNot(beEmpty())
+                    expect(try DocumentWorkerJSHandler.bundledWorkerData(for: "standard_fonts/LiberationSans-Regular.ttf", in: bundle)).toNot(beEmpty())
+                    expect(try DocumentWorkerJSHandler.bundledWorkerData(for: "wasm/openjpeg.wasm", in: bundle)).toNot(beEmpty())
+                    expect(try DocumentWorkerJSHandler.bundledWorkerData(for: "wasm/jbig2.wasm", in: bundle)).toNot(beEmpty())
+                    expect { try DocumentWorkerJSHandler.bundledWorkerData(for: "../worker.js", in: bundle) }.to(throwError())
+                }
             }
 
             context("with a valid PDF URL") {
@@ -546,7 +556,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(timeout))
+                    expect(emittedUpdates.count).toEventually(beGreaterThanOrEqualTo(3), timeout: .seconds(timeout))
                     assertStructuredDocumentTextPack(updates: emittedUpdates, expectedURL: expectedURL)
                 }
 
@@ -731,10 +741,11 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                         expect(index).to(equal(0))
 
                     case .inProgress:
-                        expect(index).to(equal(1))
+                        expect(index).to(beGreaterThan(0))
+                        expect(index).to(beLessThan(updates.count - 1))
 
                     case .extractedData(let result, _):
-                        expect(index).to(equal(2))
+                        expect(index).to(equal(updates.count - 1))
                         guard case .structuredDocumentText(let structuredDocumentText) = result else {
                             fail("expected structured document text result, got \(result)")
                             return

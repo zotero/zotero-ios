@@ -16,10 +16,10 @@ let nativeONNXPromiseId = 0;
 let waitingNativeONNXPromises = {};
 let worker = new Worker('worker.js');
 
-async function query(action, data, transfer) {
+async function query(action, data, transfer, onProgress) {
   return new Promise(function (resolve, reject) {
     promiseId++;
-    waitingPromises[promiseId] = { resolve, reject };
+    waitingPromises[promiseId] = { resolve, reject, onProgress };
     worker.postMessage({ id: promiseId, action, data }, transfer);
   });
 }
@@ -37,6 +37,14 @@ worker.onmessage = async function (e) {
       else {
         waiting.resolve(message.data);
       }
+    }
+    return;
+  }
+
+  if (message.progressID) {
+    let waiting = waitingPromises[message.progressID];
+    if (waiting && waiting.onProgress) {
+      waiting.onProgress(message.data && message.data.progress);
     }
     return;
   }
@@ -118,7 +126,9 @@ async function performAction(action, workId, filePath, parameters) {
     let buf = await fetchLocalFile(filePath);
     let data = { buf };
     Object.assign(data, parameters || {});
-    let result = await query(action, data, [buf]);
+    let result = await query(action, data, [buf], function (progress) {
+      webkit.messageHandlers.progressHandler.postMessage({ workId, progress });
+    });
 
     if (action === 'pdf.getRecognizerData') {
       webkit.messageHandlers.recognizerDataHandler.postMessage({ workId, recognizerData: result });
