@@ -25,16 +25,10 @@ final class SpeechDocumentParserSpec: QuickSpec {
                         paragraphBlock(page: 0, runs: [makeRun("Third.", page: 0)])
                     ])
 
-                    let pages = SpeechDocumentParser.parse(materialized: materialized)
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(pages.count).to(equal(1))
-                    let page = pages[0]
-                    expect(page).notTo(beNil())
-                    expect(page?.paragraphRanges.count).to(equal(2))
-                    expect(substring(page?.text ?? "", page!.paragraphRanges[0])).to(equal("First sentence. Second."))
-                    expect(substring(page?.text ?? "", page!.paragraphRanges[1])).to(equal("Third."))
-                    expect(page?.text.contains("A Heading")).to(beFalse())
-                    expect(page?.text.contains("caption")).to(beFalse())
+                    expect(paragraphs.map(\.text)).to(equal(["First sentence. Second.", "Third."]))
+                    expect(paragraphs.allSatisfy { $0.page == 0 }).to(beTrue())
                 }
 
                 it("reads list blocks") {
@@ -45,11 +39,11 @@ final class SpeechDocumentParserSpec: QuickSpec {
                         ])
                     ])
 
-                    let pages = SpeechDocumentParser.parse(materialized: materialized)
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(pages[0]?.paragraphRanges.count).to(equal(1))
-                    expect(pages[0]?.text.contains("Item one.")).to(beTrue())
-                    expect(pages[0]?.text.contains("Item two.")).to(beTrue())
+                    expect(paragraphs.count).to(equal(1))
+                    expect(paragraphs.first?.text.contains("Item one.")).to(beTrue())
+                    expect(paragraphs.first?.text.contains("Item two.")).to(beTrue())
                 }
 
                 it("skips blocks with excluded flowClass") {
@@ -58,36 +52,38 @@ final class SpeechDocumentParserSpec: QuickSpec {
                         paragraphBlock(page: 0, runs: [makeRun("Real content.", page: 0)])
                     ])
 
-                    let pages = SpeechDocumentParser.parse(materialized: materialized)
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(pages[0]?.paragraphRanges.count).to(equal(1))
-                    expect(substring(pages[0]?.text ?? "", pages[0]!.paragraphRanges[0])).to(equal("Real content."))
+                    expect(paragraphs.map(\.text)).to(equal(["Real content."]))
                 }
 
-                it("joins paragraphs on the same page with a blank line") {
+                it("assigns page offsets so paragraphs on a page are separated by a blank line") {
                     let materialized = document(blocks: [
                         paragraphBlock(page: 0, runs: [makeRun("Alpha.", page: 0)]),
                         paragraphBlock(page: 0, runs: [makeRun("Beta.", page: 0)])
                     ])
 
-                    let pages = SpeechDocumentParser.parse(materialized: materialized)
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(pages[0]?.text).to(equal("Alpha.\n\nBeta."))
-                    expect(pages[0]?.paragraphRanges.count).to(equal(2))
+                    expect(paragraphs.count).to(equal(2))
+                    expect(paragraphs[0].pageOffset).to(equal(0))
+                    // "Alpha." (6 chars) + "\n\n" (2 chars) = 8
+                    expect(paragraphs[1].pageOffset).to(equal(8))
                 }
 
-                it("assigns runs to their page from the run textMap") {
+                it("assigns paragraphs to their page from the run textMap") {
                     let materialized = document(blocks: [
                         paragraphBlock(page: 3, runs: [makeRun("On page three.", page: 3)])
                     ])
 
-                    let pages = SpeechDocumentParser.parse(materialized: materialized)
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(Array(pages.keys)).to(equal([3]))
-                    expect(pages[3]?.text).to(equal("On page three."))
+                    expect(paragraphs.count).to(equal(1))
+                    expect(paragraphs.first?.page).to(equal(3))
+                    expect(paragraphs.first?.pageOffset).to(equal(0))
                 }
 
-                it("splits a paragraph that spans two pages into per-page segments") {
+                it("splits a paragraph that spans two pages into one paragraph per page") {
                     let materialized = document(blocks: [
                         paragraphBlock(page: 0, runs: [
                             makeRun("Starts on page zero. ", page: 0),
@@ -95,13 +91,15 @@ final class SpeechDocumentParserSpec: QuickSpec {
                         ])
                     ])
 
-                    let pages = SpeechDocumentParser.parse(materialized: materialized)
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(Set(pages.keys)).to(equal([0, 1]))
-                    expect(pages[0]?.text).to(equal("Starts on page zero."))
-                    expect(pages[0]?.paragraphRanges.count).to(equal(1))
-                    expect(pages[1]?.text).to(equal("Continues on page one."))
-                    expect(pages[1]?.paragraphRanges.count).to(equal(1))
+                    expect(paragraphs.count).to(equal(2))
+                    expect(paragraphs[0].page).to(equal(0))
+                    expect(paragraphs[0].text).to(equal("Starts on page zero."))
+                    expect(paragraphs[0].pageOffset).to(equal(0))
+                    expect(paragraphs[1].page).to(equal(1))
+                    expect(paragraphs[1].text).to(equal("Continues on page one."))
+                    expect(paragraphs[1].pageOffset).to(equal(0))
                 }
 
                 it("assigns a run without a textMap to the surrounding page") {
@@ -113,22 +111,23 @@ final class SpeechDocumentParserSpec: QuickSpec {
                         ])
                     ])
 
-                    let pages = SpeechDocumentParser.parse(materialized: materialized)
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(Array(pages.keys)).to(equal([2]))
-                    expect(pages[2]?.text).to(equal("Alpha Beta"))
+                    expect(paragraphs.count).to(equal(1))
+                    expect(paragraphs.first?.page).to(equal(2))
+                    expect(paragraphs.first?.text).to(equal("Alpha Beta"))
                 }
 
-                it("returns nothing for empty or missing content") {
-                    expect(SpeechDocumentParser.parse(materialized: ["content": []]).isEmpty).to(beTrue())
-                    expect(SpeechDocumentParser.parse(materialized: [:]).isEmpty).to(beTrue())
+                it("returns no paragraphs for empty or missing content") {
+                    expect(SpeechDocumentParser.parse(materialized: ["content": []]).paragraphs.isEmpty).to(beTrue())
+                    expect(SpeechDocumentParser.parse(materialized: [:]).paragraphs.isEmpty).to(beTrue())
                 }
             }
 
             describe("language") {
                 it("reads the lowercase language key (EPUB)") {
                     let materialized: [String: Any] = ["metadata": ["source": ["properties": ["language": "en-GB"]]]]
-                    expect(SpeechDocumentParser.language(from: materialized)).to(equal("en-GB"))
+                    expect(SpeechDocumentParser.parse(materialized: materialized).language).to(equal("en-GB"))
                 }
 
                 it("reads the capitalized Language key (PDF)") {
@@ -151,101 +150,108 @@ final class SpeechDocumentParserSpec: QuickSpec {
                 }
             }
 
-            // Two paragraphs: "One. Two." at 0..<9, "Three. Four." at 11..<23 (separated by a blank line).
+            // Two segments (paragraphs) on a page: "One. Two." at page-text offset 0, "Three. Four." at offset 11.
+            // The page text (segments joined by a blank line) is "One. Two.\n\nThree. Four.".
             let text = "One. Two.\n\nThree. Four."
-            let ranges = [NSRange(location: 0, length: 9), NSRange(location: 11, length: 12)]
+            let segments = [
+                SpeechDocumentParser.Segment(text: "One. Two.", pageOffset: 0),
+                SpeechDocumentParser.Segment(text: "Three. Four.", pageOffset: 11)
+            ]
 
-            describe("paragraphSegment") {
-                it("returns from the index to the end of the containing paragraph") {
-                    expect(SpeechDocumentParser.paragraphSegment(startingAt: 0, in: ranges)).to(equal(NSRange(location: 0, length: 9)))
-                    expect(SpeechDocumentParser.paragraphSegment(startingAt: 5, in: ranges)).to(equal(NSRange(location: 5, length: 4)))
+            describe("paragraphRange") {
+                it("returns from the index to the end of the containing segment") {
+                    expect(SpeechDocumentParser.paragraphRange(startingAt: 0, in: segments)).to(equal(NSRange(location: 0, length: 9)))
+                    expect(SpeechDocumentParser.paragraphRange(startingAt: 5, in: segments)).to(equal(NSRange(location: 5, length: 4)))
                 }
 
-                it("returns the next whole paragraph when the index is in the gap between paragraphs") {
-                    expect(SpeechDocumentParser.paragraphSegment(startingAt: 9, in: ranges)).to(equal(NSRange(location: 11, length: 12)))
+                it("returns the next whole segment when the index is in the gap between segments") {
+                    expect(SpeechDocumentParser.paragraphRange(startingAt: 9, in: segments)).to(equal(NSRange(location: 11, length: 12)))
                 }
 
-                it("returns nil past the last paragraph") {
-                    expect(SpeechDocumentParser.paragraphSegment(startingAt: 23, in: ranges)).to(beNil())
-                    expect(SpeechDocumentParser.paragraphSegment(startingAt: 100, in: ranges)).to(beNil())
+                it("returns nil past the last segment") {
+                    expect(SpeechDocumentParser.paragraphRange(startingAt: 23, in: segments)).to(beNil())
+                    expect(SpeechDocumentParser.paragraphRange(startingAt: 100, in: segments)).to(beNil())
                 }
             }
 
-            describe("sentenceSegment") {
-                it("returns the sentence starting at the index, bounded to its paragraph") {
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: 0, in: text, paragraphRanges: ranges))).to(equal("One."))
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: 5, in: text, paragraphRanges: ranges))).to(equal("Two."))
+            describe("sentenceRange") {
+                it("returns the sentence starting at the index, within its segment") {
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: 0, in: segments))).to(equal("One."))
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: 5, in: segments))).to(equal("Two."))
                 }
 
-                it("crosses into the next paragraph when the index is in the gap") {
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: 9, in: text, paragraphRanges: ranges))).to(equal("Three."))
+                it("crosses into the next segment when the index is in the gap") {
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: 9, in: segments))).to(equal("Three."))
                 }
 
                 it("never lets a sentence span a paragraph boundary") {
-                    // No terminal punctuation after "beta", so a naive tokenizer could merge the two paragraphs.
+                    // No terminal punctuation after "beta", so a naive tokenizer over the joined text could merge the paragraphs.
                     let mergeText = "Alpha beta\n\nGamma delta."
-                    let mergeRanges = [NSRange(location: 0, length: 10), NSRange(location: 12, length: 12)]
-                    expect(trimmed(mergeText, SpeechDocumentParser.sentenceSegment(startingAt: 0, in: mergeText, paragraphRanges: mergeRanges))).to(equal("Alpha beta"))
+                    let mergeSegments = [
+                        SpeechDocumentParser.Segment(text: "Alpha beta", pageOffset: 0),
+                        SpeechDocumentParser.Segment(text: "Gamma delta.", pageOffset: 12)
+                    ]
+                    expect(trimmed(mergeText, SpeechDocumentParser.sentenceRange(startingAt: 0, in: mergeSegments))).to(equal("Alpha beta"))
                 }
 
-                it("returns nil past the last paragraph") {
-                    expect(SpeechDocumentParser.sentenceSegment(startingAt: 100, in: text, paragraphRanges: ranges)).to(beNil())
+                it("returns nil past the last segment") {
+                    expect(SpeechDocumentParser.sentenceRange(startingAt: 100, in: segments)).to(beNil())
                 }
             }
 
             describe("nextSentenceStart") {
-                it("advances to the next sentence within the paragraph") {
-                    let start = SpeechDocumentParser.nextSentenceStart(after: 4, in: text, paragraphRanges: ranges)
+                it("advances to the next sentence within the segment") {
+                    let start = SpeechDocumentParser.nextSentenceStart(after: 4, in: segments)
                     expect(start).notTo(beNil())
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: start!, in: text, paragraphRanges: ranges))).to(equal("Two."))
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: start!, in: segments))).to(equal("Two."))
                 }
 
                 it("advances past the sentence containing a mid-sentence index") {
                     // Emulates local-voice playback, where the position is word-level (mid-sentence).
-                    let start = SpeechDocumentParser.nextSentenceStart(after: 2, in: text, paragraphRanges: ranges)
+                    let start = SpeechDocumentParser.nextSentenceStart(after: 2, in: segments)
                     expect(start).notTo(beNil())
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: start!, in: text, paragraphRanges: ranges))).to(equal("Two."))
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: start!, in: segments))).to(equal("Two."))
                 }
 
-                it("rolls into the first sentence of the next paragraph") {
-                    let start = SpeechDocumentParser.nextSentenceStart(after: 9, in: text, paragraphRanges: ranges)
+                it("rolls into the first sentence of the next segment") {
+                    let start = SpeechDocumentParser.nextSentenceStart(after: 9, in: segments)
                     expect(start).notTo(beNil())
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: start!, in: text, paragraphRanges: ranges))).to(equal("Three."))
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: start!, in: segments))).to(equal("Three."))
                 }
 
                 it("returns nil past the last sentence") {
-                    expect(SpeechDocumentParser.nextSentenceStart(after: 23, in: text, paragraphRanges: ranges)).to(beNil())
+                    expect(SpeechDocumentParser.nextSentenceStart(after: 23, in: segments)).to(beNil())
                 }
             }
 
             describe("previousSentenceStart") {
-                it("returns the previous sentence within the paragraph") {
-                    let start = SpeechDocumentParser.previousSentenceStart(before: 5, in: text, paragraphRanges: ranges)
+                it("returns the previous sentence within the segment") {
+                    let start = SpeechDocumentParser.previousSentenceStart(before: 5, in: segments)
                     expect(start).notTo(beNil())
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: start!, in: text, paragraphRanges: ranges))).to(equal("One."))
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: start!, in: segments))).to(equal("One."))
                 }
 
-                it("rolls back into the previous paragraph's last sentence") {
-                    let start = SpeechDocumentParser.previousSentenceStart(before: 11, in: text, paragraphRanges: ranges)
+                it("rolls back into the previous segment's last sentence") {
+                    let start = SpeechDocumentParser.previousSentenceStart(before: 11, in: segments)
                     expect(start).notTo(beNil())
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: start!, in: text, paragraphRanges: ranges))).to(equal("Two."))
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: start!, in: segments))).to(equal("Two."))
                 }
 
-                it("returns nil at the first sentence of the first paragraph") {
-                    expect(SpeechDocumentParser.previousSentenceStart(before: 0, in: text, paragraphRanges: ranges)).to(beNil())
-                    expect(SpeechDocumentParser.previousSentenceStart(before: 2, in: text, paragraphRanges: ranges)).to(beNil())
+                it("returns nil at the first sentence of the first segment") {
+                    expect(SpeechDocumentParser.previousSentenceStart(before: 0, in: segments)).to(beNil())
+                    expect(SpeechDocumentParser.previousSentenceStart(before: 2, in: segments)).to(beNil())
                 }
             }
 
             describe("lastSentenceStart") {
-                it("returns the last sentence of the last paragraph") {
-                    let start = SpeechDocumentParser.lastSentenceStart(in: text, paragraphRanges: ranges)
+                it("returns the last sentence of the last segment") {
+                    let start = SpeechDocumentParser.lastSentenceStart(in: segments)
                     expect(start).notTo(beNil())
-                    expect(trimmed(text, SpeechDocumentParser.sentenceSegment(startingAt: start!, in: text, paragraphRanges: ranges))).to(equal("Four."))
+                    expect(trimmed(text, SpeechDocumentParser.sentenceRange(startingAt: start!, in: segments))).to(equal("Four."))
                 }
 
-                it("returns nil when there are no paragraphs") {
-                    expect(SpeechDocumentParser.lastSentenceStart(in: text, paragraphRanges: [])).to(beNil())
+                it("returns nil when there are no segments") {
+                    expect(SpeechDocumentParser.lastSentenceStart(in: [])).to(beNil())
                 }
             }
         }

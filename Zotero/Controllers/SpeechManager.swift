@@ -127,20 +127,33 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         case cantGetText
     }
 
-    struct SpeechData {
-        let index: Delegate.Index
-        /// The range of the currently spoken text segment as reported by the voice processor.
-        /// Word-level for local voice; sentence- or paragraph-level for remote voice depending on granularity.
-        let range: NSRange
-        /// The range of the text unit currently highlighted (sentence or paragraph depending on `highlightGranularity`).
-        let highlightRange: NSRange
-        /// The granularity at which the highlight was computed. Recorded so that a voice/granularity change
-        /// can be detected and the highlight recomputed even if the speech position is still within the old range.
-        let highlightGranularity: NLTokenUnit
+    /// A readable paragraph, resolved to the delegate's page index type.
+    struct SpeechParagraph {
+        let text: String
+        let page: Delegate.Index
+        /// Character offset of the paragraph within its page's readable text.
+        let pageOffset: Int
+        /// Bounding rects (PDF space) on its page..
+        let rects: [CGRect]
+    }
 
-        func copy(range: NSRange, highlightRange: NSRange, highlightGranularity: NLTokenUnit) -> SpeechData {
-            return SpeechData(index: index, range: range, highlightRange: highlightRange, highlightGranularity: highlightGranularity)
-        }
+    /// Current speech position, anchored to a paragraph.
+    private struct Position {
+        var paragraphIndex: Int
+        /// Range of the currently spoken segment within the paragraph (word-level for local, sentence/paragraph for remote).
+        var range: NSRange
+        /// Range of the highlighted unit (sentence or paragraph) within the paragraph.
+        var highlightRange: NSRange
+        var highlightGranularity: NLTokenUnit
+    }
+
+    /// A resumable playback position, anchored to a paragraph. Reported as playback progresses and passed back to
+    /// `start(resuming:)` to resume where reading left off.
+    struct ResumePosition {
+        let page: Delegate.Index
+        let paragraphIndex: Int
+        /// Character offset within the paragraph's text.
+        let offset: Int
     }
 
     private enum NavigationDirection {
@@ -148,8 +161,19 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         case backward
     }
 
+    /// Where playback should begin.
+    enum StartTarget {
+        /// The first readable paragraph at or after the delegate's current page.
+        case currentPage
+        /// Start at a page-text offset resolved by the closure (used for a PSPDFKit text selection), then map to a paragraph.
+        case pageTextOffset((String) -> Int)
+        /// Resume at a previously reported paragraph anchor.
+        case resume(ResumePosition)
+    }
+
     /// Time window within which a second forward/backward call upgrades the pending sentence skip to a paragraph skip.
     private let navigationMultiTapInterval: TimeInterval = 0.3
+    private let parsingQueue: DispatchQueue
     let state: BehaviorRelay<SpeechState>
     let remainingTime: BehaviorRelay<TimeInterval?>
     private let disposeBag: DisposeBag
@@ -158,21 +182,24 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private let nowPlayingManager: NowPlayingManager
 
     private var processor: VoiceProcessor!
-    private var speechData: SpeechData? {
+    private var position: Position? {
         didSet {
-            if let speechData {
-                onSpeakingPositionChanged?(speechData.index, speechData.range.location)
-            }
+            guard let position, position.paragraphIndex < paragraphs.count else { return }
+            let paragraph = paragraphs[position.paragraphIndex]
+            onSpeakingPositionChanged?(ResumePosition(page: paragraph.page, paragraphIndex: position.paragraphIndex, offset: position.range.location))
         }
     }
-    /// Per-page read-aloud text, extracted once for the whole document from structured document text when playback starts.
-    private var cachedPages: [Delegate.Index: String]
-    /// Per-page paragraph segment ranges (character offsets within the page text), derived from the structured document
-    /// text. Used for paragraph-granularity navigation instead of heuristic paragraph detection.
-    private var paragraphRanges: [Delegate.Index: [NSRange]]
-    /// Whether the whole document has already been extracted and cached. Set once per session; no further data is requested afterwards.
+    /// The page currently handed to the voice processor. Used to map processor-reported page-text offsets back to a paragraph.
+    private var currentSpeakingPage: Delegate.Index?
+    /// Readable paragraphs for the whole document, in reading order.
+    private var paragraphs: [SpeechParagraph]
+    /// Indices into `paragraphs`, grouped by page in reading order.
+    private var paragraphIndicesByPage: [Delegate.Index: [Int]]
+    /// Total readable-text length per page (character count), used as the highlight hint denominator.
+    private var pageTextLength: [Delegate.Index: Int]
+    /// Whether the whole document has already been extracted and cached.
     private var documentLoaded: Bool
-    /// Document language (BCP-47 tag) read from the structured document text metadata, if any. Used as the session language.
+    /// Document language (BCP-47 tag) read from the structured document text metadata, if any.
     private var documentLanguage: String?
     /// Worker used to extract structured document text for the whole document.
     private var speechWorker: DocumentWorkerController.Worker?
@@ -181,7 +208,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var pendingNavigation: (direction: NavigationDirection, workItem: DispatchWorkItem)?
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     var onHighlightSessionTimedOut: (() -> Void)?
-    var onSpeakingPositionChanged: ((Delegate.Index, Int) -> Void)?
+    var onSpeakingPositionChanged: ((ResumePosition) -> Void)?
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -189,8 +216,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     var detectedLanguage: String {
         return processor.detectedLanguage ?? "en"
     }
+    /// Current position expressed as a page-text offset range, for the voice processors (which work in page-text offsets).
     fileprivate var speechRange: NSRange? {
-        return speechData?.range
+        guard let position, position.paragraphIndex < paragraphs.count else { return nil }
+        let paragraph = paragraphs[position.paragraphIndex]
+        return NSRange(location: paragraph.pageOffset + position.range.location, length: position.range.length)
     }
     var currentPageIndex: Delegate.Index? { delegate?.getCurrentPageIndex() }
     /// Granularity at which the read-aloud highlight is rendered. Mirrors the voice's segmentation granularity:
@@ -226,26 +256,58 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// (used to disambiguate duplicate occurrences when highlighting), if speech is active.
     /// The highlight covers a sentence or paragraph depending on the voice's segmentation granularity.
     var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index, sourceLocation: Int, sourceTextLength: Int)? {
-        guard let speechData, let pageText = cachedPages[speechData.index] else { return nil }
-        let range = speechData.highlightRange
-        guard range.length > 0, let textRange = Range(range, in: pageText) else { return nil }
-        let text = String(pageText[textRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let position, position.paragraphIndex < paragraphs.count else { return nil }
+        let paragraph = paragraphs[position.paragraphIndex]
+        let range = position.highlightRange
+        guard range.length > 0, let textRange = Range(range, in: paragraph.text) else { return nil }
+        let text = String(paragraph.text[textRange]).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
-        return (text, speechData.index, range.location, (pageText as NSString).length)
+        return (text, paragraph.page, paragraph.pageOffset + range.location, pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length)
+    }
+
+    // MARK: - Paragraph model helpers
+
+    /// Page-local segments (text + page offset) for the given page, in reading order. Handed to voice processors.
+    private func segments(forPage page: Delegate.Index) -> [SpeechDocumentParser.Segment] {
+        return (paragraphIndicesByPage[page] ?? []).map { SpeechDocumentParser.Segment(text: paragraphs[$0].text, pageOffset: paragraphs[$0].pageOffset) }
+    }
+
+    /// The page's readable text (paragraphs joined by a blank line). Derived on demand; used by the local voice utterance
+    /// and the (page-text based) highlight session manager.
+    private func pageText(forPage page: Delegate.Index) -> String {
+        return (paragraphIndicesByPage[page] ?? []).map { paragraphs[$0].text }.joined(separator: SpeechDocumentParser.segmentSeparator)
+    }
+
+    /// Maps a page-text offset on `page` to a paragraph index and the offset within that paragraph.
+    private func resolveParagraph(atPageTextOffset offset: Int, page: Delegate.Index) -> (index: Int, offset: Int)? {
+        let indices = paragraphIndicesByPage[page] ?? []
+        guard let first = indices.first else { return nil }
+        var chosen = first
+        for index in indices {
+            if paragraphs[index].pageOffset <= offset {
+                chosen = index
+            } else {
+                break
+            }
+        }
+        let paragraph = paragraphs[chosen]
+        return (chosen, max(0, min(offset - paragraph.pageOffset, paragraph.text.count)))
     }
 
     init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController, documentWorkerController: DocumentWorkerController) {
         self.delegate = delegate
         self.remoteVoicesController = remoteVoicesController
         self.documentWorkerController = documentWorkerController
-        cachedPages = [:]
-        paragraphRanges = [:]
+        paragraphs = []
+        paragraphIndicesByPage = [:]
+        pageTextLength = [:]
         documentLoaded = false
         highlightSessionManager = SpeechHighlightSessionManager<SpeechManager<Delegate>>()
         state = BehaviorRelay(value: .stopped)
         remainingTime = BehaviorRelay(value: nil)
         disposeBag = DisposeBag()
         nowPlayingManager = NowPlayingManager()
+        parsingQueue = DispatchQueue(label: "SpeechManager.ParsingQueue", qos: .userInteractive, attributes: .concurrent)
         super.init()
         highlightSessionManager.delegate = self
         highlightSessionManager.onSessionTimedOut = { [weak self] in
@@ -282,8 +344,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
 
                 case .stopped:
-                    // The extracted document text is kept across stops so playback can restart without re-loading it.
-                    speechData = nil
+                    // The extracted paragraphs are kept across stops so playback can restart without re-loading them.
+                    position = nil
+                    currentSpeakingPage = nil
                     processor.detectedLanguage = nil
                     pendingNavigation?.workItem.cancel()
                     pendingNavigation = nil
@@ -324,9 +387,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     // MARK: - Actions
 
-    // Start speech
-    // - parameter mapStartIndexToPage: Used to map startIndex from PSPDFKit document to the structured-document-text page.
-    func start(mapStartIndexToPage: ((String) -> Int)? = nil) {
+    func start(_ target: StartTarget) {
         guard let delegate else {
             DDLogError("SpeechManager: can't get delegate")
             return
@@ -346,7 +407,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             // Set the session language from the document metadata before playback starts, so that the voice stays
             // constant for the whole session. No-op when the user has already picked a language or it was already set.
             applySessionLanguageIfNeeded()
-            startPlayback(mapStartIndexToPage: mapStartIndexToPage)
+            startPlayback(target: target)
         }
     }
 
@@ -387,25 +448,20 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                         return
                     }
                     // Parsing the whole document can be heavy, so do it off the main thread.
-                    DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                        let parsed: [Int: SpeechDocumentParser.ParsedPage]
-                        let language: String?
+                    parsingQueue.async { [weak self] in
+                        let parsed: SpeechDocumentParser.ParsedDocument
                         do {
                             let pack = try SDTPack(data: buffer)
-                            let materialized = try pack.materialize()
-                            parsed = SpeechDocumentParser.parse(materialized: materialized)
-                            language = SpeechDocumentParser.language(from: materialized)
+                            parsed = SpeechDocumentParser.parse(materialized: try pack.materialize())
                         } catch {
                             DDLogError("SpeechManager: could not parse structured document text - \(error)")
-                            parsed = [:]
-                            language = nil
+                            parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
                         }
                         DispatchQueue.main.async { [weak self] in
                             guard let self else { return }
-                            store(parsed: parsed)
-                            documentLanguage = language
+                            store(parsed)
                             documentLoaded = true
-                            DDLogInfo("SpeechManager: extracted structured document text in \(CFAbsoluteTimeGetCurrent() - start)")
+                            DDLogInfo("SpeechManager: extracted \(paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
                             completion(true)
                         }
                     }
@@ -414,31 +470,59 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             .disposed(by: disposeBag)
     }
 
-    /// Stores parsed structured document text into the page caches, mapping structured-document-text page indices to
-    /// the delegate's page index type.
-    private func store(parsed: [Int: SpeechDocumentParser.ParsedPage]) {
+    /// Stores parsed paragraphs, mapping structured-document-text page indices to the delegate's page index type and
+    /// building the per-page index and length lookups. Paragraphs whose page is out of bounds are dropped.
+    private func store(_ parsed: SpeechDocumentParser.ParsedDocument) {
         guard let delegate else { return }
-        for (sdtPage, page) in parsed {
-            guard let index = delegate.pageIndex(forStructuredDocumentTextPage: sdtPage) else { continue }
-            cachedPages[index] = page.text
-            paragraphRanges[index] = page.paragraphRanges
+        var paragraphs: [SpeechParagraph] = []
+        var indicesByPage: [Delegate.Index: [Int]] = [:]
+        var lengths: [Delegate.Index: Int] = [:]
+        for paragraph in parsed.paragraphs {
+            guard let page = delegate.pageIndex(forStructuredDocumentTextPage: paragraph.page) else { continue }
+            let index = paragraphs.count
+            paragraphs.append(SpeechParagraph(text: paragraph.text, page: page, pageOffset: paragraph.pageOffset, rects: paragraph.rects))
+            indicesByPage[page, default: []].append(index)
+            lengths[page] = max(lengths[page] ?? 0, paragraph.pageOffset + paragraph.text.count)
         }
+        self.paragraphs = paragraphs
+        paragraphIndicesByPage = indicesByPage
+        pageTextLength = lengths
+        documentLanguage = parsed.language
     }
 
-    private func startPlayback(mapStartIndexToPage: ((String) -> Int)?) {
+    private func startPlayback(target: StartTarget) {
         guard let delegate else {
             state.accept(.stopped)
             return
         }
+
+        // Resume targets a stored paragraph anchor directly, with no page-text round-trip.
+        if case .resume(let resumePosition) = target, resumePosition.paragraphIndex < paragraphs.count {
+            let paragraph = paragraphs[resumePosition.paragraphIndex]
+            let offset = min(max(0, resumePosition.offset), paragraph.text.count)
+            startSpeaking(paragraphIndex: resumePosition.paragraphIndex, offset: offset, reportPageChange: false)
+            return
+        }
+
         let currentIndex = delegate.getCurrentPageIndex()
-        guard let pageIndex = firstReadablePageIndex(atOrAfter: currentIndex), let page = cachedPages[pageIndex] else {
+        guard let page = firstReadablePage(atOrAfter: currentIndex) else {
             DDLogWarn("SpeechManager: no readable content to play")
             state.accept(.stopped)
             return
         }
-        // Only honor the requested start offset when the readable page is the page the user is on.
-        let startIndex = (pageIndex == currentIndex) ? (mapStartIndexToPage?(page) ?? 0) : 0
-        startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false)
+        // A PSPDFKit text selection maps to a page-text offset, which we then resolve to a paragraph. Only honored when
+        // the readable page is the page the user is on.
+        let startOffset: Int
+        if case .pageTextOffset(let map) = target, page == currentIndex {
+            startOffset = map(pageText(forPage: page))
+        } else {
+            startOffset = 0
+        }
+        guard let (paragraphIndex, offset) = resolveParagraph(atPageTextOffset: startOffset, page: page) else {
+            state.accept(.stopped)
+            return
+        }
+        startSpeaking(paragraphIndex: paragraphIndex, offset: offset, reportPageChange: false)
     }
 
     /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice stays
@@ -450,12 +534,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         DDLogInfo("SpeechManager: using session language \(language) (from document metadata: \(documentLanguage != nil))")
     }
 
-    // Start speech
-    // - parameter startIndex: Start speaking at given index.
-    func start(startIndex: Int) {
-        start(mapStartIndexToPage: { _ in startIndex })
-    }
-
     func pause() {
         processor.pause()
     }
@@ -464,7 +542,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         if processor.canResume {
             processor.resume()
         } else {
-            start()
+            start(.currentPage)
         }
     }
 
@@ -517,10 +595,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     /// Starts a highlight session. Returns the initial text and page index, and shows a temporary highlight in the document.
     func startHighlightSession() -> (text: String, pageIndex: Delegate.Index)? {
-        guard state.value.isSpeaking || state.value.isPaused,
-              let speechData,
-              let pageText = cachedPages[speechData.index] else { return nil }
-
+        guard state.value.isSpeaking || state.value.isPaused, let position, position.paragraphIndex < paragraphs.count else { return nil }
+        let paragraph = paragraphs[position.paragraphIndex]
         let voiceInfo: HighlightVoiceInfo
         switch processor.speechVoice {
         case .remote(let remoteVoice):
@@ -536,9 +612,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         guard let result = highlightSessionManager.startSession(
             voiceInfo: voiceInfo,
-            position: speechData.range.location,
-            pageText: pageText,
-            pageIndex: speechData.index
+            position: paragraph.pageOffset + position.range.location,
+            segments: segments(forPage: paragraph.page),
+            pageIndex: paragraph.page
         ) else { return nil }
 
         notifyAnnotationPreviewChanged(result)
@@ -680,20 +756,20 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
-    /// Returns the first readable (cached) page index at or after `index`, or nil if there is none.
-    private func firstReadablePageIndex(atOrAfter index: Delegate.Index) -> Delegate.Index? {
-        if cachedPages[index] != nil {
+    /// Returns the first readable page (one that has paragraphs) at or after `index`, or nil if there is none.
+    private func firstReadablePage(atOrAfter index: Delegate.Index) -> Delegate.Index? {
+        if paragraphIndicesByPage[index]?.isEmpty == false {
             return index
         }
-        return nextReadablePageIndex(from: index)
+        return nextReadablePage(after: index)
     }
 
-    /// Returns the next readable (cached) page index after `index`, skipping pages without readable content, or nil.
-    private func nextReadablePageIndex(from index: Delegate.Index) -> Delegate.Index? {
+    /// Returns the next readable page after `index`, skipping pages without readable content, or nil.
+    private func nextReadablePage(after index: Delegate.Index) -> Delegate.Index? {
         guard let delegate else { return nil }
         var current = index
         while let next = delegate.getNextPageIndex(from: current) {
-            if cachedPages[next] != nil {
+            if paragraphIndicesByPage[next]?.isEmpty == false {
                 return next
             }
             current = next
@@ -701,54 +777,17 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return nil
     }
 
-    /// Returns the previous readable (cached) page index before `index`, skipping pages without readable content, or nil.
-    private func previousReadablePageIndex(from index: Delegate.Index) -> Delegate.Index? {
+    /// Returns the previous readable page before `index`, skipping pages without readable content, or nil.
+    private func previousReadablePage(before index: Delegate.Index) -> Delegate.Index? {
         guard let delegate else { return nil }
         var current = index
         while let previous = delegate.getPreviousPageIndex(from: current) {
-            if cachedPages[previous] != nil {
+            if paragraphIndicesByPage[previous]?.isEmpty == false {
                 return previous
             }
             current = previous
         }
         return nil
-    }
-
-    /// Returns the paragraph range (from the structured document text) that contains, or most closely precedes, `index`.
-    private func paragraphRange(containing index: Int, pageIndex: Delegate.Index) -> NSRange? {
-        let ranges = paragraphRanges[pageIndex] ?? []
-        var best: NSRange?
-        for range in ranges {
-            if index >= range.location, index < range.location + range.length {
-                return range
-            }
-            if range.location <= index {
-                best = range
-            }
-        }
-        return best ?? ranges.first
-    }
-
-    /// Returns the start index of the next paragraph after the one containing `position`, or nil if there is none on this page.
-    private func nextParagraphStartIndex(after position: Int, pageIndex: Delegate.Index) -> Int? {
-        let ranges = paragraphRanges[pageIndex] ?? []
-        guard let current = paragraphRange(containing: position, pageIndex: pageIndex) else {
-            return ranges.first?.location
-        }
-        return ranges.first(where: { $0.location > current.location })?.location
-    }
-
-    /// Returns the start index for a backward paragraph skip from `position`: the start of the current paragraph when
-    /// `position` is past it, otherwise the start of the previous paragraph. Returns nil at the first paragraph's start.
-    private func previousParagraphStartIndex(before position: Int, pageIndex: Delegate.Index) -> Int? {
-        let ranges = paragraphRanges[pageIndex] ?? []
-        guard let current = paragraphRange(containing: position, pageIndex: pageIndex) else {
-            return ranges.last(where: { $0.location < position })?.location
-        }
-        if position > current.location {
-            return current.location
-        }
-        return ranges.last(where: { $0.location < current.location })?.location
     }
 
     /// Navigates forward with tap coalescing: a single call skips by sentence, two calls in quick succession skip by paragraph.
@@ -795,180 +834,161 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     func forward(by unit: NLTokenUnit) {
-        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
-
-        // Both units come from the structured document text: paragraph boundaries directly, sentences detected within
-        // the paragraph that contains them (so a sentence never spans a paragraph boundary).
-        let nextIndex: Int?
+        guard let position, position.paragraphIndex < paragraphs.count else { return }
         if unit == .paragraph {
-            nextIndex = nextParagraphStartIndex(after: speechData.range.location, pageIndex: speechData.index)
-        } else {
-            let currentEndIndex = speechData.range.location + speechData.range.length
-            nextIndex = SpeechDocumentParser.nextSentenceStart(after: currentEndIndex, in: currentPage, paragraphRanges: paragraphRanges[speechData.index] ?? [])
+            move(toParagraph: position.paragraphIndex + 1, offset: 0)
+            return
         }
-
-        if let index = nextIndex {
-            DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            moveTo(index: index, on: currentPage, pageIndex: speechData.index)
-            if !state.value.isPaused {
-                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false)
-            }
-            delegate?.focusPage(speechData.index)
-        } else if let nextPageIndex = nextReadablePageIndex(from: speechData.index), let page = cachedPages[nextPageIndex] {
-            moveTo(index: 0, on: page, pageIndex: nextPageIndex)
-            if !state.value.isPaused {
-                startSpeaking(page: page, pageIndex: nextPageIndex, reportPageChange: false)
-            }
-            delegate?.focusPage(nextPageIndex)
+        // Sentences are detected within the current paragraph's text, so they never span a paragraph boundary.
+        let paragraph = paragraphs[position.paragraphIndex]
+        let currentEnd = position.range.location + position.range.length
+        if let next = TextTokenizer.nextSentenceStart(after: currentEnd, in: paragraph.text), next < paragraph.text.count {
+            move(toParagraph: position.paragraphIndex, offset: next)
         } else {
-            stop()
+            move(toParagraph: position.paragraphIndex + 1, offset: 0)
         }
     }
 
     func backward(by unit: NLTokenUnit) {
-        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
-
-        // Both units come from the structured document text: paragraph boundaries directly, sentences detected within
-        // the paragraph that contains them (so a sentence never spans a paragraph boundary).
-        let previousIndex: Int?
+        guard let position, position.paragraphIndex < paragraphs.count else { return }
+        let paragraph = paragraphs[position.paragraphIndex]
         if unit == .paragraph {
-            previousIndex = previousParagraphStartIndex(before: speechData.range.location, pageIndex: speechData.index)
-        } else {
-            previousIndex = SpeechDocumentParser.previousSentenceStart(before: speechData.range.location, in: currentPage, paragraphRanges: paragraphRanges[speechData.index] ?? [])
+            // A back press within a paragraph returns to its start; at the start it moves to the previous paragraph.
+            move(toParagraph: position.range.location > 0 ? position.paragraphIndex : position.paragraphIndex - 1, offset: 0)
+            return
         }
-
-        if let index = previousIndex {
-            DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            moveTo(index: index, on: currentPage, pageIndex: speechData.index)
-            if !state.value.isPaused {
-                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false)
-            }
-            delegate?.focusPage(speechData.index)
-        } else if unit != .paragraph, speechData.range.location != 0 {
-            moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
-            if !state.value.isPaused {
-                startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false)
-            }
-            delegate?.focusPage(speechData.index)
-        } else if let previousPageIndex = previousReadablePageIndex(from: speechData.index), let previousPage = cachedPages[previousPageIndex] {
-            let speechIndex: Int?
-            if unit == .paragraph {
-                speechIndex = paragraphRanges[previousPageIndex]?.last?.location ?? 0
-            } else {
-                // Resume at the last sentence of the previous page's last paragraph.
-                speechIndex = SpeechDocumentParser.lastSentenceStart(in: previousPage, paragraphRanges: paragraphRanges[previousPageIndex] ?? [])
-            }
-            if let speechIndex {
-                moveTo(index: speechIndex, on: previousPage, pageIndex: previousPageIndex)
-                if !state.value.isPaused {
-                    startSpeaking(at: speechIndex, page: previousPage, pageIndex: previousPageIndex, reportPageChange: false)
-                }
-                delegate?.focusPage(previousPageIndex)
-            } else {
-                stop()
-            }
+        if let previous = TextTokenizer.previousSentenceStart(before: position.range.location, in: paragraph.text) {
+            move(toParagraph: position.paragraphIndex, offset: previous)
+        } else if position.paragraphIndex > 0 {
+            // At the first sentence of the paragraph: go to the previous paragraph's last sentence.
+            let previousParagraph = paragraphs[position.paragraphIndex - 1]
+            let lastSentence = TextTokenizer.previousSentenceStart(before: previousParagraph.text.count, in: previousParagraph.text) ?? 0
+            move(toParagraph: position.paragraphIndex - 1, offset: lastSentence)
+        } else if position.range.location != 0 {
+            move(toParagraph: position.paragraphIndex, offset: 0)
         } else {
             stop()
         }
     }
 
-    private func startSpeaking(at index: Int = 0, page: String, pageIndex: Delegate.Index, reportPageChange: Bool) {
-        let previousPageIndex = speechData?.index
-        if previousPageIndex != pageIndex {
-            speechData = SpeechData(index: pageIndex, range: NSRange(), highlightRange: NSRange(), highlightGranularity: highlightGranularity)
+    /// Moves to a paragraph position: updates the highlight, restarts playback (unless paused), and focuses the page.
+    /// Stops when the target index is out of bounds (start/end of document).
+    private func move(toParagraph index: Int, offset: Int) {
+        guard index >= 0, index < paragraphs.count else {
+            stop()
+            return
         }
-        if reportPageChange, let previousPageIndex {
-            delegate?.moved(to: pageIndex, from: previousPageIndex)
+        DDLogInfo("SpeechManager: move to paragraph \(index), offset \(offset)")
+        moveTo(paragraphIndex: index, offset: offset)
+        if !state.value.isPaused {
+            startSpeaking(paragraphIndex: index, offset: offset, reportPageChange: false)
         }
-        processor.speak(text: page, startIndex: index, paragraphRanges: paragraphRanges[pageIndex] ?? [])
+        delegate?.focusPage(paragraphs[index].page)
     }
 
-    /// Moves the current speech position without starting playback.
-    /// Used when navigating while paused to update the highlight position.
-    private func moveTo(index: Int, on page: String, pageIndex: Delegate.Index) {
-        guard let sentenceData = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
+    private func startSpeaking(paragraphIndex index: Int, offset: Int = 0, reportPageChange: Bool) {
+        guard index < paragraphs.count else {
+            stop()
+            return
+        }
+        let paragraph = paragraphs[index]
+        let previousPage = currentPage(ofParagraph: position?.paragraphIndex)
+        if position?.paragraphIndex != index {
+            position = Position(paragraphIndex: index, range: NSRange(location: offset, length: 0), highlightRange: NSRange(), highlightGranularity: highlightGranularity)
+        }
+        if reportPageChange, let previousPage, previousPage != paragraph.page {
+            delegate?.moved(to: paragraph.page, from: previousPage)
+        }
+        currentSpeakingPage = paragraph.page
+        processor.speak(segments: segments(forPage: paragraph.page), startPageTextOffset: paragraph.pageOffset + offset)
+    }
 
-        let previousPageIndex = speechData?.index
-        let pageDidChange = previousPageIndex != pageIndex
-        let previousHighlight = speechData.map({ (range: $0.highlightRange, granularity: $0.highlightGranularity) })
+    /// Updates the current position and highlight for a paragraph offset, without starting playback.
+    /// Used when navigating while paused, and to seed the highlight before playback resumes.
+    private func moveTo(paragraphIndex index: Int, offset: Int) {
+        guard index < paragraphs.count else { return }
+        let paragraph = paragraphs[index]
+        guard let sentence = TextTokenizer.findSentence(startingAt: offset, in: paragraph.text) else { return }
+
+        let previousPage = currentPage(ofParagraph: position?.paragraphIndex)
+        let pageDidChange = previousPage != paragraph.page
         let granularity = highlightGranularity
 
-        // Check if the new position is still within the current highlighted unit (same granularity)
+        // Keep the existing highlight range if we're still inside it (same paragraph and granularity).
         let isInCurrentHighlight: Bool
-        if let previousHighlight, previousHighlight.range.length > 0, previousHighlight.granularity == granularity {
-            isInCurrentHighlight = !pageDidChange && NSLocationInRange(index, previousHighlight.range)
+        if let position, position.paragraphIndex == index, position.highlightRange.length > 0, position.highlightGranularity == granularity {
+            isInCurrentHighlight = NSLocationInRange(offset, position.highlightRange)
         } else {
             isInCurrentHighlight = false
         }
 
         let newHighlightRange: NSRange
         let highlightText: String?
-        if isInCurrentHighlight, let previousHighlight {
-            // Still in the same unit, keep the existing range
-            newHighlightRange = previousHighlight.range
+        if isInCurrentHighlight, let position {
+            newHighlightRange = position.highlightRange
             highlightText = nil
         } else {
-            // Find the full unit (sentence/paragraph) containing this position
-            let containingUnit = findHighlightUnit(at: index, in: page, granularity: granularity)
-            newHighlightRange = containingUnit?.range ?? sentenceData.range
-            highlightText = containingUnit?.text ?? sentenceData.text
+            let unit = findHighlightUnit(at: offset, in: paragraph.text, granularity: granularity)
+            newHighlightRange = unit?.range ?? sentence.range
+            highlightText = unit?.text ?? sentence.text
         }
 
-        speechData = SpeechData(index: pageIndex, range: sentenceData.range, highlightRange: newHighlightRange, highlightGranularity: granularity)
+        position = Position(paragraphIndex: index, range: sentence.range, highlightRange: newHighlightRange, highlightGranularity: granularity)
         processor.invalidateCurrentPlayback()
 
-        // Only notify delegate if the highlight changed
         if let highlightText {
             delegate?.readAloudHighlightChanged(
                 text: highlightText,
-                pageIndex: pageIndex,
-                sourceLocation: newHighlightRange.location,
-                sourceTextLength: (page as NSString).length
+                pageIndex: paragraph.page,
+                sourceLocation: paragraph.pageOffset + newHighlightRange.location,
+                sourceTextLength: pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length
             )
         }
 
-        if pageDidChange, let previousPageIndex {
-            delegate?.moved(to: pageIndex, from: previousPageIndex)
+        if pageDidChange, let previousPage {
+            delegate?.moved(to: paragraph.page, from: previousPage)
         }
+    }
+
+    private func currentPage(ofParagraph index: Int?) -> Delegate.Index? {
+        guard let index, index < paragraphs.count else { return nil }
+        return paragraphs[index].page
     }
 
     // MARK: - VoiceProcessorDelegate
 
     func goToNextPageIfAvailable() -> Bool {
-        guard let speechData, let nextIndex = nextReadablePageIndex(from: speechData.index), let page = cachedPages[nextIndex] else {
-            return false
-        }
-        startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: true)
+        guard let position else { return false }
+        let nextIndex = position.paragraphIndex + 1
+        guard nextIndex < paragraphs.count else { return false }
+        startSpeaking(paragraphIndex: nextIndex, offset: 0, reportPageChange: true)
         return true
     }
 
     func speechRangeWillChange(to range: NSRange) {
-        guard let speechData else { return }
-        guard let pageText = cachedPages[speechData.index] else { return }
-
+        guard let page = currentSpeakingPage, let (index, _) = resolveParagraph(atPageTextOffset: range.location, page: page) else { return }
+        let paragraph = paragraphs[index]
+        let intraLocation = max(0, range.location - paragraph.pageOffset)
+        let intraLength = min(range.length, max(0, paragraph.text.count - intraLocation))
+        let intraRange = NSRange(location: intraLocation, length: intraLength)
         let granularity = highlightGranularity
 
-        // Check if the new range is still within the current highlighted unit and granularity hasn't changed
-        if speechData.highlightGranularity == granularity, NSLocationInRange(range.location, speechData.highlightRange) {
-            // Still in the same unit, just update the speech range
-            self.speechData = speechData.copy(range: range, highlightRange: speechData.highlightRange, highlightGranularity: granularity)
+        // Still within the current highlighted unit (same paragraph and granularity): just update the speech range.
+        if let position, position.paragraphIndex == index, position.highlightGranularity == granularity, NSLocationInRange(intraLocation, position.highlightRange) {
+            self.position = Position(paragraphIndex: index, range: intraRange, highlightRange: position.highlightRange, highlightGranularity: granularity)
             return
         }
 
-        // New range is outside the current unit (or granularity changed), find the new unit
-        let unitResult = findHighlightUnit(at: range.location, in: pageText, granularity: granularity)
-        let newHighlightRange = unitResult?.range ?? range
+        let unit = findHighlightUnit(at: intraLocation, in: paragraph.text, granularity: granularity)
+        let newHighlightRange = unit?.range ?? intraRange
+        position = Position(paragraphIndex: index, range: intraRange, highlightRange: newHighlightRange, highlightGranularity: granularity)
 
-        // Update speech data with the new range and highlight range
-        self.speechData = speechData.copy(range: range, highlightRange: newHighlightRange, highlightGranularity: granularity)
-
-        // Notify delegate of the highlight change
-        if let highlightText = unitResult?.text {
+        if let highlightText = unit?.text {
             delegate?.readAloudHighlightChanged(
                 text: highlightText,
-                pageIndex: speechData.index,
-                sourceLocation: newHighlightRange.location,
-                sourceTextLength: (pageText as NSString).length
+                pageIndex: paragraph.page,
+                sourceLocation: paragraph.pageOffset + newHighlightRange.location,
+                sourceTextLength: pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length
             )
         }
     }
@@ -994,10 +1014,10 @@ private protocol VoiceProcessor {
     /// Time elapsed since current audio segment started playing.
     var segmentAudioElapsedTime: TimeInterval { get }
 
-    /// Starts speaking `text` from `startIndex`. `paragraphRanges` are the structured-document-text paragraph segment
-    /// ranges (character offsets) within `text`; processors that segment by paragraph use them instead of re-detecting
-    /// boundaries. Processors that speak the whole text at once may ignore them.
-    func speak(text: String, startIndex: Int, paragraphRanges: [NSRange])
+    /// Starts speaking the page's `segments` (paragraphs, each with its page-text offset) from `startPageTextOffset`
+    /// (a character offset within the page's readable text). The local voice joins the segments into one utterance;
+    /// the remote voice reads them segment by segment.
+    func speak(segments: [SpeechDocumentParser.Segment], startPageTextOffset: Int)
     func pause()
     func resume()
     func stop()
@@ -1075,8 +1095,12 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         synthesizer.delegate = self
     }
 
-    func speak(text: String, startIndex: Int, paragraphRanges: [NSRange]) {
-        // Local voice speaks the whole page as a single utterance, so paragraph ranges are not used here.
+    func speak(segments: [SpeechDocumentParser.Segment], startPageTextOffset: Int) {
+        // Local voice reads the whole page as one utterance, so it joins the paragraphs into the page's readable text.
+        speak(pageText: segments.map(\.text).joined(separator: SpeechDocumentParser.segmentSeparator), startIndex: startPageTextOffset)
+    }
+
+    private func speak(pageText text: String, startIndex: Int) {
         if synthesizer.isSpeaking {
             ignoreFinishCallCount += 1
             synthesizer.stopSpeaking(at: .immediate)
@@ -1148,7 +1172,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         if synthesizer.isSpeaking {
             synthesizer.pauseSpeaking(at: .immediate)
         }
-        speak(text: text, startIndex: speechRange.location, paragraphRanges: [])
+        speak(pageText: text, startIndex: speechRange.location)
     }
 
     private func voice(for text: String) -> AVSpeechSynthesisVoice {
@@ -1239,10 +1263,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private unowned let remoteVoicesController: RemoteVoicesController
     private var tier: RemoteVoice.Tier
 
-    private var text: String?
-    /// Structured-document-text paragraph segment ranges (character offsets) for the page currently being read.
-    /// Used to segment playback by paragraph (and to bound sentences to their paragraph) instead of re-detecting boundaries.
-    private var paragraphRanges: [NSRange] = []
+    /// The current page's paragraph segments (text + page-text offset). The remote voice reads these segment by segment,
+    /// splitting a segment into sentences with `TextTokenizer` when the voice's granularity is `.sentence`.
+    private var segments: [SpeechDocumentParser.Segment] = []
     private(set) var preferredLanguage: String?
     var detectedLanguage: String?
     private var voice: RemoteVoice?
@@ -1316,13 +1339,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         return VoiceUtility.findRemoteVoice(for: language, tier: .standard, response: allAvailableVoices)
     }
 
-    func speak(text: String, startIndex: Int, paragraphRanges: [NSRange]) {
+    func speak(segments: [SpeechDocumentParser.Segment], startPageTextOffset: Int) {
         // Immediate: stop current playback and update state
-        if self.text != text || startIndex != 0 {
+        if self.segments.map(\.text) != segments.map(\.text) || startPageTextOffset != 0 {
             stopPreloadingAndClearCache()
         }
-        self.text = text
-        self.paragraphRanges = paragraphRanges
+        self.segments = segments
         if player?.isPlaying == true {
             player?.stop()
         }
@@ -1338,33 +1360,33 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
         // If the voice is not known yet, start loading immediately so that there is no unnecessary delay
         if voice == nil {
-            loadVoiceAndStartSpeaking(text: text, startIndex: startIndex)
+            loadVoiceAndStartSpeaking(startIndex: startPageTextOffset)
             return
         }
 
         // Debounce segment download so rapid forward/backward taps don't trigger multiple network requests
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            self.loadVoiceAndStartSpeaking(text: text, startIndex: startIndex)
+            self.loadVoiceAndStartSpeaking(startIndex: startPageTextOffset)
         }
         debouncedSpeakWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
     }
 
-    private func loadVoiceAndStartSpeaking(text: String, startIndex: Int) {
+    private func loadVoiceAndStartSpeaking(startIndex: Int) {
         // Language is detected once at session start, so the voice is resolved only the first time and then reused.
         let getVoice: Single<RemoteVoice>
         if let voice {
             getVoice = Single.just(voice)
         } else {
-            getVoice = loadVoice(forText: text)
+            getVoice = loadVoice()
         }
 
         getVoice
             .observe(on: MainScheduler.instance)
             .subscribe(
                 onSuccess: { [weak self] voice in
-                    self?.startSpeaking(text: text, startIndex: startIndex, voice: voice)
+                    self?.startSpeaking(startIndex: startIndex, voice: voice)
                 },
                 onFailure: { [weak self] error in
                     self?.handleSpeechFailure(error: error)
@@ -1395,13 +1417,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
 
         func reloadCurrentSegment() {
-            guard let text, let voice, let speechRange = delegate.speechRange else { return }
+            guard !segments.isEmpty, let voice, let speechRange = delegate.speechRange else { return }
             // Clear cache since voice changed
             segmentCache.removeAll()
             loadingSegments.removeAll()
             player.stop()
             self.player = nil
-            startSpeaking(text: text, startIndex: speechRange.location, voice: voice)
+            startSpeaking(startIndex: speechRange.location, voice: voice)
         }
     }
 
@@ -1441,9 +1463,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     // MARK: - Voices
 
-    private func loadVoice(forText text: String) -> Single<RemoteVoice> {
+    private func loadVoice() -> Single<RemoteVoice> {
         if let allAvailableVoices {
-            return loadVoice(forText: text, language: language, tier: tier, allVoices: allAvailableVoices)
+            return resolveVoice(language: language, tier: tier, allVoices: allAvailableVoices)
         }
         return remoteVoicesController.loadVoices()
             .do(onSuccess: { [weak self] result in
@@ -1453,13 +1475,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 guard let self else {
                     return Single.error(Error.cancelled)
                 }
-                return loadVoice(forText: text, language: language, tier: tier, allVoices: result.response)
+                return resolveVoice(language: language, tier: tier, allVoices: result.response)
             })
             .do(onSuccess: { [weak self] voice in
                 self?.voice = voice
             })
 
-        func loadVoice(forText text: String, language: String, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
+        func resolveVoice(language: String, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
             return Single.create { subscriber in
                 if let voice = VoiceUtility.findRemoteVoice(for: language, tier: tier, response: allVoices) ?? allVoices.firstVoice(for: tier) {
                     subscriber(.success(voice))
@@ -1473,9 +1495,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     // MARK: - Speech
 
-    private func startSpeaking(text: String, startIndex: Int, voice: RemoteVoice) {
+    private func startSpeaking(startIndex: Int, voice: RemoteVoice) {
         // Find the range for the segment at startIndex
-        guard let range = findNextRange(startingAt: startIndex, voice: voice, in: text) else {
+        guard let range = findNextRange(startingAt: startIndex, voice: voice) else {
             handleSpeechFailure(error: Error.endOfPage)
             return
         }
@@ -1486,7 +1508,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         // Check if we already have the segment cached
         if let cachedData = segmentCache[range] {
             handleSpeechSuccess(data: cachedData, range: range)
-            ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+            ensureSegmentsPreloaded(after: range, voice: voice)
             return
         }
 
@@ -1501,14 +1523,14 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         // Load segment and start playing as soon as it's ready, while preloading others
         delegate.state.accept(.loading)
         startCreditPollTimer()
-        loadAndPlaySegment(range: range, text: text, voice: voice)
+        loadAndPlaySegment(range: range, voice: voice)
 
-        func loadAndPlaySegment(range: NSRange, text: String, voice: RemoteVoice) {
+        func loadAndPlaySegment(range: NSRange, voice: RemoteVoice) {
             // Mark as loading
             loadingSegments.insert(range)
 
             // Start loading the segment we need to play
-            loadSegment(for: range, in: text, voice: voice)
+            loadSegment(for: range, voice: voice)
                 .observe(on: MainScheduler.instance)
                 .subscribe(
                     onSuccess: { [weak self] data in
@@ -1516,7 +1538,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                         loadingSegments.remove(range)
                         // Play immediately
                         handleSpeechSuccess(data: data, range: range)
-                        ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+                        ensureSegmentsPreloaded(after: range, voice: voice)
                     },
                     onFailure: { [weak self] error in
                         self?.loadingSegments.remove(range)
@@ -1526,19 +1548,29 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 .disposed(by: disposeBag)
 
             // Start preloading next segments concurrently
-            ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+            ensureSegmentsPreloaded(after: range, voice: voice)
         }
     }
 
-    private func loadSegment(for range: NSRange, in text: String, voice: RemoteVoice) -> Single<Data> {
-        guard let textRange = Range(range, in: text) else {
+    /// Returns the text to synthesize for a page-text range, extracted from the segment that contains it (ranges from
+    /// `findNextRange` always lie within a single segment).
+    private func loadSegment(for range: NSRange, voice: RemoteVoice) -> Single<Data> {
+        guard let segmentText = text(forPageTextRange: range) else {
             return .error(Error.endOfPage)
         }
-        let segmentText = String(text[textRange])
         return remoteVoicesController.downloadSound(forText: segmentText, voiceId: voice.id)
     }
 
-    private func ensureSegmentsPreloaded(after currentRange: NSRange, text: String, voice: RemoteVoice) {
+    private func text(forPageTextRange range: NSRange) -> String? {
+        for segment in segments where range.location >= segment.pageOffset && range.location < segment.pageOffset + segment.text.count {
+            let intra = NSRange(location: range.location - segment.pageOffset, length: range.length)
+            guard let textRange = Range(intra, in: segment.text) else { return nil }
+            return String(segment.text[textRange])
+        }
+        return nil
+    }
+
+    private func ensureSegmentsPreloaded(after currentRange: NSRange, voice: RemoteVoice) {
         // Calculate how many more segments we need to preload
         let currentlyBuffered = segmentCache.count + loadingSegments.count
         let segmentsToLoad = Self.preloadAheadCount - currentlyBuffered
@@ -1548,7 +1580,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         var loaded = 0
 
         while loaded < segmentsToLoad {
-            guard let range = findNextRange(startingAt: nextIndex, voice: voice, in: text) else { break }
+            guard let range = findNextRange(startingAt: nextIndex, voice: voice) else { break }
 
             // Skip if already cached or being loaded
             if segmentCache[range] != nil || loadingSegments.contains(range) {
@@ -1559,7 +1591,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             // Mark as loading and start download
             loadingSegments.insert(range)
 
-            loadSegment(for: range, in: text, voice: voice)
+            loadSegment(for: range, voice: voice)
                 .observe(on: MainScheduler.instance)
                 .subscribe(
                     onSuccess: { [weak self] data in
@@ -1572,7 +1604,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                         } else {
                             segmentCache[range] = data
                         }
-                        ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+                        ensureSegmentsPreloaded(after: range, voice: voice)
                     },
                     onFailure: { [weak self] error in
                         guard let self else { return }
@@ -1697,18 +1729,18 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     // MARK: - Helpers
 
-    private func findNextRange(startingAt index: Int, voice: RemoteVoice, in text: String) -> NSRange? {
-        // Paragraph boundaries come from the structured document text; sentences are detected within a paragraph.
+    private func findNextRange(startingAt index: Int, voice: RemoteVoice) -> NSRange? {
+        // Segments are the structured-document-text paragraphs; sentences are detected within a single segment.
         if voice.granularity == .sentence {
-            return SpeechDocumentParser.sentenceSegment(startingAt: index, in: text, paragraphRanges: paragraphRanges)
+            return SpeechDocumentParser.sentenceRange(startingAt: index, in: segments)
         }
-        return SpeechDocumentParser.paragraphSegment(startingAt: index, in: paragraphRanges)
+        return SpeechDocumentParser.paragraphRange(startingAt: index, in: segments)
     }
 
     private func finishSpeaking() {
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
-        text = nil
+        segments = []
         player?.stop()
         player = nil
         segmentCache.removeAll()
@@ -1723,7 +1755,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
 extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        guard flag, let text, let voice, let speechRange = delegate.speechRange else {
+        guard flag, !segments.isEmpty, let voice, let speechRange = delegate.speechRange else {
             finishSpeaking()
             return
         }
@@ -1734,11 +1766,11 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
 
         let delay = voice.sentenceDelay > 0 ? TimeInterval(voice.sentenceDelay) / (1000.0 * TimeInterval(speechRateModifier)) : 0
         if delay == 0 {
-            startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
+            startSpeaking(startIndex: nextStartIndex, voice: voice)
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                 guard let self, self.delegate.state.value.isSpeaking || self.delegate.state.value == .loading else { return }
-                self.startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
+                self.startSpeaking(startIndex: nextStartIndex, voice: voice)
             }
         }
     }
@@ -1752,15 +1784,15 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
 // MARK: - SpeechHighlightSessionManagerDelegate
 
 extension SpeechManager: SpeechHighlightSessionManagerDelegate {
-    func highlightSessionNextPageData(from pageIndex: Delegate.Index) -> (pageText: String, pageIndex: Delegate.Index)? {
-        guard let nextIndex = nextReadablePageIndex(from: pageIndex),
-              let text = cachedPages[nextIndex] else { return nil }
-        return (text, nextIndex)
+    func highlightSessionSegments(forPage pageIndex: Delegate.Index) -> [SpeechDocumentParser.Segment] {
+        return segments(forPage: pageIndex)
     }
 
-    func highlightSessionPreviousPageData(from pageIndex: Delegate.Index) -> (pageText: String, pageIndex: Delegate.Index)? {
-        guard let prevIndex = previousReadablePageIndex(from: pageIndex),
-              let text = cachedPages[prevIndex] else { return nil }
-        return (text, prevIndex)
+    func highlightSessionNextReadablePage(after pageIndex: Delegate.Index) -> Delegate.Index? {
+        return nextReadablePage(after: pageIndex)
+    }
+
+    func highlightSessionPreviousReadablePage(before pageIndex: Delegate.Index) -> Delegate.Index? {
+        return previousReadablePage(before: pageIndex)
     }
 }
