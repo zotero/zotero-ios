@@ -6,62 +6,69 @@
 //  Copyright © 2025 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import CoreGraphics
 import Foundation
 import NaturalLanguage
 
-/// Turns a materialized `SDTPack` document into per-page read-aloud text.
+/// Turns a materialized `SDTPack` document into the read-aloud paragraph model.
 ///
 /// Only readable blocks (`paragraph` and `list`) are kept; headings, images, math, preformatted blocks and anything
 /// flagged `excluded` (page numbers, running headers/footers, …) are dropped. Each readable block is split by the page
-/// its runs belong to (a paragraph can span a page boundary), so that the resulting per-page text matches the text
-/// PSPDFKit renders on that page and can be highlighted there. Within a page, segments are separated by a blank line
-/// so that downstream sentence/paragraph tokenization treats them as distinct paragraphs.
+/// its runs belong to (a paragraph can span a page boundary), so every resulting `Paragraph` lives on exactly one page
+/// and its text matches what PSPDFKit renders there. `pageOffset` is the paragraph's character offset within its page's
+/// readable text (paragraphs on a page are joined by a blank line), which lets callers translate between a paragraph
+/// position and an in-page position without materializing the page text.
 enum SpeechDocumentParser {
-    /// Read-aloud text for a single document page.
-    struct ParsedPage {
-        /// Concatenated text of all readable segments on the page, separated by blank lines.
+    /// A single readable paragraph (or the per-page slice of a paragraph that spans pages).
+    struct Paragraph {
         let text: String
-        /// Character-offset ranges (within `text`) of the individual paragraph segments, in reading order.
-        /// Used for paragraph-granularity navigation so that paragraphs don't have to be re-detected heuristically.
-        let paragraphRanges: [NSRange]
+        /// 0-based structured-document-text page index the paragraph renders on.
+        let page: Int
+        /// Character offset of this paragraph within its page's readable text.
+        let pageOffset: Int
+        /// Bounding rects (PDF coordinate space) of the paragraph on its page. Metadata only; not used for highlighting yet.
+        let rects: [CGRect]
+    }
+
+    /// Page-local unit handed to voice processors and the segment-query helpers. `pageOffset` is the character offset of
+    /// the segment within its page's readable text, so page-text offsets and per-segment offsets are interchangeable.
+    struct Segment {
+        let text: String
+        let pageOffset: Int
+    }
+
+    struct ParsedDocument {
+        /// Readable paragraphs in document reading order.
+        let paragraphs: [Paragraph]
+        /// Document language (BCP-47) from metadata, if present.
+        let language: String?
     }
 
     private static let blockTypesToRead: Set<String> = ["paragraph", "list"]
-    private static let segmentSeparator = "\n\n"
+    /// Characters separating two paragraphs within a page's readable text.
+    static let segmentSeparator = "\n\n"
 
-    /// Parses the `materialize()` output of an `SDTPack` into per-(SDT)page read-aloud text keyed by page index.
-    static func parse(materialized: [String: Any]) -> [Int: ParsedPage] {
-        guard let content = materialized["content"] as? [[String: Any]] else { return [:] }
+    /// Parses the `materialize()` output of an `SDTPack` into the read-aloud paragraph model.
+    static func parse(materialized: [String: Any]) -> ParsedDocument {
+        let language = language(from: materialized)
+        guard let content = materialized["content"] as? [[String: Any]] else {
+            return ParsedDocument(paragraphs: [], language: language)
+        }
 
-        var buffers: [Int: String] = [:]
-        var ranges: [Int: [NSRange]] = [:]
+        var paragraphs: [Paragraph] = []
+        var pageLengths: [Int: Int] = [:]
 
         for block in content {
             guard let type = block["type"] as? String, blockTypesToRead.contains(type) else { continue }
             if let flowClass = block["flowClass"] as? String, flowClass == "excluded" { continue }
 
-            let fallbackPage = startPage(of: block) ?? buffers.keys.max() ?? 0
+            let fallbackPage = startPage(of: block) ?? pageLengths.keys.max() ?? 0
             var runs: [(text: String, page: Int)] = []
             collectRuns(in: block, fallbackPage: fallbackPage, into: &runs)
-            appendSegments(from: runs, into: &buffers, ranges: &ranges)
+            appendSegments(from: runs, block: block, into: &paragraphs, pageLengths: &pageLengths)
         }
 
-        var result: [Int: ParsedPage] = [:]
-        for (page, text) in buffers {
-            result[page] = ParsedPage(text: text, paragraphRanges: ranges[page] ?? [])
-        }
-        return result
-    }
-
-    /// Returns the document language (a BCP-47 tag such as `en-GB`) from the structured document text metadata, or nil
-    /// if it isn't present. PDFs store it under `Language`, EPUBs under `language`, in `metadata.source.properties`.
-    static func language(from materialized: [String: Any]) -> String? {
-        guard let metadata = materialized["metadata"] as? [String: Any],
-              let source = metadata["source"] as? [String: Any],
-              let properties = source["properties"] as? [String: Any] else { return nil }
-        let language = (properties["language"] ?? properties["Language"]) as? String
-        let trimmed = language?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return (trimmed?.isEmpty == false) ? trimmed : nil
+        return ParsedDocument(paragraphs: paragraphs, language: language)
     }
 
     /// Recursively gathers the leaf text runs of a block, assigning each run the page it is rendered on. Pure-spacing
@@ -81,9 +88,14 @@ enum SpeechDocumentParser {
         }
     }
 
-    /// Groups consecutive runs by page into segments and appends each segment to its page buffer, recording the
-    /// segment's character range. A page change inside a block starts a new segment (and thus a new paragraph unit).
-    private static func appendSegments(from runs: [(text: String, page: Int)], into buffers: inout [Int: String], ranges: inout [Int: [NSRange]]) {
+    /// Groups consecutive runs by page into segments and appends each as a `Paragraph`, tracking per-page text length so
+    /// `pageOffset` matches the position the segment would have in the page's joined readable text.
+    private static func appendSegments(
+        from runs: [(text: String, page: Int)],
+        block: [String: Any],
+        into paragraphs: inout [Paragraph],
+        pageLengths: inout [Int: Int]
+    ) {
         var currentPage: Int?
         var segment = ""
 
@@ -102,15 +114,22 @@ enum SpeechDocumentParser {
         func flush(page: Int, text: String) {
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return }
-            var buffer = buffers[page] ?? ""
-            if !buffer.isEmpty {
-                buffer += segmentSeparator
-            }
-            let location = buffer.count
-            buffer += trimmed
-            buffers[page] = buffer
-            ranges[page, default: []].append(NSRange(location: location, length: trimmed.count))
+            let existingLength = pageLengths[page] ?? 0
+            let offset = existingLength == 0 ? 0 : existingLength + segmentSeparator.count
+            pageLengths[page] = offset + trimmed.count
+            paragraphs.append(Paragraph(text: trimmed, page: page, pageOffset: offset, rects: rects(of: block, page: page)))
         }
+    }
+
+    /// Returns the document language (a BCP-47 tag such as `en-GB`) from the structured document text metadata, or nil
+    /// if it isn't present. PDFs store it under `Language`, EPUBs under `language`, in `metadata.source.properties`.
+    static func language(from materialized: [String: Any]) -> String? {
+        guard let metadata = materialized["metadata"] as? [String: Any],
+              let source = metadata["source"] as? [String: Any],
+              let properties = source["properties"] as? [String: Any] else { return nil }
+        let language = (properties["language"] ?? properties["Language"]) as? String
+        let trimmed = language?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (trimmed?.isEmpty == false) ? trimmed : nil
     }
 
     /// Returns the page index of a block from its `anchor.pageRects` (the first rect's first element).
@@ -134,120 +153,169 @@ enum SpeechDocumentParser {
         return intValue(firstEntry[1])
     }
 
+    /// Builds the paragraph's bounding rects for `page` from `anchor.pageRects` (entries are `[page, x0, y0, x1, y1]`, PDF space).
+    private static func rects(of block: [String: Any], page: Int) -> [CGRect] {
+        guard let anchor = block["anchor"] as? [String: Any],
+              let pageRects = anchor["pageRects"] as? [[Any]] else { return [] }
+        return pageRects.compactMap { rect in
+            guard rect.count >= 5, intValue(rect[0]) == page,
+                  let x0 = doubleValue(rect[1]), let y0 = doubleValue(rect[2]),
+                  let x1 = doubleValue(rect[3]), let y1 = doubleValue(rect[4]) else { return nil }
+            return CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0)
+        }
+    }
+
     private static func intValue(_ value: Any) -> Int? {
         if let value = value as? Int { return value }
         if let value = value as? NSNumber { return value.intValue }
+        return nil
+    }
+
+    private static func doubleValue(_ value: Any) -> Double? {
+        if let value = value as? Double { return value }
+        if let value = value as? NSNumber { return value.doubleValue }
+        if let value = value as? String { return Double(value) }
         return nil
     }
 }
 
 // MARK: - Segment queries
 
-/// Navigation over the paragraph segments produced by the parser. Sentences are detected with `TextTokenizer` but always
-/// bounded to a single paragraph segment, so a sentence never spans a paragraph boundary. Shared by `SpeechManager`
-/// (forward/backward navigation) and `RemoteVoiceProcessor` (playback segmentation) so both segment identically.
-///
-/// All indices are character offsets within the page text, matching the ranges the parser produces and `TextTokenizer`.
+/// Navigation over a page's paragraph `Segment`s. Sentences are detected with `TextTokenizer` on an individual segment's
+/// text, so a sentence can never span a paragraph boundary (each segment is its own string). All indices are page-text
+/// character offsets (a segment's own text starts at its `pageOffset`). Shared by `SpeechManager` (forward/backward
+/// navigation) and `RemoteVoiceProcessor` (playback segmentation) so both segment identically.
 extension SpeechDocumentParser {
-    /// Returns the range from `index` to the end of the paragraph segment that covers it (or the whole next segment
-    /// when `index` falls in the gap between segments). Returns nil when `index` is past the last segment.
-    static func paragraphSegment(startingAt index: Int, in paragraphRanges: [NSRange]) -> NSRange? {
-        for range in paragraphRanges {
-            let end = range.location + range.length
-            guard index < end else { continue }
-            let start = max(index, range.location)
-            return NSRange(location: start, length: end - start)
-        }
-        return nil
+    /// Returns the range from `index` to the end of the segment that covers it (or the whole next segment when `index`
+    /// falls in the gap between segments). Returns nil when `index` is past the last segment.
+    static func paragraphRange(startingAt index: Int, in segments: [Segment]) -> NSRange? {
+        guard let (_, segment) = segmentContaining(index, in: segments) else { return nil }
+        let end = segment.pageOffset + segment.text.count
+        let start = max(index, segment.pageOffset)
+        return NSRange(location: start, length: end - start)
     }
 
-    /// Returns the next sentence range starting at `index`, bounded to the paragraph segment that contains it. Returns
-    /// nil when `index` is past the last segment.
-    static func sentenceSegment(startingAt index: Int, in text: String, paragraphRanges: [NSRange]) -> NSRange? {
-        guard let paragraph = paragraphSegment(startingAt: index, in: paragraphRanges) else { return nil }
-        guard let sentence = TextTokenizer.findSentence(startingAt: paragraph.location, in: text) else { return nil }
-        let paragraphEnd = paragraph.location + paragraph.length
-        let sentenceEnd = min(sentence.range.location + sentence.range.length, paragraphEnd)
-        let length = sentenceEnd - sentence.range.location
-        guard length > 0 else { return nil }
-        return NSRange(location: sentence.range.location, length: length)
+    /// Returns the next sentence range starting at `index`, bounded to the segment that contains it. Returns nil when
+    /// `index` is past the last segment.
+    static func sentenceRange(startingAt index: Int, in segments: [Segment]) -> NSRange? {
+        guard let (_, segment) = segmentContaining(index, in: segments) else { return nil }
+        let intra = max(0, index - segment.pageOffset)
+        guard let sentence = TextTokenizer.findSentence(startingAt: intra, in: segment.text) else { return nil }
+        return NSRange(location: segment.pageOffset + sentence.range.location, length: sentence.range.length)
     }
 
-    /// Returns the start index of the sentence that follows the one containing `index`, bounded to paragraph segments.
-    /// When `index` is inside the last sentence of its segment, returns the first sentence start of the next segment.
-    /// Returns nil when there is no following sentence within `paragraphRanges`. Unlike `sentenceSegment`, this advances
-    /// past the sentence containing `index` (used for forward navigation, where `index` may be mid-sentence).
-    static func nextSentenceStart(after index: Int, in text: String, paragraphRanges: [NSRange]) -> Int? {
-        guard let (segmentIndex, segment) = segmentContaining(index, in: paragraphRanges) else { return nil }
-        let segmentEnd = segment.location + segment.length
-        if index < segmentEnd, let segmentText = substring(of: text, range: segment) {
-            let relative = max(0, index - segment.location)
-            if let relativeNext = TextTokenizer.findIndex(ofNext: .sentence, startingAt: relative, in: segmentText) {
-                let candidate = segment.location + relativeNext
+    /// Returns the start index of the sentence following the one containing `index`, rolling into the next segment when
+    /// `index` is in the last sentence of its segment. Returns nil past the last sentence. Advances past the containing
+    /// sentence (used for forward navigation, where `index` may be mid-sentence).
+    static func nextSentenceStart(after index: Int, in segments: [Segment]) -> Int? {
+        guard let (segmentIndex, segment) = segmentContaining(index, in: segments) else { return nil }
+        let segmentEnd = segment.pageOffset + segment.text.count
+        if index < segmentEnd {
+            let intra = max(0, index - segment.pageOffset)
+            if let relativeNext = TextTokenizer.nextSentenceStart(after: intra, in: segment.text) {
+                let candidate = segment.pageOffset + relativeNext
                 if candidate < segmentEnd {
                     return candidate
                 }
             }
         }
-        // The sentence containing `index` is the last one in its segment; move to the next segment's first sentence.
         let nextIndex = segmentIndex + 1
-        guard nextIndex < paragraphRanges.count else { return nil }
-        return firstSentenceStart(in: paragraphRanges[nextIndex], text: text)
+        guard nextIndex < segments.count else { return nil }
+        return firstSentenceStart(in: segments[nextIndex])
     }
 
-    /// Returns the start index of the first sentence within `segment`.
-    private static func firstSentenceStart(in segment: NSRange, text: String) -> Int? {
-        return sentenceSegment(startingAt: segment.location, in: text, paragraphRanges: [segment])?.location ?? segment.location
-    }
-
-    /// Returns the start index of the sentence immediately before `index`, bounded to paragraph segments. Looks within
-    /// the segment containing `index`; if `index` is at that segment's first sentence, returns the last sentence start
-    /// of the previous segment. Returns nil when there is no earlier sentence within `paragraphRanges`.
-    static func previousSentenceStart(before index: Int, in text: String, paragraphRanges: [NSRange]) -> Int? {
-        guard let (segmentIndex, segment) = segmentContaining(index, in: paragraphRanges) else { return nil }
-        if index > segment.location, let segmentText = substring(of: text, range: segment) {
-            let relative = index - segment.location
-            if let relativeStart = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: relative, in: segmentText) {
-                return segment.location + relativeStart
+    /// Returns the start index of the sentence immediately before `index`, rolling back into the previous segment's last
+    /// sentence when `index` is at its segment's first sentence. Returns nil when there is no earlier sentence.
+    static func previousSentenceStart(before index: Int, in segments: [Segment]) -> Int? {
+        guard let (segmentIndex, segment) = segmentContaining(index, in: segments) else { return nil }
+        if index > segment.pageOffset {
+            let intra = index - segment.pageOffset
+            if let relativeStart = TextTokenizer.previousSentenceStart(before: intra, in: segment.text) {
+                return segment.pageOffset + relativeStart
             }
         }
         guard segmentIndex > 0 else { return nil }
-        return lastSentenceStart(in: paragraphRanges[segmentIndex - 1], text: text)
+        return lastSentenceStart(in: segments[segmentIndex - 1])
     }
 
-    /// Returns the start index of the last sentence within the last paragraph segment. Returns nil when there are no segments.
-    static func lastSentenceStart(in text: String, paragraphRanges: [NSRange]) -> Int? {
-        guard let last = paragraphRanges.last else { return nil }
-        return lastSentenceStart(in: last, text: text)
+    /// Returns the start index of the last sentence in the last segment. Returns nil when there are no segments.
+    static func lastSentenceStart(in segments: [Segment]) -> Int? {
+        guard let last = segments.last else { return nil }
+        return lastSentenceStart(in: last)
     }
 
-    private static func lastSentenceStart(in segment: NSRange, text: String) -> Int? {
-        guard let segmentText = substring(of: text, range: segment) else { return nil }
-        if let relativeStart = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: segmentText.count, in: segmentText) {
-            return segment.location + relativeStart
+    private static func firstSentenceStart(in segment: Segment) -> Int {
+        return segment.pageOffset + (TextTokenizer.findSentence(startingAt: 0, in: segment.text)?.range.location ?? 0)
+    }
+
+    private static func lastSentenceStart(in segment: Segment) -> Int {
+        return segment.pageOffset + (TextTokenizer.previousSentenceStart(before: segment.text.count, in: segment.text) ?? 0)
+    }
+
+    /// Returns the segment (and its index) whose text ends after `index` — i.e. the segment containing `index`, or the
+    /// next one when `index` is in the gap between segments. Segments are ordered by `pageOffset`.
+    private static func segmentContaining(_ index: Int, in segments: [Segment]) -> (index: Int, segment: Segment)? {
+        for (offset, segment) in segments.enumerated() where index < segment.pageOffset + segment.text.count {
+            return (offset, segment)
         }
-        return segment.location
+        return nil
     }
+}
 
-    /// Returns the segment (and its index) that contains `index`, or the closest segment at or before it.
-    private static func segmentContaining(_ index: Int, in paragraphRanges: [NSRange]) -> (index: Int, range: NSRange)? {
-        var best: (Int, NSRange)?
-        for (offset, range) in paragraphRanges.enumerated() {
-            if index >= range.location, index < range.location + range.length {
-                return (offset, range)
-            }
-            if range.location <= index {
-                best = (offset, range)
-            }
+// MARK: - Highlight units
+
+/// Highlight units over a page's segments, parameterized by granularity. A `.paragraph` unit is a whole segment; a
+/// `.sentence` unit is a sentence within a segment. All ranges are page-text character offsets. Used by
+/// `SpeechHighlightSessionManager` so its unit detection comes straight from the structured document text.
+extension SpeechDocumentParser {
+    /// The full unit (whole segment for `.paragraph`, containing sentence for `.sentence`) covering `index`.
+    static func unitRange(containing index: Int, granularity: NLTokenUnit, in segments: [Segment]) -> NSRange? {
+        guard let (_, segment) = segmentContaining(index, in: segments) else { return nil }
+        if granularity == .paragraph {
+            return NSRange(location: segment.pageOffset, length: segment.text.count)
         }
-        if let best { return best }
-        return paragraphRanges.first.map { (0, $0) }
+        let intra = max(0, index - segment.pageOffset)
+        guard let sentence = TextTokenizer.findSentenceContaining(index: intra, in: segment.text) else { return nil }
+        return NSRange(location: segment.pageOffset + sentence.range.location, length: sentence.range.length)
     }
 
-    private static func substring(of text: String, range: NSRange) -> String? {
-        guard range.location >= 0, range.length >= 0, range.location + range.length <= text.count else { return nil }
-        let start = text.index(text.startIndex, offsetBy: range.location)
-        let end = text.index(start, offsetBy: range.length)
-        return String(text[start..<end])
+    /// The first unit on the page.
+    static func firstUnitRange(granularity: NLTokenUnit, in segments: [Segment]) -> NSRange? {
+        guard let first = segments.first else { return nil }
+        if granularity == .paragraph {
+            return NSRange(location: first.pageOffset, length: first.text.count)
+        }
+        return sentenceRange(startingAt: first.pageOffset, in: segments)
+    }
+
+    /// The last unit on the page.
+    static func lastUnitRange(granularity: NLTokenUnit, in segments: [Segment]) -> NSRange? {
+        guard let last = segments.last else { return nil }
+        if granularity == .paragraph {
+            return NSRange(location: last.pageOffset, length: last.text.count)
+        }
+        guard let start = lastSentenceStart(in: segments) else { return nil }
+        return sentenceRange(startingAt: start, in: segments)
+    }
+
+    /// The unit following the one that ends at `range`'s end, on the same page. nil past the last unit.
+    static func nextUnitRange(afterEndOf range: NSRange, granularity: NLTokenUnit, in segments: [Segment]) -> NSRange? {
+        let end = range.location + range.length
+        if granularity == .paragraph {
+            guard let next = segments.first(where: { $0.pageOffset >= end }) else { return nil }
+            return NSRange(location: next.pageOffset, length: next.text.count)
+        }
+        guard let start = nextSentenceStart(after: end, in: segments) else { return nil }
+        return sentenceRange(startingAt: start, in: segments)
+    }
+
+    /// The unit immediately before the one starting at `location`, on the same page. nil at the first unit.
+    static func previousUnitRange(before location: Int, granularity: NLTokenUnit, in segments: [Segment]) -> NSRange? {
+        if granularity == .paragraph {
+            guard let previous = segments.last(where: { $0.pageOffset < location }) else { return nil }
+            return NSRange(location: previous.pageOffset, length: previous.text.count)
+        }
+        guard let start = previousSentenceStart(before: location, in: segments) else { return nil }
+        return sentenceRange(startingAt: start, in: segments)
     }
 }

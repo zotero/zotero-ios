@@ -170,36 +170,6 @@ enum TextTokenizer {
         return (resultText, originalRange)
     }
 
-    /// Finds the paragraph at the given index.
-    /// If the index is in the middle of a paragraph, returns from startIndex to the end of that paragraph.
-    /// Returns the extracted text and its range in the original string.
-    static func findParagraph(startingAt startIndex: Int, in text: String) -> (text: String, range: NSRange)? {
-        guard startIndex < text.count else { return nil }
-
-        let searchStartIndex = text.index(text.startIndex, offsetBy: startIndex)
-        let remainingText = String(text[searchStartIndex...])
-        let trimmedRemainingText = remainingText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedRemainingText.isEmpty else { return nil }
-
-        let tokenizer = NLTokenizer(unit: .paragraph)
-        tokenizer.string = remainingText
-
-        let tokenRange = tokenizer.tokenRange(at: remainingText.startIndex)
-        let extractedText = String(remainingText[tokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if !extractedText.isEmpty {
-            let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: tokenRange.lowerBound)
-            let length = remainingText.distance(from: tokenRange.lowerBound, to: tokenRange.upperBound)
-            return (extractedText, NSRange(location: location, length: length))
-        }
-
-        // NLTokenizer didn't find a meaningful token, return the entire trimmed remaining text
-        let trimmedRange = remainingText.range(of: trimmedRemainingText)!
-        let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: trimmedRange.lowerBound)
-        let length = trimmedRemainingText.count
-        return (trimmedRemainingText, NSRange(location: location, length: length))
-    }
-
     /// Finds the full sentence containing the given index.
     /// Unlike `findSentence(startingAt:)`, this returns the entire sentence from its beginning to its end,
     /// even if the index is in the middle of the sentence.
@@ -226,10 +196,8 @@ enum TextTokenizer {
         return (resultText, originalRange)
     }
 
-    /// Finds the full paragraph containing the given index.
-    /// Unlike `findParagraph(startingAt:)`, this returns the entire paragraph from its beginning to its end,
-    /// even if the index is in the middle of the paragraph.
-    /// Returns the extracted text and its range in the original string.
+    /// Finds the full paragraph containing the given index, from its beginning to its end, even if the index is in the
+    /// middle of the paragraph. Returns the extracted text and its range in the original string.
     static func findParagraphContaining(index: Int, in text: String) -> (text: String, range: NSRange)? {
         guard index < text.count else { return nil }
 
@@ -247,29 +215,23 @@ enum TextTokenizer {
         return (extractedText, NSRange(location: location, length: length))
     }
 
-    /// Finds the start index of the next sentence or paragraph after the current one.
-    static func findIndex(ofNext granularity: NLTokenUnit, startingAt startIndex: Int, in text: String) -> Int? {
+    /// Finds the start index of the next sentence after the current one. Footnote-normalized before tokenizing.
+    static func nextSentenceStart(after startIndex: Int, in text: String) -> Int? {
         guard startIndex < text.count else { return nil }
 
-        if granularity == .sentence {
-            let normalized = normalizeText(text)
-            let normStartIndex = normalized.normalizedIndex(for: startIndex)
-            guard let normResult = nextTokenStart(granularity: .sentence, startIndex: normStartIndex, in: normalized.text) else { return nil }
-            return normalized.originalIndex(for: normResult)
-        }
-
-        return nextTokenStart(granularity: granularity, startIndex: startIndex, in: text)
+        let normalized = normalizeText(text)
+        let normStartIndex = normalized.normalizedIndex(for: startIndex)
+        guard let normResult = nextSentenceTokenStart(startIndex: normStartIndex, in: normalized.text) else { return nil }
+        return normalized.originalIndex(for: normResult)
     }
 
-    /// Tokenizes the full text and returns the position to start the next reading from:
+    /// Tokenizes the full text into sentences and returns the position to start the next reading from:
     /// - If `startIndex` is at or before the start of a token, returns that token's start.
     /// - If `startIndex` is inside a token, returns that token's upperBound (the start of the following token / trailing whitespace).
-    /// Tokenizing the full text (rather than a slice starting at `startIndex`) preserves the surrounding context NLTokenizer needs
-    /// to detect boundaries. A `startIndex` that lands exactly on a paragraph boundary is recognized as the start of the next
-    /// paragraph; a slice-based call instead treats the slice's first token as "the current paragraph" and returns its end,
-    /// skipping the paragraph entirely.
-    private static func nextTokenStart(granularity: NLTokenUnit, startIndex: Int, in text: String) -> Int? {
-        let tokenizer = NLTokenizer(unit: granularity)
+    /// Tokenizing the full text (rather than a slice starting at `startIndex`) preserves the surrounding context NLTokenizer
+    /// needs to detect boundaries.
+    private static func nextSentenceTokenStart(startIndex: Int, in text: String) -> Int? {
+        let tokenizer = NLTokenizer(unit: .sentence)
         tokenizer.string = text
 
         var result: Int?
@@ -293,64 +255,22 @@ enum TextTokenizer {
         return result
     }
 
-    /// Finds the start index of the previous whole token (sentence or paragraph) before the given position.
-    /// If the index is in the middle of a token, returns the start of the token before that one.
-    /// If the index is at the end of a token, returns the start of that token.
-    /// Returns nil if there is no previous whole token.
-    static func findIndex(ofPreviousWhole granularity: NLTokenUnit, beforeIndex index: Int, in text: String) -> Int? {
+    /// Finds the start index of the previous whole sentence before the given position.
+    /// If the index is in the middle of a sentence, returns the start of the sentence before that one.
+    /// If the index is at the end of a sentence, returns the start of that sentence.
+    /// Returns nil if there is no previous whole sentence.
+    static func previousSentenceStart(before index: Int, in text: String) -> Int? {
         guard index > 0, index <= text.count else { return nil }
 
-        if granularity == .sentence {
-            let normalized = normalizeText(text)
-            let normIndex = normalized.normalizedIndex(for: index)
+        let normalized = normalizeText(text)
+        let normIndex = normalized.normalizedIndex(for: index)
 
-            let tokenizer = NLTokenizer(unit: .sentence)
-            tokenizer.string = normalized.text
-
-            var tokens: [Range<String.Index>] = []
-            tokenizer.enumerateTokens(in: normalized.text.startIndex..<normalized.text.endIndex) { tokenRange, _ in
-                let tokenText = normalized.text[tokenRange]
-                if !tokenText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    tokens.append(tokenRange)
-                }
-                return true
-            }
-
-            guard !tokens.isEmpty else { return nil }
-
-            let indexPosition = normalized.text.index(normalized.text.startIndex, offsetBy: normIndex)
-
-            var targetTokenIndex: Int?
-            for (i, tokenRange) in tokens.enumerated() {
-                if indexPosition <= tokenRange.lowerBound {
-                    targetTokenIndex = i - 1
-                    break
-                } else if indexPosition < tokenRange.upperBound {
-                    targetTokenIndex = i - 1
-                    break
-                } else if indexPosition == tokenRange.upperBound {
-                    targetTokenIndex = i
-                    break
-                }
-            }
-
-            if targetTokenIndex == nil {
-                targetTokenIndex = tokens.count - 1
-            }
-
-            guard let idx = targetTokenIndex, idx >= 0 else { return nil }
-
-            let normLowerBound = normalized.text.distance(from: normalized.text.startIndex, to: tokens[idx].lowerBound)
-            return normalized.originalIndex(for: normLowerBound)
-        }
-
-        // Paragraph path — unchanged
-        let tokenizer = NLTokenizer(unit: granularity)
-        tokenizer.string = text
+        let tokenizer = NLTokenizer(unit: .sentence)
+        tokenizer.string = normalized.text
 
         var tokens: [Range<String.Index>] = []
-        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { tokenRange, _ in
-            let tokenText = text[tokenRange]
+        tokenizer.enumerateTokens(in: normalized.text.startIndex..<normalized.text.endIndex) { tokenRange, _ in
+            let tokenText = normalized.text[tokenRange]
             if !tokenText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 tokens.append(tokenRange)
             }
@@ -359,7 +279,7 @@ enum TextTokenizer {
 
         guard !tokens.isEmpty else { return nil }
 
-        let indexPosition = text.index(text.startIndex, offsetBy: index)
+        let indexPosition = normalized.text.index(normalized.text.startIndex, offsetBy: normIndex)
 
         var targetTokenIndex: Int?
         for (i, tokenRange) in tokens.enumerated() {
@@ -381,6 +301,7 @@ enum TextTokenizer {
 
         guard let idx = targetTokenIndex, idx >= 0 else { return nil }
 
-        return text.distance(from: text.startIndex, to: tokens[idx].lowerBound)
+        let normLowerBound = normalized.text.distance(from: normalized.text.startIndex, to: tokens[idx].lowerBound)
+        return normalized.originalIndex(for: normLowerBound)
     }
 }

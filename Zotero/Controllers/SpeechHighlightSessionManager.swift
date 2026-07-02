@@ -18,26 +18,37 @@ enum HighlightVoiceInfo {
 
 protocol SpeechHighlightSessionManagerDelegate: AnyObject {
     associatedtype PageIndex: Hashable
-    func highlightSessionNextPageData(from pageIndex: PageIndex) -> (pageText: String, pageIndex: PageIndex)?
-    func highlightSessionPreviousPageData(from pageIndex: PageIndex) -> (pageText: String, pageIndex: PageIndex)?
+    /// Paragraph segments (text + page-text offset) for the page, in reading order. Empty if the page has no readable content.
+    func highlightSessionSegments(forPage pageIndex: PageIndex) -> [SpeechDocumentParser.Segment]
+    /// The next readable page (one that has segments), or nil.
+    func highlightSessionNextReadablePage(after pageIndex: PageIndex) -> PageIndex?
+    /// The previous readable page (one that has segments), or nil.
+    func highlightSessionPreviousReadablePage(before pageIndex: PageIndex) -> PageIndex?
 }
 
 final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManagerDelegate> {
     typealias PageIndex = Delegate.PageIndex
+    typealias Segment = SpeechDocumentParser.Segment
 
     struct Session {
-        /// Individual unit ranges in document order. The first element is the leftmost unit, the last is the rightmost.
+        /// Individual unit ranges (page-text offsets) in document order. The first element is the leftmost unit, the last is the rightmost.
         var unitRanges: [NSRange]
         /// Index into `unitRanges` pointing to the initially selected unit.
         let anchorIndex: Int
         let granularity: NLTokenUnit
-        let pageText: String
+        /// The page's paragraph segments (source of truth for units); the page text is derived from them.
+        let segments: [Segment]
         let pageIndex: PageIndex
 
         /// The combined range spanning all unit ranges.
         var range: NSRange {
             guard let first = unitRanges.first, let last = unitRanges.last else { return NSRange() }
             return NSRange(location: first.location, length: last.location + last.length - first.location)
+        }
+
+        /// The page's readable text, derived by joining the segments (used to extract highlighted text and as the hint denominator).
+        var pageText: String {
+            return segments.map(\.text).joined(separator: SpeechDocumentParser.segmentSeparator)
         }
     }
 
@@ -72,15 +83,15 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
         inactivityTimer = nil
     }
 
-    /// Starts a new highlight session by finding the appropriate unit at the given speech position.
+    /// Starts a new highlight session by finding the appropriate unit at the given speech position (a page-text offset).
     /// Uses voice info to determine granularity and a "go back" heuristic (< 50% progress or < 3 seconds elapsed).
     func startSession(
         voiceInfo: HighlightVoiceInfo,
         position: Int,
-        pageText: String,
+        segments: [Segment],
         pageIndex: PageIndex
     ) -> (text: String, pageIndex: PageIndex)? {
-        let clampedPosition = min(max(position, 0), max(pageText.count - 1, 0))
+        let clampedPosition = min(max(position, 0), max(pageTextLength(of: segments) - 1, 0))
 
         let granularity: NLTokenUnit
         let shouldGoBack: Bool
@@ -93,90 +104,80 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
 
         case .local:
             granularity = .sentence
-            if let sentence = TextTokenizer.findSentenceContaining(index: clampedPosition, in: pageText), sentence.range.length > 0 {
-                let posInSentence = max(0, clampedPosition - sentence.range.location)
-                shouldGoBack = Float(posInSentence) / Float(sentence.range.length) < 0.5
+            if let sentence = SpeechDocumentParser.unitRange(containing: clampedPosition, granularity: .sentence, in: segments), sentence.length > 0 {
+                let posInSentence = max(0, clampedPosition - sentence.location)
+                shouldGoBack = Float(posInSentence) / Float(sentence.length) < 0.5
             } else {
                 shouldGoBack = false
             }
         }
 
         // Find the current unit containing the speech position
-        let currentUnit = findUnitContaining(granularity: granularity, index: clampedPosition, in: pageText)
-        guard let currentUnit else { return nil }
+        guard let currentUnit = SpeechDocumentParser.unitRange(containing: clampedPosition, granularity: granularity, in: segments) else { return nil }
 
         if shouldGoBack {
             // Try previous unit on the same page
-            if let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: granularity, beforeIndex: currentUnit.range.location, in: pageText),
-               let prev = findUnit(granularity: granularity, startingAt: prevIdx, in: pageText) {
-                session = Session(unitRanges: [prev.range], anchorIndex: 0, granularity: granularity, pageText: pageText, pageIndex: pageIndex)
-                return (prev.text, pageIndex)
+            if let prev = SpeechDocumentParser.previousUnitRange(before: currentUnit.location, granularity: granularity, in: segments) {
+                return setSession(unitRanges: [prev], anchorIndex: 0, granularity: granularity, segments: segments, pageIndex: pageIndex)
             }
             // Try last unit on the previous page
-            if let prevPageData = delegate?.highlightSessionPreviousPageData(from: pageIndex),
-               let lastIdx = TextTokenizer.findIndex(ofPreviousWhole: granularity, beforeIndex: prevPageData.pageText.count, in: prevPageData.pageText),
-               let last = findUnit(granularity: granularity, startingAt: lastIdx, in: prevPageData.pageText) {
-                session = Session(unitRanges: [last.range], anchorIndex: 0, granularity: granularity, pageText: prevPageData.pageText, pageIndex: prevPageData.pageIndex)
-                return (last.text, prevPageData.pageIndex)
+            if let prevIndex = delegate?.highlightSessionPreviousReadablePage(before: pageIndex) {
+                let prevSegments = delegate?.highlightSessionSegments(forPage: prevIndex) ?? []
+                if let last = SpeechDocumentParser.lastUnitRange(granularity: granularity, in: prevSegments) {
+                    return setSession(unitRanges: [last], anchorIndex: 0, granularity: granularity, segments: prevSegments, pageIndex: prevIndex)
+                }
             }
         }
 
         // Use the current unit
-        session = Session(unitRanges: [currentUnit.range], anchorIndex: 0, granularity: granularity, pageText: pageText, pageIndex: pageIndex)
-        return (currentUnit.text, pageIndex)
+        return setSession(unitRanges: [currentUnit], anchorIndex: 0, granularity: granularity, segments: segments, pageIndex: pageIndex)
     }
 
     /// Moves to the next unit as a single selection. If anchor+1 exists in unitRanges, uses that.
-    /// Otherwise finds the next unit after the anchor in the text, crossing to the next page if needed.
+    /// Otherwise finds the next unit after the anchor, crossing to the next page if needed.
     func moveForward() -> (text: String, pageIndex: PageIndex)? {
         guard let session else { return nil }
 
         if session.anchorIndex + 1 < session.unitRanges.count {
-            let newRange = session.unitRanges[session.anchorIndex + 1]
-            self.session = Session(unitRanges: [newRange], anchorIndex: 0, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-            return currentResult()
+            return setSession(unitRanges: [session.unitRanges[session.anchorIndex + 1]], anchorIndex: 0, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
         }
 
         let anchorRange = session.unitRanges[session.anchorIndex]
-        if let next = findNextUnit(granularity: session.granularity, afterEndOf: anchorRange, in: session.pageText) {
-            self.session = Session(unitRanges: [next.range], anchorIndex: 0, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-            return currentResult()
+        if let next = SpeechDocumentParser.nextUnitRange(afterEndOf: anchorRange, granularity: session.granularity, in: session.segments) {
+            return setSession(unitRanges: [next], anchorIndex: 0, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
         }
 
         // No next unit on current page — try next page
-        if let nextPageData = delegate?.highlightSessionNextPageData(from: session.pageIndex),
-           let first = findUnit(granularity: session.granularity, startingAt: 0, in: nextPageData.pageText) {
-            self.session = Session(unitRanges: [first.range], anchorIndex: 0, granularity: session.granularity, pageText: nextPageData.pageText, pageIndex: nextPageData.pageIndex)
-            return currentResult()
+        if let nextIndex = delegate?.highlightSessionNextReadablePage(after: session.pageIndex) {
+            let nextSegments = delegate?.highlightSessionSegments(forPage: nextIndex) ?? []
+            if let first = SpeechDocumentParser.firstUnitRange(granularity: session.granularity, in: nextSegments) {
+                return setSession(unitRanges: [first], anchorIndex: 0, granularity: session.granularity, segments: nextSegments, pageIndex: nextIndex)
+            }
         }
 
         return nil
     }
 
     /// Moves to the previous unit as a single selection. If anchor-1 exists in unitRanges, uses that.
-    /// Otherwise finds the previous unit before the anchor in the text, crossing to the previous page if needed.
+    /// Otherwise finds the previous unit before the anchor, crossing to the previous page if needed.
     func moveBackward() -> (text: String, pageIndex: PageIndex)? {
         guard let session else { return nil }
 
         if session.anchorIndex - 1 >= 0 {
-            let newRange = session.unitRanges[session.anchorIndex - 1]
-            self.session = Session(unitRanges: [newRange], anchorIndex: 0, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-            return currentResult()
+            return setSession(unitRanges: [session.unitRanges[session.anchorIndex - 1]], anchorIndex: 0, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
         }
 
         let anchorRange = session.unitRanges[session.anchorIndex]
-        if let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: anchorRange.location, in: session.pageText),
-           let prev = findUnit(granularity: session.granularity, startingAt: prevIdx, in: session.pageText) {
-            self.session = Session(unitRanges: [prev.range], anchorIndex: 0, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-            return currentResult()
+        if let prev = SpeechDocumentParser.previousUnitRange(before: anchorRange.location, granularity: session.granularity, in: session.segments) {
+            return setSession(unitRanges: [prev], anchorIndex: 0, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
         }
 
         // No previous unit on current page — try previous page
-        if let prevPageData = delegate?.highlightSessionPreviousPageData(from: session.pageIndex),
-           let lastIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: prevPageData.pageText.count, in: prevPageData.pageText),
-           let last = findUnit(granularity: session.granularity, startingAt: lastIdx, in: prevPageData.pageText) {
-            self.session = Session(unitRanges: [last.range], anchorIndex: 0, granularity: session.granularity, pageText: prevPageData.pageText, pageIndex: prevPageData.pageIndex)
-            return currentResult()
+        if let prevIndex = delegate?.highlightSessionPreviousReadablePage(before: session.pageIndex) {
+            let prevSegments = delegate?.highlightSessionSegments(forPage: prevIndex) ?? []
+            if let last = SpeechDocumentParser.lastUnitRange(granularity: session.granularity, in: prevSegments) {
+                return setSession(unitRanges: [last], anchorIndex: 0, granularity: session.granularity, segments: prevSegments, pageIndex: prevIndex)
+            }
         }
 
         return nil
@@ -189,16 +190,14 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
 
         if session.anchorIndex > 0 {
             session.unitRanges.removeFirst()
-            self.session = Session(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex - 1, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-            return currentResult()
+            return setSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex - 1, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
         }
 
         let lastRange = session.unitRanges.last!
-        guard let next = findNextUnit(granularity: session.granularity, afterEndOf: lastRange, in: session.pageText) else { return nil }
+        guard let next = SpeechDocumentParser.nextUnitRange(afterEndOf: lastRange, granularity: session.granularity, in: session.segments) else { return nil }
 
-        session.unitRanges.append(next.range)
-        self.session = Session(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-        return currentResult()
+        session.unitRanges.append(next)
+        return setSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
     }
 
     /// Extends highlight backward: if selection was expanded forward beyond the anchor, shrinks from the end first.
@@ -208,17 +207,14 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
 
         if session.anchorIndex < session.unitRanges.count - 1 {
             session.unitRanges.removeLast()
-            self.session = Session(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-            return currentResult()
+            return setSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
         }
 
         let firstRange = session.unitRanges.first!
-        guard let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: firstRange.location, in: session.pageText),
-              let prev = findUnit(granularity: session.granularity, startingAt: prevIdx, in: session.pageText) else { return nil }
+        guard let prev = SpeechDocumentParser.previousUnitRange(before: firstRange.location, granularity: session.granularity, in: session.segments) else { return nil }
 
-        session.unitRanges.insert(prev.range, at: 0)
-        self.session = Session(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex + 1, granularity: session.granularity, pageText: session.pageText, pageIndex: session.pageIndex)
-        return currentResult()
+        session.unitRanges.insert(prev, at: 0)
+        return setSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex + 1, granularity: session.granularity, segments: session.segments, pageIndex: session.pageIndex)
     }
 
     /// Ends the session and returns the final combined text and page index for annotation creation.
@@ -246,44 +242,26 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
 
     // MARK: - Private
 
+    /// Sets the session and returns the current combined text + page index (or nil if the text is empty).
+    private func setSession(unitRanges: [NSRange], anchorIndex: Int, granularity: NLTokenUnit, segments: [Segment], pageIndex: PageIndex) -> (text: String, pageIndex: PageIndex)? {
+        session = Session(unitRanges: unitRanges, anchorIndex: anchorIndex, granularity: granularity, segments: segments, pageIndex: pageIndex)
+        return currentResult()
+    }
+
     private func currentResult() -> (text: String, pageIndex: PageIndex)? {
         guard let session, let text = currentText() else { return nil }
         return (text, session.pageIndex)
     }
 
     private func extractText(from text: String, range: NSRange) -> String {
+        guard range.location >= 0, range.length >= 0, range.location + range.length <= text.count else { return "" }
         let start = text.index(text.startIndex, offsetBy: range.location)
         let end = text.index(start, offsetBy: range.length)
         return String(text[start..<end]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func findUnitContaining(granularity: NLTokenUnit, index: Int, in text: String) -> (text: String, range: NSRange)? {
-        if granularity == .paragraph {
-            return TextTokenizer.findParagraphContaining(index: index, in: text)
-        } else {
-            return TextTokenizer.findSentenceContaining(index: index, in: text)
-        }
-    }
-
-    private func findNextUnit(granularity: NLTokenUnit, afterEndOf range: NSRange, in text: String) -> (text: String, range: NSRange)? {
-        var startIndex = range.location + range.length
-        // Skip whitespace/newlines to handle paragraph boundaries (e.g. \n\n between paragraphs)
-        while startIndex < text.count {
-            let idx = text.index(text.startIndex, offsetBy: startIndex)
-            if text[idx].isWhitespace || text[idx].isNewline {
-                startIndex += 1
-            } else {
-                break
-            }
-        }
-        return findUnit(granularity: granularity, startingAt: startIndex, in: text)
-    }
-
-    private func findUnit(granularity: NLTokenUnit, startingAt index: Int, in text: String) -> (text: String, range: NSRange)? {
-        if granularity == .paragraph {
-            return TextTokenizer.findParagraph(startingAt: index, in: text)
-        } else {
-            return TextTokenizer.findSentence(startingAt: index, in: text)
-        }
+    private func pageTextLength(of segments: [Segment]) -> Int {
+        guard let last = segments.last else { return 0 }
+        return last.pageOffset + last.text.count
     }
 }
