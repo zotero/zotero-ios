@@ -343,7 +343,7 @@ final class DocumentWorkerController {
             }
 
             fileprivate struct Cache: Work.Cache {
-                let location = CacheLocation(path: "sdt", version: 2)
+                let location = CacheLocation(path: "sdt", version: 3)
 
                 func cachedResult(for work: Work, in worker: Worker, fileStorage: FileStorage) -> DocumentWorkerController.Result? {
                     guard case .structuredDocumentText = work else { return nil }
@@ -472,7 +472,7 @@ final class DocumentWorkerController {
             case queued
             case failed
             case cancelled
-            case inProgress
+            case inProgress(progress: Double? = nil)
             case extractedData(result: Result, isCached: Bool = false)
         }
 
@@ -664,7 +664,7 @@ final class DocumentWorkerController {
             subject.send(work: work, kind: .queued, worker: worker, runtime: preferredRuntime(for: work))
             if let cachedResult = work.cache?.cachedResult(for: work, in: worker, fileStorage: fileStorage) {
                 worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
-                subject.send(work: work, kind: .inProgress, worker: worker, runtime: preferredRuntime(for: work))
+                subject.send(work: work, kind: .inProgress(), worker: worker, runtime: preferredRuntime(for: work))
                 finishWork(work, in: worker, updateWorkerState: false, finalUpdateKind: .extractedData(result: cachedResult, isCached: true))
                 return
             }
@@ -835,6 +835,9 @@ final class DocumentWorkerController {
                     switch event.result {
                     case .success(let data):
                         switch data {
+                        case .progress(let progress):
+                            worker.subjectsByWork[work]?.send(work: work, kind: .inProgress(progress: progress), worker: worker, runtime: preferredRuntime(for: work))
+
                         case .recognizerData(let data):
                             finishWork(work, in: worker, finalUpdateKind: .extractedData(result: .recognizerData(data)))
 
@@ -898,7 +901,7 @@ final class DocumentWorkerController {
         // Start work.
         worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
         DDLogInfo("DocumentWorkerController: started \(work) in \(worker)")
-        subject.send(work: work, kind: .inProgress, worker: worker, runtime: runtime)
+        subject.send(work: work, kind: .inProgress(), worker: worker, runtime: runtime)
         switch work {
         case .recognizer:
             documentWorkerHandler.performAction(.recognizePDF(password: worker.password), workId: work.id)
