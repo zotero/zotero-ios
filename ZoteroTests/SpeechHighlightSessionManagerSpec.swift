@@ -23,15 +23,36 @@ private final class MockPageProvider: SpeechHighlightSessionManagerDelegate {
     /// Maps pageIndex → previous pageIndex
     var previousPageMap: [Int: Int] = [:]
 
-    func highlightSessionNextPageData(from pageIndex: Int) -> (pageText: String, pageIndex: Int)? {
-        guard let nextIndex = nextPageMap[pageIndex], let text = pages[nextIndex] else { return nil }
-        return (text, nextIndex)
+    func highlightSessionSegments(forPage pageIndex: Int) -> [SpeechDocumentParser.Segment] {
+        guard let text = pages[pageIndex] else { return [] }
+        return segments(fromPageText: text)
     }
 
-    func highlightSessionPreviousPageData(from pageIndex: Int) -> (pageText: String, pageIndex: Int)? {
-        guard let prevIndex = previousPageMap[pageIndex], let text = pages[prevIndex] else { return nil }
-        return (text, prevIndex)
+    func highlightSessionNextReadablePage(after pageIndex: Int) -> Int? {
+        guard let next = nextPageMap[pageIndex], pages[next] != nil else { return nil }
+        return next
     }
+
+    func highlightSessionPreviousReadablePage(before pageIndex: Int) -> Int? {
+        guard let previous = previousPageMap[pageIndex], pages[previous] != nil else { return nil }
+        return previous
+    }
+}
+
+/// Splits a page text into paragraph segments on the blank-line separator, matching how the parser lays out a page.
+private func segments(fromPageText text: String) -> [SpeechDocumentParser.Segment] {
+    guard !text.isEmpty else { return [] }
+    var result: [SpeechDocumentParser.Segment] = []
+    var offset = 0
+    let parts = text.components(separatedBy: SpeechDocumentParser.segmentSeparator)
+    for (index, part) in parts.enumerated() {
+        result.append(SpeechDocumentParser.Segment(text: part, pageOffset: offset))
+        offset += part.count
+        if index < parts.count - 1 {
+            offset += SpeechDocumentParser.segmentSeparator.count
+        }
+    }
+    return result
 }
 
 final class SpeechHighlightSessionManagerSpec: QuickSpec {
@@ -60,7 +81,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First sentence. Second sentence. Third sentence."
                     let result = manager.startSession(
                         voiceInfo: noGoBack, position: 16,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     expect(result?.text).to(equal("Second sentence."))
@@ -74,7 +95,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First sentence. Second sentence. Third sentence."
                     let result = manager.startSession(
                         voiceInfo: goBack, position: 16,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     expect(result?.text).to(equal("First sentence."))
@@ -84,7 +105,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First sentence. Second sentence."
                     let result = manager.startSession(
                         voiceInfo: goBack, position: 0,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     expect(result?.text).to(equal("First sentence."))
@@ -96,7 +117,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
 
                     let result = manager.startSession(
                         voiceInfo: goBack, position: 0,
-                        pageText: "First sentence on page 2.", pageIndex: 1
+                        segments: segments(fromPageText: "First sentence on page 2."), pageIndex: 1
                     )
 
                     expect(result?.text).to(equal("Last sentence on page 1."))
@@ -108,7 +129,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
                     let result = manager.startSession(
                         voiceInfo: paragraphNoGoBack, position: 20,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     expect(result?.text).to(equal("Second paragraph."))
@@ -117,7 +138,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                 it("returns nil for empty text") {
                     let result = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "", pageIndex: 0
+                        segments: segments(fromPageText: ""), pageIndex: 0
                     )
 
                     expect(result).to(beNil())
@@ -128,7 +149,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                         let pageText = "First sentence. Second sentence. Third sentence."
                         let result = manager.startSession(
                             voiceInfo: .local, position: 16,
-                            pageText: pageText, pageIndex: 0
+                            segments: segments(fromPageText: pageText), pageIndex: 0
                         )
 
                         expect(result?.text).to(equal("First sentence."))
@@ -138,7 +159,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                         let pageText = "First sentence. Second sentence. Third sentence."
                         let result = manager.startSession(
                             voiceInfo: .local, position: 26,
-                            pageText: pageText, pageIndex: 0
+                            segments: segments(fromPageText: pageText), pageIndex: 0
                         )
 
                         expect(result?.text).to(equal("Second sentence."))
@@ -157,7 +178,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First sentence. Second sentence. Third sentence."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     let result = manager.moveForward()
@@ -171,7 +192,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3. S4. S5."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 8,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendForward()
@@ -189,7 +210,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
 
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Only sentence.", pageIndex: 0
+                        segments: segments(fromPageText: "Only sentence."), pageIndex: 0
                     )
 
                     let result = manager.moveForward()
@@ -201,7 +222,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                 it("returns nil at end of last page") {
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Only sentence.", pageIndex: 0
+                        segments: segments(fromPageText: "Only sentence."), pageIndex: 0
                     )
 
                     expect(manager.moveForward()).to(beNil())
@@ -219,7 +240,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First sentence. Second sentence. Third sentence."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 16,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     let result = manager.moveBackward()
@@ -232,7 +253,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3. S4. S5."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 8,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendBackward()
@@ -250,7 +271,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
 
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Only sentence.", pageIndex: 1
+                        segments: segments(fromPageText: "Only sentence."), pageIndex: 1
                     )
 
                     let result = manager.moveBackward()
@@ -262,7 +283,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                 it("returns nil at start of first page") {
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Only sentence.", pageIndex: 0
+                        segments: segments(fromPageText: "Only sentence."), pageIndex: 0
                     )
 
                     expect(manager.moveBackward()).to(beNil())
@@ -276,7 +297,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     let result = manager.extendForward()
@@ -289,7 +310,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 4,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendBackward()
@@ -304,7 +325,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
 
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Only sentence.", pageIndex: 0
+                        segments: segments(fromPageText: "Only sentence."), pageIndex: 0
                     )
 
                     expect(manager.extendForward()).to(beNil())
@@ -318,7 +339,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 8,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     let result = manager.extendBackward()
@@ -331,7 +352,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 4,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendForward()
@@ -346,7 +367,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
 
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Only sentence.", pageIndex: 1
+                        segments: segments(fromPageText: "Only sentence."), pageIndex: 1
                     )
 
                     expect(manager.extendBackward()).to(beNil())
@@ -360,7 +381,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: pageText, pageIndex: 5
+                        segments: segments(fromPageText: pageText), pageIndex: 5
                     )
                     _ = manager.extendForward()
 
@@ -382,7 +403,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                 it("clears session without returning text") {
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "S1. S2.", pageIndex: 0
+                        segments: segments(fromPageText: "S1. S2."), pageIndex: 0
                     )
 
                     manager.cancelSession()
@@ -398,7 +419,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3. S4. S5."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 8,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     expect(manager.currentText()).to(equal("S3."))
@@ -418,7 +439,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3. S4. S5."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 8,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendForward()
@@ -432,7 +453,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 4,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendForward()
@@ -451,7 +472,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
 
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Page 1 sentence.", pageIndex: 0
+                        segments: segments(fromPageText: "Page 1 sentence."), pageIndex: 0
                     )
 
                     var result = manager.moveForward()
@@ -471,7 +492,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
 
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "Page 3 sentence.", pageIndex: 2
+                        segments: segments(fromPageText: "Page 3 sentence."), pageIndex: 2
                     )
 
                     var result = manager.moveBackward()
@@ -493,7 +514,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
                     _ = manager.startSession(
                         voiceInfo: paragraphNoGoBack, position: 0,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     expect(manager.currentText()).to(equal("First paragraph."))
@@ -509,7 +530,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "P1.\n\nP2.\n\nP3."
                     _ = manager.startSession(
                         voiceInfo: paragraphNoGoBack, position: 5,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendForward()
@@ -526,7 +547,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
                     let result = manager.startSession(
                         voiceInfo: paragraphGoBack, position: 20,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     expect(result?.text).to(equal("First paragraph."))
@@ -540,7 +561,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                     let pageText = "S1. S2. S3."
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: pageText, pageIndex: 0
+                        segments: segments(fromPageText: pageText), pageIndex: 0
                     )
 
                     _ = manager.extendForward()
@@ -558,7 +579,7 @@ final class SpeechHighlightSessionManagerSpec: QuickSpec {
                 it("preserves page index through navigation on same page") {
                     _ = manager.startSession(
                         voiceInfo: noGoBack, position: 0,
-                        pageText: "S1. S2. S3.", pageIndex: 42
+                        segments: segments(fromPageText: "S1. S2. S3."), pageIndex: 42
                     )
 
                     expect(manager.session?.pageIndex).to(equal(42))
