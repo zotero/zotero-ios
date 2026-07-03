@@ -28,6 +28,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     }
 
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
+    private unowned let documentWorkerController: DocumentWorkerController
     let disposeBag: DisposeBag
 
     weak var documentController: HtmlEpubDocumentViewController?
@@ -110,8 +111,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<HtmlEpubReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<HtmlEpubReaderActionHandler>, compactSize: Bool, documentWorkerController: DocumentWorkerController) {
         self.viewModel = viewModel
+        self.documentWorkerController = documentWorkerController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         isChangingInterfaceVisibility = false
@@ -145,6 +147,31 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         setupViews()
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
+
+        if let file = viewModel.state.documentFile as? FileData {
+            documentWorkerController.queue(work: .structuredDocumentText, in: .init(file: file))
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { update in
+                    switch update.kind {
+                    case .extractedData(let data, _):
+                        guard let buffer = data["buf"] as? Data else {
+                            return
+                        }
+                        do {
+                            let materialized = try SDTPack(data: buffer).materialize()
+                            DDLogInfo("Materialized: \(materialized)")
+                        } catch {
+                            DDLogError("Could not parse structured document text - \(error)")
+                        }
+
+                    default:
+                        break
+                    }
+                }, onError: { error in
+                    DDLogError("ERROR: \(error)")
+                })
+                .disposed(by: disposeBag)
+        }
 
         func observeViewModel() {
             viewModel.stateObservable
