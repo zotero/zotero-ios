@@ -226,11 +226,11 @@ final class DocumentWorkerJSHandler {
                     if let cachedWorkData {
                         data = cachedWorkData
                     } else {
-                        data = try Data(contentsOf: url, options: [.mappedIfSafe])
+                        data = try Data(contentsOf: url)
                         cachedWorkData = data
                     }
                 } else {
-                    data = try Data(contentsOf: url, options: [.mappedIfSafe])
+                    data = try Data(contentsOf: url)
                     cachedWorkData = nil
                 }
                 guard let buffer = engine.makeArrayBuffer(from: data) else {
