@@ -20,6 +20,7 @@ final class DocumentWorkerWebViewHandler: WebViewHandler {
         case recognizerData = "recognizerDataHandler"
         case fullText = "fullTextHandler"
         case structuredDocumentText = "structuredDocumentTextHandler"
+        case progress = "progressHandler"
         case nativeONNX = "nativeONNXHandler"
         case log = "logHandler"
     }
@@ -151,6 +152,7 @@ final class DocumentWorkerWebViewHandler: WebViewHandler {
                     parameters["contentType"] = contentType
                     parameters["password"] = password
                     parameters["sourceHash"] = sourceHash
+                    parameters["reportProgress"] = true
 #if MAINAPP
                     parameters["nativeONNX"] = usesNativeONNXForStructuredDocumentText && nativeONNXBridge != nil
 #endif
@@ -205,6 +207,10 @@ final class DocumentWorkerWebViewHandler: WebViewHandler {
         case .structuredDocumentText:
             guard let body = body as? [String: Any], let workId = body["workId"] as? String, let data = body["structuredDocumentText"] as? [String: Any] else { return }
             observable.on(.next((workId: workId, result: .success(.structuredDocumentText(data: data)))))
+
+        case .progress:
+            guard let body = body as? [String: Any], let workId = body["workId"] as? String, let progress = body["progress"] as? Double else { return }
+            observable.on(.next((workId: workId, result: .success(.progress(progress)))))
 
         case .nativeONNX:
 #if MAINAPP

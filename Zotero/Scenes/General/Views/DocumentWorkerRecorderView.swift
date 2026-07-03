@@ -210,7 +210,7 @@ private struct RecordRow: View {
                 Text(record.work.title)
                     .font(.headline)
                 Spacer(minLength: 12)
-                StatusText(status: record.status)
+                StatusText(record: record)
             }
 
             Text(record.fileName)
@@ -249,12 +249,12 @@ private extension DocumentWorkerRecorder.Record {
 }
 
 private struct StatusText: View {
-    let status: DocumentWorkerRecorder.Record.Status
+    let record: DocumentWorkerRecorder.Record
 
     var body: some View {
-        Text(status.title)
+        Text(record.statusTitle)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(status.color)
+            .foregroundStyle(record.status.color)
     }
 }
 
@@ -322,25 +322,6 @@ private extension DocumentWorkerController.Priority {
 }
 
 private extension DocumentWorkerRecorder.Record.Status {
-    var title: String {
-        switch self {
-        case .queued:
-            return "Queued"
-
-        case .running:
-            return "Running"
-
-        case .finished:
-            return "Finished"
-
-        case .failed:
-            return "Failed"
-
-        case .cancelled:
-            return "Cancelled"
-        }
-    }
-
     var color: Color {
         switch self {
         case .queued:
@@ -357,6 +338,28 @@ private extension DocumentWorkerRecorder.Record.Status {
 
         case .cancelled:
             return .orange
+        }
+    }
+}
+
+private extension DocumentWorkerRecorder.Record {
+    var statusTitle: String {
+        switch status {
+        case .queued:
+            return "Queued"
+
+        case .running:
+            guard let progress else { return "Running" }
+            return "\(Int(progress.rounded()))%"
+
+        case .finished:
+            return "Finished"
+
+        case .failed:
+            return "Failed"
+
+        case .cancelled:
+            return "Cancelled"
         }
     }
 }

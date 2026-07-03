@@ -24,34 +24,6 @@ final class ONNXRuntimeSpec: QuickSpec {
                 return try ONNXRuntime.createSession(modelData: modelData, environment: environment)
             }
 
-            func expectTableGridMergerModel(_ resource: String) throws {
-                let session = try session(forModelResource: resource)
-
-                expect(try session.inputNames()).to(equal([
-                    "features"
-                ]))
-                expect(try session.outputNames()).to(equal([
-                    "logits"
-                ]))
-
-                let outputs = try session.run(
-                    inputs: [
-                        .float32(
-                            name: "features",
-                            values: Array(repeating: 0, count: 24),
-                            dimensions: [1, 24]
-                        )
-                    ],
-                    outputNames: [
-                        "logits"
-                    ]
-                )
-
-                expect(outputs["logits"]?.elementType).to(equal(ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT))
-                expect(outputs["logits"]?.dimensions).to(equal([1]))
-                expect(outputs["logits"]?.floatValues?.count).to(equal(1))
-            }
-
             it("loads the C runtime and creates an environment") {
                 expect(ONNXRuntime.versionString).toNot(beEmpty())
                 expect { try ONNXRuntime.createEnvironment() }.toNot(throwError())
@@ -205,76 +177,6 @@ final class ONNXRuntimeSpec: QuickSpec {
                 expect(outputs["logits"]?.elementType).to(equal(ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT))
                 expect(outputs["logits"]?.dimensions).to(equal([1]))
                 expect(outputs["logits"]?.floatValues?.count).to(equal(1))
-            }
-
-            it("loads the document worker table-grid scorer model") {
-                let session = try session(forModelResource: "table_grid_samecell_aux_dynamic_compact_int8")
-
-                expect(try session.inputNames()).to(equal([
-                    "node_feats",
-                    "edge_index",
-                    "edge_feats",
-                    "node_mask",
-                    "edge_mask"
-                ]))
-                expect(try session.outputNames()).to(equal([
-                    "same_box_logits",
-                    "same_line_logits",
-                    "next_in_line_logits"
-                ]))
-            }
-
-            it("runs the document worker table-grid scorer model") {
-                let session = try session(forModelResource: "table_grid_samecell_aux_dynamic_compact_int8")
-
-                let outputs = try session.run(
-                    inputs: [
-                        .float32(
-                            name: "node_feats",
-                            values: Array(repeating: 0, count: 32),
-                            dimensions: [1, 1, 32]
-                        ),
-                        .int64(
-                            name: "edge_index",
-                            values: Array(repeating: 0, count: 24),
-                            dimensions: [1, 1, 24]
-                        ),
-                        .float32(
-                            name: "edge_feats",
-                            values: Array(repeating: 0, count: 24 * 32),
-                            dimensions: [1, 1, 24, 32]
-                        ),
-                        .float32(
-                            name: "node_mask",
-                            values: [1],
-                            dimensions: [1, 1]
-                        ),
-                        .float32(
-                            name: "edge_mask",
-                            values: Array(repeating: 0, count: 24),
-                            dimensions: [1, 1, 24]
-                        )
-                    ],
-                    outputNames: [
-                        "same_box_logits",
-                        "same_line_logits",
-                        "next_in_line_logits"
-                    ]
-                )
-
-                for outputName in ["same_box_logits", "same_line_logits", "next_in_line_logits"] {
-                    expect(outputs[outputName]?.elementType).to(equal(ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT))
-                    expect(outputs[outputName]?.dimensions).to(equal([1, 1, 24]))
-                    expect(outputs[outputName]?.floatValues?.count).to(equal(24))
-                }
-            }
-
-            it("loads and runs the document worker table-grid row merger model") {
-                try expectTableGridMergerModel("table_grid_axis_row_merger_mlp_compact_int8")
-            }
-
-            it("loads and runs the document worker table-grid column merger model") {
-                try expectTableGridMergerModel("table_grid_axis_col_merger_mlp_compact_int8")
             }
         }
     }

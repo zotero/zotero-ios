@@ -30,6 +30,7 @@ enum DocumentWorkerAction {
 }
 
 enum DocumentWorkerOutput {
+    case progress(Double)
     case recognizerData(data: [String: Any])
     case fullText(data: [String: Any])
     case structuredDocumentText(data: [String: Any])

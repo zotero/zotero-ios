@@ -82,9 +82,6 @@
 		61B0A1EB2FBD200100C0DE01 /* block_seg_classifier_model.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 61B0A1EA2FBD200100C0DE01 /* block_seg_classifier_model.onnx */; };
 		61B0A1EE2FBD200100C0DE01 /* block_seg_clusterer_model.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 61B0A1ED2FBD200100C0DE01 /* block_seg_clusterer_model.onnx */; };
 		61B0A1F02FBD200100C0DE01 /* block_seg_clusterer_repair_model.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 61B0A1EF2FBD200100C0DE01 /* block_seg_clusterer_repair_model.onnx */; };
-		61B0A1F22FBD200100C0DE01 /* table_grid_samecell_aux_dynamic_compact_int8.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 61B0A1F12FBD200100C0DE01 /* table_grid_samecell_aux_dynamic_compact_int8.onnx */; };
-		61B0A1F42FBD200100C0DE01 /* table_grid_axis_row_merger_mlp_compact_int8.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 61B0A1F32FBD200100C0DE01 /* table_grid_axis_row_merger_mlp_compact_int8.onnx */; };
-		61B0A1F62FBD200100C0DE01 /* table_grid_axis_col_merger_mlp_compact_int8.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 61B0A1F52FBD200100C0DE01 /* table_grid_axis_col_merger_mlp_compact_int8.onnx */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C0DE022F9D000100000001 /* 1.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE012F9D000100000001 /* 1.pdf */; };
 		61C0DE022F9D000100000002 /* 1.epub in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE012F9D000100000002 /* 1.epub */; };
@@ -1460,9 +1457,6 @@
 		61B0A1EA2FBD200100C0DE01 /* block_seg_classifier_model.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = block_seg_classifier_model.onnx; sourceTree = "<group>"; };
 		61B0A1ED2FBD200100C0DE01 /* block_seg_clusterer_model.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = block_seg_clusterer_model.onnx; sourceTree = "<group>"; };
 		61B0A1EF2FBD200100C0DE01 /* block_seg_clusterer_repair_model.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = block_seg_clusterer_repair_model.onnx; sourceTree = "<group>"; };
-		61B0A1F12FBD200100C0DE01 /* table_grid_samecell_aux_dynamic_compact_int8.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = table_grid_samecell_aux_dynamic_compact_int8.onnx; sourceTree = "<group>"; };
-		61B0A1F32FBD200100C0DE01 /* table_grid_axis_row_merger_mlp_compact_int8.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = table_grid_axis_row_merger_mlp_compact_int8.onnx; sourceTree = "<group>"; };
-		61B0A1F52FBD200100C0DE01 /* table_grid_axis_col_merger_mlp_compact_int8.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = table_grid_axis_col_merger_mlp_compact_int8.onnx; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		61C0DE012F9D000100000001 /* 1.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = 1.pdf; sourceTree = "<group>"; };
 		61C0DE012F9D000100000002 /* 1.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = 1.epub; sourceTree = "<group>"; };
@@ -2690,9 +2684,6 @@
 				61B0A1EA2FBD200100C0DE01 /* block_seg_classifier_model.onnx */,
 				61B0A1ED2FBD200100C0DE01 /* block_seg_clusterer_model.onnx */,
 				61B0A1EF2FBD200100C0DE01 /* block_seg_clusterer_repair_model.onnx */,
-				61B0A1F12FBD200100C0DE01 /* table_grid_samecell_aux_dynamic_compact_int8.onnx */,
-				61B0A1F32FBD200100C0DE01 /* table_grid_axis_row_merger_mlp_compact_int8.onnx */,
-				61B0A1F52FBD200100C0DE01 /* table_grid_axis_col_merger_mlp_compact_int8.onnx */,
 			);
 			path = ONNX;
 			sourceTree = "<group>";
@@ -5226,9 +5217,6 @@
 				61B0A1EB2FBD200100C0DE01 /* block_seg_classifier_model.onnx in Resources */,
 				61B0A1EE2FBD200100C0DE01 /* block_seg_clusterer_model.onnx in Resources */,
 				61B0A1F02FBD200100C0DE01 /* block_seg_clusterer_repair_model.onnx in Resources */,
-				61B0A1F22FBD200100C0DE01 /* table_grid_samecell_aux_dynamic_compact_int8.onnx in Resources */,
-				61B0A1F42FBD200100C0DE01 /* table_grid_axis_row_merger_mlp_compact_int8.onnx in Resources */,
-				61B0A1F62FBD200100C0DE01 /* table_grid_axis_col_merger_mlp_compact_int8.onnx in Resources */,
 				B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */,
 				61C0DE022F9D000100000004 /* 1_pdf_structured_text.json in Resources */,
 				61C0DE122F9D000100000007 /* bitcoin_pdf_structured_text.json in Resources */,

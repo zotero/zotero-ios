@@ -62,6 +62,7 @@ final class DocumentWorkerRecorder {
         var startedAt: Date?
         var finishedAt: Date?
         var duration: CFTimeInterval?
+        var progress: Double?
         var isCached: Bool
     }
 
@@ -132,6 +133,7 @@ final class DocumentWorkerRecorder {
                 if let startedAt = update.startedAt {
                     record.startedAt = startedAt
                 }
+                record.progress = update.kind.progress
                 if status.isTerminal {
                     record.finishedAt = Date()
                     record.duration = update.duration
@@ -154,6 +156,7 @@ final class DocumentWorkerRecorder {
                     startedAt: update.startedAt,
                     finishedAt: status.isTerminal ? Date() : nil,
                     duration: status.isTerminal ? update.duration : nil,
+                    progress: update.kind.progress,
                     isCached: status.isTerminal && update.kind.isCached
                 )
                 if status.isTerminal {
@@ -176,6 +179,16 @@ final class DocumentWorkerRecorder {
 }
 
 private extension DocumentWorkerController.Update.Kind {
+    var progress: Double? {
+        switch self {
+        case .inProgress(let progress):
+            return progress
+
+        case .queued, .extractedData, .failed, .cancelled:
+            return nil
+        }
+    }
+
     var isCached: Bool {
         switch self {
         case .extractedData(_, let isCached):

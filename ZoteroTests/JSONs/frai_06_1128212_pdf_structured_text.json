@@ -1,7 +1,7 @@
 {
 	"schemaVersion": "1.0.0",
 	"metadata": {
-		"processor": {"type": "pdf", "version": 1},
+		"processor": {"type": "pdf", "version": 2},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
 		"source": {
 			"contentType": "application/pdf",
@@ -26,17 +26,17 @@
 			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[21], [38]], "label": "2"},
 			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[38], [56]], "label": "3"},
 			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[56], [73]], "label": "4"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[73], [103]], "label": "5"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[103], [125]], "label": "6"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[125], [156]], "label": "7"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[156], [173]], "label": "8"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[173], [197]], "label": "9"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[197], [214]], "label": "10"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[214], [233]], "label": "11"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[233], [241]], "label": "12"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[241], [259]], "label": "13"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[259], [262]], "label": "14"},
-			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[262], [265]], "label": "15"}
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[73], [100]], "label": "5"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[100], [122]], "label": "6"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[122], [151]], "label": "7"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[151], [168]], "label": "8"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[168], [192]], "label": "9"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[192], [209]], "label": "10"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[209], [228]], "label": "11"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[228], [236]], "label": "12"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[236], [254]], "label": "13"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[254], [257]], "label": "14"},
+			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[257], [260]], "label": "15"}
 		],
 		"outline": [
 			{"title": "COPYRIGHT", "ref": [7]},
@@ -64,59 +64,59 @@
 				"ref": [53],
 				"children": [
 					{"title": "3.1. Abductive explanations (AXp’s)", "ref": [60]},
-					{"title": "3.2. Contrastive explanations (CXp’s)", "ref": [82]},
-					{"title": "3.3. Duality between AXp’s and CXp’s", "ref": [95]},
-					{"title": "3.4. Current status of logic-based explainability", "ref": [100]}
+					{"title": "3.2. Contrastive explanations (CXp’s)", "ref": [80]},
+					{"title": "3.3. Duality between AXp’s and CXp’s", "ref": [92]},
+					{"title": "3.4. Current status of logic-based explainability", "ref": [97]}
 				]
 			},
 			{
 				"title": "4. How to understand interpretable ML models?",
-				"ref": [106],
+				"ref": [103],
 				"children": [
 					{
 						"title": "4.1. How to comprehend predictions?",
-						"ref": [108],
-						"children": [{"title": "“Given an instance (v, c), why is the prediction c?”", "ref": [110]}]
+						"ref": [105],
+						"children": [{"title": "“Given an instance (v, c), why is the prediction c?”", "ref": [107]}]
 					},
-					{"title": "4.2. Defining model comprehensibility", "ref": [118]},
+					{"title": "4.2. Defining model comprehensibility", "ref": [115]},
 					{
 						"title": "4.3. Are interpretable models indeed comprehensible?",
-						"ref": [129],
+						"ref": [126],
 						"children": [
-							{"title": "4.3.1. Decision trees", "ref": [131]},
-							{"title": "4.3.2. Decision lists", "ref": [142]}
+							{"title": "4.3.1. Decision trees", "ref": [128]},
+							{"title": "4.3.2. Decision lists", "ref": [139]}
 						]
 					}
 				]
 			},
 			{
 				"title": "5. Non-comprehensibility of interpretable models",
-				"ref": [166],
+				"ref": [161],
 				"children": [
-					{"title": "5.1. Non-comprehensibility of decision trees", "ref": [168]},
-					{"title": "5.2. Non-comprehensibility of decision lists", "ref": [174]},
-					{"title": "5.3. Non-comprehensibility of decision sets", "ref": [178]},
-					{"title": "5.4. Answering WHYNOT questions can be hard", "ref": [180]}
+					{"title": "5.1. Non-comprehensibility of decision trees", "ref": [163]},
+					{"title": "5.2. Non-comprehensibility of decision lists", "ref": [169]},
+					{"title": "5.3. Non-comprehensibility of decision sets", "ref": [173]},
+					{"title": "5.4. Answering WHYNOT questions can be hard", "ref": [175]}
 				]
 			},
 			{
 				"title": "6. Experimental evidence",
-				"ref": [203],
+				"ref": [198],
 				"children": [
-					{"title": "6.1. Measuring explanation redundancy", "ref": [209]},
-					{"title": "6.2. Redundancy of default explanations", "ref": [216]},
-					{"title": "6.3. Additional classifiers", "ref": [220]}
+					{"title": "6.1. Measuring explanation redundancy", "ref": [204]},
+					{"title": "6.2. Redundancy of default explanations", "ref": [211]},
+					{"title": "6.3. Additional classifiers", "ref": [215]}
 				]
 			},
-			{"title": "7. Discussion", "ref": [223]},
-			{"title": "8. Conclusion and research directions", "ref": [235]},
-			{"title": "Data availability statement", "ref": [244]},
-			{"title": "Author contributions", "ref": [246]},
-			{"title": "Funding", "ref": [248]},
-			{"title": "Acknowledgments", "ref": [250]},
-			{"title": "Conflict of interest", "ref": [252]},
-			{"title": "Publisher’s note", "ref": [254]},
-			{"title": "References", "ref": [256]}
+			{"title": "7. Discussion", "ref": [218]},
+			{"title": "8. Conclusion and research directions", "ref": [230]},
+			{"title": "Data availability statement", "ref": [239]},
+			{"title": "Author contributions", "ref": [241]},
+			{"title": "Funding", "ref": [243]},
+			{"title": "Acknowledgments", "ref": [245]},
+			{"title": "Conflict of interest", "ref": [247]},
+			{"title": "Publisher’s note", "ref": [249]},
+			{"title": "References", "ref": [251]}
 		]
 	},
 	"content": [
@@ -397,7 +397,7 @@
 					"anchor": {
 						"textMap": "[[0,0,229,321,545.6,330,[266,5],3.4,6,4.7,3.3,[6.5,4],1.6,[5.7,4],2.3,2,2],[0,0,215,309,545.6,318,4.4,4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 38]]
+					"refs": [[255, 38]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,0,215,309,545.6,318,[17.4,1.3]]]"}},
 				{
@@ -405,7 +405,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,309,545.6,318,[22.7,6.4],4.5,4.6,5,2.4,4,2,2.4,4.6,4,[5.4,4],1.6,[4,4],2.4,2,1.4,[4,4],4.5,4.3,4.4]]"
 					},
-					"refs": [[260, 7]]
+					"refs": [[255, 7]]
 				},
 				{
 					"text": ", 2020; ",
@@ -416,7 +416,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,309,545.6,318,[136.5,6],3,2.7,3.7,5,3.7,4,3.5,4.5,2.7,[4.6,4],1.7,[4,4],2.3,2,1.4,[4,4],4.5,4.4,4.3]]"
 					},
-					"refs": [[260, 36]]
+					"refs": [[255, 36]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,0,215,309,545.6,318,[220.5,1.4]]]"}},
 				{
@@ -424,7 +424,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,309,545.6,318,[226,5],4,5,4,2.4,3,[5,3.6],2,[4,4],2,2,1.6,[4,4],4.5,4.4,4.3]]"
 					},
-					"refs": [[257, 9]]
+					"refs": [[252, 9]]
 				},
 				{
 					"text": "). Despite these successes, there are shortcomings to the deployment of ML models (",
@@ -437,7 +437,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,297,545.6,306,[278.5,4.4],3.7,4,4,4,4.7,2.7,[4.5,4],1.7,[4,4],2.3,2,2],[0,0,215,285,545.6,294,4.4,4.3,4.4,4.3]]"
 					},
-					"refs": [[263, 4]]
+					"refs": [[258, 4]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,0,215,285,545.6,294,[17.4,1.3]]]"}},
 				{
@@ -445,7 +445,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,285,545.6,294,[23.7,6.3],4.6,4.6,4.7,2.7,4,2,2.4,4.6,4,[6.3,4],1.6,[5,4],2.3,2,1.4,[5,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[260, 9]]
+					"refs": [[255, 9]]
 				},
 				{
 					"text": ", 2016). Indeed, complex ML models can exhibit lack of robustness, can display bias, and their operation is invariably inscrutable for human decision makers (",
@@ -458,7 +458,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,261,545.6,270,[32,6.5],5,4.7,5,2.3,5,3,[4,4],4.7,3,[4.4,6],[0.3,5],3.7,1.4,[3.3,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 12]]
+					"refs": [[255, 12]]
 				},
 				{
 					"text": "). As a result, there have been efforts to devising logically rigorous (and so formal) approaches to reasoning about ML models (Marques-Silva and Ignatiev, ",
@@ -469,7 +469,7 @@
 				{
 					"text": "2022",
 					"anchor": {"textMap": "[[0,0,215,237,271,246,[34,4],4,4.5,4.4]]"},
-					"refs": [[260, 45]]
+					"refs": [[255, 45]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,0,215,237,271,246,[51,3],2]]"}}
 			]
@@ -487,13 +487,13 @@
 				{
 					"text": "Rudin, 2019",
 					"anchor": {"textMap": "[[0,0,215,213,545.6,222,[282,6],4.5,5,2,5,1.5,[5,4.6],4.3,4.3,4.3]]"},
-					"refs": [[260, 61]]
+					"refs": [[255, 61]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,0,215,213,545.6,222,[328.5,2]]]"}},
 				{
 					"text": "Molnar, 2020",
 					"anchor": {"textMap": "[[0,0,215,201,545.6,210,8,4.7,2.3,5,4,3,1.6,[5,4],4.5,4.3,4.3]]"},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": "), which include, for example, decision trees, decision lists, and decision sets, among others (",
@@ -506,7 +506,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,189,412,198,[73.3,8],4.7,2.3,5,4,3,1.6,[3,4.4],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": "). Despite the term “interpretable model” being extremely popular (",
@@ -519,7 +519,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,177,545.6,186,[33,6],4.7,4.7,2.4,5,1.3,[2.4,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 61]]
+					"refs": [[255, 61]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,0,215,177,545.6,186,[77,1]]]"}},
 				{
@@ -527,7 +527,7 @@
 					"anchor": {
 						"textMap": "[[0,0,215,177,545.6,186,[80.6,8],4.6,2.3,5,4,3,1.6,[2.4,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": "), it is also the case that there is no rigorous definition for what an interpretable model should be. The subjectivity of what interpretability should mean indicates that a rigorous widely accepted definition is at least fairly unlikely. Accordingly, some other researchers have raised important concerns about what interpretability of ML models might represent (",
@@ -538,7 +538,7 @@
 				{
 					"text": "Lipton, 2018",
 					"anchor": {"textMap": "[[0,0,215,129,356.6,138,[91,5],2,5,3,4,5,1.5,[2.7,4.3],4.3,4.4,4.3]]"},
-					"refs": [[260, 39]]
+					"refs": [[255, 39]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,0,215,129,356.6,138,[136.5,3],2]]"}}
 			]
@@ -558,7 +558,7 @@
 					"anchor": {
 						"textMap": "[[0,0,229,117,545.6,126,[202.7,3],4,4,2.4,[4.3,4],1.7,[4,4],2,2,1.5,[3.6,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 28]]
+					"refs": [[255, 28]]
 				},
 				{
 					"text": ", 2022a; ",
@@ -569,7 +569,7 @@
 					"anchor": {
 						"textMap": "[[0,0,229,117,545.6,126,[292,7],4.5,4,5,4],[0,0,215,105,545.6,114,4,1.7,[3.6,4],2,2.3,1.4,[3.3,4.3],4.3,4.4,4.3,4.5]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{
 					"text": ") that, when compared with logically rigorous explanations, decision trees can yield explanations which are arbitrarily redundant on the number of features.",
@@ -598,7 +598,7 @@
 				{
 					"text": "Quinlan, 1987",
 					"anchor": {"textMap": "[[0,0,215,70.4,545.6,77,[212,5.7],4,2,4,1.6,3.6,4,1.3,[2,4],4,4,4]]"},
-					"refs": [[260, 55]]
+					"refs": [[255, 55]]
 				},
 				{
 					"text": "), but not for addressing explaination redundancy.",
@@ -664,7 +664,7 @@
 					"anchor": {
 						"textMap": "[[0,1,49.7,715,290.6,724,[31,3],4,4,2.5,[5.6,4],1.7,[5,4],2.4,2,1.5,[5,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 28]]
+					"refs": [[255, 28]]
 				},
 				{
 					"text": ", 2022a; ",
@@ -675,7 +675,7 @@
 					"anchor": {
 						"textMap": "[[0,1,49.7,715,290.6,724,[127,7],4.6,4,5,2.7,[6,3.6],2,[5,4],2.3,2,1.4,[5,4.3],4.4,4.3,4.3,4.6]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{
 					"text": ") that the answer to this WHY question can be arbitrarily redundant when the explanation corresponds to the path in the decision tree that is consistent with the values assigned to the features. A corollary of these results is that, if succinct explanations can be viewed as a measure of model interpretability, then decision trees can hardly be deemed interpretable. Furthermore, a human decision maker will in most cases be unable to propose explanations less redundant than the tree path consistent with the input, and so automated computation of explanations is required.",
@@ -724,7 +724,7 @@
 					"anchor": {
 						"textMap": "[[0,1,115.4,223,290.6,232,3,4,3.6,2.7,[5.7,4],1.7,[5.4,4],2,2,1.6,[5,4.4],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 28]]
+					"refs": [[255, 28]]
 				},
 				{
 					"text": ", 2022a; ",
@@ -735,7 +735,7 @@
 					"anchor": {
 						"textMap": "[[0,1,115.4,223,290.6,232,[96,7],5,4,5,3,[5.5,4],1.7,[5.4,4],2,2,1.6,[5,4.4],4.4,4.3,4.3,4.6]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,1,115.4,223,290.6,232,[173,2]]]"}},
 				{
@@ -743,7 +743,7 @@
 					"anchor": {
 						"textMap": "[[0,1,49.7,211,290.6,220,3,4.3,5,4,2.6,2.4,4,2.7,[3.5,4],5,3,[3.7,8],4,3,5,4.6,4,3,3.3,4.3,2.4,2.3,4,4,1.4,[3,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{
 					"text": "). The assessment of the so-called interpretable models included in this study hinges on the fact that rigorous explanations are efficient to compute, even when in theory computing some of these explanations is computationally hard.",
@@ -1062,7 +1062,7 @@
 					"anchor": {
 						"textMap": "[[0,1,304.6,248,545.6,256.5,[55,8],4.7,2.3,5,4,3,1.6,[6,4.5],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": "), we will consider tree and rule models (",
@@ -1073,7 +1073,7 @@
 				{
 					"text": "Flach, 2012",
 					"anchor": {"textMap": "[[0,1,304.6,236,545.6,244.5,[33,5],2,4,4,5,1,[5,4],4.6,4.3,4.3]]"},
-					"refs": [[260, 4]]
+					"refs": [[255, 4]]
 				},
 				{
 					"text": "), namely decision trees, decision lists, and decision sets, in their simplest forms. These are widely regarded as interpretable (",
@@ -1086,7 +1086,7 @@
 					"anchor": {
 						"textMap": "[[0,1,304.6,212,545.6,220.5,[61,5],4,4.6,4.5,4,3.3,4,[-0.3,2.4],3,[4,3.7],2,[3,4],2,2,1.6,[3,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[260, 37]]
+					"refs": [[255, 37]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,1,304.6,212,545.6,220.5,[138,1.3]]]"}},
 				{
@@ -1094,7 +1094,7 @@
 					"anchor": {
 						"textMap": "[[0,1,304.6,212,545.6,220.5,[142.3,5.4],5,4.6,2.4,5,1.3,[3,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[260, 61]]
+					"refs": [[255, 61]]
 				},
 				{
 					"text": ", 2022; Molnar, ",
@@ -1105,7 +1105,7 @@
 				{
 					"text": "2020",
 					"anchor": {"textMap": "[[0,1,304.6,200,327,208.5,4.4,4.3,4.3,4.3]]"},
-					"refs": [[260, 22]]
+					"refs": [[255, 22]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,1,304.6,200,327,208.5,[17.3,3],2]]"}}
 			]
@@ -1189,7 +1189,7 @@
 					"anchor": {
 						"textMap": "[[0,2,49.7,703,212.3,712,[48.3,3],4,3.7,2.6,[3,4],2,[2.6,4],2,2.3,1.4,[2.5,4.3],4.3,4.3,4.4,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "). Thus, a literal x",
@@ -1363,7 +1363,7 @@
 				}
 			],
 			"flowClass": "auxiliary",
-			"backRefs": [[158, 1]]
+			"backRefs": [[153, 1]]
 		},
 		{
 			"type": "paragraph",
@@ -1476,7 +1476,7 @@
 					"anchor": {
 						"textMap": "[[0,2,196,261,290.6,270,4.6,4,4.6,4.5,4,3,4,2.3,3,[3.7,4],1.6,[3,3.7],2.3,2,1.4,[2.5,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 37]]
+					"refs": [[255, 37]]
 				},
 				{
 					"text": "), but with a definition of overlap that is restricted to the instances in the dataset. As a result, as first observed in ",
@@ -1489,7 +1489,7 @@
 					"anchor": {
 						"textMap": "[[0,2,49.7,237,290.6,246,[148,3],4,5,4,3,2.3,4,2.6,[4.4,4],1.6,[4,4],2,1.5,[3.6,3],4.4,4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 26]]
+					"refs": [[255, 26]]
 				},
 				{
 					"text": "), the solution proposed in ",
@@ -1502,7 +1502,7 @@
 					"anchor": {
 						"textMap": "[[0,2,49.7,225,290.6,234,[75.7,5],4,4.3,4.5,4,3.3,4,2,3.3,[3,4],2,[2.4,4],2,1.6,[2.3,3],4.4,4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 37]]
+					"refs": [[255, 37]]
 				},
 				{
 					"text": ") is susceptible to overlap for points in feature space that are not in the dataset.",
@@ -1527,7 +1527,7 @@
 					"anchor": {
 						"textMap": "[[0,2,49.7,165,290.6,174,[100.7,3],4.3,5,4,2.6,2.4,4,2.7,[5.3,4],1.6,[5,4],2,1.4,[4.6,3],4.4,4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 26]]
+					"refs": [[255, 26]]
 				},
 				{
 					"text": "). To the best of our knowledge, no rigorous approach exists that guarantees that a decision sets implements a total function, i.e., guarantee of i) no overlap and ii) a prediction for every point in feature space. If these conditions are not met, interpretability is even more of a challenge (Furthermore, ",
@@ -1540,7 +1540,7 @@
 					"anchor": {
 						"textMap": "[[0,2,49.7,105,290.6,114,[54,3.3],4,5,4,3,2,4,3,[3.6,4],1.7,[3,4],2.5,1.3,[3,3],4.5,4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 26]]
+					"refs": [[255, 26]]
 				},
 				{
 					"text": ") conjectures that learning a DS that respects the two conditions above is 6",
@@ -1578,7 +1578,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,751,545.6,760,[22.5,3],4.4,5,4,2.6,2.4,4,2.7,[6.3,4],1.6,[6,4],2,2,1.5,[5.6,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 26]]
+					"refs": [[255, 26]]
 				},
 				{
 					"text": "). Moreover, no solution exists that guarantees that a decision set implements a total function without overlap. Thus, in the remainder of this article, we will focus on decision trees and decision lists.",
@@ -1616,7 +1616,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,619,545.6,627.5,[40,5],2.6,4,3,2.7,[7.3,4],1.7,[7,4],2,2,1.6,[6.7,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[257, 11]]
+					"refs": [[252, 11]]
 				},
 				{
 					"text": "). SAT is well-known to be an NP-complete (",
@@ -1629,7 +1629,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,607,545.6,615.5,[56,6],4.5,4.6,4.4,1.4,[6,4],4.4,4.3,4.3]]"
 					},
-					"refs": [[257, 19]]
+					"refs": [[252, 19]]
 				},
 				{
 					"text": ") decision problem. A propositional formula φ is defined over a finite set of propositional atoms X = {x",
@@ -1750,7 +1750,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,223,464.3,231.5,[48.5,5.7],4,2.3,2.7,4,3,1.5,[3.5,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 58]]
+					"refs": [[255, 58]]
 				},
 				{
 					"text": ") (Recall that a set H is a hitting set of a set of sets S = {S",
@@ -1783,7 +1783,7 @@
 				{
 					"text": "2020",
 					"anchor": {"textMap": "[[0,2,304.6,163,531.4,171.5,[204.4,4.4],4.4,4.3,4.3]]"},
-					"refs": [[260, 46]]
+					"refs": [[255, 46]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,2,304.6,163,531.4,171.5,[222,3],2]]"}}
 			]
@@ -1815,7 +1815,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,93,545.6,102,[202,4.6],4.7,2.4,3,[4.6,4],1.7,[3.6,4],2.3,2,2],[0,2,304.6,81,545.6,90,4.4,4.3,4.3,4.3]]"
 					},
-					"refs": [[263, 2]]
+					"refs": [[258, 2]]
 				},
 				{
 					"text": ", 2019; ",
@@ -1826,7 +1826,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,81,545.6,90,[42.5,3],4.3,5,4,2.6,2.4,4,2.7,[3.3,4],1.7,[3,3.7],2.3,2,1.4,[2.6,4.3],4.3,4.4,4.3,4]]"
 					},
-					"refs": [[260, 23]]
+					"refs": [[255, 23]]
 				},
 				{
 					"text": ",b,c, 2020a, 2022; ",
@@ -1839,7 +1839,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,81,545.6,90,[178.6,6.7],[-0.3,4],3.3,4.6,5,4,2.7,3.3,4.4,2.7,[3,4],2,[2.6,4],2.3,2,2],[0,2,304.6,69,545.6,78,4.4,4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 53]]
+					"refs": [[255, 53]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,2,304.6,69,545.6,78,[17.3,1.4]]]"}},
 				{
@@ -1847,7 +1847,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,69,545.6,78,[23.7,8.7],4.6,2,2,[5,4],2,[5,4],2,2.3,1.3,[5,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[263, 11]]
+					"refs": [[258, 11]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,2,304.6,69,545.6,78,[89,1]]]"}},
 				{
@@ -1855,7 +1855,7 @@
 					"anchor": {
 						"textMap": "[[0,2,304.6,69,545.6,78,[95,6],5,5,4,7,4,3.4,3,[6,4],1.7,[5,4],2.4,2,1.4,[5,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[257, 8]]
+					"refs": [[252, 8]]
 				},
 				{
 					"text": ", 2021, ",
@@ -1864,13 +1864,13 @@
 				{
 					"text": "2022a",
 					"anchor": {"textMap": "[[0,2,304.6,69,545.6,78,[211,4.4],4.3,4.3,4.3,4]]"},
-					"refs": [[257, 6]]
+					"refs": [[252, 6]]
 				},
 				{"text": ",", "anchor": {"textMap": "[[0,2,304.6,69,545.6,78,[232.3,2]]]"}},
 				{
 					"text": "b;",
 					"anchor": {"textMap": "[[0,2,304.6,69,545.6,78,[234.3,4.6],2]]"},
-					"refs": [[245]]
+					"refs": [[240]]
 				}
 			]
 		},
@@ -1941,7 +1941,7 @@
 					"anchor": {
 						"textMap": "[[0,3,62,531,506.3,537.5,[92.4,5.3],2.7,[3,4],1.7,[2.6,3.6],2,1.5,1,[2.6,4],4,4,3.7]]"
 					},
-					"refs": [[260, 13]]
+					"refs": [[255, 13]]
 				},
 				{
 					"text": ", Figure 5b), for the tic-tac-toe dataset. This DT is also studied more recently in ",
@@ -1954,7 +1954,7 @@
 					"anchor": {
 						"textMap": "[[0,3,62,531,506.3,537.5,[389.3,2],3.5,3.5,2.4,[3,4],1.5,[2.7,3.6],1.7,1,[2.6,2],4,4,4,4,3.4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": ") and Marques-Silva (2022). Each feature tests a possible play for the X player. The (boxed) terminal nodes display the predicted class. The (circled) non-terminal nodes display the tested feature. The edges label depicts the feature’s tested literal, for the edge to be consistent. The number below each node denotes a unique number given to each node, which enables representing paths in the DT. (A) Decision tree. (B) Mapping of features.",
@@ -1964,7 +1964,7 @@
 				}
 			],
 			"flowClass": "auxiliary",
-			"backRefs": [[39, 23], [75, 1], [93, 1], [98, 1], [135, 1]]
+			"backRefs": [[39, 23], [75, 1], [90, 1], [95, 1], [132, 1]]
 		},
 		{
 			"type": "paragraph",
@@ -1975,7 +1975,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,462,290.6,471,5.3,4.6,5,7,4,4,4.5,4.7,4,2.4,[5.6,4],1.6,[5,4],2.4,2,1.4,[5,4],4.5,4.3,4.4]]"
 					},
-					"refs": [[257, 15]]
+					"refs": [[252, 15]]
 				},
 				{
 					"text": ", 2021; Darwiche, 2020; ",
@@ -1988,7 +1988,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,462,290.6,471,[188.3,6.5],4,3.3,6,2.6,4,4.6,2.5,[5.5,4],5,4.6],[0,3,49.7,450,290.6,459,7,2.3,3.3,3,4.6,1.4,[4,4],4.4,4.4,4.3]]"
 					},
-					"refs": [[257, 22]]
+					"refs": [[252, 22]]
 				},
 				{
 					"text": ", 2022; ",
@@ -1999,7 +1999,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,450,290.6,459,[70.5,3],3.6,4,2.5,[4.4,4],1.6,[4,4],2.3,2,1.4,[4,4],4.4,4.4,4.3]]"
 					},
-					"refs": [[260, 28]]
+					"refs": [[255, 28]]
 				},
 				{
 					"text": ", 2021, 2022a,b; ",
@@ -2012,7 +2012,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,450,290.6,459,[189,8],[0,4],3,5,5,3.4,3.3,3,4.4,2.4,2.3,4,4],[0,3,49.7,438,290.6,447,4,1.7,[3,4],2.4,2,1.4,[3,4.3],4.3,4.3,4.4,1.3,[3,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 47]]
+					"refs": [[255, 47]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,438,290.6,447,[60.4,1.3]]]"}},
 				{
@@ -2020,7 +2020,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,438,290.6,447,[64.7,5.6],4,4.3,3,[4,3.7],2,[3,4],2,2.3,1.3,[3,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 57]]
+					"refs": [[255, 57]]
 				},
 				{
 					"text": ", 2021; ",
@@ -2031,7 +2031,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,438,290.6,447,[150,4],5,2,[3,4],1.5,[3,4],2.4,2,1.5,[3,4.3],4.3,4.3,4.3]]"
 					},
-					"refs": [[263, 1]]
+					"refs": [[258, 1]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,438,290.6,447,[202.6,1.4]]]"}},
 				{
@@ -2039,7 +2039,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,438,290.6,447,[207,6],7.5,4.3,4.5,5,4.6,2],[0,3,49.7,426,290.6,435,4.3,4.3,4.4,4.3]]"
 					},
-					"refs": [[257, 0]]
+					"refs": [[252, 0]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,426,290.6,435,[17.3,1.3]]]"}},
 				{
@@ -2047,7 +2047,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,426,290.6,435,[23,6.4],3.3,4,5,3.7,2,[5,4],2,[4.5,4],2,2.3,1.3,[4.5,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[257, 2]]
+					"refs": [[252, 2]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,426,290.6,435,[94.3,1.4]]]"}},
 				{
@@ -2055,7 +2055,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,426,290.6,435,[100,6],3.6,4.7,4,2,[5,4],1.7,[4.7,4],2,2.3,1.3,[4.5,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[257, 4]]
+					"refs": [[252, 4]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,426,290.6,435,[167,1.5]]]"}},
 				{
@@ -2063,7 +2063,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,426,290.6,435,[173,5.3],2.3,4,5,2.4,[5,4],1.7,[4.7,4],2.3,2,1.4,[4.5,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[257, 14]]
+					"refs": [[252, 14]]
 				},
 				{
 					"text": ", 2022a,b; ",
@@ -2076,7 +2076,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,414,290.6,423,[32,6],5,4.4,4.7,4,2,[3.5,4],5,3,[4,8],3.7,3.4,4.6,5,3.6,3.3,3,4.4,2.4,2.3,4,4,1.5,[3,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[257, 20]]
+					"refs": [[252, 20]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,414,290.6,423,[151,1.4]]]"}},
 				{
@@ -2084,7 +2084,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,414,290.6,423,[155.4,6.7],4,3.3,6,2.6,4,[-0.3,5],2.4,[3.6,4],5,3,[4,8],3.7,3.4,4.6,5,2,3.5,2],[0,3,49.7,402,290.6,411,4.3,4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 1]]
+					"refs": [[255, 1]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,402,290.6,411,[17.3,1.3]]]"}},
 				{
@@ -2092,7 +2092,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,402,290.6,411,[21,7],4.6,4,5,2.7,[3,4],1.6,[2.6,4],2,2,1.6,[2.3,4.3],4.3,4.3,4.4,4]]"
 					},
-					"refs": [[260, 14]]
+					"refs": [[255, 14]]
 				},
 				{
 					"text": ",b, 2022; ",
@@ -2103,7 +2103,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,402,290.6,411,[120,3],4,5,4,2.7,2.4,4,2.7,[3,4],5,3,[3,8],4,3.4,4.6,5,3.6,3.3,3,4.5,2.4,2,4.4,4,1.3,[2.3,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,402,290.6,411,[239,2]]]"}},
 				{
@@ -2111,7 +2111,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,390,290.6,399,3,4,3.6,2.7,[4.3,4],5,3,[4.7,8],4,3,4.7,5,3.6,3.3,3,4.5,2.4,2.3,4,4,1.4,[4,4],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 32]]
+					"refs": [[255, 32]]
 				},
 				{
 					"text": ", 2022; ",
@@ -2122,7 +2122,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,390,290.6,399,[136,5],2,3.4,[4.6,4],5,3,[4.7,5],4.4,3.4,2.4,5,2.3,1.4,[3.7,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 40]]
+					"refs": [[255, 40]]
 				},
 				{
 					"text": ", 2022a; ",
@@ -2133,7 +2133,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,378,290.6,387,8,4,2,3,2.4,[4,3.7],2,[3.3,4],2.3,2,1.4,[3,4.6],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 44]]
+					"refs": [[255, 44]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,378,290.6,387,[62.6,1.4]]]"}},
 				{
@@ -2141,7 +2141,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,378,290.6,387,[67,9],4,2,5,3.7,5,3.6,3.3,[4,4],2,[3.4,4],2,2,1.6,[3.3,4.3],4.3,4.3,4.3]]"
 					},
-					"refs": [[104]]
+					"refs": [[101]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,378,290.6,387,[146,1.5]]]"}},
 				{
@@ -2149,7 +2149,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,378,290.6,387,[151,6],7.3,4.3,4.5,5,3,[4,4],5,3,[4.3,5.3],4,5,3,6.7,[-0.3,4],2.4,7.4,2],[0,3,49.7,366,290.6,375,4.3,4.3,4.4,4.3]]"
 					},
-					"refs": [[257, 1]]
+					"refs": [[252, 1]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,366,290.6,375,[17.3,1.3]]]"}},
 				{
@@ -2157,7 +2157,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,366,290.6,375,[23.6,4.7],4,3,3.5,4,2,3.5,2.7,[5.5,4],1.6,[5,4],2.3,2,1.5,[5,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[260, 3]]
+					"refs": [[255, 3]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,366,290.6,375,[99,1.4]]]"}},
 				{
@@ -2165,7 +2165,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,366,290.6,375,[105.4,6.3],4.6,3.3,2.4,1.6,[5,4],5,3,[6,5.4],4.7,4.6,2.4,5,1.3,[5,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[260, 10]]
+					"refs": [[255, 10]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,366,290.6,375,[192,1.5]]]"}},
 				{
@@ -2173,7 +2173,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,366,290.6,375,[198.5,7],4.5,4,5,2.7,[5.6,4],5,4.6],[0,3,49.7,354,290.6,363,8,4,3,5,4.5,4,3,3.4,4,2.6,2.3,4,4,1.5,[3,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[260, 17]]
+					"refs": [[255, 17]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,354,290.6,363,[73.4,1.4]]]"}},
 				{
@@ -2181,7 +2181,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,354,290.6,363,[78,8],[-0.5,4],3.3,4.6,5,3.6,3.3,3,4.4,2.5,2,4.4,2.6,[3.5,4],5,3,[4,3],4,5,4,2.7,2.4,4,4,1.4,[3,4],4.5,4.3,4.4]]"
 					},
-					"refs": [[260, 48]]
+					"refs": [[255, 48]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,354,290.6,363,[198.4,1.3]]]"}},
 				{
@@ -2189,7 +2189,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,354,290.6,363,[202.7,8.6],[-0.7,4],2,5,4,[-0.3,5],3.7,5,2],[0,3,49.7,342,290.6,351,4.3,4.3,4.4,4.3]]"
 					},
-					"refs": [[263, 9]]
+					"refs": [[258, 9]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,342,290.6,351,[17.3,1.3]]]"}},
 				{
@@ -2197,7 +2197,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,342,290.6,351,[22,6],3,[4.4,4],1.7,[3.7,4],2.3,2,1.4,[3.5,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[263, 12]]
+					"refs": [[258, 12]]
 				},
 				{
 					"text": "), and are characterized by formally provable guarantees of rigor, given the underlying ML models. Given such guarantees of rigor, logic-based explainability should be contrasted with well-known model-agnostic approaches to XAI (",
@@ -2210,7 +2210,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,306,290.6,315,[193,6],2,5,4,2,3.5,3,[3.6,4],1.6,[3,4],2,2,2],[0,3,49.7,294,290.6,303,4.3,4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 59]]
+					"refs": [[255, 59]]
 				},
 				{
 					"text": ", 2018; ",
@@ -2221,7 +2221,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,294,290.6,303,[44,5],5,5,4.5,4.5,4,3,3,[4,4],5,3,[4.4,5],3.7,4,1,[3.6,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 43]]
+					"refs": [[255, 43]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,49.7,294,290.6,303,[133,1.3]]]"}},
 				{
@@ -2229,7 +2229,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,294,290.6,303,[138,6],5,2,5,4.7,3,2.5,1.6,[3.6,4],1.6,[3.7,4],2,2.3,1.4,[3.4,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 11]]
+					"refs": [[255, 11]]
 				},
 				{
 					"text": "), which offer no guarantees of rigor. The rest of this section offers a brief overview of logic-based explainability. More detailed overviews can be found elsewhere (Marques-Silva, 2022; Marques-Silva and Ignatiev, ",
@@ -2240,7 +2240,7 @@
 				{
 					"text": "2022",
 					"anchor": {"textMap": "[[0,3,49.7,246,105.6,255,[33.5,4.3],4.3,4.3,4.4]]"},
-					"refs": [[260, 45]]
+					"refs": [[255, 45]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,3,49.7,246,105.6,255,[51,3],2]]"}}
 			]
@@ -2273,7 +2273,7 @@
 					"anchor": {
 						"textMap": "[[0,3,63.6,183,290.6,191.6,[131,4.3],5,2,3.4,[4.4,4],1.6,[3.7,4],2,2.3,1.3,[3.5,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[263, 2]]
+					"refs": [[258, 2]]
 				},
 				{
 					"text": ") denote a minimal set of literals (relating a feature value x",
@@ -2304,7 +2304,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,135,209,143.6,[81,3],4.6,5,4,2.6,2.5,4,2.6,[4,3.7],2,[3,4],2.4,2,1.4,[3,4.5],4.3,4.3,4.3,4]]"
 					},
-					"refs": [[260, 23]]
+					"refs": [[255, 23]]
 				},
 				{"text": ")", "anchor": {"textMap": "[[0,3,49.7,135,209,143.6,[156,3]]]"}},
 				{"text": "1", "style": {"sup": true}, "anchor": {"textMap": "[[0,3,209,139.3,212,144.3]]"}},
@@ -2335,7 +2335,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,94,290.6,100.6,[136,4],4,1.7,3,[5,4],1.6,[5,3.4],1.7,1.7,1,[5,3.7],4,4,4]]"
 					},
-					"refs": [[263, 2]]
+					"refs": [[258, 2]]
 				},
 				{
 					"text": "). Independent work (",
@@ -2348,7 +2348,7 @@
 					"anchor": {
 						"textMap": "[[0,3,49.7,82,290.6,88.6,[20,2],4,4,4,2,2,4,2,[3.3,4],1.5,[3,3.6],1.7,2,1,[2.7,4],4,4,4,3.4]]"
 					},
-					"refs": [[260, 23]]
+					"refs": [[255, 23]]
 				},
 				{
 					"text": ") studied PI explanations in the case of for more general classification functions, i.e., not necessarily boolean, and related",
@@ -2500,7 +2500,7 @@
 				}
 			],
 			"flowClass": "auxiliary",
-			"backRefs": [[76, 3], [211, 5]]
+			"backRefs": [[76, 3], [206, 5]]
 		},
 		{
 			"type": "paragraph",
@@ -2584,7 +2584,7 @@
 					"anchor": {
 						"textMap": "[[0,3,304.6,166.3,545.6,173,[91.4,6],4,2.3,4,4,4,3,3.6,3.7,1.6,2,3,2.6,[4,4],1.6,[4,3.5],1.7,1.7,1,[4,3.7],4,4,4,1,[3.6,4],4,4,4]]"
 					},
-					"refs": [[260, 47]]
+					"refs": [[255, 47]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,304.6,166.3,545.6,173,[197,1]]]"}},
 				{
@@ -2592,7 +2592,7 @@
 					"anchor": {
 						"textMap": "[[0,3,304.6,166.3,545.6,173,[202,5],4.3,4.3,4,4,1.6,[4,3.5],4,4.3],[0,3,304.6,154.3,545.6,161,6,3.6,2.5,4,4,4,3,3.6,3.7,1.6,2,3,4,1,[2.5,4],4,4,3.7]]"
 					},
-					"refs": [[257, 20]]
+					"refs": [[252, 20]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,304.6,154.3,545.6,161,[64,1.6]]]"}},
 				{
@@ -2600,7 +2600,7 @@
 					"anchor": {
 						"textMap": "[[0,3,304.6,154.3,545.6,161,[68.3,5],4.3,3.6,4,3,[3,4],1.6,[3,3.5],1.7,1.7,1,[2.7,4],4,4,4,4]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{
 					"text": ", 2022; ",
@@ -2611,7 +2611,7 @@
 					"anchor": {
 						"textMap": "[[0,3,304.6,154.3,545.6,161,[154,2],4,4,3.5,2.3,1.6,4,2,[3.3,3.6],4,3,[3,6],4,2.3,4,4,4,3,3.6,3.7,1.6,2,3,4,1.5],[0,3,304.6,142.4,545.6,149,4,4,4,4]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,304.6,142.4,545.6,149,[16,1]]]"}},
 				{
@@ -2619,7 +2619,7 @@
 					"anchor": {
 						"textMap": "[[0,3,304.6,142.4,545.6,149,[20,2],3.3,3.6,2.4,[3,4],4,2.7,[3.4,6],3.6,2.5,4,4,4,3,3.5,4,1.4,1.7,3.4,3.6,1,[2.7,4],4,4,4]]"
 					},
-					"refs": [[260, 32]]
+					"refs": [[255, 32]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,3,304.6,142.4,545.6,149,[113,1]]]"}},
 				{
@@ -2627,7 +2627,7 @@
 					"anchor": {
 						"textMap": "[[0,3,304.6,142.4,545.6,149,[117,1.5],4,4,4,2,2,3.7,2,[3.4,4],1.4,[3,3.4],1.7,1.7,1,[3,3.7],4,4,4]]"
 					},
-					"refs": [[260, 19]]
+					"refs": [[255, 19]]
 				},
 				{
 					"text": "; Marques-Silva and Ignatiev, ",
@@ -2638,7 +2638,7 @@
 				{
 					"text": "2022",
 					"anchor": {"textMap": "[[0,3,304.6,130.4,352.6,137,[28.5,4],4,4,4]]"},
-					"refs": [[260, 45]]
+					"refs": [[255, 45]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,3,304.6,130.4,352.6,137,[44.5,2],1.5]]"}}
 			],
@@ -2752,7 +2752,7 @@
 					"anchor": {
 						"textMap": "[[0,4,49.7,681.4,290.6,690,[99,3],4,3.4,2.6,[3.4,4],1.7,[3,4],2,2.3,1.3,[3,4],4.4,4.4,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "), we can conclude that {3, 5} is the only AXp, given the instance.",
@@ -2793,36 +2793,20 @@
 		},
 		{
 			"type": "math",
-			"anchor": {"pageRects": [[4, 109.34, 615.21, 117.73, 621.42]]},
+			"anchor": {"pageRects": [[4, 109.34, 602.27, 290.63, 624.31]]},
 			"content": [
 				{
 					"text": "IF",
 					"style": {"bold": true},
 					"anchor": {"textMap": "[[0,4,109.3,615,117.7,621.4,3.4,5]]"}
-				}
-			],
-			"flowClass": "auxiliary",
-			"rightMostWords": []
-		},
-		{
-			"type": "math",
-			"anchor": {"pageRects": [[4, 123.14, 602.27, 135.11, 624.31]]},
-			"content": [
+				},
+				{"text": " "},
 				{
-					"text": "∧ i∈X",
+					"text": "∧ i∈X (x",
 					"anchor": {
-						"textMap": "[[0,4,124,621.6,135,624.3],[0,4,123,602.3,125,609],[0,4,125,602.6,129.3,608.7],[0,4,129.3,603,135,609]]"
+						"textMap": "[[0,4,124,621.6,135,624.3],[0,4,123,602.3,125,609],[0,4,125,602.6,129.3,608.7],[0,4,129.3,603,135,609],[0,4,136,613,139,622],[0,4,139,613,143.4,622]]"
 					}
-				}
-			],
-			"flowClass": "auxiliary",
-			"rightMostWords": []
-		},
-		{
-			"type": "math",
-			"anchor": {"pageRects": [[4, 136.04, 612.24, 290.63, 621.76]]},
-			"content": [
-				{"text": "(x", "anchor": {"textMap": "[[0,4,136,613,139,622],[0,4,139,613,143.4,622]]"}},
+				},
 				{"text": "i", "style": {"sub": true}, "anchor": {"textMap": "[[0,4,143.4,612,145.3,619]]"}},
 				{"text": " "},
 				{"text": "= v", "anchor": {"textMap": "[[0,4,148.3,613.5,155.3,621.5],[0,4,158,613,162,622]]"}},
@@ -2873,7 +2857,7 @@
 					"anchor": {
 						"textMap": "[[0,4,63.6,558.3,290.6,567,[200,6],2.3,4.6,4,2,3.5,4.6],[0,4,49.7,546.3,290.6,555,4,1.7,[2.5,4],2.3,2,1.4,[2.3,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 60]]
+					"refs": [[255, 60]]
 				},
 				{
 					"text": "), abductive explanations can be interpreted as answering a “",
@@ -2921,7 +2905,7 @@
 					"anchor": {
 						"textMap": "[[0,4,49.7,426,258,434.7,[80.6,8],2.5,2.3,2.3,4,3,1.5,[3,4.3],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 51]]
+					"refs": [[255, 51]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,4,49.7,426,258,434.7,[124.4,1.4]]]"}},
 				{
@@ -2929,7 +2913,7 @@
 					"anchor": {
 						"textMap": "[[0,4,49.7,426,258,434.7,[129,3],4,5,4,3,2,4,3,[3.3,4],1.7,[3,4],2.3,2,1.5,[3,4],4.5,4.3,4.4,4]]"
 					},
-					"refs": [[260, 21]]
+					"refs": [[255, 21]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,4,49.7,426,258,434.7,[203,3],2]]"}},
 				{"text": "3", "style": {"sup": true}, "anchor": {"textMap": "[[0,4,258,430.4,260.7,435.4]]"}},
@@ -2984,7 +2968,7 @@
 				}
 			],
 			"flowClass": "auxiliary",
-			"backRefs": [[92, 1]]
+			"backRefs": [[89, 1]]
 		},
 		{
 			"type": "paragraph",
@@ -3015,7 +2999,7 @@
 		},
 		{
 			"type": "math",
-			"anchor": {"pageRects": [[4, 60.14, 235.23, 280.2, 257.69]]},
+			"anchor": {"pageRects": [[4, 60.14, 224.07, 290.63, 257.69]]},
 			"content": [
 				{
 					"text": "CXp(Y; F, κ,",
@@ -3057,19 +3041,14 @@
 				{"text": " "},
 				{"text": "v", "style": {"bold": true}, "anchor": {"textMap": "[[0,4,266,237.4,270,243.6]]"}},
 				{
-					"text": ", c)",
-					"anchor": {"textMap": "[[0,4,270,235,272,244],[0,4,273.6,235,277,244],[0,4,277,235,280,244]]"}
+					"text": ", c) (8)",
+					"anchor": {
+						"textMap": "[[0,4,270,235,272,244],[0,4,273.6,235,277,244],[0,4,277,235,280,244],[0,4,280,224,290.6,233,3,4.5,3]]"
+					}
 				}
 			],
 			"flowClass": "auxiliary",
-			"rightMostWords": []
-		},
-		{
-			"type": "math",
-			"anchor": {"pageRects": [[4, 280.08, 224.07, 290.63, 232.8]]},
-			"content": [{"text": "(8)", "anchor": {"textMap": "[[0,4,280,224,290.6,233,3,4.5,3]]"}}],
-			"flowClass": "auxiliary",
-			"backRefs": [[92, 3]]
+			"backRefs": [[89, 3]]
 		},
 		{
 			"type": "paragraph",
@@ -3119,7 +3098,7 @@
 				}
 			],
 			"flowClass": "auxiliary",
-			"backRefs": [[92, 5]]
+			"backRefs": [[89, 5]]
 		},
 		{
 			"type": "paragraph",
@@ -3148,7 +3127,7 @@
 					"anchor": {
 						"textMap": "[[0,4,49.7,70,155.4,76.7,[36,3.4],1.6,3,[3,3.6],4,3,[3,4],4,2.6,1.6,4,2,1,[2.3,4],4,4,4,4]]"
 					},
-					"refs": [[260, 42]]
+					"refs": [[255, 42]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,4,49.7,70,155.4,76.7,[102,2],2]]"}}
 			],
@@ -3167,19 +3146,19 @@
 				{
 					"text": "(7)",
 					"anchor": {"textMap": "[[0,4,433.3,751,545.6,760,[43.6,3],4.4,3]]"},
-					"refs": [[84]]
+					"refs": [[82]]
 				},
 				{"text": ", ", "anchor": {"textMap": "[[0,4,433.3,751,545.6,760,[54,1.5]]]"}},
 				{
 					"text": "(8)",
 					"anchor": {"textMap": "[[0,4,433.3,751,545.6,760,[59.5,3],4.5,3]]"},
-					"refs": [[87]]
+					"refs": [[84]]
 				},
 				{"text": ", or ", "anchor": {"textMap": "[[0,4,433.3,751,545.6,760,[70,1.5],[4,4.6],2.3]]"}},
 				{
 					"text": "(9)",
 					"anchor": {"textMap": "[[0,4,433.3,751,545.6,760,[87,3],4.3,2]]"},
-					"refs": [[89]]
+					"refs": [[86]]
 				},
 				{
 					"text": " (be it minimal or not) identifies not only a set non-fixed of features but also assignments to those non-fixed features that guarantee a change of the prediction. Hence, all the information required to change the prediction is readily available. Furthermore, the definition of CXp (similar to the definition of AXp) targets a subset-minimal set of features. However, other definitions could be considered, e.g., cardinality-minimal contrastive explanations, among others.",
@@ -3226,7 +3205,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,609,545.6,618,[99,3],4,3.5,2.6,[3.4,4],1.6,[3,4],2.3,2,1.4,[2.7,4.4],4.3,4.3,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "), we can conclude that {3} and {5} are the only CXp’s, given the instance.",
@@ -3273,7 +3252,7 @@
 					"anchor": {
 						"textMap": "[[0,4,399,491.3,545.6,500,[9,7],[-0.6,3.3],3,4.5,3.3,[4,4],2,[3,4],2.5,2,1.4,[3,4.5],4.3,4.3,4.4]]"
 					},
-					"refs": [[263, 6]]
+					"refs": [[258, 6]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,4,399,491.3,545.6,500,[73,1]]]"}},
 				{
@@ -3281,7 +3260,7 @@
 					"anchor": {
 						"textMap": "[[0,4,399,491.3,545.6,500,[77,6.5],4,3,2.6,7.3,1.6,[3.3,4],1.7,[3.4,4],2,2.3,1.4,[3,4.5],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 34]]
+					"refs": [[255, 34]]
 				},
 				{
 					"text": ", 2021; Venkatasubramanian and Alfano, ",
@@ -3292,7 +3271,7 @@
 				{
 					"text": "2020",
 					"anchor": {"textMap": "[[0,4,304.6,479.3,472.6,488,[146,4],4,4.5,4.3]]"},
-					"refs": [[263, 1]]
+					"refs": [[258, 1]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,4,304.6,479.3,472.6,488,[163,3],2]]"}}
 			]
@@ -3324,7 +3303,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,407,545.6,416,[53.4,5.7],4,2.3,2.7,4,3,1.5,[2.6,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 58]]
+					"refs": [[255, 58]]
 				},
 				{
 					"text": ") (see Section 2.3), recent work (",
@@ -3337,7 +3316,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,407,545.6,416,[211.5,3],4.4,5,4,2.6,2.4,4,4],[0,4,304.6,395,545.6,404,4,1.7,[5.5,4],2,2.3,1.3,[5.3,4.3],4.3,4.3,4.3,4]]"
 					},
-					"refs": [[260, 21]]
+					"refs": [[255, 21]]
 				},
 				{
 					"text": ",b) proved the following duality between minimal hitting sets:",
@@ -3362,7 +3341,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,351,545.6,360,[26,3],4,5,4,2.7,2.4,4,2.7,[6,4],1.7,[5.6,4],2,2.3,1.3,[5.4,4.3],4.3,4.3,4.4,4]]"
 					},
-					"refs": [[260, 21]]
+					"refs": [[255, 21]]
 				},
 				{
 					"text": ",b) AXp’s are minimal hitting sets (MHSes) of CXp’s and vice versa.",
@@ -3405,7 +3384,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,273.3,545.6,282,[137.4,3.3],4,3.5,2.7,[6,3.7],2,[5.3,4],2,2.3,1.3,[5.3,4.3],4.3,4.3,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "), we can conclude that the sets of AXp’s is: {{1, 4, 5}} and that the set of CXp’s is {{1}, {4}, {5}}.",
@@ -3430,7 +3409,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,215.5,545.6,224,[122.3,7],4.7,4,5,2.7,[3.4,4],1.7,[3,4],2,2,1.6,[2.7,4.3],4.3,4.3,4.3,4.6]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,4,304.6,215.5,545.6,224,[192,1.3]]]"}},
 				{
@@ -3438,7 +3417,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,215.5,545.6,224,[196,3],4,5,4,3,2.3,4,2.7,[3.3,4],5,4.7],[0,4,304.6,203.5,479.4,212,8,4,3,5,4.6,4,3,3.3,4.3,2.4,2.3,4,4,1.4,[3,4],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,4,304.6,203.5,479.4,212,[73.3,1.4]]]"}},
 				{
@@ -3446,7 +3425,7 @@
 					"anchor": {
 						"textMap": "[[0,4,304.6,203.5,479.4,212,[77.4,8],4,3,5,4.6,4,3,3.3,4.3,2.4,2,4.4,2.6,[3.4,4],1.7,[3,4],2,2,1.6,[2.7,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 47]]
+					"refs": [[255, 47]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,4,304.6,203.5,479.4,212,[169.7,3],2]]"}}
 			]
@@ -3476,7 +3455,7 @@
 				{
 					"text": "2021b",
 					"anchor": {"textMap": "[[0,4,304.6,69,545.6,78,[214,4.3],4.3,4.3,4.3,4.6]]"},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{"text": "),", "anchor": {"textMap": "[[0,4,304.6,69,545.6,78,[236,3],2]]"}}
 			],
@@ -3536,7 +3515,7 @@
 					"text": "4",
 					"style": {"sup": true},
 					"anchor": {"textMap": "[[0,5,245.6,719.6,248.5,724.6]]"},
-					"refs": [[108]]
+					"refs": [[105]]
 				},
 				{"text": ":", "anchor": {"textMap": "[[0,5,249,715,251,724]]"}}
 			],
@@ -3568,7 +3547,7 @@
 							"anchor": {
 								"textMap": "[[0,5,76.5,661,290.6,670,[155.3,3],4,3.7,2.6,[4,4],1.6,[3.6,4],2,2.3,1.4,[3.3,4.3],4.3,4.4,4.3]]"
 							},
-							"refs": [[260, 28]]
+							"refs": [[255, 28]]
 						},
 						{
 							"text": ", 2022a; ",
@@ -3581,7 +3560,7 @@
 							"anchor": {
 								"textMap": "[[0,5,76.5,649,176.7,658,[25.6,6.7],4.7,4,5,2.7,[3.5,4],1.6,[3,4],2,2.3,1.3,[3,4],4.4,4.3,4.3,4.6]]"
 							},
-							"refs": [[260, 16]]
+							"refs": [[255, 16]]
 						},
 						{"text": ").", "anchor": {"textMap": "[[0,5,76.5,649,176.7,658,[95,3],2]]"}}
 					]
@@ -3601,7 +3580,7 @@
 							"anchor": {
 								"textMap": "[[1,5,76.5,601,290.6,610,[129,3],4,5,4,3,2.3,4,2.7,[5,4],5,3,[5.3,8],4,3,4.7,5,3.6,3.3,3],[0,5,76.5,589,120,598,4.3,2.4,2.3,4,4,1.5,[2.7,4.3],4.3,4.4,4.3]]"
 							},
-							"refs": [[260, 20]]
+							"refs": [[255, 20]]
 						},
 						{"text": ").", "anchor": {"textMap": "[[0,5,76.5,589,120,598,[38.5,3],2]]"}}
 					]
@@ -3621,7 +3600,7 @@
 							"anchor": {
 								"textMap": "[[0,5,76.5,565,290.6,574,[75.4,3.3],4,5,4,3,2,4,3,[3,4],5,3,[3.4,8],4,3,5,4.5,4,3,3.4,4,2.6,2.3,4,4,1.5,[2.4,4.3],4.4,4.3,4.3]]"
 							},
-							"refs": [[260, 20]]
+							"refs": [[255, 20]]
 						},
 						{
 							"text": "), but here the main limitation is requiring that the decision set computes a total function, as discussed earlier in this article.",
@@ -3660,7 +3639,7 @@
 					"anchor": {
 						"textMap": "[[0,5,49.7,453,290.6,461.7,[176,5],2.5,4.7,2.7,4.6,5,1.3,[4,4],4.4,4.3,4.4]]"
 					},
-					"refs": [[260, 39]]
+					"refs": [[255, 39]]
 				},
 				{
 					"text": "), we ask a different question. Concretely, this section investigates how explanations can be obtained from an interpretable model. Since the model is interpretable, we require that a human decision maker be able to find such an explanation by manual inspection, i.e., not automated analysis is to be used. Evidently, for an interpretable model, one would expect that this should be feasible to do.",
@@ -3681,7 +3660,7 @@
 					}
 				}
 			],
-			"backRefs": [[104, 1]]
+			"backRefs": [[101, 1]]
 		},
 		{
 			"type": "paragraph",
@@ -3698,7 +3677,7 @@
 					"anchor": {
 						"textMap": "[[0,5,49.7,305.7,290.6,314.4,[192,8],2.4,2.3,2.3,4,3,1.5,[6,4.4],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 51]]
+					"refs": [[255, 51]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,5,49.7,305.7,290.6,314.4,[239,2]]]"}},
 				{
@@ -3706,7 +3685,7 @@
 					"anchor": {
 						"textMap": "[[0,5,49.7,293.7,290.6,302.4,8,4.6,2.3,5,4,3,1.6,[3.7,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": "), we investigate how explanations can be manually identified given an interpretable model. Concretely, given some interpretable model, e.g., decision trees, lists, or sets, we pose the following question:",
@@ -3754,7 +3733,7 @@
 					"anchor": {
 						"textMap": "[[0,5,49.7,185.4,290.6,194,[54.3,5],4,4.5,4.5,4,3,4,2.3,3,[4.3,4],1.7,[3.4,4],2.3,2,1.4,[3,4.5],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 37]]
+					"refs": [[255, 37]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,5,49.7,185.4,290.6,194,[132,1.6]]]"}},
 				{
@@ -3762,7 +3741,7 @@
 					"anchor": {
 						"textMap": "[[0,5,49.7,185.4,290.6,194,[136.6,6],2,5,3.6,2.4,3.3,3,[4,4],2,[3,4],2.5,2,1.4,[3,4.5],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 60]]
+					"refs": [[255, 60]]
 				},
 				{
 					"text": "), we seek to answer the WHY question by finding a set of features X , with which we associate the following rule:",
@@ -3842,7 +3821,7 @@
 					"anchor": {
 						"textMap": "[[0,5,304.6,691,545.6,700,[94,8],2.6,2.3,2.3,4,3,1.5,[4.7,4.4],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 50]]
+					"refs": [[255, 50]]
 				},
 				{
 					"text": "). Methods to address this possible limitation have been studied elsewhere (",
@@ -3855,7 +3834,7 @@
 					"anchor": {
 						"textMap": "[[0,5,304.6,679,545.6,688,[181,9],4,2,5,3.7,4.7,4,3,[4.7,4],1.7,[4,4],2,2,2],[0,5,304.6,667,545.6,676,4.4,4.3,4.3,4.3]]"
 					},
-					"refs": [[263, 10]]
+					"refs": [[258, 10]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,5,304.6,667,545.6,676,[17.3,1.4]]]"}},
 				{
@@ -3863,7 +3842,7 @@
 					"anchor": {
 						"textMap": "[[0,5,304.6,667,545.6,676,[21.7,6],3.5,4,5,3.7,2,[3.6,4],1.7,[3,4],2.4,2,1.4,[3,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[257, 3]]
+					"refs": [[252, 3]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,5,304.6,667,545.6,676,[88.3,1.4]]]"}},
 				{
@@ -3871,7 +3850,7 @@
 					"anchor": {
 						"textMap": "[[0,5,304.6,667,545.6,676,[92.7,3],4,3.6,2.6,[3.6,4],1.7,[3,4],2.4,2,1.4,[3,4.3],4.4,4.3,4.3,4.6]]"
 					},
-					"refs": [[260, 31]]
+					"refs": [[255, 31]]
 				},
 				{
 					"text": ")). Furthermore, to keep the notation as simple as possible, and similarly to the definition of AXp’s and CXp’s, we will talk about the answers to the WHY questions solely using only sets of features. Concretely, X ⊆ F is a set of features, that presupposes a literal (x",
@@ -3985,7 +3964,7 @@
 					"anchor": {
 						"textMap": "[[0,5,304.6,289.7,545.6,298.4,[117.3,5.7],5,4.6,2.4,5,1.3,[3.6,4.3],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 61]]
+					"refs": [[255, 61]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,5,304.6,289.7,545.6,298.4,[162,1.5]]]"}},
 				{
@@ -3993,7 +3972,7 @@
 					"anchor": {
 						"textMap": "[[0,5,304.6,289.7,545.6,298.4,[167,8],4.7,2.3,5,4,3,1.6,[3.6,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": ")], one would expect the model to be comprehensible, thus enabling a human decision maker to grasp answers to the WHY question, and express such answers as general rules, as proposed above. As shown in the rest of this section, although one can devise solutions for finding correct answers to the WHY question, those answers are hardly irreducible. More importantly, as shown in later sections, arbitrary redundancy is inherent to models that are generally deemed interpretable.",
@@ -4136,618 +4115,17 @@
 				{"text": "1.", "anchor": {"textMap": "[[0,6,272.3,756,278,762.5,4,[0,2]]]"}}
 			],
 			"flowClass": "auxiliary",
-			"backRefs": [[137, 14]]
+			"backRefs": [[134, 14]]
 		},
 		{
 			"type": "table",
 			"anchor": {"pageRects": [[6, 49.923, 606.23, 290.754, 747.5260000000001]]},
 			"content": [
 				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 732.65601623, 277.89044748, 742.8029867199999]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 732.65601623, 84.3464528, 742.5160625599999]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 732.65601623, 84.3464528, 742.5160625599999]]},
-									"content": [
-										{
-											"text": "x3 = x5",
-											"anchor": {
-												"textMap": "[[0,6,56,734,60.4,742.5],[0,6,60.4,732.7,64,740],[0,6,67,734.3,74,742.3],[0,6,76.5,734,80.7,742.5],[0,6,80.7,732.7,84.3,740]]"
-											}
-										},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 126.657, 732.65601623, 134.5304328, 742.5160625599999]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 126.657, 732.65601623, 134.5304328, 742.5160625599999]]},
-									"content": [
-										{
-											"text": "x1",
-											"anchor": {"textMap": "[[0,6,126.7,734,131,742.5],[0,6,131,732.7,134.5,740]]"}
-										},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 173.025, 732.65601623, 180.8984328, 742.5160625599999]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 173.025, 732.65601623, 180.8984328, 742.5160625599999]]},
-									"content": [
-										{
-											"text": "x2",
-											"anchor": {"textMap": "[[0,6,173,734,177.3,742.5],[0,6,177.3,732.7,181,740]]"}
-										},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 218.241, 732.65601623, 226.1144328, 742.5160625599999]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 218.241, 732.65601623, 226.1144328, 742.5160625599999]]},
-									"content": [
-										{
-											"text": "x4",
-											"anchor": {"textMap": "[[0,6,218,734,222.5,742.5],[0,6,222.5,732.7,226,740]]"}
-										},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 262.008, 733.8276403399999, 277.89044748, 742.8029867199999]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {
-										"pageRects": [[6, 262.008, 733.8276403399999, 277.89044748, 742.8029867199999]]
-									},
-									"content": [
-										{
-											"text": "κ(x)",
-											"anchor": {
-												"textMap": "[[0,6,262,734.3,266.4,742],[0,6,267,734,270,742.5],[0,6,270,734,275,743],[0,6,275,734,278,742.5]]"
-											}
-										}
-									]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 718.69772055, 271.628448, 725.46235505]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 718.69772055, 59.471248, 725.46235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 718.69772055, 59.471248, 725.46235505]]},
-									"content": [
-										{"text": "1", "anchor": {"textMap": "[[0,6,56,718.7,59.5,725.5]]"}},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 718.69772055, 132.515448, 725.46235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 718.69772055, 132.515448, 725.46235505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,129,718.7,132.5,725.5]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 718.69772055, 178.883448, 725.46235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 718.69772055, 178.883448, 725.46235505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,175.5,718.7,179,725.5]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 718.69772055, 225.25144799999998, 725.46235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 221.904, 718.69772055, 225.25144799999998, 725.46235505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,222,718.7,225.3,725.5]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 718.69772055, 271.628448, 725.46235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 718.69772055, 271.628448, 725.46235505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,718.7,271.6,725.5]]"}}]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 703.0557205499999, 271.628448, 709.82035505]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 703.0557205499999, 59.471248, 709.82035505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 703.0557205499999, 59.471248, 709.82035505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,56,703,59.5,710]]"}}, {"text": " "}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 703.0557205499999, 132.515448, 709.82035505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 703.0557205499999, 132.515448, 709.82035505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,129,703,132.5,710]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 703.0557205499999, 178.883448, 709.82035505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 703.0557205499999, 178.883448, 709.82035505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,175.5,703,179,710]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 703.0557205499999, 225.25144799999998, 709.82035505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {
-										"pageRects": [[6, 221.904, 703.0557205499999, 225.25144799999998, 709.82035505]]
-									},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,222,703,225.3,710]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 703.0557205499999, 271.628448, 709.82035505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 703.0557205499999, 271.628448, 709.82035505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,703,271.6,710]]"}}]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 687.41372055, 271.628448, 694.17835505]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 687.41372055, 59.471248, 694.17835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 687.41372055, 59.471248, 694.17835505]]},
-									"content": [
-										{"text": "1", "anchor": {"textMap": "[[0,6,56,687.4,59.5,694]]"}},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 687.41372055, 132.515448, 694.17835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 687.41372055, 132.515448, 694.17835505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,129,687.4,132.5,694]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 687.41372055, 178.883448, 694.17835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 687.41372055, 178.883448, 694.17835505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,175.5,687.4,179,694]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 687.41372055, 225.25144799999998, 694.17835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 221.904, 687.41372055, 225.25144799999998, 694.17835505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,222,687.4,225.3,694]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 687.41372055, 271.628448, 694.17835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 687.41372055, 271.628448, 694.17835505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,687.4,271.6,694]]"}}]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 671.7717205499999, 271.628448, 678.53635505]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 671.7717205499999, 59.471248, 678.53635505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 671.7717205499999, 59.471248, 678.53635505]]},
-									"content": [
-										{"text": "1", "anchor": {"textMap": "[[0,6,56,672,59.5,678.5]]"}},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 671.7717205499999, 132.515448, 678.53635505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 671.7717205499999, 132.515448, 678.53635505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,129,672,132.5,678.5]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 671.7717205499999, 178.883448, 678.53635505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 671.7717205499999, 178.883448, 678.53635505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,175.5,672,179,678.5]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 671.7717205499999, 225.25144799999998, 678.53635505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {
-										"pageRects": [[6, 221.904, 671.7717205499999, 225.25144799999998, 678.53635505]]
-									},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,222,672,225.3,678.5]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 671.7717205499999, 271.628448, 678.53635505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 671.7717205499999, 271.628448, 678.53635505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,672,271.6,678.5]]"}}]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 656.12972055, 271.628448, 662.8943550500001]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 656.12972055, 59.471248, 662.8943550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 656.12972055, 59.471248, 662.8943550500001]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,56,656,59.5,663]]"}}, {"text": " "}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 656.12972055, 132.515448, 662.8943550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 656.12972055, 132.515448, 662.8943550500001]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,129,656,132.5,663]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 656.12972055, 178.883448, 662.8943550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 656.12972055, 178.883448, 662.8943550500001]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,175.5,656,179,663]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 656.12972055, 225.25144799999998, 662.8943550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {
-										"pageRects": [[6, 221.904, 656.12972055, 225.25144799999998, 662.8943550500001]]
-									},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,222,656,225.3,663]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 656.12972055, 271.628448, 662.8943550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 656.12972055, 271.628448, 662.8943550500001]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,656,271.6,663]]"}}]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 640.48772055, 271.628448, 647.25235505]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 640.48772055, 59.471248, 647.25235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 640.48772055, 59.471248, 647.25235505]]},
-									"content": [
-										{"text": "1", "anchor": {"textMap": "[[0,6,56,640.5,59.5,647.3]]"}},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 640.48772055, 132.515448, 647.25235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 640.48772055, 132.515448, 647.25235505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,129,640.5,132.5,647.3]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 640.48772055, 178.883448, 647.25235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 640.48772055, 178.883448, 647.25235505]]},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,175.5,640.5,179,647.3]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 640.48772055, 225.25144799999998, 647.25235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 221.904, 640.48772055, 225.25144799999998, 647.25235505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,222,640.5,225.3,647.3]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 640.48772055, 271.628448, 647.25235505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 640.48772055, 271.628448, 647.25235505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,640.5,271.6,647.3]]"}}]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 624.84572055, 271.628448, 631.6103550500001]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 624.84572055, 59.471248, 631.6103550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 624.84572055, 59.471248, 631.6103550500001]]},
-									"content": [
-										{"text": "1", "anchor": {"textMap": "[[0,6,56,625,59.5,631.6]]"}},
-										{"text": " "}
-									]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 624.84572055, 132.515448, 631.6103550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 624.84572055, 132.515448, 631.6103550500001]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,129,625,132.5,631.6]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 624.84572055, 178.883448, 631.6103550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 624.84572055, 178.883448, 631.6103550500001]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,175.5,625,179,631.6]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 624.84572055, 225.25144799999998, 631.6103550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {
-										"pageRects": [[6, 221.904, 624.84572055, 225.25144799999998, 631.6103550500001]]
-									},
-									"content": [{"text": "0", "anchor": {"textMap": "[[0,6,222,625,225.3,631.6]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 624.84572055, 271.628448, 631.6103550500001]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 624.84572055, 271.628448, 631.6103550500001]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,625,271.6,631.6]]"}}]
-								}
-							]
-						}
-					]
-				},
-				{
-					"type": "tablerow",
-					"anchor": {"pageRects": [[6, 56.1238, 609.20372055, 271.628448, 615.96835505]]},
-					"content": [
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 56.1238, 609.20372055, 59.471248, 615.96835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 56.1238, 609.20372055, 59.471248, 615.96835505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,56,609,59.5,616]]"}}, {"text": " "}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 129.168, 609.20372055, 132.515448, 615.96835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 129.168, 609.20372055, 132.515448, 615.96835505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,129,609,132.5,616]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 175.536, 609.20372055, 178.883448, 615.96835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 175.536, 609.20372055, 178.883448, 615.96835505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,175.5,609,179,616]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 221.904, 609.20372055, 225.25144799999998, 615.96835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 221.904, 609.20372055, 225.25144799999998, 615.96835505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,222,609,225.3,616]]"}}]
-								}
-							]
-						},
-						{
-							"type": "tablecell",
-							"anchor": {"pageRects": [[6, 268.281, 609.20372055, 271.628448, 615.96835505]]},
-							"content": [
-								{
-									"type": "paragraph",
-									"anchor": {"pageRects": [[6, 268.281, 609.20372055, 271.628448, 615.96835505]]},
-									"content": [{"text": "1", "anchor": {"textMap": "[[0,6,268.3,609,271.6,616]]"}}]
-								}
-							]
-						}
-					]
+					"text": "x3 = x5 x1 x2 x4 κ(x) 1 0001 1 0011 1 0101 1 0111 1 1001 1 1011 1 1101 1 1111",
+					"anchor": {
+						"textMap": "[[0,6,56,734,60.4,742.5],[0,6,60.4,732.7,64,740],[0,6,67,734.3,74,742.3],[0,6,76.5,734,80.7,742.5],[0,6,80.7,732.7,84.3,740],[0,6,126.7,734,131,742.5],[0,6,131,732.7,134.5,740],[0,6,173,734,177.3,742.5],[0,6,177.3,732.7,181,740],[0,6,218,734,222.5,742.5],[0,6,222.5,732.7,226,740],[0,6,262,734.3,266.4,742],[0,6,267,734,270,742.5],[0,6,270,734,275,743],[0,6,275,734,278,742.5],[0,6,56,718.7,271.6,725.5,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]],[0,6,56,703,271.6,710,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]],[0,6,56,687.4,271.6,694,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]],[0,6,56,672,271.6,678.5,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]],[0,6,56,656,271.6,663,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]],[0,6,56,640.5,271.6,647.3,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]],[0,6,56,625,271.6,631.6,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]],[0,6,56,609,271.6,616,2.4,[71,3],[43,3.5],[43,3.4],[43,3.3]]]"
+					}
 				}
 			],
 			"flowClass": "auxiliary"
@@ -4815,7 +4193,7 @@
 					"anchor": {
 						"textMap": "[[0,6,49.7,346,268.7,354.6,[155,3],4,3.7,2.6,[3.4,4],1.6,[3,4],2,2,1.6,[2.7,4.4],4.3,4.3,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{"text": "):", "anchor": {"textMap": "[[0,6,49.7,346,268.7,354.6,[214,3],2]]"}}
 			]
@@ -4975,7 +4353,7 @@
 				{
 					"text": "Table 1.",
 					"anchor": {"textMap": "[[0,6,49.7,117,290.6,126,[102,5.7],[-1,4],4.6,2.3,2.5,[3.3,4.4],1.3]]"},
-					"refs": [[126]]
+					"refs": [[123]]
 				},
 				{
 					"text": " As can be observed, since the prediction remains unchanged for any value assigned to features 1, 2, and 4, we can conclude that an answer to the WHY question in this case is X",
@@ -5010,7 +4388,7 @@
 					}
 				}
 			],
-			"nextPart": [138]
+			"nextPart": [135]
 		},
 		{
 			"type": "paragraph",
@@ -5036,7 +4414,7 @@
 					}
 				}
 			],
-			"previousPart": [137]
+			"previousPart": [134]
 		},
 		{
 			"type": "paragraph",
@@ -5536,7 +4914,7 @@
 		},
 		{
 			"type": "math",
-			"anchor": {"pageRects": [[6, 328.15, 162.4, 507.2, 171.92]]},
+			"anchor": {"pageRects": [[6, 328.15, 126.4, 545.57, 172.07]]},
 			"content": [
 				{"text": "R", "anchor": {"textMap": "[[0,6,328,163,333.7,172]]"}},
 				{"text": "4", "style": {"sub": true}, "anchor": {"textMap": "[[0,6,333.7,162.4,337,169]]"}},
@@ -5566,20 +4944,11 @@
 					"anchor": {"textMap": "[[0,6,483.4,165.4,487.7,171.6]]"}
 				},
 				{
-					"text": ") = 0",
+					"text": ") = 0 R",
 					"anchor": {
-						"textMap": "[[0,6,487.7,163,491,172],[0,6,493.4,163.7,500.4,171.7],[0,6,503,163,507,172]]"
+						"textMap": "[[0,6,487.7,163,491,172],[0,6,493.4,163.7,500.4,171.7],[0,6,503,163,507,172],[0,6,328,151,333.7,160]]"
 					}
-				}
-			],
-			"flowClass": "auxiliary",
-			"rightMostWords": []
-		},
-		{
-			"type": "math",
-			"anchor": {"pageRects": [[6, 328.15, 126.4, 507.2, 159.92]]},
-			"content": [
-				{"text": "R", "anchor": {"textMap": "[[0,6,328,151,333.7,160]]"}},
+				},
 				{"text": "5", "style": {"sub": true}, "anchor": {"textMap": "[[0,6,333.7,150.4,337,157]]"}},
 				{"text": " "},
 				{
@@ -5656,23 +5025,14 @@
 					"anchor": {"textMap": "[[0,6,483.4,129.4,487.7,135.6]]"}
 				},
 				{
-					"text": ") = 1",
+					"text": ") = 1 (12)",
 					"anchor": {
-						"textMap": "[[0,6,487.7,127,491,136],[0,6,493.4,127.7,500.4,135.7],[0,6,503,127,507,136]]"
+						"textMap": "[[0,6,487.7,127,491,136],[0,6,493.4,127.7,500.4,135.7],[0,6,503,127,507,136],[0,6,530.7,163.3,545.6,172,3,4.4,4.4,3]]"
 					}
 				}
 			],
 			"flowClass": "auxiliary",
-			"rightMostWords": []
-		},
-		{
-			"type": "math",
-			"anchor": {"pageRects": [[6, 530.7, 163.34, 545.57, 172.07]]},
-			"content": [
-				{"text": "(12)", "anchor": {"textMap": "[[0,6,530.7,163.3,545.6,172,3,4.4,4.4,3]]"}}
-			],
-			"flowClass": "auxiliary",
-			"backRefs": [[157, 66]]
+			"backRefs": [[152, 66]]
 		},
 		{
 			"type": "paragraph",
@@ -5726,7 +5086,7 @@
 					}
 				}
 			],
-			"nextPart": [157]
+			"nextPart": [152]
 		},
 		{
 			"type": "paragraph",
@@ -5913,7 +5273,7 @@
 				{
 					"text": "(12)",
 					"anchor": {"textMap": "[[0,7,49.7,547,63,556,[10.4,3]],[0,7,63,547,215.3,556,4.5,4.3,3]]"},
-					"refs": [[153]]
+					"refs": [[148]]
 				},
 				{
 					"text": ", and let the point in feature space be",
@@ -5997,7 +5357,7 @@
 					}
 				}
 			],
-			"previousPart": [154]
+			"previousPart": [149]
 		},
 		{
 			"type": "paragraph",
@@ -6451,7 +5811,7 @@
 					"anchor": {
 						"textMap": "[[0,7,400.5,539,545.6,548,3,4.3,5,4,2.6,2.4,4,2.7,[4.4,4],5,3,[4.5,8],4,3,5,4.6,4,3,3.3,4.3,2.4,2,4.4,4,1.3,[3.7,4.3],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{
 					"text": "), it is hard to compute one AXp (resp. CXp) in the case of DLs/DSs. Hence, it would be unrealistic to expect human decision makers to be able to compute answers to the WHY (resp. WHY NOT) question by inspection, as each such answer can be mapped to an AXp (resp. CXp).",
@@ -6524,7 +5884,7 @@
 					"anchor": {
 						"textMap": "[[0,7,304.6,205,545.6,214,[114,3],3.6,4,2.4,[4,4],2,[3.5,4],2.3,2,1.4,[3.5,4.3],4.3,4.4,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": ") There exist DTs, defined on m features, for which there exist instances exhibiting an AXp of size 1, and the path consistent with the instances has size m. Proposition 3. (Proposition 11 of ",
@@ -6537,7 +5897,7 @@
 					"anchor": {
 						"textMap": "[[0,7,304.6,161,545.6,170,[128.7,3],4,3.6,2.6,[5,4],1.6,[4.6,4],2,2,1.6,[4.3,4.3],4.3,4.4,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": ") A DT does not exhibit explanation redundancy if it can be represented with a disjunctive normal form (DNF) generalized decision function (GDF).",
@@ -6682,7 +6042,7 @@
 					"anchor": {
 						"textMap": "[[0,8,49.7,453,290.6,462,[22,3],4.5,5,4,2.7,2.4,4,2.7,[3.7,4],1.6,[3.3,4],2,2,1.6,[3,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 26]]
+					"refs": [[255, 26]]
 				},
 				{
 					"text": "). Finally, explanation of DSs when these compute total functions appears to raise at least the same difficulties as DLs.",
@@ -6767,7 +6127,7 @@
 					"anchor": {
 						"textMap": "[[0,8,71,165,290.6,174,[3,5.5],2.4,4,3,2.7,[4,3.7],2,[3.3,4],2.3,2,1.4,[3,4.6],4.3,4.3,4.3]]"
 					},
-					"refs": [[257, 11]]
+					"refs": [[252, 11]]
 				},
 				{
 					"text": "). The decision problem for CNF formulas (i.e., the Boolean Satisfiability (SAT) problem) is to decide whether there exists an assignment such that the formula’s valuation is 1. It is well-known that SAT is NP-complete (",
@@ -6780,7 +6140,7 @@
 					"anchor": {
 						"textMap": "[[0,8,49.7,129,290.6,138,[147.5,6],4.7,4.6,4.4,1.4,[3,4],4.5,4.3,4.3]]"
 					},
-					"refs": [[257, 19]]
+					"refs": [[252, 19]]
 				},
 				{
 					"text": ") (Technically, for CNF formulas, the decision problem is CNFSAT, and since we consider each clause to contain three literals, the decision problem is referred to as 3CNFSAT. However, we just use SAT to refer to these as well as the original decision problem on arbitrary propositional formulas).",
@@ -7202,7 +6562,7 @@
 					}
 				}
 			],
-			"nextPart": [198]
+			"nextPart": [193]
 		},
 		{
 			"type": "paragraph",
@@ -7377,7 +6737,7 @@
 				{"text": " "},
 				{"text": "to fire.", "anchor": {"textMap": "[[0,9,101.5,631,125,640,3,3,[3.4,5],0,3.3,4,2]]"}}
 			],
-			"previousPart": [195]
+			"previousPart": [190]
 		},
 		{
 			"type": "paragraph",
@@ -7613,7 +6973,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,373,290.6,381.6,[83,3],4.3,5,4,2.6,2.4,4,2.7,[4.3,4],5,3,[4.5,8],4,3,4.7,5,3.6,3.3,3,4.5,2.4,2.3,4,4,1.5,[3.5,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{
 					"text": ", Prop. 3) and the relationship between the complexity of computing AXp’s and CXp’s (",
@@ -7626,7 +6986,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,349,290.6,357.6,[43.4,6],4.6,4.6,4.7,4,2,[4,4],5,3,[4.5,8],4,3,4.7,5,3.6,3.3,3,4.5,2.4,2.3,4,4,1.4,[3.6,4.3],4.3,4.3,4.3]]"
 					},
-					"refs": [[257, 20]]
+					"refs": [[252, 20]]
 				},
 				{
 					"text": ", Th. 15) (for a more restricted family of classifiers). The proposed proof offers a more direct argument. Practical efficient algorithms for computing both AXp’s and CXp’s of DLs are described elsewhere (",
@@ -7639,7 +6999,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,313,290.6,321.6,[194,3],4,5,4,3,2,4,3,[5.3,4],5,4.6],[0,9,49.7,301,128,309.6,8,4,3,5,4.5,4,3,3.4,4,2.6,2.3,4,4,1.5,[2.7,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,9,49.7,301,128,309.6,[73.3,3],2]]"}}
 			]
@@ -7659,7 +7019,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,277,290.6,285.6,[125.6,7],4.6,4,5,2.7,[4.5,4],1.6,[4,4],2,2.3,1.4,[3.7,4.3],4.3,4.3,4.4,4.5]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,9,49.7,277,290.6,285.6,[198,1.6]]]"}},
 				{
@@ -7667,7 +7027,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,277,290.6,285.6,[203.3,3],4,3.7,2.6,[4.4,4],1.6,[4,4],2,2.3,2],[0,9,49.7,265,290.6,273.6,4.3,4.3,4.4,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "), but also for enumerating all CXp’s (",
@@ -7680,7 +7040,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,265,290.6,273.6,[165.3,7],5,3.7,5,3,[4.5,4],1.6,[4.3,4],2,2.3,1.3,[4,4.3],4.4,4.3,4.3,4.6]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,9,49.7,265,290.6,273.6,[239,2]]]"}},
 				{
@@ -7688,7 +7048,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,253,290.6,261.6,3,4,3.6,2.7,[4.7,4],1.6,[4.3,4],2,2.3,1.4,[4,4.3],4.4,4.3,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "). Hence, for DTs, one can argue that there are efficient solutions to answering WHYNOT questions. However, the bookkeeping involved to prevent redundancy in reported CXp’s (and so in answering WHYNOT questions) is arguably beyond the reach of the average human decision maker. The proposed algorithm (",
@@ -7701,7 +7061,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,193,290.6,201.6,[41.5,7],4.7,4,5,2.7,[4,4],1.7,[3.5,4],2.3,2,1.4,[3.3,4.4],4.3,4.3,4.3,4.6]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,9,49.7,193,290.6,201.6,[113,1.4]]]"}},
 				{
@@ -7709,7 +7069,7 @@
 					"anchor": {
 						"textMap": "[[0,9,49.7,193,290.6,201.6,[117.7,3],4,3.6,2.6,[4,4],1.7,[3.5,4],2.3,2,1.4,[3.3,4.3],4.4,4.3,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": ") lists all possible ways to change a prediction (in polynomial time), and then removes the ways that exhibit redundancies (also in polynomial time). However, such algorithms would require a non-negligible amount of work if the solution were to be computed manually.",
@@ -7742,7 +7102,7 @@
 					}
 				}
 			],
-			"nextPart": [205]
+			"nextPart": [200]
 		},
 		{
 			"type": "paragraph",
@@ -7755,7 +7115,7 @@
 					}
 				}
 			],
-			"previousPart": [204]
+			"previousPart": [199]
 		},
 		{
 			"type": "paragraph",
@@ -7772,7 +7132,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,715,545.6,724,[70,3],4,5,4,3,2,4,3,[6,4],5,3,[6.7,8],4,3,5,4.5,4,3,3.3,4.3,2.4,2.3,4,3,[6,3],4.4,4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{"text": ") and ", "anchor": {"textMap": "[[0,9,304.6,715,545.6,724,[200,2],[6,4],5,3]]"}},
 				{
@@ -7780,7 +7140,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,715,545.6,724,[226.4,3],4,3.6,4],[0,9,304.6,703,545.6,712,4,1.7,[3.6,4],2.3,1.3,[3.5,3],4.4,4.3,4.3,4.4,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "). The datasets and the induced DTs/DLs are adapted from these earlier works. In particular, for DTs, we use the SATbased implementation of the explanation redundancy checker proposed in ",
@@ -7793,7 +7153,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,667,545.6,676,[48,3],4,4,2.6,[5,4],1.6,[4.5,4],2,1.6,[4.3,3],4.4,4.3,4.3,4.4,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "). For DLs, we use the SAT-based implementation of the formal explainer proposed in ",
@@ -7806,7 +7166,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,655,545.6,664,[195,3],4.5,5,4,2.6,2.4,4,2.7,[4,4],5,5],[0,9,304.6,643,471.3,652,8,4,3,5,4.6,4,3,3.3,4.3,2.4,2.3,4,2.7,[3.4,3],4.4,4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{
 					"text": ") publicly available online",
@@ -7850,7 +7210,7 @@
 					"anchor": {
 						"textMap": "[[0,9,417.7,487,545.6,496,5,3,2.5,4,4.6,2.3,4,2,[4,4],1.7,[4,4],2,2,1.5,[3.6,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 5]]
+					"refs": [[255, 5]]
 				},
 				{
 					"text": "; FairML, 2016; PennML, 2020; ",
@@ -7861,7 +7221,7 @@
 				{
 					"text": "UCI, 2020",
 					"anchor": {"textMap": "[[0,9,304.6,475,545.6,484,[59.7,6.7],6,3,1.4,[4,4.4],4.3,4.4,4.3]]"},
-					"refs": [[263, 5]]
+					"refs": [[258, 5]]
 				},
 				{
 					"text": ") and are taken directly from ",
@@ -7874,7 +7234,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,475,545.6,484,[212,3],4,5,4,2.5,2.4,4,4],[0,9,304.6,463,545.6,472,4,5,3,[6,8],4,3.4,4.6,4.7,4,3,3.4,4,2.6,2.3,4,3,[5.7,3],4.4,4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{"text": "); ", "anchor": {"textMap": "[[0,9,304.6,463,545.6,472,[95,3],1.5]]"}},
 				{
@@ -7882,7 +7242,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,463,545.6,472,[104.5,3.3],4,3.6,2.6,[6,3.7],2,[5.3,4],2,1.6,[5,3.3],4.3,4.3,4.3,4.4,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "). Following prior work (",
@@ -7895,7 +7255,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,451,545.6,460,[28.3,3],4,3.7,2.7,[8,4],1.6,[7.6,4],2,2.3,1.3,[7.4,4.3],4.3,4.4,4.3,4]]"
 					},
-					"refs": [[260, 29]]
+					"refs": [[255, 29]]
 				},
 				{
 					"text": "), we assessed the redundancy of explanations offered by decision trees trained by two prominent DT inference tools: ITI (Incremental Tree Induction) (",
@@ -7908,13 +7268,13 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,427,545.6,436,[196.7,7],2.5,4.3,4.6,3.3,0,[3.7,4],1.6,[3,4],2,2,2.3],[0,9,304.6,415,545.6,424,4.4,4.3,4.3,4.3]]"
 					},
-					"refs": [[263, 7]]
+					"refs": [[258, 7]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,9,304.6,415,545.6,424,[17.3,1.4]]]"}},
 				{
 					"text": "ITI, 2020",
 					"anchor": {"textMap": "[[0,9,304.6,415,545.6,424,[22,3],5.6,3,1.4,[3.3,4.3],4.3,4.4,4.3]]"},
-					"refs": [[260, 27]]
+					"refs": [[255, 27]]
 				},
 				{
 					"text": ") and IAI (Interpretable AI) (",
@@ -7927,13 +7287,13 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,415,545.6,424,[163,5.6],4,3,3,3.3,2.4,7.3,4,2,[4,4],4.7,3,[4.4,6.6],5,4.7,5,2],[0,9,304.6,403,545.6,412,4.4,4.3,4.3,4.3]]"
 					},
-					"refs": [[257, 10]]
+					"refs": [[252, 10]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,9,304.6,403,545.6,412,[17.3,1.4]]]"}},
 				{
 					"text": "IAI, 2020",
 					"anchor": {"textMap": "[[0,9,304.6,403,545.6,412,[23.7,3],6,3,1.5,[5,4],4.4,4.3,4.4]]"},
-					"refs": [[260, 18]]
+					"refs": [[255, 18]]
 				},
 				{
 					"text": "). When training ",
@@ -7944,7 +7304,7 @@
 				{
 					"text": "IAI",
 					"anchor": {"textMap": "[[0,9,304.6,403,545.6,412,[128,3],6,2]]"},
-					"refs": [[260, 18]]
+					"refs": [[255, 18]]
 				},
 				{
 					"text": " models, the tool was run being instructed to train high-accuracy DTs of depth either 6 and 8 (Deeper trees are harder to learn, and do not yield significant gains in accuracy). In the following, these two configurations of IAI are referred to as IAI-6 and IAI-8, respectively. As for decision list models, those were trained by the well-known CN2 algorithm (",
@@ -7957,7 +7317,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,331,526,340,[41,6],2,4,3.5,3,[3.5,4],5,3,[3.7,6.7],2.4,4.5,2.3,4,2.6,2.7,1.4,[2.7,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[257, 18]]
+					"refs": [[252, 18]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,9,304.6,331,526,340,[125.3,1.4]]]"}},
 				{
@@ -7965,7 +7325,7 @@
 					"anchor": {
 						"textMap": "[[0,9,304.6,331,526,340,[129.4,6],2.3,4,3.3,3,[3.5,4],5,3,[3.6,5.3],4.6,3.3,6,4,2.3,2.3,1.3,[3,4],4.4,4.3,4.3]]"
 					},
-					"refs": [[257, 17]]
+					"refs": [[252, 17]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,9,304.6,331,526,340,[216,3],2]]"}}
 			]
@@ -8056,7 +7416,7 @@
 					}
 				}
 			],
-			"nextPart": [215]
+			"nextPart": [210]
 		},
 		{
 			"type": "math",
@@ -8134,7 +7494,7 @@
 					}
 				}
 			],
-			"previousPart": [211]
+			"previousPart": [206]
 		},
 		{
 			"type": "heading",
@@ -8155,7 +7515,7 @@
 				{
 					"text": "Figure 2",
 					"anchor": {"textMap": "[[0,10,63.6,650,290.6,659,5,2,4.4,5,3,2.7,[3.3,3]]]"},
-					"refs": [[239]]
+					"refs": [[234]]
 				},
 				{
 					"text": " shows four cactus plots depicting the minimum, average, and maximum redundancy of default explanations computed for the considered DT and DL models. Here is how the plots should be interpreted. Given a dataset and the corresponding ML model, each instance of the dataset is provided with a default explanation by the model, as described above, which is followed by an explanation redundancy check. Given the redundancy information for all the instances of the dataset, the minimum, average, and maximum explanation redundancy for this dataset is calculated. As a result and considering all the datasets studied, the full minimum/average/maximum redundancy statistics is plotted as a line sorted in ascending order. This way, a point with coordinates (X, Y) signifies that there are X datasets/models whose default explanations have the (minimum, average, and maximum) literal redundancy upper-bounded by Y%.",
@@ -8212,7 +7572,7 @@
 					}
 				}
 			],
-			"nextPart": [222]
+			"nextPart": [217]
 		},
 		{
 			"type": "paragraph",
@@ -8229,7 +7589,7 @@
 					"anchor": {
 						"textMap": "[[0,10,304.6,727,545.6,736,[99.3,6.6],4.7,2.4,4,3.3,1.6,[3.4,4],1.6,[3.5,4],2.3,2,1.4,[3,4.6],4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 6]]
+					"refs": [[255, 6]]
 				},
 				{
 					"text": ") proposes the use of DTs for diagnosis of coronary artery disease. For one of the DTs proposed in ",
@@ -8242,7 +7602,7 @@
 					"anchor": {
 						"textMap": "[[0,10,304.6,703,545.6,712,[46.6,6.4],5,2,4,3.5,1.6,[3.5,4],1.6,[3.7,4],2,1.5,[3.4,3],4.5,4.3,4.3,4.3]]"
 					},
-					"refs": [[260, 6]]
+					"refs": [[255, 6]]
 				},
 				{
 					"text": ") (see ",
@@ -8253,13 +7613,13 @@
 					"anchor": {
 						"textMap": "[[0,10,304.6,703,545.6,712,[136,6],5,2,4,3.7,1.6,[3.5,4],1.6,[3.6,4],2.3,2,1.4,[3.4,4.3],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 6]]
+					"refs": [[255, 6]]
 				},
 				{"text": ", ", "anchor": {"textMap": "[[0,10,304.6,703,545.6,712,[201.4,1.3]]]"}},
 				{
 					"text": "Figure 2),",
 					"anchor": {"textMap": "[[0,10,304.6,703,545.6,712,[206,5],2,4.5,5,3,2.7,[3.3,4.3],3,2]]"},
-					"refs": [[239]]
+					"refs": [[234]]
 				},
 				{
 					"text": " the longest paths have 19 non-terminal nodes. Among these, for the path with prediction cad, manual inspection",
@@ -8276,7 +7636,7 @@
 					}
 				}
 			],
-			"previousPart": [221]
+			"previousPart": [216]
 		},
 		{
 			"type": "heading",
@@ -8305,7 +7665,7 @@
 					"anchor": {
 						"textMap": "[[0,10,304.6,540.7,545.6,549.5,[161,3],4,5,4,3,2,4,3,[5,3.6],2,[4.3,4],2,2,1.6,[4,4.5],4.3,4.3,4.4,4]]"
 					},
-					"refs": [[260, 23]]
+					"refs": [[255, 23]]
 				},
 				{
 					"text": ", 2020a; ",
@@ -8318,7 +7678,7 @@
 					"anchor": {
 						"textMap": "[[0,10,304.6,528.7,378.7,537.5,[25.6,8],2,2.5,2.3,4,3,1.5,[2.7,4.3],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 51]]
+					"refs": [[255, 51]]
 				},
 				{"text": ").", "anchor": {"textMap": "[[0,10,304.6,528.7,378.7,537.5,[69,3],2]]"}}
 			]
@@ -8338,7 +7698,7 @@
 					"anchor": {
 						"textMap": "[[0,10,304.6,504.7,545.6,513.5,[80.6,5.7],5,4.6,2.4,5,1.3,[5,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 61]]
+					"refs": [[255, 61]]
 				},
 				{"text": "; ", "anchor": {"textMap": "[[0,10,304.6,504.7,545.6,513.5,[127,1.3]]]"}},
 				{
@@ -8346,7 +7706,7 @@
 					"anchor": {
 						"textMap": "[[0,10,304.6,504.7,545.6,513.5,[133.3,8],4.6,2.3,5,4,3,1.6,[5,4.3],4.3,4.4,4.3]]"
 					},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": "), we focus on (manually) extracting answers to WHY questions from the models. In contrast, (manually) finding answers to WHYNOT questions is in general far less intuitive. In fact, Section 5.4 proves that it is computationally hard to answer WHYNOT questions for DLs. Clearly, all this but precludes human decision makers from attempting to answer WHYNOT questions for DLs.",
@@ -8371,7 +7731,7 @@
 					"anchor": {
 						"textMap": "[[0,10,318.6,420.7,545.6,429.5,[58.3,3],4,3.7,2.7,[5,3.6],2,[4,4],2.4,2,1.5,[4,4.4],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 28]]
+					"refs": [[255, 28]]
 				},
 				{
 					"text": ", 2022a; ",
@@ -8382,7 +7742,7 @@
 					"anchor": {
 						"textMap": "[[0,10,318.6,420.7,545.6,429.5,[149.7,7],5,4,5,2.6,[5,3.7],2,[4,4],2.4,2,1.4,[4,4.5],4.3,4.4,4.3,4.6]]"
 					},
-					"refs": [[260, 16]]
+					"refs": [[255, 16]]
 				},
 				{
 					"text": ") showed that, both in theory and in practice, decision trees exhibit explanation redundancy, i.e., if a path is used as the explanation for a WHY question, then that explanation exhibits redundancy when compared with a rigorous (logically-defined) explanation. More problematic, redundancy can grow arbitrarily large with path length.",
@@ -8508,7 +7868,7 @@
 					"anchor": {
 						"textMap": "[[0,11,49.7,715,290.6,724,[171.4,8],4,3.3,4.6,5,3.6,3.3,3,4.5,2.4,2.3,4,3,[5,4],5,4.5],[0,11,49.7,703,188,712,3,4.3,5,4,2.6,2.4,4,4,1.5,[2.7,4.3],4.3,4.3,3]]"
 					},
-					"refs": [[260, 48]]
+					"refs": [[255, 48]]
 				},
 				{
 					"text": " and references therein).",
@@ -8543,7 +7903,7 @@
 				{
 					"text": "al.",
 					"anchor": {"textMap": "[[0,11,49.7,630,290.6,638.7,[230.6,4],2,2.3]]"},
-					"refs": [[260, 8]]
+					"refs": [[255, 8]]
 				},
 				{"text": ",", "anchor": {"textMap": "[[0,11,49.7,630,290.6,638.7,[239,2]]]"}}
 			]
@@ -8558,7 +7918,7 @@
 					"anchor": {
 						"textMap": "[[0,11,304.6,751,545.6,760,[23.7,6],4.5,5,2,5,1.5,[5,4.5],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 61]]
+					"refs": [[255, 61]]
 				},
 				{
 					"text": ", 2022; ",
@@ -8569,7 +7929,7 @@
 					"anchor": {
 						"textMap": "[[0,11,304.6,751,545.6,760,[100.4,8],5,2,5,4,3.3,1.3,[5,4.5],4.4,4.3,4.3]]"
 					},
-					"refs": [[260, 52]]
+					"refs": [[255, 52]]
 				},
 				{
 					"text": "). This article proposes model comprehensibility as a measure of the understanding of ML model predictions by human decision makers. Model comprehensibility aims at finding explanations, i.e., answers to WHY and WHYNOT questions, which are both correct and irreducible. The motivation is that, for interpretable models, one would expect predictions to be comprehensible by human decision makers. As argued in this article, it is hardly the case that existing interpretable models can be deemed to enable model comprehensibility. Hence, even though there are a number of valid reasons to deploy interpretable models in high-risk domains, the",
@@ -8578,7 +7938,7 @@
 					}
 				}
 			],
-			"nextPart": [242]
+			"nextPart": [237]
 		},
 		{
 			"type": "image",
@@ -8606,7 +7966,7 @@
 				}
 			],
 			"flowClass": "auxiliary",
-			"backRefs": [[222, 7], [217, 0]]
+			"backRefs": [[217, 7], [212, 0]]
 		},
 		{
 			"type": "paragraph",
@@ -8659,7 +8019,7 @@
 					}
 				}
 			],
-			"previousPart": [237]
+			"previousPart": [232]
 		},
 		{
 			"type": "paragraph",
@@ -8676,7 +8036,7 @@
 					"anchor": {
 						"textMap": "[[0,12,131,619,290.6,628,3,4.4,5,4,2.7,2.4,4,2.7,[4,4],4.7,3,[4.3,8],4,3,5,4.5,4,3,3.3,4.3,2.4,2.3,4,4,1.5,[3,4.5],4.3,4.3,4.4]]"
 					},
-					"refs": [[260, 20]]
+					"refs": [[255, 20]]
 				},
 				{
 					"text": "), it is also the case that most publicly available solutions for the creation of decision sets exhibit a number of crucial drawbacks. One example is prediction overlap; another is the need to use a default rule for when no other rule fires. Both drawbacks represent critical limitations to model comprehensibility.",
@@ -8952,7 +8312,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[114, 5]]
+					"backRefs": [[111, 5]]
 				},
 				{
 					"type": "listitem",
@@ -9072,7 +8432,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 15]]
+					"backRefs": [[203, 15]]
 				},
 				{
 					"type": "listitem",
@@ -9091,7 +8451,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[51, 1], [182, 12]]
+					"backRefs": [[51, 1], [177, 12]]
 				},
 				{
 					"type": "listitem",
@@ -9172,7 +8532,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 23]]
+					"backRefs": [[203, 23]]
 				},
 				{
 					"type": "listitem",
@@ -9193,7 +8553,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 21]]
+					"backRefs": [[203, 21]]
 				},
 				{
 					"type": "listitem",
@@ -9212,7 +8572,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[51, 3], [182, 14]]
+					"backRefs": [[51, 3], [177, 14]]
 				},
 				{
 					"type": "listitem",
@@ -9226,7 +8586,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[59, 20], [70, 3], [201, 3]]
+					"backRefs": [[59, 20], [70, 3], [196, 3]]
 				},
 				{
 					"type": "listitem",
@@ -9484,7 +8844,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 1]]
+					"backRefs": [[203, 1]]
 				},
 				{
 					"type": "listitem",
@@ -9505,7 +8865,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[222, 1], [222, 3], [222, 5]]
+					"backRefs": [[217, 1], [217, 3], [217, 5]]
 				},
 				{
 					"type": "listitem",
@@ -9545,7 +8905,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[236, 1]]
+					"backRefs": [[231, 1]]
 				},
 				{
 					"type": "listitem",
@@ -9699,16 +9059,16 @@
 					"reference": true,
 					"backRefs": [
 						[70, 5],
-						[99, 1],
-						[101, 1],
-						[105, 0, 3],
+						[96, 1],
+						[98, 1],
+						[102, 0, 3],
 						[18, 3],
 						[22, 3],
 						[25, 3],
-						[202, 1],
-						[202, 5],
-						[202, 9],
-						[226, 3]
+						[197, 1],
+						[197, 5],
+						[197, 9],
+						[221, 3]
 					]
 				},
 				{
@@ -9756,7 +9116,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 17], [208, 19]]
+					"backRefs": [[203, 17], [203, 19]]
 				},
 				{
 					"type": "listitem",
@@ -9792,17 +9152,17 @@
 					"backRefs": [
 						[59, 26],
 						[70, 7],
-						[99, 3],
-						[201, 1],
-						[201, 5],
-						[208, 5],
+						[96, 3],
+						[196, 1],
+						[196, 5],
+						[203, 5],
 						[25, 5],
-						[105, 1, 1],
-						[105, 2, 1],
-						[165, 1],
-						[206, 1],
-						[206, 7],
-						[243, 1]
+						[102, 1, 1],
+						[102, 2, 1],
+						[160, 1],
+						[201, 1],
+						[201, 7],
+						[238, 1]
 					]
 				},
 				{
@@ -9817,7 +9177,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[83, 3], [96, 3], [97, 1]]
+					"backRefs": [[81, 3], [93, 3], [94, 1]]
 				},
 				{
 					"type": "listitem",
@@ -9857,7 +9217,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[54, 3], [224, 1], [61, 11], [62, 3]]
+					"backRefs": [[54, 3], [219, 1], [61, 11], [62, 3]]
 				},
 				{
 					"type": "listitem",
@@ -9909,7 +9269,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[46, 3], [47, 1], [47, 3], [49, 1], [179, 4]]
+					"backRefs": [[46, 3], [47, 1], [47, 3], [49, 1], [174, 4]]
 				},
 				{
 					"type": "listitem",
@@ -9937,7 +9297,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 13]]
+					"backRefs": [[203, 13]]
 				},
 				{
 					"type": "listitem",
@@ -9963,7 +9323,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[59, 4], [105, 0, 1], [18, 1], [22, 1], [25, 1], [226, 1]]
+					"backRefs": [[59, 4], [102, 0, 1], [18, 1], [22, 1], [25, 1], [221, 1]]
 				},
 				{
 					"type": "listitem",
@@ -9990,21 +9350,21 @@
 					],
 					"reference": true,
 					"backRefs": [
-						[208, 7],
-						[208, 9],
+						[203, 7],
+						[203, 9],
 						[39, 1],
 						[58, 3],
 						[75, 5],
-						[93, 5],
-						[98, 5],
-						[132, 1],
-						[170, 1],
-						[170, 3],
-						[202, 3],
-						[202, 7],
-						[202, 11],
-						[206, 3],
-						[206, 5]
+						[90, 5],
+						[95, 5],
+						[129, 1],
+						[165, 1],
+						[165, 3],
+						[197, 3],
+						[197, 7],
+						[197, 11],
+						[201, 3],
+						[201, 5]
 					]
 				},
 				{
@@ -10056,7 +9416,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[114, 7]]
+					"backRefs": [[111, 7]]
 				},
 				{
 					"type": "listitem",
@@ -10121,7 +9481,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[94, 7]]
+					"backRefs": [[91, 7]]
 				},
 				{
 					"type": "listitem",
@@ -10179,7 +9539,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[34, 5], [46, 1], [46, 5], [111, 1]]
+					"backRefs": [[34, 5], [46, 1], [46, 5], [108, 1]]
 				},
 				{
 					"type": "listitem",
@@ -10226,7 +9586,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[17, 11], [107, 1]]
+					"backRefs": [[17, 11], [104, 1]]
 				},
 				{
 					"type": "listitem",
@@ -10279,7 +9639,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[91, 1]]
+					"backRefs": [[88, 1]]
 				},
 				{
 					"type": "listitem",
@@ -10368,7 +9728,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[59, 6], [70, 1], [99, 5]]
+					"backRefs": [[59, 6], [70, 1], [96, 5]]
 				},
 				{
 					"type": "listitem",
@@ -10382,7 +9742,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[59, 44], [234, 1]]
+					"backRefs": [[59, 44], [229, 1]]
 				},
 				{
 					"type": "listitem",
@@ -10416,7 +9776,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[114, 1]]
+					"backRefs": [[111, 1]]
 				},
 				{
 					"type": "listitem",
@@ -10442,7 +9802,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[224, 3], [83, 1], [109, 1]]
+					"backRefs": [[219, 3], [81, 1], [106, 1]]
 				},
 				{
 					"type": "listitem",
@@ -10468,7 +9828,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[17, 3], [17, 5], [17, 9], [34, 1], [109, 3], [121, 3], [225, 3], [237, 3]]
+					"backRefs": [[17, 3], [17, 5], [17, 9], [34, 1], [106, 3], [118, 3], [220, 3], [232, 3]]
 				},
 				{
 					"type": "listitem",
@@ -10581,7 +9941,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[52, 1], [96, 1]]
+					"backRefs": [[52, 1], [93, 1]]
 				},
 				{
 					"type": "listitem",
@@ -10614,7 +9974,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[81, 1], [111, 3]]
+					"backRefs": [[79, 1], [108, 3]]
 				},
 				{
 					"type": "listitem",
@@ -10635,7 +9995,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[17, 1], [17, 7], [34, 7], [121, 1], [225, 1], [237, 1]]
+					"backRefs": [[17, 1], [17, 7], [34, 7], [118, 1], [220, 1], [232, 1]]
 				}
 			]
 		},
@@ -10736,7 +10096,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[59, 10], [94, 9]]
+					"backRefs": [[59, 10], [91, 9]]
 				},
 				{
 					"type": "listitem",
@@ -10798,7 +10158,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 3]]
+					"backRefs": [[203, 3]]
 				},
 				{
 					"type": "listitem",
@@ -10812,7 +10172,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[94, 5]]
+					"backRefs": [[91, 5]]
 				},
 				{
 					"type": "listitem",
@@ -10833,7 +10193,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[208, 11]]
+					"backRefs": [[203, 11]]
 				},
 				{
 					"type": "listitem",
@@ -10888,7 +10248,7 @@
 						}
 					],
 					"reference": true,
-					"backRefs": [[114, 3]]
+					"backRefs": [[111, 3]]
 				},
 				{
 					"type": "listitem",
