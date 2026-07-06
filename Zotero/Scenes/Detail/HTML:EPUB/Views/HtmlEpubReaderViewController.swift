@@ -153,15 +153,18 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { update in
                     switch update.kind {
-                    case .extractedData(let data, _):
-                        guard let buffer = data["buf"] as? Data else {
-                            return
-                        }
-                        do {
-                            let materialized = try SDTPack(data: buffer).materialize()
-                            DDLogInfo("Materialized: \(materialized)")
-                        } catch {
-                            DDLogError("Could not parse structured document text - \(error)")
+                    case .extractedData(let result, _):
+                        switch result {
+                        case .structuredDocumentText(let result):
+                            do {
+                                let materialized = try result.pack().materialize()
+                                DDLogInfo("Materialized: \(materialized)")
+                            } catch {
+                                DDLogError("Could not parse structured document text - \(error)")
+                            }
+
+                        case .fullText, .recognizerData:
+                            break
                         }
 
                     default:
