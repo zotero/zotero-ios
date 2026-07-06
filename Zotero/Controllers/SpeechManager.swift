@@ -440,30 +440,31 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 case .queued, .inProgress:
                     break
 
-                case .extractedData(let data, _):
-                    guard let buffer = data["buf"] as? Data else {
-                        DDLogError("SpeechManager: structured document text result has unexpected shape - \(data)")
+                case .extractedData(let result, _):
+                    switch result {
+                    case .structuredDocumentText(let result):
+                        // Parsing the whole document can be heavy, so do it off the main thread.
+                        parsingQueue.async { [weak self] in
+                            let parsed: SpeechDocumentParser.ParsedDocument
+                            do {
+                                parsed = SpeechDocumentParser.parse(materialized: try result.pack().materialize())
+                            } catch {
+                                DDLogError("SpeechManager: could not parse structured document text - \(error)")
+                                parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
+                            }
+                            DispatchQueue.main.async { [weak self] in
+                                guard let self else { return }
+                                store(parsed)
+                                documentLoaded = true
+                                DDLogInfo("SpeechManager: extracted \(paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
+                                completion(true)
+                            }
+                        }
+
+                    case .fullText, .recognizerData:
+                        DDLogError("SpeechManager: SDT extraction result invalid")
                         speechWorker = nil
                         completion(false)
-                        return
-                    }
-                    // Parsing the whole document can be heavy, so do it off the main thread.
-                    parsingQueue.async { [weak self] in
-                        let parsed: SpeechDocumentParser.ParsedDocument
-                        do {
-                            let pack = try SDTPack(data: buffer)
-                            parsed = SpeechDocumentParser.parse(materialized: try pack.materialize())
-                        } catch {
-                            DDLogError("SpeechManager: could not parse structured document text - \(error)")
-                            parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
-                        }
-                        DispatchQueue.main.async { [weak self] in
-                            guard let self else { return }
-                            store(parsed)
-                            documentLoaded = true
-                            DDLogInfo("SpeechManager: extracted \(paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
-                            completion(true)
-                        }
                     }
                 }
             })
