@@ -13,12 +13,15 @@ import RxSwift
 
 final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStackView {
     private let disposeBag: DisposeBag = DisposeBag()
+    /// Latest reported extraction progress (`nil` = unknown/indeterminate), retained so the progress view can be seeded
+    /// with the current value whenever it becomes visible.
+    private var currentProgress: Double?
 
     weak var playButton: UIButton!
     weak var pauseButton: UIButton!
     weak var backwardButton: UIButton!
     weak var forwardButton: UIButton!
-    weak var activityIndicator: UIActivityIndicatorView!
+    weak var progressView: CircularProgressView!
 
     convenience init(speechManager: SpeechManager<Delegate>, playAction: @escaping () -> Void) {
         let imageConfiguration = UIImage.SymbolConfiguration.init(scale: .large)
@@ -51,10 +54,10 @@ final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStack
         backwardButton.accessibilityLabel = L10n.Accessibility.Speech.backward
         backwardButton.isEnabled = speechManager.state.value.isSpeaking
 
-        let activityIndicator = UIActivityIndicatorView(style: .medium)
-        activityIndicator.hidesWhenStopped = true
+        let progressView = CircularProgressView(size: 24, lineWidth: 2)
+        progressView.isHidden = !speechManager.state.value.isSpeakingOrLoading || speechManager.state.value.isSpeaking
 
-        self.init(arrangedSubviews: [backwardButton, playButton, pauseButton, activityIndicator, forwardButton])
+        self.init(arrangedSubviews: [backwardButton, playButton, pauseButton, progressView, forwardButton])
 
         translatesAutoresizingMaskIntoConstraints = false
         axis = .horizontal
@@ -69,12 +72,19 @@ final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStack
         self.pauseButton = pauseButton
         self.forwardButton = forwardButton
         self.backwardButton = backwardButton
-        self.activityIndicator = activityIndicator
+        self.progressView = progressView
 
         speechManager.state
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
                 self?.update(state: state)
+            })
+            .disposed(by: disposeBag)
+
+        speechManager.extractionProgress
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] progress in
+                self?.updateProgress(progress)
             })
             .disposed(by: disposeBag)
     }
@@ -92,45 +102,63 @@ final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStack
         case .initializing:
             playButton.isHidden = true
             pauseButton.isHidden = true
-            activityIndicator.startAnimating()
-            activityIndicator.isHidden = false
+            showProgressView()
             forwardButton.isEnabled = false
             backwardButton.isEnabled = false
 
         case .loading:
             playButton.isHidden = true
             pauseButton.isHidden = true
-            activityIndicator.startAnimating()
-            activityIndicator.isHidden = false
+            showProgressView()
             forwardButton.isEnabled = true
             backwardButton.isEnabled = true
 
         case .speaking:
-            if activityIndicator.isAnimating {
-                activityIndicator.stopAnimating()
-            }
+            hideProgressView()
             playButton.isHidden = true
             pauseButton.isHidden = false
             forwardButton.isEnabled = true
             backwardButton.isEnabled = true
 
         case .paused:
-            if activityIndicator.isAnimating {
-                activityIndicator.stopAnimating()
-            }
+            hideProgressView()
             pauseButton.isHidden = true
             playButton.isHidden = false
             forwardButton.isEnabled = true
             backwardButton.isEnabled = true
 
         case .stopped, .outOfCredits:
-            if activityIndicator.isAnimating {
-                activityIndicator.stopAnimating()
-            }
+            hideProgressView()
             pauseButton.isHidden = true
             playButton.isHidden = false
             forwardButton.isEnabled = false
             backwardButton.isEnabled = false
+        }
+    }
+
+    /// Shows the progress view, seeding it with the latest reported extraction progress (falling back to an
+    /// indeterminate spinner while progress is unknown).
+    private func showProgressView() {
+        progressView.isHidden = false
+        updateProgress(currentProgress)
+    }
+
+    private func hideProgressView() {
+        progressView.stopIndeterminateAnimation()
+        progressView.progress = 0
+        progressView.isHidden = true
+    }
+
+    /// Reflects the extraction progress in the progress view: a determinate arc when a value is known, an indeterminate
+    /// spinner otherwise. No-op while the progress view is hidden.
+    private func updateProgress(_ progress: Double?) {
+        currentProgress = progress
+        guard !progressView.isHidden else { return }
+        if let progress {
+            progressView.stopIndeterminateAnimation()
+            progressView.progress = CGFloat(progress)
+        } else {
+            progressView.startIndeterminateAnimation()
         }
     }
 }
