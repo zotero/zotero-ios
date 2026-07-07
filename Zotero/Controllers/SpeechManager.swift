@@ -176,6 +176,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private let parsingQueue: DispatchQueue
     let state: BehaviorRelay<SpeechState>
     let remainingTime: BehaviorRelay<TimeInterval?>
+    /// Progress (0...1) of structured document text extraction while the document is being loaded, or `nil` when the
+    /// progress is not yet known (indeterminate). Reset to `nil` once extraction finishes.
+    let extractionProgress: BehaviorRelay<Double?>
     private let disposeBag: DisposeBag
     private unowned let remoteVoicesController: RemoteVoicesController
     private unowned let documentWorkerController: DocumentWorkerController
@@ -305,6 +308,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         highlightSessionManager = SpeechHighlightSessionManager<SpeechManager<Delegate>>()
         state = BehaviorRelay(value: .stopped)
         remainingTime = BehaviorRelay(value: nil)
+        extractionProgress = BehaviorRelay(value: nil)
         disposeBag = DisposeBag()
         nowPlayingManager = NowPlayingManager()
         parsingQueue = DispatchQueue(label: "SpeechManager.ParsingQueue", qos: .userInteractive, attributes: .concurrent)
@@ -433,14 +437,20 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 switch update.kind {
                 case .failed, .cancelled:
                     DDLogError("SpeechManager: structured document text extraction failed")
+                    extractionProgress.accept(nil)
                     // Drop the finished one-off worker so a retry creates a fresh one.
                     speechWorker = nil
                     completion(false)
 
-                case .queued, .inProgress:
-                    break
+                case .queued:
+                    // Extraction is queued but not started yet; progress is unknown (indeterminate).
+                    extractionProgress.accept(nil)
+
+                case .inProgress(let progress):
+                    extractionProgress.accept(progress.map { $0 / 100 })
 
                 case .extractedData(let result, _):
+                    extractionProgress.accept(nil)
                     switch result {
                     case .structuredDocumentText(let result):
                         // Parsing the whole document can be heavy, so do it off the main thread.
