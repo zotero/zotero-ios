@@ -28,7 +28,11 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     }
 
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
+    private unowned let dbStorage: DbStorage
     private unowned let documentWorkerController: DocumentWorkerController
+    private unowned let remoteVoicesController: RemoteVoicesController
+    private var readAloudHandler: ReadAloudViewHandler<HtmlEpubReaderViewController>?
+    private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     let disposeBag: DisposeBag
 
     weak var documentController: HtmlEpubDocumentViewController?
@@ -111,9 +115,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<HtmlEpubReaderActionHandler>, compactSize: Bool, documentWorkerController: DocumentWorkerController) {
+    init(
+        viewModel: ViewModel<HtmlEpubReaderActionHandler>,
+        compactSize: Bool,
+        dbStorage: DbStorage,
+        documentWorkerController: DocumentWorkerController,
+        remoteVoicesController: RemoteVoicesController
+    ) {
         self.viewModel = viewModel
+        self.dbStorage = dbStorage
         self.documentWorkerController = documentWorkerController
+        self.remoteVoicesController = remoteVoicesController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         isChangingInterfaceVisibility = false
@@ -145,35 +157,25 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         observeViewModel()
         setupNavigationBar()
         setupViews()
+        setupReadAloudIfNeeded()
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
 
-        if let file = viewModel.state.documentFile as? FileData {
-            documentWorkerController.queue(work: .structuredDocumentText, in: .init(file: file))
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { update in
-                    switch update.kind {
-                    case .extractedData(let result, _):
-                        switch result {
-                        case .structuredDocumentText(let result):
-                            do {
-                                let materialized = try result.pack().materialize()
-                                DDLogInfo("Materialized: \(materialized)")
-                            } catch {
-                                DDLogError("Could not parse structured document text - \(error)")
-                            }
-
-                        case .fullText, .recognizerData:
-                            break
-                        }
-
-                    default:
-                        break
-                    }
-                }, onError: { error in
-                    DDLogError("ERROR: \(error)")
-                })
-                .disposed(by: disposeBag)
+        func setupReadAloudIfNeeded() {
+            guard FeatureGates.enabled.contains(.speech), let documentController else { return }
+            let handler = ReadAloudViewHandler(
+                key: viewModel.state.key,
+                libraryId: viewModel.state.library.identifier,
+                viewController: self,
+                documentContainer: documentController.view,
+                delegate: self,
+                dbStorage: dbStorage,
+                remoteVoicesController: remoteVoicesController,
+                documentWorkerController: documentWorkerController
+            )
+            handler.delegate = self
+            readAloudHandler = handler
+            navigationBarLeadingItems.append(handler.createReadAloudButton(isSelected: false))
         }
 
         func observeViewModel() {
@@ -278,6 +280,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: viewModel.state.library.metadataEditable)
         updateContainerInsets(force: true)
         applyNavigationBarButtons(windowSize: windowSize)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Confirm any in-progress read-aloud highlight session, matching the PDF reader behaviour when leaving the screen.
+        readAloudHandler?.confirmActiveHighlightSession()
     }
 
     deinit {
@@ -743,6 +751,8 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
         if isHidden && isSidebarVisible {
             toggleSidebar(animated: true)
         }
+
+        readAloudHandler?.readAloudControlsShouldChange(isNavbarHidden: isHidden)
     }
 }
 
@@ -811,5 +821,169 @@ extension HtmlEpubReaderViewController: HtmlEpubSidebarDelegate {
         if isSidebarVisible && sidebarController?.view.frame.width == view.frame.width {
             toggleSidebar(animated: true)
         }
+    }
+}
+
+extension HtmlEpubReaderViewController: SpeechManagerDelegate {
+    var documentTitle: String? {
+        return viewModel.state.title
+    }
+
+    var documentFile: FileData? {
+        return viewModel.state.documentFile as? FileData
+    }
+
+    var documentPassword: String? {
+        // HTML/EPUB documents are never locked/encrypted.
+        return nil
+    }
+
+    func getCurrentPageIndex() -> Int {
+        return viewModel.state.currentPage?.index ?? 0
+    }
+
+    func getNextPageIndex(from currentPageIndex: Int) -> Int? {
+        guard let count = viewModel.state.pagesCount, currentPageIndex + 1 < count else { return nil }
+        return currentPageIndex + 1
+    }
+
+    func getPreviousPageIndex(from currentPageIndex: Int) -> Int? {
+        guard currentPageIndex > 0 else { return nil }
+        return currentPageIndex - 1
+    }
+
+    func pageIndex(forStructuredDocumentTextPage page: Int) -> Int? {
+        guard page >= 0 else { return nil }
+        if let count = viewModel.state.pagesCount, page >= count { return nil }
+        return page
+    }
+
+    func moved(to pageIndex: Int, from previousPageIndex: Int) {
+        // Visual page-follow during playback is not yet supported for HTML/EPUB (there is no structured-document-text
+        // page → reader-location mapping). No-op for now; audio playback still advances through the whole document.
+    }
+
+    func focusPage(_ pageIndex: Int) {
+        // See `moved(to:from:)`. No-op for now.
+    }
+
+    func readAloudHighlightChanged(text: String, pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
+        // Highlighting the currently-spoken text in the web view is not yet implemented. No-op for now.
+    }
+
+    func annotationPreviewChanged(text: String, pageIndex: Int, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int) {
+        documentController?.updateReadAloudAnnotationPreview(text: text, tool: tool, color: color, sourceLocation: sourceLocation, sourceTextLength: sourceTextLength)
+    }
+
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
+        documentController?.commitReadAloudAnnotation()
+    }
+
+    func clearAnnotationPreview() {
+        documentController?.clearReadAloudAnnotationPreview()
+    }
+}
+
+extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
+    func readAloudToolbarChanged(height: CGFloat) {
+        // Make room for the bottom read-aloud controls toolbar by shrinking the document from the safe-area bottom.
+        documentBottomToSafeArea?.constant = height
+        view.layoutIfNeeded()
+    }
+
+    func presentReadAloudOnboarding(language: String?, detectedLanguage: String, completion: @escaping (SpeechVoice?) -> Void) {
+        coordinatorDelegate?.showReadAloudOnboarding(
+            from: self,
+            language: language,
+            detectedLanguage: detectedLanguage,
+            userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
+            completion: completion
+        )
+    }
+
+    func presentReadAloudVoicePicker(currentVoice: SpeechVoice, language: String?, detectedLanguage: String, selectionChanged: @escaping (ReadAloudVoiceChange) -> Void) {
+        coordinatorDelegate?.showVoicePicker(
+            for: currentVoice,
+            language: language,
+            detectedLanguage: detectedLanguage,
+            userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
+            selectionChanged: selectionChanged
+        )
+    }
+
+    func presentReadAloudAddMoreTime() {
+        coordinatorDelegate?.showReadAloudAddMoreTime(from: self)
+    }
+
+    func addReadAloudControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView) {
+        annotationToolbarHandler?.setLeadingView(view: view)
+    }
+
+    func removeReadAloudControlsViewFromAnnotationToolbar() {
+        annotationToolbarHandler?.setLeadingView(view: nil)
+    }
+
+    func clearSpeechHighlight() {
+        documentController?.clearReadAloudAnnotationPreview()
+    }
+
+    func showSpeechHighlighterOverlay(_ overlay: ReadAloudHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool) {
+        view.addSubview(overlay)
+        setupConstraints()
+        if !animated {
+            view.layoutIfNeeded()
+        } else {
+            overlay.alpha = 0
+            view.layoutIfNeeded()
+            UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseOut) {
+                overlay.alpha = 1
+            }
+        }
+
+        func setupConstraints() {
+            if isCompact {
+                let bottomAnchor: NSLayoutYAxisAnchor
+                if let speechControlsView, speechControlsView.superview != nil {
+                    bottomAnchor = speechControlsView.topAnchor
+                } else {
+                    bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
+                }
+                NSLayoutConstraint.activate([
+                    overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+                    overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+                    overlay.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
+                ])
+            } else {
+                let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: containerTopInset + 20)
+                speechHighlighterTopConstraint = topConstraint
+                NSLayoutConstraint.activate([
+                    topConstraint,
+                    overlay.centerXAnchor.constraint(equalTo: documentController?.view.centerXAnchor ?? view.centerXAnchor),
+                    overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
+                    overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
+                ])
+            }
+        }
+    }
+
+    func hideSpeechHighlighterOverlay(_ overlay: ReadAloudHighlighterOverlayView) {
+        speechHighlighterTopConstraint = nil
+        UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseIn, animations: {
+            overlay.alpha = 0
+        }, completion: { _ in
+            overlay.removeFromSuperview()
+        })
+    }
+
+    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
+        guard let session = readAloudHandler?.speechManager.highlightSessionManager.session,
+              let text = readAloudHandler?.speechManager.highlightSessionManager.currentText() else { return }
+        documentController?.updateReadAloudAnnotationPreview(
+            text: text,
+            tool: tool,
+            color: color,
+            sourceLocation: session.range.location,
+            sourceTextLength: (session.pageText as NSString).length
+        )
     }
 }
