@@ -157,7 +157,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         observeViewModel()
         setupNavigationBar()
         setupViews()
-        setupReadAloudIfNeeded()
+//        setupReadAloudIfNeeded()
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
 
