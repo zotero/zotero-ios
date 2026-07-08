@@ -29,6 +29,9 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
     }
     private var isReaderInitialized: Bool
+    /// Annotation params (position, text, sortIndex, pageLabel, type, color) for the current read-aloud preview, reported
+    /// by the reader via `onReadAloudAnnotationPreview`. Held so the preview can be persisted when the session is confirmed.
+    private var readAloudPreviewParams: [String: Any]?
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -114,6 +117,54 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private func deselectText() {
         webViewHandler.call(javascript: "window._view.selectAnnotations([]);").subscribe().disposed(by: disposeBag)
+    }
+
+    // MARK: - Read Aloud
+
+    /// Renders an ephemeral, non-persisted highlight/underline preview for the given read-aloud text in the reader. The
+    /// reader locates the text (disambiguating with `sourceLocation`/`sourceTextLength` when it occurs more than once)
+    /// and reports the resulting annotation params back via `onReadAloudAnnotationPreview`.
+    func updateReadAloudAnnotationPreview(text: String, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int) {
+        let type: String
+        switch tool {
+        case .highlight:
+            type = "highlight"
+
+        case .underline:
+            type = "underline"
+
+        case .eraser, .image, .ink, .freeText, .note:
+            return
+        }
+        let payload: [String: Any] = [
+            "text": text,
+            "type": type,
+            "color": color,
+            "sourceLocation": sourceLocation,
+            "sourceTextLength": sourceTextLength
+        ]
+        webViewHandler.call(javascript: "setReadAloudAnnotationPreview({ params: \(WebViewEncoder.encodeAsJSONForJavascript(payload)) });")
+            .observe(on: MainScheduler.instance)
+            .subscribe(onFailure: { error in
+                DDLogError("HtmlEpubDocumentViewController: setting read aloud annotation preview failed - \(error)")
+            })
+            .disposed(by: disposeBag)
+    }
+
+    /// Removes the ephemeral read-aloud annotation preview from the reader and drops the captured params.
+    func clearReadAloudAnnotationPreview() {
+        readAloudPreviewParams = nil
+        webViewHandler.call(javascript: "clearReadAloudAnnotationPreview();").subscribe().disposed(by: disposeBag)
+    }
+
+    /// Persists the currently previewed read-aloud annotation (if any), promoting it into a real database annotation.
+    func commitReadAloudAnnotation() {
+        guard let params = readAloudPreviewParams else {
+            DDLogWarn("HtmlEpubDocumentViewController: no read aloud annotation preview to commit")
+            return
+        }
+        readAloudPreviewParams = nil
+        viewModel.process(action: .createAnnotationFromReadAloud(params))
     }
 
     private func process(state: HtmlEpubReaderState) {
@@ -370,6 +421,15 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             case "onBackdropTap":
                 parentDelegate?.toggleInterfaceVisibility()
+
+            case "onReadAloudAnnotationPreview":
+                // The reader located the previewed read-aloud text and returns the annotation params to persist on confirm,
+                // or empty params if the text couldn't be located.
+                if let params = data["params"] as? [String: Any], params["position"] != nil {
+                    readAloudPreviewParams = params
+                } else {
+                    readAloudPreviewParams = nil
+                }
 
             default:
                 break

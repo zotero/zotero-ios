@@ -6,12 +6,14 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SafariServices
+import SwiftUI
 import UIKit
 
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
+protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate, ReadAloudCoordinatorDelegate {
     func showDocumentChangedAlert(completed: @escaping () -> Void)
     func show(url: URL)
     func showSearch(
@@ -36,6 +38,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     private let readerURL: URL?
     private let preselectedAnnotationKey: String?
     internal unowned let controllers: Controllers
+    private let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
 
     init(
@@ -56,6 +59,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         self.preselectedAnnotationKey = preselectedAnnotationKey
         self.navigationController = navigationController
         self.controllers = controllers
+        remoteVoicesController = RemoteVoicesController(apiClient: controllers.apiClient)
         childCoordinators = []
         disposeBag = DisposeBag()
 
@@ -104,7 +108,9 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
-            documentWorkerController: userControllers.documentWorkerController
+            dbStorage: dbStorage,
+            documentWorkerController: userControllers.documentWorkerController,
+            remoteVoicesController: remoteVoicesController
         )
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: false)
@@ -159,5 +165,60 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 
     func show(url: URL) {
         (parentCoordinator as? DetailCoordinator)?.show(url: url)
+    }
+}
+
+extension HtmlEpubCoordinator: ReadAloudCoordinatorDelegate {
+    func showVoicePicker(
+        for voice: SpeechVoice,
+        language: String?,
+        detectedLanguage: String,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        selectionChanged: @escaping (ReadAloudVoiceChange) -> Void
+    ) {
+        guard let navigationController else { return }
+        let view = ReadAloudVoicePickerView(
+            selectedVoice: voice,
+            language: language,
+            detectedLanguage: detectedLanguage,
+            remoteVoicesController: remoteVoicesController,
+            dismiss: { change in
+                selectionChanged(change)
+                navigationController.dismiss(animated: true)
+            }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.modalPresentationStyle = .formSheet
+        controller.isModalInPresentation = true
+        if let presentedController = navigationController.presentedViewController {
+            presentedController.present(controller, animated: true)
+        } else {
+            navigationController.present(controller, animated: true)
+        }
+    }
+
+    func showReadAloudOnboarding(from presenter: UIViewController, language: String?, detectedLanguage: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
+        let view = ReadAloudOnboardingView(
+            language: language,
+            detectedLanguage: detectedLanguage,
+            remoteVoicesController: remoteVoicesController,
+            dismiss: { selectedVoice in
+                presenter.dismiss(animated: true) {
+                    completion(selectedVoice)
+                }
+            }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.modalPresentationStyle = .formSheet
+        presenter.present(controller, animated: true)
+    }
+
+    func showReadAloudAddMoreTime(from presenter: UIViewController) {
+        guard let url = URL(string: "https://www.zotero.org/settings/readaloud") else { return }
+        let controller = SFSafariViewController(url: url)
+        controller.modalPresentationStyle = .formSheet
+        (presenter.presentedViewController ?? presenter).present(controller, animated: true)
     }
 }
