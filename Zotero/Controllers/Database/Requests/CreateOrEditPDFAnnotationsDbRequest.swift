@@ -1,5 +1,5 @@
 //
-//  CreatePDFAnnotationsDbRequest.swift
+//  CreateOrEditPDFAnnotationsDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 31.08.2022.
@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-class CreatePDFAnnotationsDbRequest: CreateReaderAnnotationsDbRequest<PDFDocumentAnnotation> {
+class CreateOrEditPDFAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbRequest<PDFDocumentAnnotation> {
     let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     init(
@@ -60,13 +60,13 @@ class CreatePDFAnnotationsDbRequest: CreateReaderAnnotationsDbRequest<PDFDocumen
         }
     }
 
-    override func addAdditionalProperties(for annotation: PDFDocumentAnnotation, fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) {
-        add(rects: annotation.rects, fromRestore: fromRestore, to: item, changes: &changes, database: database)
-        add(paths: annotation.paths, fromRestore: fromRestore, to: item, changes: &changes, database: database)
+    override func addAdditionalProperties(for annotation: PDFDocumentAnnotation, to item: RItem, changes: inout RItemChanges, database: Realm) {
+        add(rects: annotation.rects, to: item, changes: &changes, database: database)
+        add(paths: annotation.paths, to: item, changes: &changes, database: database)
     }
 
-    private func add(rects: [CGRect], fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) {
-        if fromRestore {
+    private func add(rects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {
+        if !item.rects.isEmpty {
             item.rects.removeAll()
             changes.insert(.rects)
         }
@@ -87,8 +87,8 @@ class CreatePDFAnnotationsDbRequest: CreateReaderAnnotationsDbRequest<PDFDocumen
         changes.insert(.rects)
     }
 
-    private func add(paths: [[CGPoint]], fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) {
-        if fromRestore {
+    private func add(paths: [[CGPoint]], to item: RItem, changes: inout RItemChanges, database: Realm) {
+        if !item.paths.isEmpty {
             item.paths.removeAll()
             changes.insert(.paths)
         }
