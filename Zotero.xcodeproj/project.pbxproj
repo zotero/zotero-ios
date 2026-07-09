@@ -5378,7 +5378,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "swiftlint\n";
+			shellScript = "case \"${SKIP_SWIFTLINT:-}\" in\n    1|true|TRUE|yes|YES)\n        echo \"Skipping SwiftLint because SKIP_SWIFTLINT is enabled.\"\n        exit 0\n        ;;\nesac\n\ncase \"${CI_TAG:-}\" in\n    *skip-swiftlint*)\n        echo \"Skipping SwiftLint because CI_TAG requests skip-swiftlint.\"\n        exit 0\n        ;;\nesac\n\nswiftlint\n";
 		};
 		B3052A912C412E12008C8596 /* Bundle Reader */ = {
 			isa = PBXShellScriptBuildPhase;
