@@ -1,5 +1,5 @@
 //
-//  CreateReaderAnnotationsDbRequest.swift
+//  CreateOrEditReaderAnnotationsDbRequest.swift
 //  Zotero
 //
 //  Created by Miltiadis Vasilakis on 20/9/24.
@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-class CreateReaderAnnotationsDbRequest<Annotation: ReaderAnnotation>: DbRequest {
+class CreateOrEditReaderAnnotationsDbRequest<Annotation: ReaderAnnotation>: DbRequest {
     let attachmentKey: String
     let libraryId: LibraryIdentifier
     let annotations: [Annotation]
@@ -37,19 +37,12 @@ class CreateReaderAnnotationsDbRequest<Annotation: ReaderAnnotation>: DbRequest 
     }
 
     func create(annotation: Annotation, parent: RItem, in database: Realm) {
-        let fromRestore: Bool
         let item: RItem
 
         if let _item = database.objects(RItem.self).uniqueObject(key: annotation.key, libraryId: libraryId) {
-            if !_item.deleted {
-                // If item exists and is not deleted locally, we can ignore this request
-                return
-            }
-
             // If item exists and was already deleted locally and not yet synced, we re-add the item
             item = _item
             item.deleted = false
-            fromRestore = true
         } else {
             // If item didn't exist, create it
             item = RItem()
@@ -59,7 +52,6 @@ class CreateReaderAnnotationsDbRequest<Annotation: ReaderAnnotation>: DbRequest 
             item.libraryId = libraryId
             item.dateAdded = annotation.dateAdded
             database.add(item)
-            fromRestore = false
         }
 
         item.annotationType = annotation.type.rawValue
@@ -81,11 +73,15 @@ class CreateReaderAnnotationsDbRequest<Annotation: ReaderAnnotation>: DbRequest 
         addTags(for: annotation, to: item, database: database)
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         var changes: RItemChanges = [.parent, .fields, .type, .tags]
-        addAdditionalProperties(for: annotation, fromRestore: fromRestore, to: item, changes: &changes, database: database)
+        addAdditionalProperties(for: annotation, to: item, changes: &changes, database: database)
         item.changes.append(RObjectChange.create(changes: changes))
     }
 
     func addFields(for annotation: Annotation, to item: RItem, database: Realm) {
+        if !item.fields.isEmpty {
+            item.fields.removeAll()
+        }
+
         for field in FieldKeys.Item.Annotation.mandatoryApiFields(for: annotation.type) {
             let rField = RItemField()
             rField.key = field.key
@@ -117,7 +113,11 @@ class CreateReaderAnnotationsDbRequest<Annotation: ReaderAnnotation>: DbRequest 
         }
     }
 
-    func addTags(for annotation: Annotation, to item: RItem, database: Realm) { }
+    func addTags(for annotation: Annotation, to item: RItem, database: Realm) {
+        if !item.tags.isEmpty {
+            database.delete(item.tags)
+        }
+    }
 
-    func addAdditionalProperties(for annotation: Annotation, fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) { }
+    func addAdditionalProperties(for annotation: Annotation, to item: RItem, changes: inout RItemChanges, database: Realm) { }
 }

@@ -1,5 +1,5 @@
 //
-//  CreateHtmlEpubAnnotationsDbRequest.swift
+//  CreateOrEditHtmlEpubAnnotationsDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 28.09.2023.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-class CreateHtmlEpubAnnotationsDbRequest: CreateReaderAnnotationsDbRequest<HtmlEpubAnnotation> {
+class CreateOrEditHtmlEpubAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbRequest<HtmlEpubAnnotation> {
     override func addFields(for annotation: HtmlEpubAnnotation, to item: RItem, database: Realm) {
         super.addFields(for: annotation, to: item, database: database)
 
@@ -55,8 +55,9 @@ class CreateHtmlEpubAnnotationsDbRequest: CreateReaderAnnotationsDbRequest<HtmlE
     }
 
     override func addTags(for annotation: HtmlEpubAnnotation, to item: RItem, database: Realm) {
-        let allTags = database.objects(RTag.self)
+        super.addTags(for: annotation, to: item, database: database)
 
+        let allTags = database.objects(RTag.self)
         for tag in annotation.tags {
             guard let rTag = allTags.filter(.name(tag.name)).first else { continue }
 

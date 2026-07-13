@@ -1490,7 +1490,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             return documentAnnotation
         }
 
-        let request = CreatePDFAnnotationsDbRequest(
+        let request = CreateOrEditPDFAnnotationsDbRequest(
             attachmentKey: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
             annotations: documentAnnotations,

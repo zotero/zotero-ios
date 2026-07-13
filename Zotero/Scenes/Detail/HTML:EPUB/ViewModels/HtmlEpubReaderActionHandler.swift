@@ -728,7 +728,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func createDatabaseAnnotations(annotations: [HtmlEpubAnnotation], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        let request = CreateHtmlEpubAnnotationsDbRequest(
+        let request = CreateOrEditHtmlEpubAnnotationsDbRequest(
             attachmentKey: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
             annotations: annotations,
