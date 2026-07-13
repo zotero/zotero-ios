@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 final class TagPickerViewController: UIViewController {
-    @IBOutlet private weak var tableView: UITableView!
+    private weak var tableView: UITableView!
 
     private static let addCellId = "AddCell"
     private static let tagCellId = "TagCell"
@@ -27,7 +27,7 @@ final class TagPickerViewController: UIViewController {
         self.viewModel = viewModel
         self.saveAction = saveAction
         self.disposeBag = DisposeBag()
-        super.init(nibName: "TagPickerViewController", bundle: nil)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -36,6 +36,8 @@ final class TagPickerViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        view.backgroundColor = .systemBackground
 
         self.setupTableView()
         self.setupSearchBar()
@@ -139,12 +141,28 @@ final class TagPickerViewController: UIViewController {
     }
 
     private func setupTableView() {
-        self.tableView.delegate = self
-        self.tableView.dataSource = self
-        self.tableView.allowsMultipleSelectionDuringEditing = true
-        self.tableView.isEditing = true
-        self.tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: TagPickerViewController.tagCellId)
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: TagPickerViewController.addCellId)
+        let tableView = UITableView(frame: .zero, style: .plain)
+        tableView.backgroundColor = .systemBackground
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = UITableView.automaticDimension
+        tableView.sectionHeaderHeight = 28
+        tableView.sectionFooterHeight = 28
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.allowsMultipleSelectionDuringEditing = true
+        tableView.isEditing = true
+        tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: Self.tagCellId)
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Self.addCellId)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tableView)
+        self.tableView = tableView
+
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+        ])
     }
 
     private func setupNavigationBar() {
