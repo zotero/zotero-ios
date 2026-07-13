@@ -152,7 +152,6 @@ final class TagPickerViewController: UIViewController {
     }
 
     private func addTagIfNeeded() {
-        // When there are no search results during search, add current search query
         guard let searchController = navigationItem.searchController, !viewModel.state.searchTerm.isEmpty, let text = searchController.searchBar.text, !text.isEmpty else { return }
         viewModel.process(action: .add(text))
         searchController.searchBar.text = nil
