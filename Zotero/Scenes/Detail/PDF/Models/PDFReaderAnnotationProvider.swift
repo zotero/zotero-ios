@@ -193,7 +193,6 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             if !currentFilterContext.isEmpty {
                 applyCurrentFilterForPage(at: pageIndex, notify: true)
             }
-            // TODO: Check if current apperance needs to be applied to the file page annotations.
 
             if filePageAnnotations == nil, cachePageAnnotations == nil {
                 return nil
