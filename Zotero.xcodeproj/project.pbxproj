@@ -74,6 +74,7 @@
 		61A9B1692F476D36004FF769 /* font_data.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B1682F476D36004FF769 /* font_data.pdf */; };
 		61A9B16B2F476DA6004FF769 /* font_data_pdf_full_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B16A2F476D95004FF769 /* font_data_pdf_full_text.json */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
+		61AC684830067AEE001E630F /* TableViewDiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */; };
 		61AD977D2D67F42A000FDF45 /* DocumentWorkerControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61AD977C2D67F42A000FDF45 /* DocumentWorkerControllerSpec.swift */; };
 		61AF0C602FDFD8C3006B5C9B /* ONNXRuntime/onnxruntime.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 61AF0C5F2FDFD8C3006B5C9B /* ONNXRuntime/onnxruntime.xcframework */; };
 		61B0A1E12FBD200100C0DE01 /* ONNXRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B0A1E02FBD200100C0DE01 /* ONNXRuntime.swift */; };
@@ -6644,6 +6645,7 @@
 				B33E8A4827B6A07100CBC7DE /* AllCollectionPickerAction.swift in Sources */,
 				B310091B272C0110003FC743 /* CreateWebDavDeletionsDbRequest.swift in Sources */,
 				B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */,
+				61AC684830067AEE001E630F /* TableViewDiffableDataSource.swift in Sources */,
 				B3FC743A272195EA00F55531 /* WebDavTestWriteRequest.swift in Sources */,
 				B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */,
 				B30566FD23FC0865003304F2 /* MarkForResyncDbAction.swift in Sources */,

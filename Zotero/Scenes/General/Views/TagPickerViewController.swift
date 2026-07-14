@@ -11,12 +11,22 @@ import UIKit
 import RxSwift
 
 final class TagPickerViewController: UIViewController {
+    private enum Section: Hashable {
+        case tags
+        case add
+    }
+
+    private enum Row: Hashable {
+        case tag(Tag)
+        case add(String)
+    }
+
     private weak var tableView: UITableView!
 
     private static let addCellId = "AddCell"
     private static let tagCellId = "TagCell"
-    private static let addSection = 1
-    private static let tagsSection = 0
+    private var dataSource: TableViewDiffableDataSource<Section, Row>!
+
     private let viewModel: ViewModel<TagPickerActionHandler>
     private let saveAction: ([Tag]) -> Void
     private let disposeBag: DisposeBag
@@ -64,7 +74,25 @@ final class TagPickerViewController: UIViewController {
             tableView.sectionHeaderHeight = 28
             tableView.sectionFooterHeight = 28
             tableView.delegate = self
-            tableView.dataSource = self
+            dataSource = TableViewDiffableDataSource<Section, Row>(tableView: tableView) { tableView, indexPath, row in
+                switch row {
+                case .tag(let tag):
+                    let cell = tableView.dequeueReusableCell(withIdentifier: Self.tagCellId, for: indexPath)
+                    if let cell = cell as? TagPickerCell {
+                        cell.setup(with: tag)
+                    }
+                    return cell
+
+                case .add(let searchTerm):
+                    let cell = tableView.dequeueReusableCell(withIdentifier: Self.addCellId, for: indexPath)
+                    cell.textLabel?.text = L10n.TagPicker.createTag(searchTerm)
+                    return cell
+                }
+            }
+            dataSource.canEditRow = { [weak self] indexPath in
+                guard let row = self?.dataSource.itemIdentifier(for: indexPath), case .tag = row else { return false }
+                return true
+            }
             tableView.allowsMultipleSelectionDuringEditing = true
             tableView.isEditing = true
             tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: Self.tagCellId)
@@ -144,10 +172,23 @@ final class TagPickerViewController: UIViewController {
     }
 
     private func updateTags(to state: TagPickerState) {
-        tableView.reloadData()
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+        snapshot.appendSections([.tags, .add])
+        snapshot.appendItems(state.tags.map({ .tag($0) }), toSection: .tags)
+        if state.showAddTagButton {
+            snapshot.appendItems([.add(state.searchTerm)], toSection: .add)
+        }
+
+        dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+            self?.selectTags(in: state)
+        }
+    }
+
+    private func selectTags(in state: TagPickerState) {
         for name in state.selectedTags {
-            guard let index = state.tags.firstIndex(where: { $0.name == name }) else { continue }
-            tableView.selectRow(at: IndexPath(row: index, section: Self.tagsSection), animated: false, scrollPosition: (state.addedTagName == name ? .middle : .none))
+            guard let tag = state.tags.first(where: { $0.name == name }),
+                  let indexPath = dataSource.indexPath(for: .tag(tag)) else { continue }
+            tableView.selectRow(at: indexPath, animated: false, scrollPosition: (state.addedTagName == name ? .middle : .none))
         }
     }
 
@@ -180,62 +221,25 @@ final class TagPickerViewController: UIViewController {
     }
 }
 
-extension TagPickerViewController: UITableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
-    }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch section {
-        case Self.addSection:
-            return viewModel.state.showAddTagButton ? 1 : 0
-
-        case Self.tagsSection:
-            return viewModel.state.tags.count
-
-        default:
-            return 0
-        }
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cellId = indexPath.section == Self.tagsSection ? Self.tagCellId : Self.addCellId
-        let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
-        if let cell = cell as? TagPickerCell {
-            let tag = viewModel.state.tags[indexPath.row]
-            cell.setup(with: tag)
-        } else {
-            cell.textLabel?.text = L10n.TagPicker.createTag(viewModel.state.searchTerm)
-        }
-        return cell
-    }
-}
-
 extension TagPickerViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        switch indexPath.section {
-        case Self.addSection:
+        guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
+
+        switch row {
+        case .add:
             addTagIfNeeded()
 
-        case Self.tagsSection:
-            let name = viewModel.state.tags[indexPath.row].name
-            viewModel.process(action: .select(name))
-
-        default:
-            break
+        case .tag(let tag):
+            viewModel.process(action: .select(tag.name))
         }
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        let name = viewModel.state.tags[indexPath.row].name
-        viewModel.process(action: .deselect(name))
+        guard let row = dataSource.itemIdentifier(for: indexPath), case .tag(let tag) = row else { return }
+        viewModel.process(action: .deselect(tag.name))
     }
 
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
         return true
-    }
-
-    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return indexPath.section == Self.tagsSection
     }
 }
