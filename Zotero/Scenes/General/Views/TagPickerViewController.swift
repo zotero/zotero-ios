@@ -11,12 +11,22 @@ import UIKit
 import RxSwift
 
 final class TagPickerViewController: UIViewController {
-    @IBOutlet private weak var tableView: UITableView!
+    private enum Section: Hashable {
+        case tags
+        case add
+    }
+
+    private enum Row: Hashable {
+        case tag(Tag)
+        case add(String)
+    }
+
+    private weak var tableView: UITableView!
 
     private static let addCellId = "AddCell"
     private static let tagCellId = "TagCell"
-    private static let addSection = 1
-    private static let tagsSection = 0
+    private var dataSource: TableViewDiffableDataSource<Section, Row>!
+
     private let viewModel: ViewModel<TagPickerActionHandler>
     private let saveAction: ([Tag]) -> Void
     private let disposeBag: DisposeBag
@@ -26,8 +36,8 @@ final class TagPickerViewController: UIViewController {
     init(viewModel: ViewModel<TagPickerActionHandler>, saveAction: @escaping ([Tag]) -> Void) {
         self.viewModel = viewModel
         self.saveAction = saveAction
-        self.disposeBag = DisposeBag()
-        super.init(nibName: "TagPickerViewController", bundle: nil)
+        disposeBag = DisposeBag()
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -37,22 +47,111 @@ final class TagPickerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setupTableView()
-        self.setupSearchBar()
-        self.setupNavigationBar()
+        view.backgroundColor = .systemBackground
 
-        self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(to: state)
-                      })
-                      .disposed(by: self.disposeBag)
+        setupTableView()
+        setupSearchBar()
+        setupNavigationBar()
 
-        if self.viewModel.state.tags.isEmpty {
-            self.viewModel.process(action: .load)
+        viewModel.stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                self?.update(to: state)
+            })
+            .disposed(by: disposeBag)
+
+        if viewModel.state.tags.isEmpty {
+            viewModel.process(action: .load)
         } else {
-            self.tableView.reloadData()
-            self.select(selected: self.viewModel.state.selectedTags, tags: self.viewModel.state.tags, focusTagName: self.viewModel.state.addedTagName)
+            updateTags(to: viewModel.state)
+        }
+
+        func setupTableView() {
+            let tableView = UITableView(frame: .zero, style: .plain)
+            tableView.backgroundColor = .systemBackground
+            tableView.rowHeight = UITableView.automaticDimension
+            tableView.estimatedRowHeight = UITableView.automaticDimension
+            tableView.sectionHeaderHeight = 28
+            tableView.sectionFooterHeight = 28
+            tableView.delegate = self
+            dataSource = TableViewDiffableDataSource<Section, Row>(tableView: tableView) { tableView, indexPath, row in
+                switch row {
+                case .tag(let tag):
+                    let cell = tableView.dequeueReusableCell(withIdentifier: Self.tagCellId, for: indexPath)
+                    if let cell = cell as? TagPickerCell {
+                        cell.setup(with: tag)
+                    }
+                    return cell
+
+                case .add(let searchTerm):
+                    let cell = tableView.dequeueReusableCell(withIdentifier: Self.addCellId, for: indexPath)
+                    cell.textLabel?.text = L10n.TagPicker.createTag(searchTerm)
+                    return cell
+                }
+            }
+            dataSource.canEditRow = { [weak self] indexPath in
+                guard let row = self?.dataSource.itemIdentifier(for: indexPath), case .tag = row else { return false }
+                return true
+            }
+            tableView.allowsMultipleSelectionDuringEditing = true
+            tableView.isEditing = true
+            tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: Self.tagCellId)
+            tableView.register(UITableViewCell.self, forCellReuseIdentifier: Self.addCellId)
+            tableView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(tableView)
+            self.tableView = tableView
+
+            NSLayoutConstraint.activate([
+                tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+            ])
+        }
+
+        func setupSearchBar() {
+            let searchController = UISearchController()
+            searchController.obscuresBackgroundDuringPresentation = false
+            searchController.hidesNavigationBarDuringPresentation = false
+            searchController.searchBar.placeholder = L10n.TagPicker.placeholder
+            searchController.searchBar.autocapitalizationType = .none
+
+            searchController.searchBar.rx.text.observe(on: MainScheduler.instance)
+                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] text in
+                    self?.viewModel.process(action: .search(text ?? ""))
+                })
+                .disposed(by: disposeBag)
+
+            searchController.searchBar.rx.searchButtonClicked.observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] in
+                    self?.addTagIfNeeded()
+                })
+                .disposed(by: disposeBag)
+
+            navigationItem.searchController = searchController
+            navigationItem.preferredSearchBarPlacement = .stacked
+            navigationItem.hidesSearchBarWhenScrolling = false
+        }
+
+        func setupNavigationBar() {
+            let left = UIBarButtonItem(title: L10n.cancel)
+            left.rx.tap
+                .subscribe(onNext: { [weak self] in
+                    self?.dismiss()
+                })
+                .disposed(by: disposeBag)
+            navigationItem.leftBarButtonItem = left
+
+            let right = UIBarButtonItem(title: L10n.save)
+            right.rx.tap
+                 .subscribe(onNext: { [weak self] in
+                     guard let self else { return }
+                     save()
+                     dismiss()
+                 })
+                 .disposed(by: disposeBag)
+            navigationItem.rightBarButtonItem = right
         }
     }
 
@@ -60,12 +159,11 @@ final class TagPickerViewController: UIViewController {
 
     private func update(to state: TagPickerState) {
         if state.changes.contains(.selection) {
-            self.title = L10n.TagPicker.title(state.selectedTags.count)
+            title = L10n.TagPicker.title(state.selectedTags.count)
         }
 
         if state.changes.contains(.tags) {
-            self.tableView.reloadData()
-            self.select(selected: state.selectedTags, tags: state.tags, focusTagName: state.addedTagName)
+            updateTags(to: state)
         }
 
         if let error = state.error {
@@ -73,34 +171,45 @@ final class TagPickerViewController: UIViewController {
         }
     }
 
-    private func select(selected: Set<String>, tags: [Tag], focusTagName: String?) {
-        for name in selected {
-            guard let index = tags.firstIndex(where: { $0.name == name }) else { continue }
-            self.tableView.selectRow(at: IndexPath(row: index, section: TagPickerViewController.tagsSection), animated: false, scrollPosition: (focusTagName == name ? .middle : .none))
+    private func updateTags(to state: TagPickerState) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+        snapshot.appendSections([.tags, .add])
+        snapshot.appendItems(state.tags.map({ .tag($0) }), toSection: .tags)
+        if state.showAddTagButton {
+            snapshot.appendItems([.add(state.searchTerm)], toSection: .add)
+        }
+
+        dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+            self?.selectTags(in: state)
+        }
+    }
+
+    private func selectTags(in state: TagPickerState) {
+        for name in state.selectedTags {
+            guard let tag = state.tags.first(where: { $0.name == name }),
+                  let indexPath = dataSource.indexPath(for: .tag(tag)) else { continue }
+            tableView.selectRow(at: indexPath, animated: false, scrollPosition: (state.addedTagName == name ? .middle : .none))
         }
     }
 
     private func addTagIfNeeded() {
-        // When there are no search results during search, add current search query
-        guard let searchController = self.navigationItem.searchController,
-              !self.viewModel.state.searchTerm.isEmpty,
-              let text = searchController.searchBar.text, !text.isEmpty else { return }
-        self.viewModel.process(action: .add(text))
+        guard let searchController = navigationItem.searchController, !viewModel.state.searchTerm.isEmpty, let text = searchController.searchBar.text, !text.isEmpty else { return }
+        viewModel.process(action: .add(text))
         searchController.searchBar.text = nil
         searchController.isActive = false
     }
 
     private func save() {
-        let allTags = self.viewModel.state.snapshot ?? self.viewModel.state.tags
-        let tags = self.viewModel.state.selectedTags.compactMap { id in
+        let allTags = viewModel.state.snapshot ?? viewModel.state.tags
+        let tags = viewModel.state.selectedTags.compactMap { id in
             allTags.first(where: { $0.id == id })
         }.sorted(by: { $0.name < $1.name })
-        self.saveAction(tags)
+        saveAction(tags)
     }
 
     private func dismiss() {
-        guard let navigationController = self.navigationController else {
-            self.presentingViewController?.dismiss(animated: true, completion: nil)
+        guard let navigationController else {
+            presentingViewController?.dismiss(animated: true, completion: nil)
             return
         }
 
@@ -110,113 +219,27 @@ final class TagPickerViewController: UIViewController {
             navigationController.popViewController(animated: true)
         }
     }
-
-    // MARK: - Setups
-
-    private func setupSearchBar() {
-        let searchController = UISearchController()
-        searchController.obscuresBackgroundDuringPresentation = false
-        searchController.hidesNavigationBarDuringPresentation = false
-        searchController.searchBar.placeholder = L10n.TagPicker.placeholder
-        searchController.searchBar.autocapitalizationType = .none
-
-        searchController.searchBar.rx.text.observe(on: MainScheduler.instance)
-                         .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                         .subscribe(onNext: { [weak self] text in
-                            self?.viewModel.process(action: .search(text ?? ""))
-                         })
-                         .disposed(by: self.disposeBag)
-
-        searchController.searchBar.rx.searchButtonClicked.observe(on: MainScheduler.instance)
-                        .subscribe(onNext: { [weak self] in
-                            self?.addTagIfNeeded()
-                        })
-                        .disposed(by: self.disposeBag)
-
-        self.navigationItem.searchController = searchController
-        self.navigationItem.preferredSearchBarPlacement = .stacked
-        self.navigationItem.hidesSearchBarWhenScrolling = false
-    }
-
-    private func setupTableView() {
-        self.tableView.delegate = self
-        self.tableView.dataSource = self
-        self.tableView.allowsMultipleSelectionDuringEditing = true
-        self.tableView.isEditing = true
-        self.tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: TagPickerViewController.tagCellId)
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: TagPickerViewController.addCellId)
-    }
-
-    private func setupNavigationBar() {
-        let left = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        left.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.dismiss()
-            })
-            .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = left
-
-        let right = UIBarButtonItem(title: L10n.save, style: .plain, target: nil, action: nil)
-        right.rx.tap
-             .subscribe(onNext: { [weak self] in
-                 self?.save()
-                 self?.dismiss()
-             })
-             .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = right
-    }
-}
-
-extension TagPickerViewController: UITableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
-    }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch section {
-        case TagPickerViewController.addSection: return self.viewModel.state.showAddTagButton ? 1 : 0
-        case TagPickerViewController.tagsSection: return self.viewModel.state.tags.count
-        default: return 0
-        }
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cellId = indexPath.section == TagPickerViewController.tagsSection ? TagPickerViewController.tagCellId : TagPickerViewController.addCellId
-        let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
-        if let cell = cell as? TagPickerCell {
-            let tag = self.viewModel.state.tags[indexPath.row]
-            cell.setup(with: tag)
-        } else {
-            cell.textLabel?.text = L10n.TagPicker.createTag(self.viewModel.state.searchTerm)
-        }
-        return cell
-    }
 }
 
 extension TagPickerViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        switch indexPath.section {
-        case TagPickerViewController.addSection:
-            self.addTagIfNeeded()
+        guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
 
-        case TagPickerViewController.tagsSection:
-            let name = self.viewModel.state.tags[indexPath.row].name
-            self.viewModel.process(action: .select(name))
+        switch row {
+        case .add:
+            addTagIfNeeded()
 
-        default: break
+        case .tag(let tag):
+            viewModel.process(action: .select(tag.name))
         }
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        let name = self.viewModel.state.tags[indexPath.row].name
-        self.viewModel.process(action: .deselect(name))
+        guard let row = dataSource.itemIdentifier(for: indexPath), case .tag(let tag) = row else { return }
+        viewModel.process(action: .deselect(tag.name))
     }
 
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
         return true
-    }
-
-    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return indexPath.section == TagPickerViewController.tagsSection
     }
 }

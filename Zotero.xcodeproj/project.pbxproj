@@ -74,6 +74,7 @@
 		61A9B1692F476D36004FF769 /* font_data.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B1682F476D36004FF769 /* font_data.pdf */; };
 		61A9B16B2F476DA6004FF769 /* font_data_pdf_full_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B16A2F476D95004FF769 /* font_data_pdf_full_text.json */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
+		61AC684830067AEE001E630F /* TableViewDiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */; };
 		61AD977D2D67F42A000FDF45 /* DocumentWorkerControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61AD977C2D67F42A000FDF45 /* DocumentWorkerControllerSpec.swift */; };
 		61AF0C602FDFD8C3006B5C9B /* ONNXRuntime/onnxruntime.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 61AF0C5F2FDFD8C3006B5C9B /* ONNXRuntime/onnxruntime.xcframework */; };
 		61B0A1E12FBD200100C0DE01 /* ONNXRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B0A1E02FBD200100C0DE01 /* ONNXRuntime.swift */; };
@@ -817,7 +818,6 @@
 		B36459DB2644117D00A0C2C0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
 		B36459DC2644118800A0C2C0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
 		B36459DD2644118800A0C2C0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
-		B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CE7255451DC00910FE0 /* TagPickerViewController.xib */; };
 		B36459DF2644119600A0C2C0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
 		B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
 		B36459E2264411DB00A0C2C0 /* TagPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD8255451AA00910FE0 /* TagPickerAction.swift */; };
@@ -917,7 +917,6 @@
 		B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD8255451AA00910FE0 /* TagPickerAction.swift */; };
 		B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD9255451AA00910FE0 /* TagPickerState.swift */; };
 		B3830CE2255451C200910FE0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
-		B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CE7255451DC00910FE0 /* TagPickerViewController.xib */; };
 		B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
 		B3830CF625545EE400910FE0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
 		B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
@@ -2047,7 +2046,6 @@
 		B3830CD8255451AA00910FE0 /* TagPickerAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerAction.swift; sourceTree = "<group>"; };
 		B3830CD9255451AA00910FE0 /* TagPickerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerState.swift; sourceTree = "<group>"; };
 		B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerActionHandler.swift; sourceTree = "<group>"; };
-		B3830CE7255451DC00910FE0 /* TagPickerViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TagPickerViewController.xib; sourceTree = "<group>"; };
 		B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerViewController.swift; sourceTree = "<group>"; };
 		B3830CF425545EE400910FE0 /* TagPickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerCell.swift; sourceTree = "<group>"; };
 		B3830CF525545EE400910FE0 /* TagPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagPickerCell.xib; sourceTree = "<group>"; };
@@ -4439,7 +4437,6 @@
 				B3830CF425545EE400910FE0 /* TagPickerCell.swift */,
 				B3830CF525545EE400910FE0 /* TagPickerCell.xib */,
 				B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */,
-				B3830CE7255451DC00910FE0 /* TagPickerViewController.xib */,
 				61BD13942A5831EF008A0704 /* TextKit1TextView.swift */,
 				B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */,
 				B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */,
@@ -5148,7 +5145,6 @@
 				B3593F33241A61C700760E20 /* ItemDetailNoteContentView.xib in Resources */,
 				618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
 				B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */,
-				B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */,
 				B357A28A285B706B00E73CA1 /* ScannerViewController.xib in Resources */,
 				B3AAB0F9283B9915008188D6 /* LookupItemCell.xib in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddContentView.xib in Resources */,
@@ -5280,7 +5276,6 @@
 				B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */,
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
-				B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */,
 				618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */,
@@ -6650,6 +6645,7 @@
 				B33E8A4827B6A07100CBC7DE /* AllCollectionPickerAction.swift in Sources */,
 				B310091B272C0110003FC743 /* CreateWebDavDeletionsDbRequest.swift in Sources */,
 				B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */,
+				61AC684830067AEE001E630F /* TableViewDiffableDataSource.swift in Sources */,
 				B3FC743A272195EA00F55531 /* WebDavTestWriteRequest.swift in Sources */,
 				B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */,
 				B30566FD23FC0865003304F2 /* MarkForResyncDbAction.swift in Sources */,
