@@ -88,10 +88,10 @@ final class ONNXRuntime {
             var inputValues = ortInputs.map(\.value)
             var outputValues = [OpaquePointer?](repeating: nil, count: outputNames.count)
 
-            let status = try inputNamePointers.withUnsafeMutableBufferPointer { inputNamePointers -> OrtStatusPtr? in
-                try inputValues.withUnsafeMutableBufferPointer { inputValues -> OrtStatusPtr? in
-                    try outputNamePointers.withUnsafeMutableBufferPointer { outputNamePointers -> OrtStatusPtr? in
-                        try outputValues.withUnsafeMutableBufferPointer { outputValues -> OrtStatusPtr? in
+            let status = inputNamePointers.withUnsafeMutableBufferPointer { inputNamePointers -> OrtStatusPtr? in
+                inputValues.withUnsafeMutableBufferPointer { inputValues -> OrtStatusPtr? in
+                    outputNamePointers.withUnsafeMutableBufferPointer { outputNamePointers -> OrtStatusPtr? in
+                        outputValues.withUnsafeMutableBufferPointer { outputValues -> OrtStatusPtr? in
                             ONNXRuntime.api.pointee.Run(
                                 session,
                                 nil,
