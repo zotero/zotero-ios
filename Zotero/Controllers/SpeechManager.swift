@@ -22,7 +22,7 @@ protocol SpeechmanagerDelegate: AnyObject {
     func moved(to pageIndex: Index)
 }
 
-final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSynthesizerDelegate {
+final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSynthesizerDelegate, @unchecked Sendable {
     enum State {
         case speaking, paused, stopped, loading
 
