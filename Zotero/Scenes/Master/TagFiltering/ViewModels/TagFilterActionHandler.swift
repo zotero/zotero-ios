@@ -170,11 +170,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 return $0.tag.name.localizedCaseInsensitiveCompare($1.tag.name) == .orderedAscending
             }
 
-            try dbStorage.perform(on: backgroundQueue) { [weak viewModel] coordinator in
-                guard let viewModel else {
-                    coordinator.invalidate()
-                    return
-                }
+            try dbStorage.perform(on: backgroundQueue) { coordinator in
                 let filtered = try coordinator.perform(
                     request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: showAutomatic, filters: filters)
                 )

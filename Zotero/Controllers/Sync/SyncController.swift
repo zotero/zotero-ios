@@ -752,18 +752,19 @@ final class SyncController: SynchronizationController {
         // If conflict receiver isn't yet assigned, we just wait for it and process current action when it's assigned
         // It's assigned either after login or shortly after app is launched, so we should never stay stuck on this.
         guard let receiver = self.conflictCoordinator else { return }
-        receiver.askForPermission(message: action.debugPermissionMessage) { response in
+        receiver.askForPermission(message: action.debugPermissionMessage) { [weak self] response in
+            guard let self else { return }
             switch response {
             case .allowed:
-                self.workQueue.async { [weak self] in
+                workQueue.async { [weak self] in
                     self?.process(action: action)
                 }
 
             case .cancelSync:
-                self.cancel()
+                cancel()
 
             case .skipAction:
-                self.accessQueue.async(flags: .barrier) { [weak self] in
+                accessQueue.async(flags: .barrier) { [weak self] in
                     self?.processNextAction()
                 }
             }
@@ -2148,8 +2149,8 @@ final class SyncController: SynchronizationController {
     private func handleZoteroDirectoryMissing(for error: Error, continue: @escaping () -> Void) -> Bool {
         guard let error = error as? WebDavError.Verification, case .zoteroDirNotFound(let url) = error else { return false }
 
-        DispatchQueue.main.async {
-            self.conflictCoordinator?.askToCreateZoteroDirectory(url: url, create: { [weak self] in
+        DispatchQueue.main.async { [weak self] in
+            self?.conflictCoordinator?.askToCreateZoteroDirectory(url: url, create: { [weak self] in
                 self?.createZoteroDirectoryAndContinue(errorAction: { [weak self] in
                     self?.accessQueue.async {
                         `continue`()
