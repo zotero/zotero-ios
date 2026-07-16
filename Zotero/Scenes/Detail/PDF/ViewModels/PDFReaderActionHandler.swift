@@ -1496,7 +1496,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let documentAnnotations = annotationProvider?.results
             let documentAnnotationCount = documentAnnotations?.count ?? 0
 
-            let annotationPages = readAnnotationPages(attachmentKey: key, libraryId: viewModel.state.library.identifier)
+            let annotationPages = readAnnotationPages(attachmentKey: key, libraryId: viewModel.state.library.identifier, refreshRealm: true)
 
             let defaultAnnotationPageLabelStartTime = CFAbsoluteTimeGetCurrent()
             let defaultAnnotationPageLabel: DefaultAnnotationPageLabel = .read(attachmentKey: key, libraryId: library.identifier, dbStorage: dbStorage, queue: .main)
@@ -1673,9 +1673,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func readAnnotationPages(attachmentKey: String, libraryId: LibraryIdentifier) -> IndexSet {
+    private func readAnnotationPages(attachmentKey: String, libraryId: LibraryIdentifier, refreshRealm: Bool) -> IndexSet {
         do {
-            return try dbStorage.perform(request: ReadAnnotationPagesDbRequest(attachmentKey: attachmentKey, libraryId: libraryId), on: .main)
+            return try dbStorage.perform(request: ReadAnnotationPagesDbRequest(attachmentKey: attachmentKey, libraryId: libraryId), on: .main, refreshRealm: refreshRealm)
         } catch {
             DDLogError("PDFReaderActionHandler: failed to read annotation pages - \(error)")
             return IndexSet()
@@ -1981,7 +1981,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             return
         }
 
-        let annotationPages = readAnnotationPages(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+        let annotationPages = readAnnotationPages(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, refreshRealm: false)
 
         let defaultAnnotationPageLabel: DefaultAnnotationPageLabel? = shouldRecomputeDefaultAnnotationPageLabel ? .read(
             attachmentKey: viewModel.state.key,
