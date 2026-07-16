@@ -127,13 +127,14 @@ struct ReadFilteredCombinedAnnotationKeysDbRequest: DbResponseRequest {
             keys.insert(annotation.key)
         }
 
-        let documentAnnotations = try ReadDocumentAnnotationsDbRequest(attachmentKey: attachmentKey, libraryId: libraryId, page: page)
-            .process(in: database)
-        for cachedAnnotation in documentAnnotations {
-            guard let annotation = PDFDocumentAnnotation(annotation: cachedAnnotation, displayName: displayName, username: username),
-                  annotation.matches(term: term, filter: filter, displayName: displayName, username: username)
-            else { continue }
-            keys.insert(annotation.key)
+        if let documentAnnotations = try ReadDocumentAnnotationsDbRequest(attachmentKey: attachmentKey, libraryId: libraryId, page: page)
+            .process(in: database) {
+            for cachedAnnotation in documentAnnotations {
+                guard let annotation = PDFDocumentAnnotation(annotation: cachedAnnotation, displayName: displayName, username: username),
+                      annotation.matches(term: term, filter: filter, displayName: displayName, username: username)
+                else { continue }
+                keys.insert(annotation.key)
+            }
         }
 
         return keys

@@ -17,11 +17,7 @@ struct DeleteDocumentAnnotationsCacheDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        for info in database.objects(RDocumentAnnotationCacheInfo.self).filter(.attachmentKey(attachmentKey, in: libraryId)) {
-            let linkedAnnotations = info.annotations
-            if !linkedAnnotations.isEmpty {
-                database.delete(linkedAnnotations)
-            }
+        for info in database.objects(RDocumentAnnotationsCacheInfo.self).filter(.attachmentKey(attachmentKey, in: libraryId)) {
             database.delete(info)
         }
     }

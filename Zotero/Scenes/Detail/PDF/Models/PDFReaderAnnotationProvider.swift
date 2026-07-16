@@ -513,22 +513,22 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             md5: String?
         ) -> (results: Results<RDocumentAnnotation>, keys: [PDFReaderAnnotationKey], uniqueBaseColors: [String])? {
             guard let md5, !md5.isEmpty else { return nil }
-            let frozenResponse: ReadDocumentAnnotationsCacheInfoAndAnnotationsDbRequest.Response
+            let frozenCacheInfo: RDocumentAnnotationsCacheInfo?
             do {
-                frozenResponse = try performOnDbQueue {
+                frozenCacheInfo = try performOnDbQueue {
                     guard let response = try dbStorage.perform(
-                        request: ReadDocumentAnnotationsCacheInfoAndAnnotationsDbRequest(attachmentKey: attachmentKey, libraryId: libraryId, page: nil),
+                        request: ReadDocumentAnnotationsCacheInfoDbRequest(attachmentKey: attachmentKey, libraryId: libraryId),
                         on: dbQueue
                     ) else {
                         return nil
                     }
-                    return (response.info.freeze(), response.annotations.freeze())
+                    return response.freeze()
                 }
             } catch {
                 DDLogError("PDFReaderAnnotationProvider: failed to read document annotations cache - \(error)")
                 return nil
             }
-            guard let cacheInfo = frozenResponse?.info, let cachedAnnotations = frozenResponse?.annotations else { return nil }
+            guard let cacheInfo = frozenCacheInfo else { return nil }
             guard cacheInfo.md5 == md5 else {
                 do {
                     try performOnDbQueue {
@@ -543,6 +543,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 return nil
             }
 
+            let cachedAnnotations = cacheInfo.annotations.sorted(byKeyPath: "sortIndex", ascending: true).freeze()
             let keys = Array(cachedAnnotations.map({ PDFReaderAnnotationKey(key: $0.key, sortIndex: $0.sortIndex, type: .document) }))
             let uniqueBaseColors = Array(cacheInfo.uniqueBaseColors)
             DDLogInfo("PDFReaderAnnotationProvider: loaded \(keys.count) cached document annotations")

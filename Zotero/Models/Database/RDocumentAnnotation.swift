@@ -11,12 +11,8 @@ import UIKit
 
 import RealmSwift
 
-final class RDocumentAnnotation: Object, LibraryScoped {
+final class RDocumentAnnotation: EmbeddedObject {
     @Persisted(indexed: true) var key: String
-    @Persisted(indexed: true) var attachmentKey: String
-    @Persisted var customLibraryKey: RCustomLibraryType?
-    @Persisted var groupKey: Int?
-
     @Persisted var type: String
     @Persisted(indexed: true) var page: Int
     @Persisted var pageLabel: String
@@ -32,5 +28,4 @@ final class RDocumentAnnotation: Object, LibraryScoped {
     @Persisted var sortIndex: String
     @Persisted var dateAdded: Date
     @Persisted var dateModified: Date
-    @Persisted var cacheInfo: RDocumentAnnotationCacheInfo?
 }

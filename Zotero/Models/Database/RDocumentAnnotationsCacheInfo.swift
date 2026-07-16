@@ -1,5 +1,5 @@
 //
-//  RDocumentAnnotationCacheInfo.swift
+//  RDocumentAnnotationsCacheInfo.swift
 //  Zotero
 //
 //  Created by Miltiadis Vasilakis on 26/01/26.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-final class RDocumentAnnotationCacheInfo: Object, LibraryScoped {
+final class RDocumentAnnotationsCacheInfo: Object, LibraryScoped {
     @Persisted(indexed: true) var attachmentKey: String
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
@@ -21,5 +21,5 @@ final class RDocumentAnnotationCacheInfo: Object, LibraryScoped {
     @Persisted var uniqueBaseColors: List<String>
     @Persisted var updatedAt: Date
 
-    @Persisted(originProperty: "cacheInfo") var annotations: LinkingObjects<RDocumentAnnotation>
+    @Persisted var annotations: List<RDocumentAnnotation>
 }

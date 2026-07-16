@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		561E08F0D1D341A09184D875 /* ReadAttachmentUploadsDbRequestSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6869C0F7335B4F30B5D8C9EC /* ReadAttachmentUploadsDbRequestSpec.swift */; };
-		2E2BF2EF2B40911DF4BCEDA4 /* RDocumentAnnotationCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationCacheInfo.swift */; };
+		2E2BF2EF2B40911DF4BCEDA4 /* RDocumentAnnotationsCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */; };
 		34319EFF474800EB6BA60376 /* StoreDocumentAnnotationsCacheDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB95656CF4AD91246DF78BDA /* StoreDocumentAnnotationsCacheDbRequest.swift */; };
 		5ECD47C4C5AE63E78DA60C6C /* ReadDocumentAnnotationsCacheDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5297BAC833EEE6973ACA9818 /* ReadDocumentAnnotationsCacheDbRequest.swift */; };
 		6102D2B22D68ABF100505E6A /* bitcoin_pdf_recognizer_data.json in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */; };
@@ -1350,7 +1350,7 @@
 		D1E2F3AC2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
 		D1E2F3AE2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
 		F67027974DF649919397DAB0 /* ManageAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE4C604B8B948E2B8820E31 /* ManageAccountView.swift */; };
-		C988B9E9211AB3BFE72CFA11 /* RDocumentAnnotationCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationCacheInfo.swift */; };
+		C988B9E9211AB3BFE72CFA11 /* RDocumentAnnotationsCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */; };
 		C9ECF06C37EDB9963713C4A0 /* RDocumentAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E83150004BDA76942E1350 /* RDocumentAnnotation.swift */; };
 		D1159AE7B0BBC3D7A1954D00 /* RDocumentAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E83150004BDA76942E1350 /* RDocumentAnnotation.swift */; };
 /* End PBXBuildFile section */
@@ -1427,7 +1427,7 @@
 		0EE4C604B8B948E2B8820E31 /* ManageAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageAccountView.swift; sourceTree = "<group>"; };
 		17E83150004BDA76942E1350 /* RDocumentAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDocumentAnnotation.swift; sourceTree = "<group>"; };
 		5297BAC833EEE6973ACA9818 /* ReadDocumentAnnotationsCacheDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadDocumentAnnotationsCacheDbRequest.swift; sourceTree = "<group>"; };
-		54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationCacheInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDocumentAnnotationCacheInfo.swift; sourceTree = "<group>"; };
+		54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDocumentAnnotationsCacheInfo.swift; sourceTree = "<group>"; };
 		6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_recognizer_data.json; sourceTree = "<group>"; };
 		6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_full_text.json; sourceTree = "<group>"; };
 		6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRecognizerResponse.swift; sourceTree = "<group>"; };
@@ -3213,7 +3213,7 @@
 				B305653123FC051E003304F2 /* RCreator.swift */,
 				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
 				17E83150004BDA76942E1350 /* RDocumentAnnotation.swift */,
-				54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationCacheInfo.swift */,
+				54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */,
 				B30548F92B331B3D00853966 /* RDownload.swift */,
 				B305653523FC051E003304F2 /* RGroup.swift */,
 				B305653223FC051E003304F2 /* RItem.swift */,
@@ -5952,7 +5952,7 @@
 				B3A081C425D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
 				B3DAF84D2AC5AA5C00F9AB6A /* PDFDocumentAnnotation.swift in Sources */,
 				D1159AE7B0BBC3D7A1954D00 /* RDocumentAnnotation.swift in Sources */,
-				2E2BF2EF2B40911DF4BCEDA4 /* RDocumentAnnotationCacheInfo.swift in Sources */,
+				2E2BF2EF2B40911DF4BCEDA4 /* RDocumentAnnotationsCacheInfo.swift in Sources */,
 				5ECD47C4C5AE63E78DA60C6C /* ReadDocumentAnnotationsCacheDbRequest.swift in Sources */,
 				34319EFF474800EB6BA60376 /* StoreDocumentAnnotationsCacheDbRequest.swift in Sources */,
 				6322C296BBE6360E74142CBD /* DeleteDocumentAnnotationsCacheDbRequest.swift in Sources */,
@@ -6496,7 +6496,7 @@
 				B305674423FC09AF003304F2 /* DeletionsResponse.swift in Sources */,
 				B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */,
 				C9ECF06C37EDB9963713C4A0 /* RDocumentAnnotation.swift in Sources */,
-				C988B9E9211AB3BFE72CFA11 /* RDocumentAnnotationCacheInfo.swift in Sources */,
+				C988B9E9211AB3BFE72CFA11 /* RDocumentAnnotationsCacheInfo.swift in Sources */,
 				B353F207242E52EE0062EE24 /* Database.swift in Sources */,
 				871AB639A5C7E5E9AF08CC1C /* LibraryScoped.swift in Sources */,
 				B305674523FC09AF003304F2 /* GroupResponse.swift in Sources */,

@@ -20,19 +20,13 @@ struct StoreDocumentAnnotationsCacheDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let existingAnnotations = database.objects(RDocumentAnnotation.self)
-            .filter(.attachmentKey(attachmentKey, in: libraryId))
-        if !existingAnnotations.isEmpty {
-            database.delete(existingAnnotations)
-        }
-
-        let existingInfo = database.objects(RDocumentAnnotationCacheInfo.self)
+        let existingInfo = database.objects(RDocumentAnnotationsCacheInfo.self)
             .filter(.attachmentKey(attachmentKey, in: libraryId))
         if !existingInfo.isEmpty {
             database.delete(existingInfo)
         }
 
-        let info = RDocumentAnnotationCacheInfo()
+        let info = RDocumentAnnotationsCacheInfo()
         info.attachmentKey = attachmentKey
         info.libraryId = libraryId
         info.md5 = md5
@@ -45,8 +39,6 @@ struct StoreDocumentAnnotationsCacheDbRequest: DbRequest {
         for annotation in annotations {
             let cachedAnnotation = RDocumentAnnotation()
             cachedAnnotation.key = annotation.key
-            cachedAnnotation.attachmentKey = attachmentKey
-            cachedAnnotation.libraryId = libraryId
             cachedAnnotation.type = annotation.type.rawValue
             cachedAnnotation.page = annotation.page
             cachedAnnotation.pageLabel = annotation.pageLabel
@@ -60,7 +52,6 @@ struct StoreDocumentAnnotationsCacheDbRequest: DbRequest {
             cachedAnnotation.sortIndex = annotation.sortIndex
             cachedAnnotation.dateAdded = annotation.dateAdded
             cachedAnnotation.dateModified = annotation.dateModified
-            cachedAnnotation.cacheInfo = info
 
             for rect in annotation.rects {
                 let rRect = RRect()
@@ -88,7 +79,7 @@ struct StoreDocumentAnnotationsCacheDbRequest: DbRequest {
                 cachedAnnotation.paths.append(rPath)
             }
 
-            database.add(cachedAnnotation)
+            info.annotations.append(cachedAnnotation)
         }
     }
 }

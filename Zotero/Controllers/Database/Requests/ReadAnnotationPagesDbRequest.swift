@@ -32,10 +32,12 @@ struct ReadAnnotationPagesDbRequest: DbResponseRequest {
             guard let separatorIndex = sortIndex.firstIndex(of: "|"), let page = Int(sortIndex[..<separatorIndex]) else { continue }
             pages.insert(page)
         }
-        let cachedDocumentAnnotations = database.objects(RDocumentAnnotation.self)
-            .filter(.attachmentKey(attachmentKey, in: libraryId))
-        for annotation in cachedDocumentAnnotations {
-            pages.insert(annotation.page)
+        if let cachedDocumentAnnotations = try ReadDocumentAnnotationsCacheInfoDbRequest(attachmentKey: attachmentKey, libraryId: libraryId)
+            .process(in: database)?
+            .annotations {
+            for annotation in cachedDocumentAnnotations {
+                pages.insert(annotation.page)
+            }
         }
 
         return pages

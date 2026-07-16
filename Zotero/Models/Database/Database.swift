@@ -46,7 +46,7 @@ struct Database {
             RDownload.self,
             RLastReadDate.self,
             RDocumentAnnotation.self,
-            RDocumentAnnotationCacheInfo.self
+            RDocumentAnnotationsCacheInfo.self
         ]
         return config
     }
