@@ -68,14 +68,26 @@ final class FormattedTextView: TextKit1TextView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Custom formatting actions shown in the edit menu while editing.
-    fileprivate static func formattingMenuElements(for textView: FormattedTextView) -> [UIMenuElement] {
-        return [
-            UIAction(title: "Bold") { _ in textView.toggleBoldface(nil) },
-            UIAction(title: "Italics") { _ in textView.toggleItalics(nil) },
-            UIAction(title: "Superscript") { _ in textView.toggleSuperscript(nil) },
-            UIAction(title: "Subscript") { _ in textView.toggleSubscript(nil) }
-        ]
+    /// Adds custom formatting actions to the system menu that contains Bold and Italics.
+    fileprivate static func addingFormattingActions(to elements: [UIMenuElement], for textView: FormattedTextView) -> [UIMenuElement] {
+        return elements.map { element in
+            guard let menu = element as? UIMenu else { return element }
+
+            if menu.identifier == .textStyle {
+                return menu.replacingChildren(menu.children + formattingMenuElements(for: textView))
+            }
+
+            let children = addingFormattingActions(to: menu.children, for: textView)
+            guard !menu.children.elementsEqual(children, by: { $0 === $1 }) else { return menu }
+            return menu.replacingChildren(children)
+        }
+
+        func formattingMenuElements(for textView: FormattedTextView) -> [UIMenuElement] {
+            return [
+                UIAction(title: "Superscript") { [weak textView] _ in textView?.toggleSuperscript(nil) },
+                UIAction(title: "Subscript") { [weak textView] _ in textView?.toggleSubscript(nil) }
+            ]
+        }
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
