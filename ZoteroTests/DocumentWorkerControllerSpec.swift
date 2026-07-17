@@ -576,7 +576,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 ]
                 let pdfStructuredTextFixtures = structuredTextFixtures.filter { $0.fileExtension == "pdf" }
 
-                for fixture in pdfStructuredTextFixtures {
+                for fixture in structuredTextFixtures {
                     it("can extract structured document text for \(fixture.description)") {
                         let file = makeFile(
                             resource: fixture.resource,
