@@ -207,28 +207,28 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 switch databaseAnnotation.type {
                 case .ink:
                     if databaseAnnotation.item.paths.isEmpty {
-                        DDLogInfo("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing paths")
+                        DDLogError("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing paths")
                         return false
                     }
 
                 case .highlight, .image, .note, .underline:
                     if databaseAnnotation.item.rects.isEmpty {
-                        DDLogInfo("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
+                        DDLogError("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
                         return false
                     }
 
                 case .freeText:
                     if databaseAnnotation.item.rects.isEmpty {
-                        DDLogInfo("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
+                        DDLogError("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
                         return false
                     }
                     if databaseAnnotation.fontSize == nil {
                         // Since free text annotations are created in AnnotationConverter using `setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter), transformSize: true)`
                         // it's ok even if they are missing `fontSize`, so we just log it and continue validation.
-                        DDLogInfo("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing fontSize")
+                        DDLogError("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing fontSize")
                     }
                     if databaseAnnotation.rotation == nil {
-                        DDLogInfo("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rotation")
+                        DDLogError("PDFAnnotationsActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rotation")
                         return false
                     }
                 }
@@ -240,7 +240,7 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 let sortIndex = databaseAnnotation.sortIndex
                 let parts = sortIndex.split(separator: "|")
                 if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
-                    DDLogInfo("PDFAnnotationsActionHandler: invalid sort index (\(sortIndex)) for \(databaseAnnotation.key)")
+                    DDLogError("PDFAnnotationsActionHandler: invalid sort index (\(sortIndex)) for \(databaseAnnotation.key)")
                     return false
                 }
 
