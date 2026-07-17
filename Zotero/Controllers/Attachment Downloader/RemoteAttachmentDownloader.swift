@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-final class RemoteAttachmentDownloader {
+final class RemoteAttachmentDownloader: @unchecked Sendable {
     struct Download: Hashable {
         let key: String
         let parentKey: String

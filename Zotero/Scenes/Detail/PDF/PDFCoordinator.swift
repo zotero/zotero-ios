@@ -16,12 +16,12 @@ import PSPDFKitUI
 import RxSwift
 
 protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
-    func showSearch(document: Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle)
+    func showSearch(document: PSPDFKit.Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
-    func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
+    func showReader(document: PSPDFKit.Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
@@ -29,7 +29,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showDocumentChangedAlert(completed: @escaping () -> Void)
     func showAccessibility<Delegate: SpeechmanagerDelegate>(
         speechManager: SpeechManager<Delegate>,
-        document: Document,
+        document: PSPDFKit.Document,
         userInterfaceStyle: UIUserInterfaceStyle,
         sender: UIBarButtonItem,
         animated: Bool,
@@ -146,7 +146,7 @@ final class PDFCoordinator: ReaderCoordinator {
 }
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
-    func showSearch(document: Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle) {
+    func showSearch(document: PSPDFKit.Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle) {
         DDLogInfo("PDFCoordinator: show search")
 
         if let existing = self.searchController {
@@ -240,7 +240,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle) {
+    func showReader(document: PSPDFKit.Document, userInterfaceStyle: UIUserInterfaceStyle) {
         DDLogInfo("PDFCoordinator: show plain text reader")
         let controller = PDFPlainReaderViewController(document: document)
         let navigationController = UINavigationController(rootViewController: controller)
@@ -284,7 +284,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
     func showAccessibility<Delegate: SpeechmanagerDelegate>(
         speechManager: SpeechManager<Delegate>,
-        document: Document,
+        document: PSPDFKit.Document,
         userInterfaceStyle: UIUserInterfaceStyle,
         sender: UIBarButtonItem,
         animated: Bool,
@@ -388,7 +388,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                         DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
                     }
                     
-                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as? Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
+                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
                 action.isAccessibilityElement = true

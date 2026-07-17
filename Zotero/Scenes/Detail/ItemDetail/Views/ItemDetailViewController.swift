@@ -238,12 +238,12 @@ final class ItemDetailViewController: UIViewController {
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 if !state.isEditing {
-                    self.viewModel.process(action: .reloadData)
+                    viewModel.process(action: .reloadData)
                     return
                 }
 
-                coordinatorDelegate?.showDataReloaded(completion: { [weak viewModel] in
-                    viewModel?.process(action: .reloadData)
+                coordinatorDelegate?.showDataReloaded(completion: { [weak self] in
+                    self?.viewModel.process(action: .reloadData)
                 })
             }
             return

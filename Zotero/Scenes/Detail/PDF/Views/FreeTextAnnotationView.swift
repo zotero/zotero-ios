@@ -43,7 +43,7 @@ extension FreeTextAnnotationView {
         let previousTextBoundingBox = annotation.textBoundingBox
         super.textViewDidEndEditing(textView)
         annotation.sizeToFit()
-        var newTextBoundingBox = annotation.textBoundingBox
+        let newTextBoundingBox = annotation.textBoundingBox
         let minX = min(previousTextBoundingBox.minX, newTextBoundingBox.minX)
         let maxX = max(previousTextBoundingBox.maxX, newTextBoundingBox.maxX)
         let minY = min(previousTextBoundingBox.minY, newTextBoundingBox.minY)
