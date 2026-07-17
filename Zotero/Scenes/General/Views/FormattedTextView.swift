@@ -137,7 +137,7 @@ private final class FormattedTextViewDelegateProxy: NSObject, UITextViewDelegate
         guard let textView = textView as? FormattedTextView, textView.isEditable else {
             return baseActions.isEmpty ? nil : UIMenu(children: baseActions)
         }
-        return UIMenu(children: FormattedTextView.formattingMenuElements(for: textView) + baseActions)
+        return UIMenu(children: FormattedTextView.addingFormattingActions(to: baseActions, for: textView))
     }
 
     // Forward every other (optional) delegate method to the real delegate.
