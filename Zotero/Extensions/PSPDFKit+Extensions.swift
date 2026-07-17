@@ -11,8 +11,8 @@ import UIKit
 import PSPDFKit
 
 extension Document {
-    func annotation(on page: Int, with key: String) -> PSPDFKit.Annotation? {
-        return self.annotations(at: UInt(page)).first(where: { $0.key == key || $0.uuid == key })
+    func annotation(at pageIndex: PageIndex, with key: String) -> PSPDFKit.Annotation? {
+        return annotations(at: pageIndex).first(where: { $0.key == key || $0.uuid == key })
     }
 }
 
@@ -83,6 +83,11 @@ extension Document: AnnotationBoundingBoxConverter {
 }
 
 extension PSPDFKit.Annotation {
+    enum Source: String {
+        case database
+        case document
+    }
+
     /// Defines internal Zotero key. PDFs which were previously exported by Zotero may include this flag.
     var key: String? {
         get {
@@ -96,6 +101,59 @@ extension PSPDFKit.Annotation {
                 }
             } else {
                 self.customData?[AnnotationsConfig.keyKey] = newValue
+            }
+        }
+    }
+
+    var baseColor: String {
+        get {
+            if let customBaseColor = customData?[AnnotationsConfig.baseColorKey] as? String, !customBaseColor.isEmpty {
+                return customBaseColor
+            }
+            if let currentColorHex = color?.hexString {
+                return AnnotationsConfig.colorVariationMap[currentColorHex] ?? currentColorHex
+            }
+            return AnnotationsConfig.defaultActiveColor
+        }
+
+        set {
+            if customData == nil {
+                customData = [AnnotationsConfig.baseColorKey: newValue]
+            } else {
+                customData?[AnnotationsConfig.baseColorKey] = newValue
+            }
+        }
+    }
+
+    var source: Source? {
+        get {
+            guard let rawValue = customData?[AnnotationsConfig.sourceKey] as? String else { return nil }
+            return Source(rawValue: rawValue)
+        }
+
+        set {
+            if customData == nil {
+                if let newValue {
+                    customData = [AnnotationsConfig.sourceKey: newValue.rawValue]
+                }
+            } else {
+                customData?[AnnotationsConfig.sourceKey] = newValue?.rawValue
+            }
+        }
+    }
+
+    var createdByUserId: Int? {
+        get {
+            return customData?[AnnotationsConfig.createdByUserIdKey] as? Int
+        }
+
+        set {
+            if customData == nil {
+                if let newValue {
+                    customData = [AnnotationsConfig.createdByUserIdKey: newValue]
+                }
+            } else {
+                customData?[AnnotationsConfig.createdByUserIdKey] = newValue
             }
         }
     }
