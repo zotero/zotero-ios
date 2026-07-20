@@ -2632,15 +2632,12 @@
 		B3FE4B94268DDE4900CE123F /* CitationBibliographyExportState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CitationBibliographyExportState.swift; sourceTree = "<group>"; };
 		B3FE4B96268DDE4900CE123F /* CitationBibliographyExportView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CitationBibliographyExportView.swift; sourceTree = "<group>"; };
 		B3FE4B9B268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationBibliographyExportCoordinator.swift; sourceTree = "<group>"; };
-<<<<<<< HEAD
 		D1E2F3A52F1C000100ABC001 /* LoginWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginWsResponse.swift; sourceTree = "<group>"; };
 		D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSessionWebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelLoginSessionRequest.swift; sourceTree = "<group>"; };
 		B9848C1C2FEC525D709F292F /* DeleteDocumentAnnotationsCacheDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteDocumentAnnotationsCacheDbRequest.swift; sourceTree = "<group>"; };
 		CB95656CF4AD91246DF78BDA /* StoreDocumentAnnotationsCacheDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreDocumentAnnotationsCacheDbRequest.swift; sourceTree = "<group>"; };
-=======
->>>>>>> dc463bd5 (Project fix)
 		C42AA9D784B9E233A7F57AC5 /* SpeechHighlightSessionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechHighlightSessionManager.swift; sourceTree = "<group>"; };
 		D1E2F3A52F1C000100ABC001 /* LoginWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginWsResponse.swift; sourceTree = "<group>"; };
 		D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWebSocketController.swift; sourceTree = "<group>"; };

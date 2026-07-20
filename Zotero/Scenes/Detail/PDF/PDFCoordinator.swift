@@ -28,18 +28,6 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
-    func showAccessibility<Delegate: SpeechManagerDelegate>(
-        speechManager: SpeechManager<Delegate>,
-        document: PSPDFKit.Document,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        sender: UIBarButtonItem,
-        animated: Bool,
-        isFormSheet: @escaping () -> Bool,
-        playAction: @escaping () -> Void,
-        dismissAction: @escaping () -> Void,
-        highlighterAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
-    )
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -292,49 +280,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
         navigationController?.present(controller, animated: true)
-    }
-
-    func showAccessibility<Delegate: SpeechManagerDelegate>(
-        speechManager: SpeechManager<Delegate>,
-        document: PSPDFKit.Document,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        sender: UIBarButtonItem,
-        animated: Bool,
-        isFormSheet: @escaping () -> Bool,
-        playAction: @escaping () -> Void,
-        dismissAction: @escaping () -> Void,
-        highlighterAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
-    ) {
-        guard let navigationController else { return }
-        let readerAction = { [weak self] in
-            guard let self else { return }
-            self.navigationController?.dismiss(animated: true)
-            showReader(document: document, userInterfaceStyle: userInterfaceStyle)
-        }
-        let controller = AccessibilityPopupViewController(
-            speechManager: speechManager,
-            isFormSheet: isFormSheet,
-            readerAction: readerAction,
-            playAction: playAction,
-            dismissAction: dismissAction,
-            highlighterAction: highlighterAction,
-            voiceChangeAction: voiceChangeAction
-        )
-        controller.overrideUserInterfaceStyle = userInterfaceStyle
-        controller.coordinatorDelegate = self
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            controller.modalPresentationStyle = .popover
-            controller.popoverPresentationController?.delegate = controller
-            if #available(iOS 17, *) {
-                controller.popoverPresentationController?.sourceItem = sender
-            } else {
-                controller.popoverPresentationController?.barButtonItem = sender
-            }
-        } else {
-            controller.modalPresentationStyle = .formSheet
-        }
-        navigationController.present(controller, animated: animated)
     }
 }
 
