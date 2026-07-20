@@ -63,8 +63,10 @@ extension ParentWithSidebarController {
                 setAnnotationToolbar(hidden: toolbarButton.isSelected)
             }
         } else {
-            image?.applyingSymbolConfiguration(.init(scale: .large))
-            let checkbox = CheckboxButton(image: image!, contentInsets: NSDirectionalEdgeInsets(top: 11, leading: 6, bottom: 9, trailing: 6))
+            let checkbox = CheckboxButton(
+                image: image?.applyingSymbolConfiguration(.init(scale: .large)),
+                contentInsets: NSDirectionalEdgeInsets(top: 11, leading: 6, bottom: 9, trailing: 6)
+            )
             checkbox.scalesLargeContentImage = true
             checkbox.deselectedBackgroundColor = .clear
             checkbox.deselectedTintColor = isDocumentLocked ? .gray : Asset.Colors.zoteroBlueWithDarkMode.color
@@ -87,12 +89,7 @@ extension ParentWithSidebarController {
     }
 
     private func setAnnotationToolbar(hidden: Bool) {
-        if #available(iOS 26.0.0, *) {
-            toolbarButton.isSelected = !hidden
-            toolbarButton.tintColor = toolbarButton.isSelected ? Asset.Colors.zoteroBlue.color : nil
-        } else {
-            (toolbarButton.customView as? CheckboxButton)?.isSelected = !hidden
-        }
+        updateToolbarButtonSelection(isSelected: !hidden)
         annotationToolbarHandler?.set(hidden: hidden, animated: true)
         if hidden {
             documentController?.disableAnnotationTools()
@@ -101,6 +98,15 @@ extension ParentWithSidebarController {
 
     func closeAnnotationToolbar() {
         setAnnotationToolbar(hidden: true)
+    }
+
+    func updateToolbarButtonSelection(isSelected: Bool) {
+        if #available(iOS 26.0.0, *) {
+            toolbarButton.isSelected = isSelected
+            toolbarButton.tintColor = isSelected ? Asset.Colors.zoteroBlue.color : nil
+        } else {
+            (toolbarButton.customView as? CheckboxButton)?.isSelected = isSelected
+        }
     }
 
     func toggleSidebar(animated: Bool, sidebarButtonTag: Int) {

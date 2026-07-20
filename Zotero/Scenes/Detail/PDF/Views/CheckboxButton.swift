@@ -20,7 +20,7 @@ final class CheckboxButton: UIButton {
         }
     }
 
-    init(image: UIImage, contentInsets: NSDirectionalEdgeInsets) {
+    init(image: UIImage?, contentInsets: NSDirectionalEdgeInsets) {
         super.init(frame: .zero)
 
         var configuration = UIButton.Configuration.plain()

@@ -473,7 +473,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 documentController?.disableAnnotationTools()
             }
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
-            (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
+            updateToolbarButtonSelection(isSelected: toolbarState.visible)
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
         }
 
