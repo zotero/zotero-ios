@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "1.0.0",
+	"schemaVersion": "1.1.0",
 	"metadata": {
 		"processor": {"type": "snapshot", "version": 1},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
