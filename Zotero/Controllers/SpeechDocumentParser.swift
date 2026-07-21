@@ -45,6 +45,7 @@ enum SpeechDocumentParser {
     }
 
     private static let blockTypesToIgnore: Set<String> = ["table", "figure", "math"]
+    private static let classesTypesToIgnore: Set<String> = ["excluded", "auxiliary"]
     /// Characters separating two paragraphs within a page's readable text.
     static let segmentSeparator = "\n\n"
 
@@ -59,8 +60,8 @@ enum SpeechDocumentParser {
         var pageLengths: [Int: Int] = [:]
 
         for block in content {
+            if let flowClass = block["flowClass"] as? String, classesTypesToIgnore.contains(flowClass) { continue }
             guard let type = block["type"] as? String, !blockTypesToIgnore.contains(type) else { continue }
-            if let flowClass = block["flowClass"] as? String, flowClass == "excluded" { continue }
 
             let fallbackPage = startPage(of: block) ?? pageLengths.keys.max() ?? 0
             var runs: [(text: String, page: Int)] = []
