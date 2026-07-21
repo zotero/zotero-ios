@@ -355,6 +355,11 @@ class BaseItemsViewController: UIViewController {
     private func setupSearchBar() {
         let controller = UISearchController(searchResultsController: nil)
         controller.searchBar.placeholder = L10n.Items.searchTitle
+        if #available(iOS 26.0.0, *) {
+            if let magnifier = UIImage(systemName: "magnifyingglass")?.withTintColor(.gray, renderingMode: .alwaysOriginal) {
+                controller.searchBar.setImage(magnifier, for: .search, state: .normal)
+            }
+        }
         controller.searchBar.rx
             .text.observe(on: MainScheduler.instance)
             .skip(1)
