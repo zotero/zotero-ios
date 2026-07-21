@@ -345,8 +345,11 @@ final class ItemDetailViewController: UIViewController {
                     indicator.color = .gray
                     saveButton = UIBarButtonItem(customView: indicator)
                 } else {
-                    saveButton = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak viewModel] _ in
-                        viewModel?.process(action: .endEditing)
+                    saveButton = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak self] _ in
+                        self?.view.endEditing(true)
+                        DispatchQueue.main.async { [weak self] in
+                            self?.viewModel.process(action: .endEditing)
+                        }
                     })
                 }
                 navigationItem.rightBarButtonItem = saveButton
