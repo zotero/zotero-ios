@@ -52,6 +52,7 @@ final class ItemsToolbarController {
     private let disposeBag: DisposeBag
 
     private weak var delegate: ItemsToolbarControllerDelegate?
+    private var lookupTitleButton: UIButton?
 
     init(viewController: UIViewController, data: Data, collection: Collection, library: Library, delegate: ItemsToolbarControllerDelegate) {
         self.viewController = viewController
@@ -98,6 +99,9 @@ final class ItemsToolbarController {
         if data.isEditing {
             viewController.toolbarItems = createEditingToolbarItems(from: editingActions)
             updateEditingToolbarItems(for: data.selectedItems)
+            if #available(iOS 26.0, *) {
+                clearStatusSubtitle()
+            }
         } else {
             let filters = sizeClassSpecificFilters(from: data.filters)
             viewController.toolbarItems = createNormalToolbarItems(for: filters)
@@ -177,23 +181,20 @@ final class ItemsToolbarController {
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
             let fixedSpaceWidth: CGFloat = 16
 
-            let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterImage = UIImage(systemName: filterImageName)
-            let filterButton = UIBarButtonItem(image: filterImage)
+            let filterButton = UIBarButtonItem()
             filterButton.tintColor = Asset.Colors.zoteroBlue.color
-            if isCompact {
-                filterButton.primaryAction = createFilterPrimaryAction(image: filterImage)
-            } else {
-                let downloadsFilterEnabled = data.filters.contains(where: { $0.isDownloadedFilesFilter })
-                filterButton.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
-            }
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
+            configureFilterButton(filterButton, filters: filters)
 
-            let titleButton = UIBarButtonItem(customView: createTitleView())
-            titleButton.tag = ToolbarItem.title.tag
-
-            var items: [UIBarButtonItem] = [.fixedSpace(fixedSpaceWidth), filterButton, .flexibleSpace(), titleButton]
+            var items: [UIBarButtonItem]
+            if #available(iOS 26.0, *) {
+                items = [filterButton, .flexibleSpace(), viewController.navigationItem.searchBarPlacementBarButtonItem]
+            } else {
+                let titleButton = UIBarButtonItem(customView: createTitleView())
+                titleButton.tag = ToolbarItem.title.tag
+                items = [.fixedSpace(fixedSpaceWidth), filterButton, .flexibleSpace(), titleButton]
+            }
 
             if data.showsDocumentWorkerRecorder {
                 let documentWorkerImage = UIImage(systemName: "ladybug")
@@ -213,9 +214,17 @@ final class ItemsToolbarController {
                 sortButton.tintColor = Asset.Colors.zoteroBlue.color
                 sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-                items.append(contentsOf: [.flexibleSpace(), sortButton, .fixedSpace(fixedSpaceWidth)])
+                if #available(iOS 26.0, *) {
+                    items.append(contentsOf: [.flexibleSpace(), sortButton])
+                } else {
+                    items.append(contentsOf: [.flexibleSpace(), sortButton, .fixedSpace(fixedSpaceWidth)])
+                }
             } else {
-                items.append(contentsOf: [.flexibleSpace(), .fixedSpace(fixedSpaceWidth)])
+                if #available(iOS 26.0, *) {
+                    items.append(.flexibleSpace())
+                } else {
+                    items.append(contentsOf: [.flexibleSpace(), .fixedSpace(fixedSpaceWidth)])
+                }
             }
 
             return items
@@ -280,6 +289,21 @@ final class ItemsToolbarController {
                 return true
             }
         })
+    }
+
+    /// Applies the current filter state to the filter bar button item: the icon reflects whether any filter is active, and the tap behavior differs by size class (a menu on regular
+    /// width, a popover-presenting action on compact width). Shared by the initial toolbar build and later reloads so the two stay in sync.
+    private func configureFilterButton(_ item: UIBarButtonItem, filters: [ItemsFilter]) {
+        let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease" : "line.horizontal.3.decrease.fill"
+        let filterImage = UIImage(systemName: filterImageName)
+        item.image = filterImage
+        if isCompact {
+            item.menu = nil
+            item.primaryAction = createFilterPrimaryAction(image: filterImage)
+        } else {
+            item.primaryAction = nil
+            item.menu = createFilterMenu(downloadsFilterEnabled: filters.contains(where: { $0.isDownloadedFilesFilter }))
+        }
     }
 
     private func createFilterMenu(downloadsFilterEnabled: Bool) -> UIMenu {
@@ -350,20 +374,30 @@ final class ItemsToolbarController {
         }
 
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
-            let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterImage = UIImage(systemName: filterImageName)
-            item.image = filterImage
-            if isCompact {
-                item.menu = nil
-                item.primaryAction = createFilterPrimaryAction(image: filterImage)
-            } else {
-                item.primaryAction = nil
-                let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
-                item.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
-            }
+            configureFilterButton(item, filters: filters)
         }
 
-        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
+        if #available(iOS 26.0, *) {
+            let status = toolbarStatus(
+                for: filters,
+                downloadBatchData: downloadBatchData,
+                remoteDownloadBatchData: remoteDownloadBatchData,
+                identifierLookupBatchData: identifierLookupBatchData,
+                itemCount: itemCount
+            )
+            if status.isLookupInteractive, let text = status.text {
+                let button = lookupTitleButton ?? createLookupTitleButton()
+                configure(lookupTitleButton: button, title: viewController.title, subtitle: text)
+                lookupTitleButton = button
+                if viewController.navigationItem.titleView !== button {
+                    viewController.navigationItem.titleView = button
+                }
+                viewController.navigationItem.subtitle = nil
+            } else {
+                clearStatusSubtitle()
+                viewController.navigationItem.subtitle = status.text
+            }
+        } else if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
            let stackView = item.customView as? UIStackView {
             if let filterLabel = stackView.subviews.first as? UILabel {
                 filterLabel.isHidden = filters.isEmpty
@@ -416,5 +450,81 @@ final class ItemsToolbarController {
 
             stackView.sizeToFit()
         }
+    }
+
+    @available(iOS 26.0, *)
+    private func toolbarStatus(
+        for filters: [ItemsFilter],
+        downloadBatchData: ItemsState.DownloadBatchData?,
+        remoteDownloadBatchData: ItemsState.DownloadBatchData?,
+        identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
+        itemCount: Int
+    ) -> (text: String?, isLookupInteractive: Bool) {
+        if !filters.isEmpty {
+            return (L10n.Items.toolbarFilter(itemCount), false)
+        }
+
+        var components: [String] = []
+        var isLookupInteractive = false
+        let remoteDownloading = remoteDownloadBatchData != nil
+        if identifierLookupBatchData != .zero, !identifierLookupBatchData.isFinished || identifierLookupBatchData.failed > 0 || remoteDownloading {
+            // Keep lookup progress visible while it is active, while remote downloads are pending, or after hidden failures so the user can reopen lookup from the title.
+            isLookupInteractive = true
+            var lookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
+            if identifierLookupBatchData.failed > 0 {
+                lookupText += " - " + L10n.Items.toolbarFailed(identifierLookupBatchData.failed)
+            }
+            components.append(lookupText)
+        }
+        if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
+            components.append(L10n.Items.toolbarDownloaded(combinedDownloadBatchData.downloaded, combinedDownloadBatchData.total))
+        }
+        let text = components.isEmpty ? nil : components.joined(separator: " / ")
+        return (text, isLookupInteractive && text != nil)
+    }
+
+    /// Removes the interactive lookup title view (if it is currently installed) and clears the status subtitle. Safe to call on any iOS version.
+    private func clearStatusSubtitle() {
+        guard #available(iOS 26.0, *) else { return }
+        if viewController.navigationItem.titleView === lookupTitleButton {
+            viewController.navigationItem.titleView = nil
+        }
+        lookupTitleButton = nil
+        viewController.navigationItem.subtitle = nil
+    }
+
+    /// Creates the tappable navigation bar title button that reopens identifier lookup. Content is filled in by `configure(lookupTitleButton:title:subtitle:)`.
+    @available(iOS 26.0, *)
+    private func createLookupTitleButton() -> UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.titleAlignment = .leading
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
+        let button = UIButton(configuration: configuration)
+        button.addAction(UIAction { [weak self] _ in self?.delegate?.showLookup() }, for: .touchUpInside)
+        return button
+    }
+
+    /// Fills the tappable title button with the collection title (label color) and the lookup/download status subtitle (tinted to signal it is actionable).
+    @available(iOS 26.0, *)
+    private func configure(lookupTitleButton button: UIButton, title: String?, subtitle: String) {
+        var configuration = button.configuration ?? UIButton.Configuration.plain()
+
+        if let title, !title.isEmpty {
+            var titleAttributes = AttributeContainer()
+            titleAttributes.font = .preferredFont(forTextStyle: .headline)
+            titleAttributes.foregroundColor = UIColor.label
+            configuration.attributedTitle = AttributedString(title, attributes: titleAttributes)
+        } else {
+            configuration.attributedTitle = nil
+        }
+
+        var subtitleAttributes = AttributeContainer()
+        subtitleAttributes.font = .preferredFont(forTextStyle: .footnote)
+        subtitleAttributes.foregroundColor = UIColor.secondaryLabel
+        configuration.attributedSubtitle = AttributedString(subtitle, attributes: subtitleAttributes)
+
+        button.configuration = configuration
+        button.accessibilityLabel = [title, subtitle].compactMap({ $0 }).joined(separator: ", ")
+        button.sizeToFit()
     }
 }
