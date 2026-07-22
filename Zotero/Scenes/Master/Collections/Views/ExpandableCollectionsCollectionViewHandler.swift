@@ -146,7 +146,12 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
-            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            if #available(iOS 26.0.0, *) {  
+                section.contentInsets.leading = 16
+                section.contentInsets.trailing = 16
+            }
+            return section
         }
     }
 }
