@@ -76,6 +76,7 @@ class BaseItemsViewController: UIViewController {
             view.addSubview(tableView)
 
             if #available(iOS 26.0.0, *) {
+                view.keyboardLayoutGuide.usesBottomSafeArea = false
                 NSLayoutConstraint.activate([
                     tableView.topAnchor.constraint(equalTo: view.topAnchor),
                     tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
