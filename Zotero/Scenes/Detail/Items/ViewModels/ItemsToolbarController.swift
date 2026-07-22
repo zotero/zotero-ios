@@ -89,6 +89,11 @@ final class ItemsToolbarController {
         delegate?.traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
     }
 
+    private var usesBottomToolbarSearch: Bool {
+        guard #available(iOS 26.0, *) else { return false }
+        return UIDevice.current.userInterfaceIdiom == .phone
+    }
+
     func willAppear() {
         viewController.navigationController?.setToolbarHidden(false, animated: false)
     }
@@ -96,6 +101,9 @@ final class ItemsToolbarController {
     // MARK: - Actions
 
     func createToolbarItems(data: Data) {
+        if #available(iOS 26.0, *) {
+            viewController.navigationItem.searchBarPlacementAllowsToolbarIntegration = usesBottomToolbarSearch
+        }
         if data.isEditing {
             viewController.toolbarItems = createEditingToolbarItems(from: editingActions)
             updateEditingToolbarItems(for: data.selectedItems)
@@ -188,11 +196,17 @@ final class ItemsToolbarController {
             configureFilterButton(filterButton, filters: filters)
 
             var items: [UIBarButtonItem]
-            if #available(iOS 26.0, *) {
+            if usesBottomToolbarSearch, #available(iOS 26.0, *) {
+                // iPhone layout: filter / search / sort as separate Liquid Glass capsules; the search field is integrated into the bottom toolbar and the status moves to the navigation bar.
                 items = [filterButton, .flexibleSpace(), viewController.navigationItem.searchBarPlacementBarButtonItem]
             } else {
+                // iPad / classic layout: filter, status title and sort in the bottom toolbar; the search bar stays in the navigation bar.
                 let titleButton = UIBarButtonItem(customView: createTitleView())
                 titleButton.tag = ToolbarItem.title.tag
+                if #available(iOS 26.0, *) {
+                    // The title item is a plain status label, not a control. Hide its Liquid Glass capsule so it doesn't show as an empty bubble in the middle of the toolbar when there is no status text.
+                    titleButton.hidesSharedBackground = true
+                }
                 items = [.fixedSpace(fixedSpaceWidth), filterButton, .flexibleSpace(), titleButton]
             }
 
@@ -214,13 +228,15 @@ final class ItemsToolbarController {
                 sortButton.tintColor = Asset.Colors.zoteroBlue.color
                 sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-                if #available(iOS 26.0, *) {
+                if usesBottomToolbarSearch {
+                    // A flexible space puts the sort control in its own trailing Liquid Glass capsule, separate from the search field.
                     items.append(contentsOf: [.flexibleSpace(), sortButton])
                 } else {
                     items.append(contentsOf: [.flexibleSpace(), sortButton, .fixedSpace(fixedSpaceWidth)])
                 }
             } else {
-                if #available(iOS 26.0, *) {
+                if usesBottomToolbarSearch {
+                    // No sort control: a trailing flexible space keeps the search field centered between the filter capsule and the trailing edge.
                     items.append(.flexibleSpace())
                 } else {
                     items.append(contentsOf: [.flexibleSpace(), .fixedSpace(fixedSpaceWidth)])
@@ -377,7 +393,8 @@ final class ItemsToolbarController {
             configureFilterButton(item, filters: filters)
         }
 
-        if #available(iOS 26.0, *) {
+        if usesBottomToolbarSearch, #available(iOS 26.0, *) {
+            // iPhone layout: the status is shown in the navigation bar (as a subtitle, or a tappable title while lookup is active) since the bottom toolbar hosts the search field.
             let status = toolbarStatus(
                 for: filters,
                 downloadBatchData: downloadBatchData,
@@ -397,8 +414,12 @@ final class ItemsToolbarController {
                 clearStatusSubtitle()
                 viewController.navigationItem.subtitle = status.text
             }
-        } else if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
-           let stackView = item.customView as? UIStackView {
+        } else {
+            // iPad / classic layout: the status lives in the bottom toolbar title item, so make sure no navigation bar status (subtitle / interactive title) is set.
+            clearStatusSubtitle()
+            guard let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
+                  let stackView = item.customView as? UIStackView
+            else { return }
             if let filterLabel = stackView.subviews.first as? UILabel {
                 filterLabel.isHidden = filters.isEmpty
 
