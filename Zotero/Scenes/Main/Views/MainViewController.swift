@@ -131,7 +131,13 @@ final class MainViewController: UISplitViewController {
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
-        let navigationController = UINavigationController()
+        // Reuse the detail navigation controller that is already on screen instead of creating a new one for every collection.
+        // In iOS 26 the split view controller hoists the secondary column's toolbar items into its shared bottom toolbar. Swapping in a brand-new navigation controller
+        // for each collection leaves the previous (now deallocated) controller's items behind in that shared toolbar, so the filter/sort buttons pile up with every selection.
+        // Reusing the same navigation controller keeps the secondary column identity stable, so its toolbar items are replaced rather than accumulated. The coordinator holds the
+        // navigation controller weakly, so once it is actually gone (e.g. popped during back navigation in collapsed layout) this is nil and a fresh one is created and shown again.
+        let existingNavigationController = detailCoordinator?.navigationController
+        let navigationController = existingNavigationController ?? UINavigationController()
         let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
         let newDetailCoordinator = DetailCoordinator(
@@ -156,7 +162,10 @@ final class MainViewController: UISplitViewController {
         }
         detailCoordinator = newDetailCoordinator
 
-        showDetailViewController(navigationController, sender: nil)
+        if existingNavigationController == nil {
+            // Only present when a new navigation controller was created; a reused one is already the secondary column (or pushed in the collapsed stack).
+            showDetailViewController(navigationController, sender: nil)
+        }
     }
 }
 
