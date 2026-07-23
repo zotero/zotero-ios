@@ -6,6 +6,7 @@
 //  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import CoreGraphics
 import Foundation
 
 @testable import Zotero
@@ -17,17 +18,21 @@ final class SpeechDocumentParserSpec: QuickSpec {
     override class func spec() {
         describe("SpeechDocumentParser") {
             describe("parse") {
-                it("reads only paragraph and list blocks, skipping headings and other types") {
+                it("reads every block type but skips blocks with an excluded flowClass") {
                     let materialized = document(blocks: [
                         paragraphBlock(page: 0, runs: [makeRun("First sentence. Second.", page: 0)]),
+                        // Non-paragraph block types are read too (block type is not filtered).
                         block(type: "heading", page: 0, runs: [makeRun("A Heading", page: 0)]),
                         block(type: "image", page: 0, runs: [makeRun("caption", page: 0)]),
+                        // Excluded flowClasses (page numbers, running headers/footers, …) are the only blocks dropped.
+                        paragraphBlock(page: 0, flowClass: "excluded", runs: [makeRun("42", page: 0)]),
+                        paragraphBlock(page: 0, flowClass: "auxiliary", runs: [makeRun("Running header", page: 0)]),
                         paragraphBlock(page: 0, runs: [makeRun("Third.", page: 0)])
                     ])
 
                     let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
 
-                    expect(paragraphs.map(\.text)).to(equal(["First sentence. Second.", "Third."]))
+                    expect(paragraphs.map(\.text)).to(equal(["First sentence. Second.", "A Heading", "caption", "Third."]))
                     expect(paragraphs.allSatisfy { $0.page == 0 }).to(beTrue())
                 }
 
@@ -221,6 +226,95 @@ final class SpeechDocumentParserSpec: QuickSpec {
                 }
             }
 
+            describe("charRects") {
+                it("aligns a per-character rect with each character of the readable text") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [glyphRun("Hello", page: 0, x: 0, charWidth: 5, top: 0, height: 10)])
+                    ])
+
+                    guard let paragraph = SpeechDocumentParser.parse(materialized: materialized).paragraphs.first else {
+                        fail("expected a paragraph"); return
+                    }
+                    expect(paragraph.text).to(equal("Hello"))
+                    expect(paragraph.charRects.count).to(equal(5))
+                    expect(paragraph.charRects[0]).to(equal(rect(0, 0, 5, 10)))
+                    expect(paragraph.charRects[4]).to(equal(rect(20, 0, 5, 10)))
+                }
+
+                it("assigns nil to whitespace characters") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [glyphRun("a b", page: 0, x: 0, charWidth: 5)])
+                    ])
+
+                    guard let paragraph = SpeechDocumentParser.parse(materialized: materialized).paragraphs.first else {
+                        fail("expected a paragraph"); return
+                    }
+                    expect(paragraph.text).to(equal("a b"))
+                    expect(paragraph.charRects[0]).to(equal(rect(0, 0, 5, 10)))
+                    expect(paragraph.charRects[1]).to(beNil())
+                    expect(paragraph.charRects[2]).to(equal(rect(5, 0, 5, 10)))
+                }
+
+                it("drops a citation's geometry along with its text") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [
+                            glyphRun("Ref ", page: 0, x: 0, charWidth: 5),
+                            glyphRun("[2]", page: 0, x: 100, charWidth: 5, hasRefs: true),
+                            glyphRun(" end", page: 0, x: 200, charWidth: 5)
+                        ])
+                    ])
+
+                    guard let paragraph = SpeechDocumentParser.parse(materialized: materialized).paragraphs.first else {
+                        fail("expected a paragraph"); return
+                    }
+                    // "[2]" is elided; the surrounding spaces remain, and no rect at x=100 survives.
+                    expect(paragraph.text).to(equal("Ref  end"))
+                    expect(paragraph.charRects.count).to(equal(8))
+                    expect(paragraph.charRects.compactMap { $0?.minX }).to(equal([0, 5, 10, 200, 205, 210]))
+                }
+            }
+
+            describe("pdfLineRects") {
+                // "abcd" laid out as four 5-wide glyphs on one line (y 0–10).
+                let oneLine = SpeechDocumentParser.Segment(
+                    text: "abcd",
+                    pageOffset: 0,
+                    charRects: [rect(0, 0, 5, 10), rect(5, 0, 5, 10), rect(10, 0, 5, 10), rect(15, 0, 5, 10)]
+                )
+
+                it("merges rects on the same line into one") {
+                    let rects = SpeechDocumentParser.pdfLineRects(forRange: NSRange(location: 0, length: 4), in: [oneLine])
+                    expect(rects).to(equal([rect(0, 0, 20, 10)]))
+                }
+
+                it("covers only the requested sub-range") {
+                    let rects = SpeechDocumentParser.pdfLineRects(forRange: NSRange(location: 1, length: 2), in: [oneLine])
+                    expect(rects).to(equal([rect(5, 0, 10, 10)]))
+                }
+
+                it("splits rects that fall on different lines") {
+                    let twoLines = SpeechDocumentParser.Segment(
+                        text: "abcd",
+                        pageOffset: 0,
+                        charRects: [rect(0, 0, 5, 10), rect(5, 0, 5, 10), rect(0, 20, 5, 10), rect(5, 20, 5, 10)]
+                    )
+                    let rects = SpeechDocumentParser.pdfLineRects(forRange: NSRange(location: 0, length: 4), in: [twoLines])
+                    expect(rects).to(equal([rect(0, 0, 10, 10), rect(0, 20, 10, 10)]))
+                }
+
+                it("spans a range across two segments and skips the separator gap") {
+                    let first = SpeechDocumentParser.Segment(text: "ab", pageOffset: 0, charRects: [rect(0, 0, 5, 10), rect(5, 0, 5, 10)])
+                    // Second segment starts after "ab" + the two-character separator, at offset 4.
+                    let second = SpeechDocumentParser.Segment(text: "cd", pageOffset: 4, charRects: [rect(0, 20, 5, 10), rect(5, 20, 5, 10)])
+                    let rects = SpeechDocumentParser.pdfLineRects(forRange: NSRange(location: 0, length: 6), in: [first, second])
+                    expect(rects).to(equal([rect(0, 0, 10, 10), rect(0, 20, 10, 10)]))
+                }
+
+                it("returns no rects for an empty range") {
+                    expect(SpeechDocumentParser.pdfLineRects(forRange: NSRange(location: 0, length: 0), in: [oneLine])).to(beEmpty())
+                }
+            }
+
             describe("language") {
                 it("reads the lowercase language key (EPUB)") {
                     let materialized: [String: Any] = ["metadata": ["source": ["properties": ["language": "en-GB"]]]]
@@ -384,6 +478,40 @@ private func makeRun(_ text: String, page: Int, hasRefs: Bool = false, sup: Bool
 
 private func runWithoutTextMap(_ text: String) -> [String: Any] {
     return ["text": text]
+}
+
+/// Builds a run whose `textMap` encodes real per-character geometry: every non-whitespace character gets a rect of
+/// width `charWidth` laid out left-to-right from `x`, on a line spanning `[top, top + height)`. Whitespace characters
+/// get no rect (matching the structured document text's own layout). Lets tests assert `charRects` and `pdfLineRects`.
+private func glyphRun(
+    _ text: String,
+    page: Int,
+    x: Double = 0,
+    charWidth: Double = 5,
+    top: Double = 0,
+    height: Double = 10,
+    hasRefs: Bool = false,
+    sup: Bool = false
+) -> [String: Any] {
+    let glyphCount = text.filter { $0 != " " && $0 != "\n" && $0 != "\t" }.count
+    let widths = Array(repeating: charWidth, count: glyphCount)
+    let maxX = x + charWidth * Double(glyphCount)
+    let widthsJSON = widths.map { String(format: "%g", $0) }.joined(separator: ",")
+    let prefix = "0,\(page),\(x),\(top),\(maxX),\(top + height)"
+    let textMap = glyphCount > 0 ? "[[\(prefix),\(widthsJSON)]]" : "[[\(prefix)]]"
+
+    var run: [String: Any] = ["text": text, "anchor": ["textMap": textMap]]
+    if hasRefs {
+        run["refs"] = [[0]]
+    }
+    if sup {
+        run["style"] = ["sup": true]
+    }
+    return run
+}
+
+private func rect(_ x: Double, _ y: Double, _ width: Double, _ height: Double) -> CGRect {
+    return CGRect(x: x, y: y, width: width, height: height)
 }
 
 private func block(type: String, page: Int, flowClass: String? = nil, runs: [[String: Any]]) -> [String: Any] {
