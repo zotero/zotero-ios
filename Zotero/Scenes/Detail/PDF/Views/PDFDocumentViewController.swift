@@ -178,13 +178,12 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    /// Updates the speech highlight to show the currently spoken text
+    /// Updates the speech highlight to show the currently spoken text.
     /// - Parameters:
-    ///   - text: The text currently being read aloud
-    ///   - page: The page index where the text is located
-    ///   - hint: Optional source-text position used to disambiguate when `text` appears multiple times on `page`.
-    func updateReadAloudHighlight(text: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) {
-        updateHighlightView(text: text, page: page, annotationTool: .highlight, annotationColor: "#aaaaff", view: &readAloudHighlightView, currentPage: &currentReadAloudHighlightPage, hint: hint)
+    ///   - rects: Bounding rects (PDF coordinate space) of the currently spoken text.
+    ///   - page: The page index where the text is located.
+    func updateReadAloudHighlight(rects: [CGRect], page: PageIndex) {
+        updateHighlightView(rects: rects, page: page, annotationTool: .highlight, annotationColor: "#aaaaff", view: &readAloudHighlightView, currentPage: &currentReadAloudHighlightPage)
     }
 
     /// Clears the read-aloud highlight
@@ -193,8 +192,8 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     /// Updates the annotation preview highlight to show what will be annotated.
-    func updateAnnotationPreview(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) {
-        updateHighlightView(text: text, page: page, annotationTool: annotationTool, annotationColor: annotationColor, view: &annotationPreviewView, currentPage: &currentAnnotationPreviewPage, hint: hint)
+    func updateAnnotationPreview(rects: [CGRect], page: PageIndex, annotationTool: AnnotationTool, annotationColor: String) {
+        updateHighlightView(rects: rects, page: page, annotationTool: annotationTool, annotationColor: annotationColor, view: &annotationPreviewView, currentPage: &currentAnnotationPreviewPage)
     }
 
     /// Clears the annotation preview highlight
@@ -202,7 +201,7 @@ final class PDFDocumentViewController: UIViewController {
         clearHighlightView(&annotationPreviewView, currentPage: &currentAnnotationPreviewPage)
     }
 
-    private func updateHighlightView(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, view: inout SpeechHighlightView?, currentPage: inout PageIndex?, hint: (sourceLocation: Int, sourceTextLength: Int)?) {
+    private func updateHighlightView(rects: [CGRect], page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, view: inout SpeechHighlightView?, currentPage: inout PageIndex?) {
         guard let pdfController else { return }
 
         guard let pageView = pdfController.pageViewForPage(at: page) else {
@@ -215,7 +214,7 @@ final class PDFDocumentViewController: UIViewController {
             currentPage = page
         }
 
-        guard let pdfFrames = speechHighlightPDFFrames(for: text, page: page, near: hint), !pdfFrames.isEmpty else {
+        guard !rects.isEmpty else {
             view?.clearHighlight()
             return
         }
@@ -232,7 +231,7 @@ final class PDFDocumentViewController: UIViewController {
             container.addSubview(view!)
         }
 
-        view?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView, annotationTool: annotationTool, annotationColor: annotationColor)
+        view?.updateHighlight(pdfFrames: rects, pageView: pageView, annotationTool: annotationTool, annotationColor: annotationColor)
     }
 
     private func clearHighlightView(_ view: inout SpeechHighlightView?, currentPage: inout PageIndex?) {
@@ -1180,199 +1179,6 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         }
 
         return textOffset
-    }
-
-    /// Scalars stripped before substring matching against PSPDFKit glyphs. PDFWorker and PSPDFKit can disagree on
-    /// dash variants, soft hyphens, modifier letters above letters (e.g. `M˙`) and math bracket pieces, so these are
-    /// filtered out. Combining marks, modifier letters/symbols, formatting chars, bracket variants (open/close
-    /// punctuation, e.g. `()`, `[]`, `{}` and their fullwidth/mathematical equivalents), and non-character glyph
-    /// noise (private-use, control, unassigned and surrogate scalars often emitted by PDF math fonts) are caught by
-    /// `shouldIgnoreForGlyphMatch` via Unicode category.
-    private static let glyphMatchIgnoredScalars: Set<Unicode.Scalar> = [
-        "-",          // U+002D hyphen-minus
-        "\u{00AD}",   // soft hyphen
-        "\u{2010}",   // hyphen
-        "\u{2011}",   // non-breaking hyphen
-        "\u{2013}",   // en dash
-        "\u{2014}",   // em dash
-        "\u{2212}",   // minus sign
-        // Multi-line math bracket pieces (category Sm, not caught by Ps/Pe). Tall parens/brackets/braces in
-        // display equations are rendered as stacks of these pieces.
-        "\u{239B}",   // ⎛ left parenthesis upper hook
-        "\u{239C}",   // ⎜ left parenthesis extension
-        "\u{239D}",   // ⎝ left parenthesis lower hook
-        "\u{239E}",   // ⎞ right parenthesis upper hook
-        "\u{239F}",   // ⎟ right parenthesis extension
-        "\u{23A0}",   // ⎠ right parenthesis lower hook
-        "\u{23A1}",   // ⎡ left square bracket upper corner
-        "\u{23A2}",   // ⎢ left square bracket extension
-        "\u{23A3}",   // ⎣ left square bracket lower corner
-        "\u{23A4}",   // ⎤ right square bracket upper corner
-        "\u{23A5}",   // ⎥ right square bracket extension
-        "\u{23A6}",   // ⎦ right square bracket lower corner
-        "\u{23A7}",   // ⎧ left curly bracket upper hook
-        "\u{23A8}",   // ⎨ left curly bracket middle piece
-        "\u{23A9}",   // ⎩ left curly bracket lower hook
-        "\u{23AA}",   // ⎪ curly bracket extension
-        "\u{23AB}",   // ⎫ right curly bracket upper hook
-        "\u{23AC}",   // ⎬ right curly bracket middle piece
-        "\u{23AD}"    // ⎭ right curly bracket lower hook
-    ]
-
-    /// Searches for the given text in PSPDFKit's glyphs and returns their bounding boxes.
-    /// PDFWorker and PSPDFKit can disagree on whitespace, dash variants, diacritics, modifier letters, ligatures and
-    /// bracket glyph variants (common in math formulas), so both strings are NFKD-decomposed and stripped via
-    /// `shouldIgnoreForGlyphMatch` (combining marks, modifier letters/symbols, formatting chars, dash variants,
-    /// open/close punctuation) before substring matching.
-    /// When `searchText` appears multiple times on the page (e.g. duplicated math formulas), `near` disambiguates
-    /// which occurrence to highlight: the match whose proportional position in the glyph text most closely matches
-    /// `sourceLocation / sourceTextLength` is selected. Pass UTF-16 offsets (matches `NSRange.location` from
-    /// `TextTokenizer`). When `near` is nil or `sourceTextLength` is 0, the first match is returned.
-    /// Returns rects in PDF coordinate space.
-    func findGlyphRects(for searchText: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) -> [CGRect] {
-        guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return [] }
-        guard !searchText.isEmpty else { return [] }
-
-        // - glyphIndices: maps each source-character position to its glyph index
-        // - glyphTextFiltered: NFKD-decomposed text with ignored scalars stripped (used for searching)
-        // - filteredScalarToCharIndex: maps each scalar in glyphTextFiltered back to its source-character position
-        var characterCount = 0
-        var glyphIndices: [Int] = []
-        var glyphTextFiltered = ""
-        var filteredScalarToCharIndex: [Int] = []
-
-        for (index, glyph) in parser.glyphs.enumerated() {
-            let content = glyph.content
-            if !content.isEmpty {
-                for char in content where char != "\r" && char != "\n" {
-                    let currentIndex = characterCount
-                    characterCount += 1
-                    glyphIndices.append(index)
-
-                    for scalar in String(char).decomposedStringWithCompatibilityMapping.unicodeScalars where !shouldIgnoreForGlyphMatch(scalar) {
-                        glyphTextFiltered.unicodeScalars.append(scalar)
-                        filteredScalarToCharIndex.append(currentIndex)
-                    }
-                }
-            } else if glyph.isWordOrLineBreaker {
-                characterCount += 1
-                glyphIndices.append(index)
-            }
-        }
-
-        var searchFiltered = ""
-        for scalar in searchText.decomposedStringWithCompatibilityMapping.unicodeScalars where !shouldIgnoreForGlyphMatch(scalar) {
-            searchFiltered.unicodeScalars.append(scalar)
-        }
-        guard !searchFiltered.isEmpty else { return [] }
-
-        // Collect all non-overlapping matches.
-        var matchedRanges: [Range<String.Index>] = []
-        var cursor = glyphTextFiltered.startIndex
-        while cursor < glyphTextFiltered.endIndex,
-              let found = glyphTextFiltered.range(of: searchFiltered, range: cursor..<glyphTextFiltered.endIndex) {
-            matchedRanges.append(found)
-            cursor = found.upperBound
-        }
-        guard let range = pickMatch(in: matchedRanges, glyphText: glyphTextFiltered, hint: hint) else { return [] }
-
-        let scalars = glyphTextFiltered.unicodeScalars
-        let startScalarIdx = scalars.distance(from: scalars.startIndex, to: range.lowerBound)
-        let endScalarIdx = scalars.distance(from: scalars.startIndex, to: range.upperBound)
-        let startIdx = filteredScalarToCharIndex[startScalarIdx]
-        let endIdx = endScalarIdx < filteredScalarToCharIndex.count ? filteredScalarToCharIndex[endScalarIdx - 1] + 1 : characterCount
-
-        var uniqueGlyphIndices = Set<Int>()
-        for i in startIdx..<min(endIdx, glyphIndices.count) {
-            uniqueGlyphIndices.insert(glyphIndices[i])
-        }
-
-        return uniqueGlyphIndices.sorted().compactMap { glyphIndex in
-            let glyph = parser.glyphs[glyphIndex]
-            return glyph.isWordOrLineBreaker ? nil : glyph.frame
-        }
-
-        func shouldIgnoreForGlyphMatch(_ scalar: Unicode.Scalar) -> Bool {
-            if Self.glyphMatchIgnoredScalars.contains(scalar) { return true }
-            if scalar.properties.isWhitespace { return true }
-            switch scalar.properties.generalCategory {
-            case .nonspacingMark, .spacingMark, .enclosingMark, .modifierLetter, .modifierSymbol, .format,
-                 .openPunctuation, .closePunctuation, .privateUse, .control, .unassigned, .surrogate:
-                return true
-
-            default:
-                return false
-            }
-        }
-
-        // Picks the match whose proportional position in the glyph text best matches the caller's proportional
-        // position in the source text. Source and glyph texts can differ in length (PSPDFKit may emit PUA glyphs,
-        // ligatures, etc.), so we compare ratios rather than absolute offsets.
-        func pickMatch(in matches: [Range<String.Index>], glyphText: String, hint: (sourceLocation: Int, sourceTextLength: Int)?) -> Range<String.Index>? {
-            guard !matches.isEmpty else { return nil }
-            guard matches.count > 1, let hint, hint.sourceTextLength > 0 else { return matches.first }
-            let scalars = glyphText.unicodeScalars
-            let totalGlyph = scalars.count
-            let ratio = Double(hint.sourceLocation) / Double(hint.sourceTextLength)
-            let targetGlyphLocation = Int(Double(totalGlyph) * ratio)
-            return matches.min { lhs, rhs in
-                let lhsLoc = scalars.distance(from: scalars.startIndex, to: lhs.lowerBound)
-                let rhsLoc = scalars.distance(from: scalars.startIndex, to: rhs.lowerBound)
-                return abs(lhsLoc - targetGlyphLocation) < abs(rhsLoc - targetGlyphLocation)
-            }
-        }
-    }
-
-    /// Returns PDF-space frames for speech highlighting on the given page.
-    /// Searches for the text in PSPDFKit's glyphs to find the correct positions. When the same text appears
-    /// multiple times on the page (e.g. duplicated math formulas), `near` picks the occurrence closest in
-    /// proportional position to `sourceLocation / sourceTextLength` (UTF-16 offsets in the source text).
-    func speechHighlightPDFFrames(for text: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) -> [CGRect]? {
-        let pdfRects = findGlyphRects(for: text, page: page, near: hint)
-        guard !pdfRects.isEmpty else { return nil }
-
-        // Merge adjacent rects on the same line into larger rects for cleaner highlighting
-        return mergeAdjacentRects(pdfRects)
-    }
-
-    /// Merges glyph rects that are on the same line into continuous highlight regions.
-    /// Groups rects by line first, then merges each line into a single rect.
-    private func mergeAdjacentRects(_ rects: [CGRect]) -> [CGRect] {
-        guard !rects.isEmpty else { return [] }
-        guard rects.count > 1 else { return rects }
-
-        // Sort rects by Y position (top to bottom), then by X position (left to right)
-        let sortedRects = rects.sorted { rect1, rect2 in
-            // If on different lines (Y difference > half height), sort by Y
-            if abs(rect1.midY - rect2.midY) > rect1.height * 0.5 {
-                return rect1.midY < rect2.midY
-            }
-            // Same line - sort by X
-            return rect1.minX < rect2.minX
-        }
-
-        var merged: [CGRect] = []
-        var currentRect = sortedRects[0]
-
-        for i in 1..<sortedRects.count {
-            let nextRect = sortedRects[i]
-
-            // Check if rects are on the same line (similar y position)
-            let sameLineThreshold: CGFloat = currentRect.height * 0.5
-            let sameLine = abs(currentRect.midY - nextRect.midY) < sameLineThreshold
-
-            if sameLine {
-                // Same line - merge into a single rect spanning from leftmost to rightmost
-                currentRect = currentRect.union(nextRect)
-            } else {
-                // Different line - save current and start new
-                merged.append(currentRect)
-                currentRect = nextRect
-            }
-        }
-
-        merged.append(currentRect)
-        return merged
     }
 }
 

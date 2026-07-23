@@ -867,15 +867,16 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
         // See `moved(to:from:)`. No-op for now.
     }
 
-    func readAloudHighlightChanged(text: String, pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
+    func readAloudHighlightChanged(text: String, rects: [CGRect], pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
         // Highlighting the currently-spoken text in the web view is not yet implemented. No-op for now.
+        // (`rects` are PDF-space geometry and don't apply to the HTML/EPUB web view, which highlights via the DOM.)
     }
 
-    func annotationPreviewChanged(text: String, pageIndex: Int, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int) {
+    func annotationPreviewChanged(text: String, rects: [CGRect], pageIndex: Int, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int) {
         documentController?.updateReadAloudAnnotationPreview(text: text, tool: tool, color: color, sourceLocation: sourceLocation, sourceTextLength: sourceTextLength)
     }
 
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, rects: [CGRect], onPage pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
         documentController?.commitReadAloudAnnotation()
     }
 

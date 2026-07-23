@@ -35,20 +35,23 @@ protocol SpeechManagerDelegate: AnyObject {
     /// The highlight covers the current text unit (sentence or paragraph) being spoken, matching the voice's
     /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
     /// remote voices with paragraph granularity highlight paragraphs.
+    ///
+    /// Both a geometric and a textual description of the unit are provided so each reader can use whichever fits its
+    /// render layer: the PDF reader draws `rects` directly (authoritative structured-document-text geometry), while the
+    /// HTML/EPUB reader resolves `text` against its DOM using the `sourceLocation`/`sourceTextLength` hint.
     /// - Parameters:
-    ///   - text: The text to highlight
-    ///   - pageIndex: The page index where the text is located
-    ///   - sourceLocation: UTF-16 offset of `text` in the source page text. Disambiguates when `text` appears
-    ///     multiple times on `pageIndex` (e.g. duplicated math formulas).
-    ///   - sourceTextLength: UTF-16 length of the source page text, used together with `sourceLocation` as a
-    ///     proportional hint.
-    func readAloudHighlightChanged(text: String, pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
-    /// Called when the annotation preview highlight changes during a highlight session. `sourceLocation` and
-    /// `sourceTextLength` carry the same disambiguation hint as `readAloudHighlightChanged`.
-    func annotationPreviewChanged(text: String, pageIndex: Index, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int)
-    /// Called when the user confirms an annotation from the highlighter overlay. `sourceLocation` and
-    /// `sourceTextLength` carry the same disambiguation hint as `readAloudHighlightChanged`.
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
+    ///   - text: The highlighted unit's text.
+    ///   - rects: Bounding rects (PDF coordinate space) of the unit. Empty when the unit has no known geometry (e.g. EPUB).
+    ///   - pageIndex: The page index where the text is located.
+    ///   - sourceLocation: UTF-16 offset of `text` in the source page text (disambiguates duplicate occurrences).
+    ///   - sourceTextLength: UTF-16 length of the source page text, a proportional hint paired with `sourceLocation`.
+    func readAloudHighlightChanged(text: String, rects: [CGRect], pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
+    /// Called when the annotation preview highlight changes during a highlight session. Carries both the PDF `rects` and
+    /// the `text`/`sourceLocation`/`sourceTextLength` hint; see `readAloudHighlightChanged`.
+    func annotationPreviewChanged(text: String, rects: [CGRect], pageIndex: Index, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int)
+    /// Called when the user confirms an annotation from the highlighter overlay. Carries both the PDF `rects` and the
+    /// `text`/`sourceLocation`/`sourceTextLength` hint; see `readAloudHighlightChanged`.
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, rects: [CGRect], onPage pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
     /// Called when the highlight session ends, to remove the annotation preview highlight.
     func clearAnnotationPreview()
 }
@@ -135,6 +138,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let pageOffset: Int
         /// Bounding rects (PDF space) on its page..
         let rects: [CGRect]
+        /// Per-character glyph rect (PDF space) aligned 1:1 with `text`; see `SpeechDocumentParser.Paragraph.charRects`.
+        let charRects: [CGRect?]
     }
 
     /// Current speech position, anchored to a paragraph.
@@ -255,24 +260,33 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
-    /// Returns the current read-aloud highlight text, page index, and source-text position info
-    /// (used to disambiguate duplicate occurrences when highlighting), if speech is active.
+    /// Returns the current read-aloud highlight rects (PDF space) and page index, if speech is active.
     /// The highlight covers a sentence or paragraph depending on the voice's segmentation granularity.
-    var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index, sourceLocation: Int, sourceTextLength: Int)? {
+    var currentReadAloudHighlight: (rects: [CGRect], pageIndex: Delegate.Index)? {
         guard let position, position.paragraphIndex < paragraphs.count else { return nil }
         let paragraph = paragraphs[position.paragraphIndex]
         let range = position.highlightRange
-        guard range.length > 0, let textRange = Range(range, in: paragraph.text) else { return nil }
-        let text = String(paragraph.text[textRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return nil }
-        return (text, paragraph.page, paragraph.pageOffset + range.location, pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length)
+        guard range.length > 0 else { return nil }
+        let rects = highlightRects(paragraph: paragraph, highlightRange: range)
+        guard !rects.isEmpty else { return nil }
+        return (rects, paragraph.page)
     }
 
     // MARK: - Paragraph model helpers
 
-    /// Page-local segments (text + page offset) for the given page, in reading order. Handed to voice processors.
+    /// Page-local segments (text + page offset + per-character rects) for the given page, in reading order. Handed to
+    /// voice processors and used to derive highlight rects.
     private func segments(forPage page: Delegate.Index) -> [SpeechDocumentParser.Segment] {
-        return (paragraphIndicesByPage[page] ?? []).map { SpeechDocumentParser.Segment(text: paragraphs[$0].text, pageOffset: paragraphs[$0].pageOffset) }
+        return (paragraphIndicesByPage[page] ?? []).map {
+            SpeechDocumentParser.Segment(text: paragraphs[$0].text, pageOffset: paragraphs[$0].pageOffset, charRects: paragraphs[$0].charRects)
+        }
+    }
+
+    /// Merged PDF-space highlight rects for `highlightRange` (character offsets within `paragraph.text`), derived from
+    /// the paragraph's precomputed per-character geometry.
+    private func highlightRects(paragraph: SpeechParagraph, highlightRange: NSRange) -> [CGRect] {
+        let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
+        return SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments(forPage: paragraph.page))
     }
 
     /// The page's readable text (paragraphs joined by a blank line). Derived on demand; used by the local voice utterance
@@ -491,7 +505,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         for paragraph in parsed.paragraphs {
             guard let page = delegate.pageIndex(forStructuredDocumentTextPage: paragraph.page) else { continue }
             let index = paragraphs.count
-            paragraphs.append(SpeechParagraph(text: paragraph.text, page: page, pageOffset: paragraph.pageOffset, rects: paragraph.rects))
+            paragraphs.append(SpeechParagraph(text: paragraph.text, page: page, pageOffset: paragraph.pageOffset, rects: paragraph.rects, charRects: paragraph.charRects))
             indicesByPage[page, default: []].append(index)
             lengths[page] = max(lengths[page] ?? 0, paragraph.pageOffset + paragraph.text.count)
         }
@@ -659,8 +673,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private func notifyAnnotationPreviewChanged(_ result: (text: String, pageIndex: Delegate.Index)) {
         let sourceLocation = highlightSessionManager.session?.range.location ?? 0
         let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
+        let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
         delegate?.annotationPreviewChanged(
             text: result.text,
+            rects: rects,
             pageIndex: result.pageIndex,
             tool: highlightSessionManager.annotationTool,
             color: highlightSessionManager.annotationColor,
@@ -696,14 +712,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     func endHighlightSession() {
-        // Capture range info before `endSession()` clears the session.
+        // Capture range info and rects before `endSession()` clears the session.
         let sourceLocation = highlightSessionManager.session?.range.location ?? 0
         let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
+        let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
         if let result = highlightSessionManager.endSession() {
             delegate?.createAnnotation(
                 ofType: highlightSessionManager.annotationTool,
                 color: highlightSessionManager.annotationColor,
                 forText: result.text,
+                rects: rects,
                 onPage: result.pageIndex,
                 sourceLocation: sourceLocation,
                 sourceTextLength: sourceTextLength
@@ -950,6 +968,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         if let highlightText {
             delegate?.readAloudHighlightChanged(
                 text: highlightText,
+                rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
                 pageIndex: paragraph.page,
                 sourceLocation: paragraph.pageOffset + newHighlightRange.location,
                 sourceTextLength: pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length
@@ -997,6 +1016,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         if let highlightText = unit?.text {
             delegate?.readAloudHighlightChanged(
                 text: highlightText,
+                rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
                 pageIndex: paragraph.page,
                 sourceLocation: paragraph.pageOffset + newHighlightRange.location,
                 sourceTextLength: pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length
