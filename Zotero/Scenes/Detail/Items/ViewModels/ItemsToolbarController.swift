@@ -204,7 +204,6 @@ final class ItemsToolbarController {
                 let titleButton = UIBarButtonItem(customView: createTitleView())
                 titleButton.tag = ToolbarItem.title.tag
                 if #available(iOS 26.0, *) {
-                    // The title item is a plain status label, not a control. Hide its Liquid Glass capsule so it doesn't show as an empty bubble in the middle of the toolbar when there is no status text.
                     titleButton.hidesSharedBackground = true
                 }
                 items = [.fixedSpace(fixedSpaceWidth), filterButton, .flexibleSpace(), titleButton]
@@ -269,6 +268,10 @@ final class ItemsToolbarController {
 
                 let stackView = UIStackView(arrangedSubviews: [filterLabel, progressView])
                 stackView.axis = .horizontal
+                if #available(iOS 26.0, *) {
+                    stackView.isLayoutMarginsRelativeArrangement = true
+                    stackView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 3, leading: 12, bottom: 3, trailing: 12)
+                }
                 return stackView
             }
         }
@@ -467,6 +470,12 @@ final class ItemsToolbarController {
                     progressView.isHidden = false
                     progressView.sizeToFit()
                 }
+            }
+
+            if #available(iOS 26.0, *) {
+                let filterLabelVisible = (stackView.subviews.first as? UILabel).map({ !$0.isHidden }) ?? false
+                let progressVisible = (stackView.subviews.last as? ItemsToolbarDownloadProgressView).map({ !$0.isHidden }) ?? false
+                item.hidesSharedBackground = !(filterLabelVisible || progressVisible)
             }
 
             stackView.sizeToFit()
