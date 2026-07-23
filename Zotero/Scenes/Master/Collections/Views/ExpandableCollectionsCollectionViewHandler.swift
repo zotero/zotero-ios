@@ -147,7 +147,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
-            if #available(iOS 26.0.0, *) {  
+            if #available(iOS 26.0.0, *) {
                 section.contentInsets.leading = 16
                 section.contentInsets.trailing = 16
             }
