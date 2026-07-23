@@ -167,6 +167,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .createAnnotationFromSelection(let type):
             saveAnnotationFromSelection(type: type, in: viewModel)
 
+        case .createAnnotationFromReadAloud(let params):
+            saveAnnotationFromReadAloud(params: params, in: viewModel)
+
         case .parseOutline(let data):
             parse(outline: data, viewModel: viewModel)
         }
@@ -700,6 +703,34 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             params["comment"] = ""
             return params
         }
+    }
+
+    /// Persists an annotation created from a read-aloud highlight session. `params` is the annotation object produced by
+    /// the reader for the previewed text (position, text, sortIndex, pageLabel, type, color); this fills in the remaining
+    /// item fields and stores it, promoting the ephemeral preview into a real annotation.
+    private func saveAnnotationFromReadAloud(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        let date = Date()
+        var finalized = params
+        finalized["id"] = KeyGenerator.newKey
+        finalized["dateModified"] = DateFormatter.iso8601WithFractionalSeconds.string(from: date)
+        finalized["dateCreated"] = DateFormatter.iso8601WithFractionalSeconds.string(from: date)
+        finalized["tags"] = []
+        finalized["comment"] = ""
+        if finalized["pageLabel"] == nil {
+            finalized["pageLabel"] = ""
+        }
+        let annotations = parse(annotations: [finalized], author: viewModel.state.username, isAuthor: true)
+        guard !annotations.isEmpty else {
+            DDLogError("HtmlEpubReaderActionHandler: could not parse read-aloud annotation - \(params)")
+            return
+        }
+        update(viewModel: viewModel) { state in
+            for annotation in annotations {
+                state.annotations[annotation.key] = annotation
+            }
+            state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: [], insertions: [finalized], modifications: [])
+        }
+        createDatabaseAnnotations(annotations: annotations, in: viewModel)
     }
 
     private func saveAnnotations(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {

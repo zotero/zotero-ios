@@ -19,6 +19,15 @@ protocol ParentWithSidebarController: UIViewController {
     associatedtype SidebarController: UIViewController
 
     var toolbarButton: UIBarButtonItem { get }
+    /// Fixed leading navigation bar buttons (never overflow), in visual left-to-right order.
+    var navigationBarLeadingItems: [UIBarButtonItem] { get set }
+    /// Fixed trailing navigation bar buttons (never overflow), in visual left-to-right order. Laid out inboard of
+    /// (to the left of) the overflow group.
+    var navigationBarTrailingFixedItems: [UIBarButtonItem] { get set }
+    /// Trailing navigation bar buttons that may collapse into the system "•••" overflow menu when the bar runs out
+    /// of room, in visual left-to-right order. Laid out at the trailing edge. Only menu-representable items (image/
+    /// title + action or menu) belong here — custom-view buttons can't be shown in a menu.
+    var navigationBarOverflowItems: [UIBarButtonItem] { get set }
     var documentController: DocumentController? { get }
     var documentControllerLeft: NSLayoutConstraint? { get }
     var sidebarController: SidebarController? { get }
@@ -31,6 +40,7 @@ protocol ParentWithSidebarController: UIViewController {
     var isCompactWidth: Bool { get }
     var isDocumentLocked: Bool { get }
     var disposeBag: DisposeBag { get }
+    var windowSize: CGSize { get }
 
     func createToolbarButton() -> UIBarButtonItem
     func closeAnnotationToolbar()
@@ -41,8 +51,48 @@ protocol ParentWithSidebarController: UIViewController {
 }
 
 extension ParentWithSidebarController {
+    var windowSize: CGSize {
+        return view.window?.bounds.size ?? navigationController?.view.frame.size ?? .zero
+    }
+
     var isToolbarVisible: Bool {
         return toolbarState.visible
+    }
+
+    /// Builds the navigation bar from item groups so that, when the bar runs out of room, the overflow items collapse
+    /// into the system "•••" menu instead of being squashed/clipped (which is what happens with the classic
+    /// `left/rightBarButtonItems` arrays).
+    ///
+    /// - Each fixed item gets its own `fixedGroup` so they keep the standard discrete inter-item spacing (items inside
+    ///   a single group are clustered tightly together).
+    /// - On iPad the overflow items share one `optionalGroup`; the system moves them into a "•••" menu together when
+    ///   space is tight (e.g. minimum split-view width). Only menu-representable items belong there — custom-view
+    ///   buttons stay fixed.
+    /// - On iPhone the overflow items are kept fixed as well — everything fits and having all buttons visible looks
+    ///   better than collapsing some into a "•••" menu.
+    /// - `trailingItemGroups` are laid out leading→trailing in array order, so the fixed groups come first (inboard)
+    ///   and the overflow group sits at the trailing edge.
+    func applyNavigationBarButtons(windowSize: CGSize) {
+        let spacer = UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil)
+
+        if windowSize.width < 385 {
+            navigationItem.leftBarButtonItems = nil
+            navigationItem.rightBarButtonItems = nil
+
+            navigationItem.leadingItemGroups = navigationBarLeadingItems.map { $0.creatingFixedGroup() }
+
+            var trailingGroups = [spacer.creatingFixedGroup()] + navigationBarTrailingFixedItems.map { $0.creatingFixedGroup() }
+            if !navigationBarOverflowItems.isEmpty {
+                trailingGroups.append(.optionalGroup(customizationIdentifier: "ParentWithSidebar.overflow", items: navigationBarOverflowItems))
+            }
+            navigationItem.trailingItemGroups = trailingGroups
+        } else {
+            navigationItem.leadingItemGroups = []
+            navigationItem.trailingItemGroups = []
+
+            navigationItem.leftBarButtonItems = navigationBarLeadingItems
+            navigationItem.rightBarButtonItems = (navigationBarTrailingFixedItems + navigationBarOverflowItems).reversed() + [spacer]
+        }
     }
 
     var isSidebarVisible: Bool {
@@ -64,7 +114,19 @@ extension ParentWithSidebarController {
                 setAnnotationToolbar(hidden: checkbox.isSelected)
             })
             .disposed(by: disposeBag)
-        let barButton = UIBarButtonItem(customView: checkbox)
+        // Center the (tightly-inset) checkbox in a standard-sized container so it lines up evenly with the system
+        // bar buttons next to it, which have more surrounding padding than the checkbox's own content insets.
+        let container = UIView()
+        checkbox.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(checkbox)
+        let size = CheckboxButton.standardNavigationBarButtonSize
+        NSLayoutConstraint.activate([
+            container.widthAnchor.constraint(equalToConstant: size),
+            container.heightAnchor.constraint(equalToConstant: size),
+            checkbox.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            checkbox.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        let barButton = UIBarButtonItem(customView: container)
         barButton.isEnabled = !isDocumentLocked
         barButton.accessibilityLabel = L10n.Accessibility.Pdf.toggleAnnotationToolbar
         barButton.title = L10n.Accessibility.Pdf.toggleAnnotationToolbar
@@ -73,7 +135,7 @@ extension ParentWithSidebarController {
     }
 
     private func setAnnotationToolbar(hidden: Bool) {
-        (toolbarButton.customView as? CheckboxButton)?.isSelected = !hidden
+        toolbarButton.checkboxButton?.isSelected = !hidden
         annotationToolbarHandler?.set(hidden: hidden, animated: true)
         if hidden {
             documentController?.disableAnnotationTools()
