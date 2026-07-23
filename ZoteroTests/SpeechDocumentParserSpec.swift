@@ -124,6 +124,103 @@ final class SpeechDocumentParserSpec: QuickSpec {
                 }
             }
 
+            describe("citation elision") {
+                it("removes a bracketed numeric citation that links to a reference") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [
+                            makeRun("This matters ", page: 0),
+                            makeRun("[2]", page: 0, hasRefs: true),
+                            makeRun(".", page: 0)
+                        ])
+                    ])
+
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
+
+                    expect(paragraphs.map(\.text)).to(equal(["This matters ."]))
+                }
+
+                it("removes a parenthetical author-year citation that links to a reference") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [
+                            makeRun("As shown ", page: 0),
+                            makeRun("(Smith 2026)", page: 0, hasRefs: true),
+                            makeRun(" it works.", page: 0)
+                        ])
+                    ])
+
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
+
+                    // The elided range is removed verbatim, leaving the surrounding spaces (no whitespace collapsing, matching desktop).
+                    expect(paragraphs.map(\.text)).to(equal(["As shown  it works."]))
+                }
+
+                it("keeps a bracketed aside that is not a reference link") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [makeRun("This is verbatim [sic] text.", page: 0)])
+                    ])
+
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
+
+                    expect(paragraphs.map(\.text)).to(equal(["This is verbatim [sic] text."]))
+                }
+
+                it("keeps a parenthetical group whose linked coverage is below the threshold") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [
+                            makeRun("Note ", page: 0),
+                            makeRun("(see the discussion around ", page: 0),
+                            makeRun("2", page: 0, hasRefs: true),
+                            makeRun(" for context)", page: 0)
+                        ])
+                    ])
+
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
+
+                    expect(paragraphs.map(\.text)).to(equal(["Note (see the discussion around 2 for context)"]))
+                }
+
+                it("removes a superscript reference marker") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [
+                            makeRun("Some claim", page: 0),
+                            makeRun("3", page: 0, hasRefs: true, sup: true),
+                            makeRun(" continues.", page: 0)
+                        ])
+                    ])
+
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
+
+                    expect(paragraphs.map(\.text)).to(equal(["Some claim continues."]))
+                }
+
+                it("keeps a superscript marker that does not link to a reference") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [
+                            makeRun("E = mc", page: 0),
+                            makeRun("2", page: 0, sup: true)
+                        ])
+                    ])
+
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
+
+                    expect(paragraphs.map(\.text)).to(equal(["E = mc2"]))
+                }
+
+                it("keeps an inline reference link that is neither bracketed nor superscript") {
+                    let materialized = document(blocks: [
+                        paragraphBlock(page: 0, runs: [
+                            makeRun("See ", page: 0),
+                            makeRun("Smith and Jones", page: 0, hasRefs: true),
+                            makeRun(" for more.", page: 0)
+                        ])
+                    ])
+
+                    let paragraphs = SpeechDocumentParser.parse(materialized: materialized).paragraphs
+
+                    expect(paragraphs.map(\.text)).to(equal(["See Smith and Jones for more."]))
+                }
+            }
+
             describe("language") {
                 it("reads the lowercase language key (EPUB)") {
                     let materialized: [String: Any] = ["metadata": ["source": ["properties": ["language": "en-GB"]]]]
@@ -272,9 +369,17 @@ private func trimmed(_ text: String, _ range: NSRange?) -> String? {
     return substring(text, range).trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
-/// Builds a run whose page is encoded in the textMap (page is the second element, matching the SDT format).
-private func makeRun(_ text: String, page: Int) -> [String: Any] {
-    return ["text": text, "anchor": ["textMap": "[[0,\(page),0,0,0,0]]"]]
+/// Builds a run whose page is encoded in the textMap (page is the second element, matching the SDT format). `hasRefs`
+/// gives the run a non-empty `refs` array (it links to a reference), and `sup` marks it superscript — both drive citation elision.
+private func makeRun(_ text: String, page: Int, hasRefs: Bool = false, sup: Bool = false) -> [String: Any] {
+    var run: [String: Any] = ["text": text, "anchor": ["textMap": "[[0,\(page),0,0,0,0]]"]]
+    if hasRefs {
+        run["refs"] = [[0]]
+    }
+    if sup {
+        run["style"] = ["sup": true]
+    }
+    return run
 }
 
 private func runWithoutTextMap(_ text: String) -> [String: Any] {

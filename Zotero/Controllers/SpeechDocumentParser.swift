@@ -13,7 +13,9 @@ import NaturalLanguage
 /// Turns a materialized `SDTPack` document into the read-aloud paragraph model.
 ///
 /// Only readable blocks (`paragraph` and `list`) are kept; headings, images, math, preformatted blocks and anything
-/// flagged `excluded` (page numbers, running headers/footers, …) are dropped. Each readable block is split by the page
+/// flagged `excluded` (page numbers, running headers/footers, …) are dropped. In-text citations (bracket/parenthesis
+/// groups that are mostly reference links, and superscript reference markers) are stripped from the readable text so
+/// they aren't read aloud. Each readable block is split by the page
 /// its runs belong to (a paragraph can span a page boundary), so every resulting `Paragraph` lives on exactly one page
 /// and its text matches what PSPDFKit renders there. `pageOffset` is the paragraph's character offset within its page's
 /// readable text (paragraphs on a page are joined by a blank line), which lets callers translate between a paragraph
@@ -47,6 +49,33 @@ enum SpeechDocumentParser {
     private static let classesTypesToIgnore: Set<String> = ["excluded", "auxiliary"]
     /// Characters separating two paragraphs within a page's readable text.
     static let segmentSeparator = "\n\n"
+    /// A bracket/parenthesis group is elided when at least this fraction of its inner non-whitespace characters is
+    /// covered by reference links (matches the desktop reader's `LINK_GROUP_COVERAGE_THRESHOLD`).
+    private static let linkGroupCoverageThreshold = 0.25
+
+    /// A leaf text run with the metadata read-aloud needs: the page it renders on, whether it links to a reference
+    /// (`refs`), and whether it is superscript (`style.sup`). The last two drive in-text citation elision.
+    private struct Run {
+        let text: String
+        let page: Int
+        let hasRefs: Bool
+        let sup: Bool
+    }
+
+    /// A half-open character range `[start, end)` within a segment's text.
+    private struct TextRange {
+        let start: Int
+        var end: Int
+    }
+
+    /// A visible-text run's position within a segment's concatenated text, carrying the citation metadata used to decide
+    /// whether the run (or a bracket group containing it) should be elided.
+    private struct RunMapping {
+        let absStart: Int
+        let absEnd: Int
+        let hasRefs: Bool
+        let sup: Bool
+    }
 
     /// Parses the `materialize()` output of an `SDTPack` into the read-aloud paragraph model.
     static func parse(materialized: [String: Any]) -> ParsedDocument {
@@ -61,7 +90,7 @@ enum SpeechDocumentParser {
         for block in content {
             if let flowClass = block["flowClass"] as? String, classesTypesToIgnore.contains(flowClass) { continue }
             let fallbackPage = startPage(of: block) ?? pageLengths.keys.max() ?? 0
-            var runs: [(text: String, page: Int)] = []
+            var runs: [Run] = []
             collectRuns(in: block, fallbackPage: fallbackPage, into: &runs)
             appendSegments(from: runs, block: block, into: &paragraphs, pageLengths: &pageLengths)
         }
@@ -71,11 +100,13 @@ enum SpeechDocumentParser {
 
     /// Recursively gathers the leaf text runs of a block, assigning each run the page it is rendered on. Pure-spacing
     /// runs (and any run without its own `textMap`) inherit the page of the surrounding content.
-    private static func collectRuns(in node: [String: Any], fallbackPage: Int, into runs: inout [(text: String, page: Int)]) {
+    private static func collectRuns(in node: [String: Any], fallbackPage: Int, into runs: inout [Run]) {
         if let text = node["text"] as? String {
             guard !text.isEmpty else { return }
             let page = textMapPage(of: node) ?? runs.last?.page ?? fallbackPage
-            runs.append((text, page))
+            let hasRefs = (node["refs"] as? [Any])?.isEmpty == false
+            let sup = (node["style"] as? [String: Any])?["sup"] as? Bool == true
+            runs.append(Run(text: text, page: page, hasRefs: hasRefs, sup: sup))
             return
         }
 
@@ -89,34 +120,127 @@ enum SpeechDocumentParser {
     /// Groups consecutive runs by page into segments and appends each as a `Paragraph`, tracking per-page text length so
     /// `pageOffset` matches the position the segment would have in the page's joined readable text.
     private static func appendSegments(
-        from runs: [(text: String, page: Int)],
+        from runs: [Run],
         block: [String: Any],
         into paragraphs: inout [Paragraph],
         pageLengths: inout [Int: Int]
     ) {
         var currentPage: Int?
-        var segment = ""
+        var pageRuns: [Run] = []
 
         for run in runs {
             if let currentPage, currentPage != run.page {
-                flush(page: currentPage, text: segment)
-                segment = ""
+                flush(page: currentPage, runs: pageRuns)
+                pageRuns = []
             }
             currentPage = run.page
-            segment += run.text
+            pageRuns.append(run)
         }
         if let currentPage {
-            flush(page: currentPage, text: segment)
+            flush(page: currentPage, runs: pageRuns)
         }
 
-        func flush(page: Int, text: String) {
-            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        func flush(page: Int, runs: [Run]) {
+            let trimmed = strippingCitations(from: runs).trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return }
             let existingLength = pageLengths[page] ?? 0
             let offset = existingLength == 0 ? 0 : existingLength + segmentSeparator.count
             pageLengths[page] = offset + trimmed.count
             paragraphs.append(Paragraph(text: trimmed, page: page, pageOffset: offset, rects: rects(of: block, page: page)))
         }
+    }
+
+    /// Concatenates a page's runs into its readable text with in-text citations removed. Skipped are bracket/parenthesis
+    /// groups that are mostly reference links (e.g. "text [2]", "text (Smith, 2026)") and superscript reference markers
+    /// (e.g. the "2" in "text²"). Mirrors the desktop reader's `getElidedRanges`. Runs still contribute their text and
+    /// character positions, but only runs with visible text act as reference-coverage mappings — matching the desktop,
+    /// where whitespace-only nodes anchor nothing.
+    private static func strippingCitations(from runs: [Run]) -> String {
+        var characters: [Character] = []
+        var mappings: [RunMapping] = []
+        for run in runs {
+            let runCharacters = Array(run.text)
+            let absStart = characters.count
+            characters.append(contentsOf: runCharacters)
+            if runCharacters.contains(where: { !$0.isWhitespace }) {
+                mappings.append(RunMapping(absStart: absStart, absEnd: characters.count, hasRefs: run.hasRefs, sup: run.sup))
+            }
+        }
+
+        let elided = elidedRanges(in: characters, mappings: mappings)
+        guard !elided.isEmpty else { return String(characters) }
+
+        // Keep every character not covered by an elided range (the ranges are sorted, merged and non-overlapping).
+        var kept: [Character] = []
+        var cursor = 0
+        for range in elided {
+            if range.start > cursor {
+                kept.append(contentsOf: characters[cursor..<range.start])
+            }
+            cursor = max(cursor, range.end)
+        }
+        if cursor < characters.count {
+            kept.append(contentsOf: characters[cursor..<characters.count])
+        }
+        return String(kept)
+    }
+
+    /// Ranges of `text` that read-aloud skips: bracket/parenthesis groups that are mostly linked (citation) text, plus
+    /// superscript reference markers. Returns merged, ascending, non-overlapping ranges.
+    private static func elidedRanges(in text: [Character], mappings: [RunMapping]) -> [TextRange] {
+        var ranges: [TextRange] = []
+        for (open, close) in [(Character("["), Character("]")), (Character("("), Character(")"))] {
+            var stack: [Int] = []
+            for index in text.indices {
+                if text[index] == open {
+                    stack.append(index)
+                } else if text[index] == close, let start = stack.popLast(), isLinkGroup(text: text, mappings: mappings, start: start, end: index + 1) {
+                    ranges.append(TextRange(start: start, end: index + 1))
+                }
+            }
+        }
+        for mapping in mappings where mapping.hasRefs && mapping.sup {
+            ranges.append(TextRange(start: mapping.absStart, end: mapping.absEnd))
+        }
+        return mergeRanges(ranges)
+    }
+
+    /// Whether the group `[start, end)` (brackets included) is a citation: it must contain some reference-linked,
+    /// non-whitespace text, and linked characters must make up at least `linkGroupCoverageThreshold` of its inner
+    /// (bracket-excluded) non-whitespace content. This keeps plain asides like "(see above)" while dropping "[2]".
+    private static func isLinkGroup(text: [Character], mappings: [RunMapping], start: Int, end: Int) -> Bool {
+        var linkedCharacters = 0
+        for mapping in mappings where mapping.hasRefs {
+            let from = max(start, mapping.absStart)
+            let to = min(end, mapping.absEnd)
+            for index in from..<max(from, to) where !text[index].isWhitespace {
+                linkedCharacters += 1
+            }
+        }
+        guard linkedCharacters > 0 else { return false }
+
+        var contentCharacters = 0
+        for index in (start + 1)..<max(start + 1, end - 1) where !text[index].isWhitespace {
+            contentCharacters += 1
+        }
+        return contentCharacters > 0 && Double(linkedCharacters) / Double(contentCharacters) >= linkGroupCoverageThreshold
+    }
+
+    /// Sorts ranges and coalesces touching or overlapping ones into a minimal ascending set.
+    private static func mergeRanges(_ ranges: [TextRange]) -> [TextRange] {
+        let sorted = ranges
+            .filter { $0.end > $0.start }
+            .sorted { $0.start != $1.start ? $0.start < $1.start : $0.end < $1.end }
+        var merged: [TextRange] = []
+        for range in sorted {
+            if var last = merged.last, range.start <= last.end {
+                last.end = max(last.end, range.end)
+                merged[merged.count - 1] = last
+            } else {
+                merged.append(range)
+            }
+        }
+        return merged
     }
 
     /// Returns the document language (a BCP-47 tag such as `en-GB`) from the structured document text metadata, or nil
