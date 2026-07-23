@@ -98,6 +98,7 @@ final class SyncControllerSpec: QuickSpec {
                                 
                             case .trash:
                                 versionResponses[object] = ["BBBBBBBB": 3]
+
                             case .settings: break
                             }
                         }
@@ -173,7 +174,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -293,6 +294,7 @@ final class SyncControllerSpec: QuickSpec {
                                 
                             case .trash:
                                 versionResponses[object] = ["BBBBBBBB": 3]
+
                             case .settings: break
                             }
                         }
@@ -383,13 +385,13 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: myLibrary, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         createStub(
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -488,7 +490,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [itemToDelete], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [itemToDelete], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -628,7 +630,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -672,6 +674,7 @@ final class SyncControllerSpec: QuickSpec {
                             let item = RItem()
                             item.key = unsyncedItemKey
                             item.syncState = .dirty
+                            item.lastSyncDate = Date()
                             item.libraryId = .custom(.myLibrary)
                             realm.add(item)
                         }
@@ -721,7 +724,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -817,7 +820,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
 
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -892,7 +895,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -939,6 +942,7 @@ final class SyncControllerSpec: QuickSpec {
                                 versionResponses[object] = ["DDDDDDDD": 1,
                                                             "EEEEEEEE": 1,
                                                             "FFFFFFFF": 1]
+
                             case .trash, .settings: break
                             }
                         }
@@ -1001,6 +1005,7 @@ final class SyncControllerSpec: QuickSpec {
                                                             "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
                                                             "data": ["note": "This is a note", "itemType": "note",
                                                                      "tags": [] as [Any], "parentItem": "EEEEEEEE"] as [String: Any]]]
+
                             case .trash, .settings: break
                             }
                         }
@@ -1033,7 +1038,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -1211,7 +1216,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -1364,7 +1369,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 1),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         waitUntil(timeout: .seconds(60)) { doneAction in
@@ -1475,7 +1480,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         let file = Files.attachmentFile(in: libraryId, key: itemKey, filename: oldFilename, contentType: contentType)
@@ -1913,7 +1918,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         
                         try! realm.write {
@@ -1996,7 +2001,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any], "settings": [] as [Any]]
                         )
                         stub(condition: FileRequest(libraryId: libraryId, userId: userId, key: key, destination: file).stubCondition(with: baseUrl), response: { _ -> HTTPStubsResponse in
                             didCallDownload = true
@@ -2299,7 +2304,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [], "searches": [], "items": [], "tags": [] as [String]]
+                            jsonResponse: ["collections": [], "searches": [], "items": [], "tags": [] as [String], "settings": [] as [Any]]
                         )
                         
                         try! realm.write {
@@ -2396,7 +2401,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: ["collections": [], "searches": [], "items": [syncedKey, changedKey], "tags": []]
+                            jsonResponse: ["collections": [], "searches": [], "items": [syncedKey, changedKey], "tags": [], "settings": [] as [Any]]
                         )
                         
                         try! realm.write {
@@ -2956,9 +2961,9 @@ struct TestConflictCoordinator: ConflictReceiver & SyncRequestReceiver {
 
     func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         switch conflict {
-        case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
+        case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags, let settings):
             completed(.remoteDeletionOfActiveObject(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
-                                                    toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
+                                                    toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags, settings: settings))
 
         case .removedItemsHaveLocalChanges(let keys, let libraryId):
             completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: keys.map({ $0.0 }), toRestore: []))

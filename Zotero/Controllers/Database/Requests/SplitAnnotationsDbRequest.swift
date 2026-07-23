@@ -23,12 +23,13 @@ struct SplitAnnotationsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
+        let context = DeletionContext()
 
         for item in items {
             self.split(item: item, database: database)
-            item.willRemove(in: database)
-            database.delete(item)
+            context.delete(item, in: database)
         }
+        context.cleanup(in: database)
     }
 
     /// Splits database annotation if it exceedes position limit.
@@ -39,7 +40,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
 
         switch annotationType {
         case .highlight, .underline:
-            let rects = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minY), height: ($0.maxY - $0.minY)) })
+            let rects = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
             
             guard let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: Array(rects)) else { return }
 

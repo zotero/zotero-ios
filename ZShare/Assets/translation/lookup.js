@@ -52,7 +52,7 @@ async function lookup(encodedIdentifiers, saveAttachments) {
     const identifiersInput = decodeBase64(encodedIdentifiers);
     var identifiers = [];
 
-    for (identifier of identifiersInput.split(",")) {
+    for (let identifier of identifiersInput.split(",")) {
         const _identifiers = Zotero.Utilities.extractIdentifiers(identifier);
         identifiers.push(..._identifiers);
     }
@@ -65,30 +65,17 @@ async function lookup(encodedIdentifiers, saveAttachments) {
     Zotero.debug("Extracted identifiers: " + JSON.stringify(identifiers));
     window.webkit.messageHandlers.identifiersHandler.postMessage(identifiers);
 
-    // Set up a translate instance
-    var translate = new Zotero.Translate.Search();
-
-    try {
-        Zotero.debug("Get translators");
-        // Get translators
-        var translators = await translate.getTranslators();
-        translate.setTranslator(translators);
-    } catch (e) {
-        // Continue with other ids on failure
-        Zotero.logError(e);
-        window.webkit.messageHandlers.failureHandler.postMessage(1);
-        return;
-    }
-
-    // Go through all identifiers
-
     for (let identifier of identifiers) {
         Zotero.debug("Process identifier " + JSON.stringify(identifier));
 
         window.webkit.messageHandlers.itemsHandler.postMessage({"identifier": identifier});
 
         try {
+            var translate = new Zotero.Translate.Search();
             translate.setIdentifier(identifier);
+            Zotero.debug("Get translators");
+            var translators = await translate.getTranslators();
+            translate.setTranslator(translators);
             let items = await translate.translate({ libraryID: false, collections: false, saveAttachments: saveAttachments });
             window.webkit.messageHandlers.itemsHandler.postMessage({"identifier": identifier, "data": items});
         } catch (e) {

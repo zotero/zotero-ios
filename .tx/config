@@ -1,0 +1,31 @@
+[main]
+host = https://app.transifex.com
+lang_map = af_ZA: af, am_ET: am, bg_BG: bg, bn_BD: bn, ca: ca, cs_CZ: cs, da_DK: da, el_GR: el, en_GB: en-GB, es_AR: es-AR, es_ES: es, et_EE: et, eu_ES: eu, fi_FI: fi, fr_FR: fr, gl_ES: gl, he_IL: he, hr_HR: hr, hu_HU: hu, id_ID: id, is_IS: is, it_IT: it, ja_JP: ja, kn_IN: kn, ko_KR: ko, lt_LT: lt, mn_MN: mn, nb_NO: nb-NO, nl_NL: nl, nn_NO: nn-NO, pl_PL: pl, pt_BR: pt-BR, pt_PT: pt-PT, ro_RO: ro, ru_RU: ru, sk_SK: sk, sl_SI: sl, sr_RS: sr, sv_SE: sv, th_TH: th, tr_TR: tr, uk_UA: uk, vi_VN: vi, yue_CN: yue-Hans, zh_CN: zh-Hans, zh_TW: zh-Hant
+
+[o:zotero:p:zotero-mobile:r:infopliststrings]
+file_filter            = Zotero/Assets/<lang>.lproj/InfoPList.strings
+source_file            = Zotero/Assets/en.lproj/InfoPList.strings
+type                   = STRINGS_UTF8
+minimum_perc           = 0
+resource_name          = InfoPlist.strings
+replace_edited_strings = false
+keep_translations      = false
+
+[o:zotero:p:zotero-mobile:r:localizablestrings]
+file_filter            = ./Zotero/Assets/<lang>.lproj/Localizable.strings
+source_file            = ./Zotero/Assets/en.lproj/Localizable.strings
+type                   = STRINGS_UTF8
+minimum_perc           = 0
+resource_name          = Localizable.strings
+replace_edited_strings = false
+keep_translations      = false
+
+[o:zotero:p:zotero-mobile:r:localizablestringsdict]
+file_filter            = ./Zotero/Assets/<lang>.lproj/Localizable.stringsdict
+source_file            = ./Zotero/Assets/en.lproj/Localizable.stringsdict
+type                   = STRINGSDICT
+minimum_perc           = 0
+resource_name          = Localizable.stringsdict
+replace_edited_strings = false
+keep_translations      = false
+

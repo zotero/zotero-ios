@@ -14,12 +14,21 @@ import SwiftUI
 import CocoaLumberjackSwift
 import RxSwift
 
+enum ShowItemsReason {
+    case userSelectedCollection
+    case initialCollectionsLoad
+    case splitExpansion
+    case restoration
+}
+
 protocol MainCoordinatorDelegate: AnyObject {
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier)
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { get }
+    
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason)
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier)
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType)
 }
 
 final class MainViewController: UISplitViewController {
@@ -44,6 +53,12 @@ final class MainViewController: UISplitViewController {
         }
     }
     private var detailCoordinatorGetter: (libraryId: LibraryIdentifier?, collectionId: CollectionIdentifier?, completion: (DetailCoordinator) -> Void)?
+    private lazy var tagFilterViewModel: ViewModel<TagFilterActionHandler>? = {
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
+        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
+        let handler = TagFilterActionHandler(dbStorage: dbStorage)
+        return ViewModel(initialState: state, handler: handler)
+    }()
 
     // MARK: - Lifecycle
 
@@ -78,8 +93,13 @@ final class MainViewController: UISplitViewController {
 
         delegate = self
         preferredPrimaryColumnWidthFraction = 1 / 3
-        maximumPrimaryColumnWidth = .infinity
         minimumPrimaryColumnWidth = 320
+        if #available(iOS 26.0.0, *) {
+            maximumPrimaryColumnWidth = Self.automaticDimension
+            presentsWithGesture = false
+        } else {
+            maximumPrimaryColumnWidth = .infinity
+        }
 
         DDLogInfo("MainViewController: viewDidLoad")
     }
@@ -111,7 +131,13 @@ final class MainViewController: UISplitViewController {
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
-        let navigationController = UINavigationController()
+        // Reuse the detail navigation controller that is already on screen instead of creating a new one for every collection.
+        // In iOS 26 the split view controller hoists the secondary column's toolbar items into its shared bottom toolbar. Swapping in a brand-new navigation controller
+        // for each collection leaves the previous (now deallocated) controller's items behind in that shared toolbar, so the filter/sort buttons pile up with every selection.
+        // Reusing the same navigation controller keeps the secondary column identity stable, so its toolbar items are replaced rather than accumulated. The coordinator holds the
+        // navigation controller weakly, so once it is actually gone (e.g. popped during back navigation in collapsed layout) this is nil and a fresh one is created and shown again.
+        let existingNavigationController = detailCoordinator?.navigationController
+        let navigationController = existingNavigationController ?? UINavigationController()
         let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
         let newDetailCoordinator = DetailCoordinator(
@@ -119,6 +145,7 @@ final class MainViewController: UISplitViewController {
             collection: collection,
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
+            mainCoordinatorDelegate: self,
             itemsTagFilterDelegate: tagFilterController,
             controllers: controllers
         )
@@ -135,37 +162,45 @@ final class MainViewController: UISplitViewController {
         }
         detailCoordinator = newDetailCoordinator
 
-        showDetailViewController(navigationController, sender: nil)
+        if existingNavigationController == nil {
+            // Only present when a new navigation controller was created; a reused one is already the secondary column (or pushed in the collapsed stack).
+            showDetailViewController(navigationController, sender: nil)
+        }
     }
 }
 
 extension MainViewController: UISplitViewControllerDelegate { }
 
 extension MainViewController: MainCoordinatorDelegate {
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        guard isCollapsed || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
-        showItems(for: collection, in: libraryId, searchItemKeys: nil)
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
+
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason) {
+        guard detailCoordinator?.libraryId == libraryId && detailCoordinator?.collection.identifier == collection.identifier else {
+            showItems(for: collection, in: libraryId, searchItemKeys: nil)
+            return
+        }
+        switch reason {
+        case .userSelectedCollection:
+            guard let navigationController = detailCoordinator?.navigationController else {
+                showItems(for: collection, in: libraryId, searchItemKeys: nil)
+                return
+            }
+            if navigationController.viewControllers.count > 1 {
+                navigationController.popToRootViewController(animated: !isCollapsed)
+            }
+            if isCollapsed {
+                showDetailViewController(navigationController, sender: nil)
+            }
+
+        case .initialCollectionsLoad, .splitExpansion, .restoration:
+            break
+        }
     }
 }
 
 extension MainViewController: MainCoordinatorSyncToolbarDelegate {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-
-        do {
-            var collectionType: CollectionIdentifier.CustomType?
-
-            try dbStorage.perform(on: .main, with: { coordinator in
-                let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
-                collectionType = isAnyInTrash ? .trash : .all
-            })
-
-            guard let collectionType else { return }
-
-            masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
-            showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
-        } catch let error {
-            DDLogError("MainViewController: can't load searched keys - \(error)")
-        }
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType) {
+        masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
+        showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
     }
 }

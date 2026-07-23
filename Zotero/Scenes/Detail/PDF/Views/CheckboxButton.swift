@@ -20,7 +20,7 @@ final class CheckboxButton: UIButton {
         }
     }
 
-    init(image: UIImage, contentInsets: NSDirectionalEdgeInsets) {
+    init(image: UIImage?, contentInsets: NSDirectionalEdgeInsets) {
         super.init(frame: .zero)
 
         var configuration = UIButton.Configuration.plain()
@@ -30,15 +30,13 @@ final class CheckboxButton: UIButton {
         configuration.contentInsets = contentInsets
         self.configuration = configuration
 
-        self.configurationUpdateHandler = { [weak self] button in
-            let isSelected = self?.isSelected ?? false
-            var configuration = button.configuration
-            var background = configuration?.background
-            background?.backgroundColor = isSelected ? self?.selectedBackgroundColor : self?.deselectedBackgroundColor
-            if let background {
-                configuration?.background = background
-            }
-            configuration?.baseForegroundColor = isSelected ? self?.selectedTintColor : self?.deselectedTintColor
+        configurationUpdateHandler = { button in
+            guard let button = button as? CheckboxButton, var configuration = button.configuration else { return }
+            let isSelected = button.isSelected
+            var background = configuration.background
+            background.backgroundColor = isSelected ? button.selectedBackgroundColor : button.deselectedBackgroundColor
+            configuration.background = background
+            configuration.baseForegroundColor = isSelected ? button.selectedTintColor : button.deselectedTintColor
             button.configuration = configuration
         }
     }

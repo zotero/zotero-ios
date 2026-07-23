@@ -25,6 +25,9 @@ final class Defaults {
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
+    @OptionalUserDefault(key: "sessionId")
+    var sessionId: String?
+
     // MARK: - WebDav Session
 
     @UserDefault(key: "webDavEnabled", defaultValue: false)
@@ -126,11 +129,45 @@ final class Defaults {
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings
 
+    @CodableUserDefault(
+        key: "PDFReaderAnnotationTools",
+        defaultValue: [
+            AnnotationToolButton(type: .highlight, isVisible: true),
+            AnnotationToolButton(type: .underline, isVisible: true),
+            AnnotationToolButton(type: .note, isVisible: true),
+            AnnotationToolButton(type: .freeText, isVisible: true),
+            AnnotationToolButton(type: .image, isVisible: true),
+            AnnotationToolButton(type: .ink, isVisible: true),
+            AnnotationToolButton(type: .eraser, isVisible: true)
+        ],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .standard
+    )
+    var pdfAnnotationTools: [AnnotationToolButton]
+
     // MARK: - HTML / Epub Settings
 
     @CodableUserDefault(key: "HtmlEpubReaderSettings", defaultValue: HtmlEpubSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var htmlEpubSettings: HtmlEpubSettings
+
+    @CodableUserDefault(
+        key: "HtmlEpubReaderAnnotationTools",
+        defaultValue: [AnnotationToolButton(type: .highlight, isVisible: true), AnnotationToolButton(type: .underline, isVisible: true), AnnotationToolButton(type: .note, isVisible: true)],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .standard
+    )
+    var htmlEpubAnnotationTools: [AnnotationToolButton]
     #endif
+
+    // MARK: - Speech
+
+    @UserDefault(key: "SpeechDefaultVoiceForLanguage", defaultValue: [:])
+    var defaultVoiceForLanguage: [String: String]
+
+    @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
+    var speechRateModifier: Float
 
     // MARK: - Citation / Bibliography Export
 
@@ -185,6 +222,14 @@ final class Defaults {
     @UserDefault(key: "ClearPSPDFKitCacheGuard", defaultValue: currentClearPSPDFKitCacheGuard - 1)
     var clearPSPDFKitCacheGuard: Int
 
+    // MARK: - Debug
+
+    @UserDefault(key: "DebugReaderUUIDByHash", defaultValue: [:])
+    var debugReaderUUIDByHash: [String: String]
+
+    @OptionalUserDefault(key: "LastDebugReaderHashOrURL")
+    var lastDebugReaderHashOrURL: String?
+
     // MARK: - Actions
 
     func reset() {
@@ -192,6 +237,7 @@ final class Defaults {
         username = ""
         displayName = ""
         userId = 0
+        sessionId = nil
         shareExtensionIncludeTags = true
         shareExtensionIncludeAttachment = true
         selectedLibraryId = .custom(.myLibrary)

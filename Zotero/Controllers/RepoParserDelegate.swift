@@ -53,6 +53,7 @@ final class RepoParserDelegate: NSObject, XMLParserDelegate {
 
         case .style:
             self.currentStyleId = attributeDict["id"]
+
         default: break
         }
     }

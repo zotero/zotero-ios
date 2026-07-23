@@ -13,6 +13,8 @@ import RxSwift
 protocol ReaderError: Error {
     var title: String { get }
     var message: String { get }
+    
+    var documentShouldClose: Bool { get }
 }
 
 protocol ReaderState {
@@ -100,7 +102,13 @@ protocol ReaderCoordinator: Coordinator, ReaderCoordinatorDelegate, ReaderSideba
 extension ReaderCoordinator {
     func show(error: ReaderError) {
         let controller = UIAlertController(title: error.title, message: error.message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        if error.documentShouldClose {
+            controller.addAction(UIAlertAction(title: L10n.close, style: .default, handler: { [weak self] _ in
+                self?.navigationController?.dismiss(animated: true)
+            }))
+        } else {
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        }
         navigationController?.present(controller, animated: true)
     }
 
@@ -287,7 +295,7 @@ extension ReaderCoordinator {
 
         let state = ReaderSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(rows: settings.rows, viewModel: viewModel)
+        let baseController = ReaderSettingsViewController(rows: settings.rows, minimumPreferredContentSize: settings.minimumPreferredContentSize, viewModel: viewModel)
         let controller: UIViewController
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller = baseController
@@ -296,7 +304,6 @@ extension ReaderCoordinator {
         }
         controller.modalPresentationStyle = .popover
         controller.popoverPresentationController?.sourceItem = sender
-        controller.preferredContentSize = settings.preferredContentSize
         controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
         navigationController?.present(controller, animated: true, completion: nil)
 

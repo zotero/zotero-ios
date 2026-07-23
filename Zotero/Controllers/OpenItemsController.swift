@@ -116,8 +116,8 @@ final class OpenItemsController {
 
     enum Presentation {
         case pdf(library: Library, key: String, parentKey: String?, url: URL, page: Int?, preselectedAnnotationKey: String?, previewRects: [CGRect]?)
-        case html(library: Library, key: String, parentKey: String?, url: URL)
-        case epub(library: Library, key: String, parentKey: String?, url: URL)
+        case html(library: Library, key: String, parentKey: String?, url: URL, preselectedAnnotationKey: String?)
+        case epub(library: Library, key: String, parentKey: String?, url: URL, preselectedAnnotationKey: String?)
         case note(library: Library, key: String, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String)
 
         // MARK: Properties
@@ -133,21 +133,21 @@ final class OpenItemsController {
 
         var library: Library {
             switch self {
-            case .pdf(let library, _, _, _, _, _, _), .html(let library, _, _, _), .epub(let library, _, _, _), .note(let library, _, _, _, _, _):
+            case .pdf(let library, _, _, _, _, _, _), .html(let library, _, _, _, _), .epub(let library, _, _, _, _), .note(let library, _, _, _, _, _):
                 return library
             }
         }
 
         var key: String {
             switch self {
-            case .pdf(_, let key, _, _, _, _, _), .html(_, let key, _, _), .epub(_, let key, _, _), .note(_, let key, _, _, _, _):
+            case .pdf(_, let key, _, _, _, _, _), .html(_, let key, _, _, _), .epub(_, let key, _, _, _), .note(_, let key, _, _, _, _):
                 return key
             }
         }
 
         var parentKey: String? {
             switch self {
-            case .pdf(_, _, let parentKey, _, _, _, _), .html(_, _, let parentKey, _), .epub(_, _, let parentKey, _):
+            case .pdf(_, _, let parentKey, _, _, _, _), .html(_, _, let parentKey, _, _), .epub(_, _, let parentKey, _, _):
                 return parentKey
 
             case .note:

@@ -71,6 +71,7 @@ final class ItemDetailViewController: UIViewController {
 
         navigationController?.setToolbarHidden(true, animated: false)
         collectionView.isHidden = true
+        collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
         setupFileObservers()
 
         viewModel.stateObservable
@@ -114,7 +115,7 @@ final class ItemDetailViewController: UIViewController {
                     switch update.kind {
                     case .ready:
                         viewModel.process(action: .attachmentOpened(update.key))
-                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: nil)
 
                     case .failed(let error):
                         viewModel.process(action: .attachmentOpened(update.key))
@@ -209,6 +210,12 @@ final class ItemDetailViewController: UIViewController {
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return }
             coordinatorDelegate?.show(doi: encoded)
+
+        case .openCollection(let collection):
+            coordinatorDelegate?.show(collection: collection, libraryId: viewModel.state.library.identifier)
+
+        case .openLibrary(let library):
+            coordinatorDelegate?.show(library: library.identifier)
         }
     }
 
@@ -231,12 +238,12 @@ final class ItemDetailViewController: UIViewController {
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 if !state.isEditing {
-                    self.viewModel.process(action: .reloadData)
+                    viewModel.process(action: .reloadData)
                     return
                 }
 
-                coordinatorDelegate?.showDataReloaded(completion: { [weak viewModel] in
-                    viewModel?.process(action: .reloadData)
+                coordinatorDelegate?.showDataReloaded(completion: { [weak self] in
+                    self?.viewModel.process(action: .reloadData)
                 })
             }
             return
@@ -341,11 +348,14 @@ final class ItemDetailViewController: UIViewController {
                     saveButton = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak viewModel] _ in
                         viewModel?.process(action: .endEditing)
                     })
+                    if #available(iOS 26.0.0, *) {
+                        saveButton.tintColor = Asset.Colors.zoteroBlue.color
+                    }
                 }
                 navigationItem.rightBarButtonItem = saveButton
 
                 guard includesCancel else { return }
-                let cancelButton = UIBarButtonItem(primaryAction: UIAction(title: L10n.cancel) { [weak viewModel] _ in
+                let cancelButton = UIBarButtonItem(systemItem: .cancel, primaryAction: UIAction(title: L10n.cancel) { [weak viewModel] _ in
                     viewModel?.process(action: .cancelEditing)
                 })
                 navigationItem.leftBarButtonItem = cancelButton
@@ -376,9 +386,7 @@ final class ItemDetailViewController: UIViewController {
                 func attachmentButtonItems(for state: MainAttachmentButtonState?) -> [UIBarButtonItem] {
                     guard let state else { return [] }
 
-                    let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-                    spacer.width = 16
-                    var items: [UIBarButtonItem] = [spacer]
+                    var items: [UIBarButtonItem] = [.fixedSpace(16)]
 
                     switch state {
                     case .ready(let key), .error(let key, _):
@@ -427,6 +435,30 @@ final class ItemDetailViewController: UIViewController {
 extension ItemDetailViewController: ItemDetailCollectionViewHandlerDelegate {
     func isDownloadingFromNavigationBar(for key: String) -> Bool {
         return downloadingViaNavigationBar && key == viewModel.state.mainAttachmentKey
+    }
+
+    func getStructuredText(for attachment: Attachment) {
+        guard let file = attachment.file as? FileData,
+              let downloader = controllers.userControllers?.fileDownloader,
+              let documentWorkerController = controllers.userControllers?.documentWorkerController
+        else { return }
+
+        downloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.key) { [weak self, weak documentWorkerController] result in
+            switch result {
+            case .success:
+                self?.queueStructuredTextExtraction(from: file, using: documentWorkerController)
+
+            case .failure(let error):
+                self?.coordinatorDelegate?.showAttachmentError(error)
+            }
+        }
+    }
+
+    private func queueStructuredTextExtraction(from file: FileData, using documentWorkerController: DocumentWorkerController?) {
+        guard let documentWorkerController else { return }
+
+        let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
+        _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
     }
 }
 
