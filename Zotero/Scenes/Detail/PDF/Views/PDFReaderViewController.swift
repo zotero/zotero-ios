@@ -625,7 +625,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         if let page = documentController?.pdfController?.pageIndex {
             viewModel.process(action: .submitPendingPage(Int(page)))
         }
-        viewModel.process(action: .clearTmpData)
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 

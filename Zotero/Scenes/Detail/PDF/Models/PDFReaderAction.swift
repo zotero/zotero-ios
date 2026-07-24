@@ -49,7 +49,6 @@ enum PDFReaderAction {
     case setVisiblePage(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool)
     case setFontSize(key: String, size: CGFloat)
     case export(includeAnnotations: Bool)
-    case clearTmpData
     case setSidebarEditingEnabled(Bool)
     case setSettings(settings: PDFSettings)
     case changeIdleTimerDisabled(Bool)

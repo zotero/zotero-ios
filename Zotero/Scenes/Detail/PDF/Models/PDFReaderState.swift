@@ -141,6 +141,8 @@ struct PDFReaderState: ViewModelState {
     var selectionFromDocument: Bool
     /// Annotation keys changed by the latest annotation update.
     var changedAnnotationKeys: [PDFReaderAnnotationKey]?
+    /// Page indices whose rendered thumbnails changed in the latest annotation update.
+    var changedAnnotationPages: Set<Int>?
     /// Page that should be shown initially, instead of stored page
     var initialPage: Int?
     /// Rects that should be highlighted initially, used by note editor to highlight original annotation position
@@ -201,6 +203,7 @@ struct PDFReaderState: ViewModelState {
         self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)
         self.activeFontSize = CGFloat(Defaults.shared.activeFontSize)
         self.selectionFromDocument = false
+        self.changedAnnotationPages = nil
 
         switch libraryId {
         case .custom:
@@ -227,6 +230,7 @@ struct PDFReaderState: ViewModelState {
         self.focusDocumentLocation = nil
         selectionFromDocument = false
         self.changedAnnotationKeys = nil
+        self.changedAnnotationPages = nil
         self.error = nil
         self.pdfNotification = nil
         self.changedColorForTool = nil
