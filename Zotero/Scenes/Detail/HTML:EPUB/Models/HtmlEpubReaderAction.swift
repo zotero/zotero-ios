@@ -11,7 +11,6 @@ import UIKit
 enum HtmlEpubReaderAction {
     case changeFilter(AnnotationsFilter?)
     case changeIdleTimerDisabled(Bool)
-    case createAnnotationFromReadAloud([String: Any])
     case createAnnotationFromSelection(AnnotationType)
     case deinitialiseReader
     case deselectAnnotationDuringEditing(String)

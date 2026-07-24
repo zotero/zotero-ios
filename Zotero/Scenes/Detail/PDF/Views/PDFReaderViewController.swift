@@ -1172,18 +1172,19 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         documentController?.focus(page: pageIndex)
     }
 
-    func readAloudHighlightChanged(text: String, rects: [CGRect], pageIndex: UInt, sourceLocation: Int, sourceTextLength: Int) {
+    func readAloudHighlightChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: UInt) {
+        // PDF highlights by geometry; the reader SDT positions are unused here.
         documentController?.updateReadAloudHighlight(rects: rects, page: PageIndex(pageIndex))
     }
 
-    func annotationPreviewChanged(text: String, rects: [CGRect], pageIndex: UInt, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int) {
+    func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: UInt, tool: AnnotationTool, color: String) {
         if documentController?.currentPage != pageIndex {
             documentController?.focus(page: pageIndex)
         }
         documentController?.updateAnnotationPreview(rects: rects, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
     }
 
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, rects: [CGRect], onPage pageIndex: UInt, sourceLocation: Int, sourceTextLength: Int) {
+    func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: UInt) {
         let page = PageIndex(pageIndex)
         guard !rects.isEmpty else { return }
         switch tool {
