@@ -44,6 +44,17 @@ final class SDTPack {
     private let data: Data
     private let header: Header
     private let index: Index
+
+    /// The raw pack bytes, for handing the pack to the reader web view (`setSDTPack`).
+    var rawData: Data { data }
+    /// Pack format version (the reader validates this against its own `SDT_PACK_VERSION`).
+    var packVersion: Int { Int(header.packVersion) }
+    /// Major component of the schema version (the reader validates this against its schema major version).
+    var schemaMajorVersion: Int { Int(header.schemaVersion.split(separator: ".").first.flatMap { Int($0) } ?? 0) }
+
+    /// The document metadata dictionary (the `metadata` value of `materialize()`), decoded on its own without
+    /// materializing the whole content — cheap enough for e.g. reading the document language.
+    func metadataDictionary() throws -> [String: Any] { try metadataResult.get() }
     private lazy var metadataResult: Result<[String: Any], Swift.Error> = {
         return Result { try readDictionaryJSON(range: metadataRange()) }
 
