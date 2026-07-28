@@ -371,6 +371,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             view.backgroundColor = color
             webView?.backgroundColor = color
             webView?.scrollView.backgroundColor = color
+            parentDelegate?.setReaderBackground(color: color)
         }
     }
 
