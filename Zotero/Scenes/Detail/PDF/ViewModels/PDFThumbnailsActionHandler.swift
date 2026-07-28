@@ -137,7 +137,8 @@ final class PDFThumbnailsActionHandler: ViewModelActionHandler {
         .disposed(by: disposeBag)
 
         func cache(image: UIImage, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-            viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex))
+            let cost = image.cgImage.map({ $0.bytesPerRow * $0.height }) ?? 0
+            viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex), cost: cost)
             update(viewModel: viewModel) { state in
                 state.loadedThumbnail = Int(pageIndex)
             }
