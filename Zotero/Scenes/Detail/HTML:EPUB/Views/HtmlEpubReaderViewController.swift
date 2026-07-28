@@ -17,6 +17,7 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
 
     func show(url: URL)
     func toggleInterfaceVisibility()
+    func setReaderBackground(color: UIColor)
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
@@ -42,6 +43,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private weak var pageIndicatorLabel: UILabel?
     private var documentBottomToSafeArea: NSLayoutConstraint?
     private var documentBottomToIndicator: NSLayoutConstraint?
+    private var documentBottomToView: NSLayoutConstraint?
+    private var pageIndicatorBottom: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
     var annotationToolbarHandler: AnnotationToolbarHandler?
     weak var sidebarController: HtmlEpubSidebarViewController?
@@ -231,7 +234,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let documentTopConstraint = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
             let documentBottomToSafeArea = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
-            let documentBottomToIndicator = pageIndicator.topAnchor.constraint(equalTo: documentController.view.bottomAnchor, constant: 12)
+            let documentBottomToIndicator = pageIndicator.topAnchor.constraint(equalTo: documentController.view.bottomAnchor, constant: 8)
+            let documentBottomToView = view.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
+            let pageIndicatorBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 0)
 
             NSLayoutConstraint.activate([
                 documentTopConstraint,
@@ -239,7 +244,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor),
                 documentLeftConstraint,
                 pageIndicator.centerXAnchor.constraint(equalTo: documentController.view.centerXAnchor),
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 12),
+                pageIndicatorBottom,
                 pageIndicatorLabel.topAnchor.constraint(equalTo: pageIndicator.topAnchor, constant: 6),
                 pageIndicator.bottomAnchor.constraint(equalTo: pageIndicatorLabel.bottomAnchor, constant: 6),
                 pageIndicatorLabel.leadingAnchor.constraint(equalTo: pageIndicator.leadingAnchor, constant: 12),
@@ -254,6 +259,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             self.pageIndicatorLabel = pageIndicatorLabel
             self.documentBottomToSafeArea = documentBottomToSafeArea
             self.documentBottomToIndicator = documentBottomToIndicator
+            self.documentBottomToView = documentBottomToView
+            self.pageIndicatorBottom = pageIndicatorBottom
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler!.performInitialLayout()
         }
@@ -465,11 +472,16 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         guard let pageIndicator else { return }
         let hasInfo = viewModel.state.currentPage != nil && viewModel.state.pagesCount != nil
         let shouldShow = hasInfo && !navBarHidden
-        if shouldShow {
-            documentBottomToSafeArea?.isActive = false
+        // Pick the document's bottom anchor: full screen fills to the very bottom (under the home indicator), otherwise
+        // it stops above the page indicator (when shown) or at the safe area.
+        documentBottomToView?.isActive = false
+        documentBottomToIndicator?.isActive = false
+        documentBottomToSafeArea?.isActive = false
+        if navBarHidden {
+            documentBottomToView?.isActive = true
+        } else if shouldShow {
             documentBottomToIndicator?.isActive = true
         } else {
-            documentBottomToIndicator?.isActive = false
             documentBottomToSafeArea?.isActive = true
         }
         pageIndicator.alpha = shouldShow ? 1 : 0
@@ -710,6 +722,10 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
         coordinatorDelegate?.show(url: url)
     }
 
+    func setReaderBackground(color: UIColor) {
+        view.backgroundColor = color
+    }
+
     func toggleInterfaceVisibility() {
         let isHidden = !(navigationController?.navigationBar.isHidden ?? false)
         let shouldChangeNavigationBarVisibility = !toolbarState.visible || toolbarState.position != .pinned
@@ -912,8 +928,9 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
 
 extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
     func readAloudToolbarChanged(height: CGFloat) {
-        // Make room for the bottom read-aloud controls toolbar by shrinking the document from the safe-area bottom.
-        documentBottomToSafeArea?.constant = height
+        let toolbarHeightAboveSafeArea = max(0, height - view.safeAreaInsets.bottom)
+        documentBottomToSafeArea?.constant = toolbarHeightAboveSafeArea
+        pageIndicatorBottom?.constant = toolbarHeightAboveSafeArea + 8
         view.layoutIfNeeded()
     }
 
