@@ -10,6 +10,7 @@ import Foundation
 
 enum PDFThumbnailsAction {
     case prefetch([UInt])
+    case cancelPrefetch([UInt])
     case load(UInt)
     case setAppearance(Appearance)
     case loadPages

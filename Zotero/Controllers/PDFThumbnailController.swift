@@ -110,17 +110,6 @@ extension PDFThumbnailController {
         }
     }
 
-    /// Start rendering process of multiple thumbnails per document.
-    /// - parameter pages: Page indices which should be rendered.
-    func cache(pages: [UInt], key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, appearance: Appearance) -> Observable<()> {
-        let observables = pages.map({
-            thumbnail(page: $0, key: key, libraryId: libraryId, document: document, imageSize: imageSize, appearance: appearance)
-                .map({ _ in () })
-                .asObservable()
-        })
-        return Observable.merge(observables)
-    }
-
     /// Loads a thumbnail from disk or renders and caches it if needed. Concurrent requests for the same thumbnail share one operation.
     func thumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, appearance: Appearance) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in

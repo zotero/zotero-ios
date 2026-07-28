@@ -154,6 +154,11 @@ extension PDFThumbnailsViewController: UICollectionViewDataSourcePrefetching {
         let toFetch = indexPaths.map({ $0.row }).map(UInt.init)
         viewModel.process(action: .prefetch(toFetch))
     }
+
+    func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+        let toCancel = indexPaths.map({ $0.row }).map(UInt.init)
+        viewModel.process(action: .cancelPrefetch(toCancel))
+    }
 }
 
 extension PDFThumbnailsViewController {
