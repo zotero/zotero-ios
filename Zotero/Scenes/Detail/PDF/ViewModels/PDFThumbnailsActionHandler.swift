@@ -96,7 +96,8 @@ final class PDFThumbnailsActionHandler: ViewModelActionHandler {
                 libraryId: viewModel.state.libraryId,
                 document: viewModel.state.document,
                 imageSize: viewModel.state.thumbnailSize,
-                appearance: viewModel.state.appearance
+                appearance: viewModel.state.appearance,
+                priority: .prefetch
             )
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
@@ -128,7 +129,8 @@ final class PDFThumbnailsActionHandler: ViewModelActionHandler {
             libraryId: viewModel.state.libraryId,
             document: viewModel.state.document,
             imageSize: viewModel.state.thumbnailSize,
-            appearance: viewModel.state.appearance
+            appearance: viewModel.state.appearance,
+            priority: .visible
         )
         .observe(on: MainScheduler.instance)
         .subscribe(with: viewModel) { viewModel, image in

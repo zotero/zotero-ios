@@ -23,7 +23,7 @@ final class PDFThumbnailController: NSObject {
         let libraryId: LibraryIdentifier
     }
 
-    private struct RequestKey: Hashable {
+    fileprivate struct RequestKey: Hashable {
         let key: String
         let libraryId: LibraryIdentifier
         let page: UInt
@@ -31,9 +31,15 @@ final class PDFThumbnailController: NSObject {
         let appearance: Appearance
     }
 
-    private struct Request {
-        let key: RequestKey
-        let document: Document
+    struct Request {
+        enum Priority: Int {
+            case prefetch
+            case visible
+        }
+
+        fileprivate let key: RequestKey
+        fileprivate let document: Document
+        fileprivate var priority: Priority
     }
 
     private enum DiskLoadResult {
@@ -50,7 +56,7 @@ final class PDFThumbnailController: NSObject {
         }
 
         let id: UUID
-        let request: Request
+        var request: Request
         var state: State
         var subscribers: [UUID: (SingleEvent<UIImage>) -> Void]
     }
@@ -111,14 +117,26 @@ extension PDFThumbnailController {
     }
 
     /// Loads a thumbnail from disk or renders and caches it if needed. Concurrent requests for the same thumbnail share one operation.
-    func thumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, appearance: Appearance) -> Single<UIImage> {
+    func thumbnail(
+        page: UInt,
+        key: String,
+        libraryId: LibraryIdentifier,
+        document: Document,
+        imageSize: CGSize,
+        appearance: Appearance,
+        priority: Request.Priority
+    ) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let self else { return Disposables.create() }
 
             let requestKey = RequestKey(key: key, libraryId: libraryId, page: page, size: imageSize, appearance: appearance)
             let subscriberId = UUID()
             performOnAccessQueue {
-                add(subscriber: subscriber, id: subscriberId, request: Request(key: requestKey, document: document))
+                add(
+                    subscriber: subscriber,
+                    id: subscriberId,
+                    request: Request(key: requestKey, document: document, priority: priority)
+                )
             }
 
             return Disposables.create { [weak self] in
@@ -139,10 +157,12 @@ extension PDFThumbnailController {
             if var entry = entries[request.key] {
                 switch entry.state {
                 case .loadingFromDisk:
+                    promote(&entry, to: request.priority)
                     entry.subscribers[subscriberId] = subscriber
                     entries[request.key] = entry
 
                 case .rendering:
+                    promote(&entry, to: request.priority)
                     entry.subscribers[subscriberId] = subscriber
                     entries[request.key] = entry
 
@@ -160,6 +180,14 @@ extension PDFThumbnailController {
             )
             entries[request.key] = entry
             loadFromDisk(requestKey: request.key, entryId: entry.id)
+
+            func promote(_ entry: inout Entry, to priority: Request.Priority) {
+                guard priority.rawValue > entry.request.priority.rawValue else { return }
+                entry.request.priority = priority
+                if case .rendering(let task) = entry.state {
+                    task.priority = .userInitiated
+                }
+            }
 
             func loadFromDisk(requestKey: RequestKey, entryId: UUID) {
                 ioQueue.async { [weak self] in
@@ -342,7 +370,7 @@ extension PDFThumbnailController {
 
         do {
             let task = try RenderTask(request: request)
-            task.priority = .userInitiated
+            task.priority = entry.request.priority == .visible ? .userInitiated : .utility
             task.completionHandler = { [weak self] image, error in
                 let result: Result<UIImage, Swift.Error> = image.flatMap({ .success($0) }) ?? .failure(error ?? Error.imageNotAvailable)
                 self?.accessQueue.async {
