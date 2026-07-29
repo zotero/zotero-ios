@@ -94,19 +94,20 @@ struct ReadAloudOnboardingView: View {
     private var descriptionSection: some View {
         Section {
             let bulletPoints = model.type.descriptionBulletPoints
-            ForEach(Array(bulletPoints.enumerated()), id: \.element) { index, point in
-                HStack(alignment: .top, spacing: 8) {
-                    Text("•")
-                    Text(point)
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(Array(bulletPoints), id: \.self) { point in
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                        Text(point)
+                    }
                 }
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(
-                    top: index == 0 ? 16 : 0,
-                    leading: 20,
-                    bottom: index == bulletPoints.count - 1 ? 16 : 0,
-                    trailing: 20
-                ))
             }
+            .listRowInsets(EdgeInsets(
+                top: 16,
+                leading: 20,
+                bottom: 16,
+                trailing: 20
+            ))
         }
     }
 }
