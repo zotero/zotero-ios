@@ -378,6 +378,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     deinit {
         viewModel.process(action: .changeIdleTimerDisabled(false))
+        viewModel.process(action: .deinitialiseReader)
         DDLogInfo("PDFReaderViewController deinitialized")
     }
 
