@@ -244,10 +244,7 @@ extension PDFThumbnailController {
                 $0.key == key && $0.libraryId == libraryId && pageIndices.contains($0.page)
             })
             for requestKey in requestKeys {
-                if case .rendering(let task) = entries[requestKey]?.state {
-                    task.cancel()
-                }
-                entries[requestKey] = nil
+                cancel(requestKey: requestKey)
             }
 
             ioQueue.async { [weak self] in
@@ -280,10 +277,7 @@ extension PDFThumbnailController {
             return
         }
 
-        if case .rendering(let task) = entry.state {
-            task.cancel()
-        }
-        entries[requestKey] = nil
+        cancel(requestKey: requestKey)
     }
 
     private func deleteDiskCache(for documentKey: DocumentKey) {
@@ -293,12 +287,7 @@ extension PDFThumbnailController {
         })
 
         for requestKey in requestKeys {
-            guard let entry = entries[requestKey] else { continue }
-
-            if case .rendering(let task) = entry.state {
-                task.cancel()
-            }
-            entries[requestKey] = nil
+            cancel(requestKey: requestKey)
         }
 
         ioQueue.async { [weak self] in
@@ -340,6 +329,13 @@ extension PDFThumbnailController {
             }
             enqueue(entry: entry)
         }
+    }
+
+    private func cancel(requestKey: RequestKey) {
+        if case .rendering(let task) = entries[requestKey]?.state {
+            task.cancel()
+        }
+        entries[requestKey] = nil
     }
 
     /// Creates and enqueues a render request for PSPDFKit rendering engine.
