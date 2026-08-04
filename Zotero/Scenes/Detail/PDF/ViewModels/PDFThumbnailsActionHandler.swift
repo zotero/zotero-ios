@@ -86,6 +86,11 @@ final class PDFThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 
+    private func cache(image: UIImage, pageIndex: UInt, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        let cost = image.cgImage.map({ $0.bytesPerRow * $0.height }) ?? 0
+        viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex), cost: cost)
+    }
+
     private func prefetch(pageIndices: [UInt], in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         for pageIndex in Set(pageIndices) {
             guard prefetchDisposables[pageIndex] == nil else { continue }
@@ -100,9 +105,10 @@ final class PDFThumbnailsActionHandler: ViewModelActionHandler {
                 priority: .prefetch
             )
             .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
-                self?.prefetchDisposables[pageIndex] = nil
-            }, onFailure: { [weak self] _ in
+            .subscribe(onSuccess: { [weak self, weak viewModel] image in
+                guard let self, let viewModel else { return }
+                cache(image: image, pageIndex: pageIndex, viewModel: viewModel)
+            }, onDisposed: { [weak self] in
                 self?.prefetchDisposables[pageIndex] = nil
             })
             prefetchDisposables[pageIndex] = disposable
@@ -133,18 +139,14 @@ final class PDFThumbnailsActionHandler: ViewModelActionHandler {
             priority: .visible
         )
         .observe(on: MainScheduler.instance)
-        .subscribe(with: viewModel) { viewModel, image in
-            cache(image: image, viewModel: viewModel)
-        }
-        .disposed(by: disposeBag)
-
-        func cache(image: UIImage, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-            let cost = image.cgImage.map({ $0.bytesPerRow * $0.height }) ?? 0
-            viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex), cost: cost)
+        .subscribe(onSuccess: { [weak self, weak viewModel] image in
+            guard let self, let viewModel else { return }
+            cache(image: image, pageIndex: pageIndex, viewModel: viewModel)
             update(viewModel: viewModel) { state in
                 state.loadedThumbnail = Int(pageIndex)
             }
-        }
+        })
+        .disposed(by: disposeBag)
     }
 
     private func setAppearance(appearance: Appearance, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
