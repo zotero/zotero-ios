@@ -156,12 +156,7 @@ extension PDFThumbnailController {
 
             if var entry = entries[request.key] {
                 switch entry.state {
-                case .loadingFromDisk:
-                    promote(&entry, to: request.priority)
-                    entry.subscribers[subscriberId] = subscriber
-                    entries[request.key] = entry
-
-                case .rendering:
+                case .loadingFromDisk, .rendering:
                     promote(&entry, to: request.priority)
                     entry.subscribers[subscriberId] = subscriber
                     entries[request.key] = entry
