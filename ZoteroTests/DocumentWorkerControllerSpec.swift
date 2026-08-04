@@ -575,8 +575,16 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     (description: "snapshot HTML 2", resource: "2", fileExtension: "html", key: "fffffff2", contentType: "text/html", expected: "2_html_structured_text", timeout: 20)
                 ]
                 let pdfStructuredTextFixtures = structuredTextFixtures.filter { $0.fileExtension == "pdf" }
+                let defaultRuntimeStructuredTextFixtures = structuredTextFixtures.filter { fixture in
+                    if #available(iOS 18.0, *) {
+                        return true
+                    } else {
+                        // PDF SDT uses the WebView runtime by default, which isn't supported on iOS 17.
+                        return fixture.fileExtension != "pdf"
+                    }
+                }
 
-                for fixture in structuredTextFixtures {
+                for fixture in defaultRuntimeStructuredTextFixtures {
                     it("can extract structured document text for \(fixture.description)") {
                         let file = makeFile(
                             resource: fixture.resource,
@@ -619,34 +627,36 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     }
                 }
 
-                for fixture in pdfStructuredTextFixtures {
-                    it("can extract structured document text for \(fixture.description) with WebView and native ONNX") {
-                        let configuration = DocumentWorkerController.Configuration(
-                            supportedWorkKinds: [.structuredDocumentText],
-                            usesNativeONNXForStructuredDocumentText: true,
-                            structuredDocumentTextRuntime: .webView
-                        )
-                        let webViewNativeONNXDocumentWorkerController = DocumentWorkerController(
-                            fileStorage: TestControllers.fileStorage,
-                            configuration: configuration
-                        )
-                        webViewNativeONNXDocumentWorkerController.webViewProvider = webViewProvider
-                        let key = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8))
-                        let file = makeFile(
-                            resource: fixture.resource,
-                            fileExtension: fixture.fileExtension,
-                            key: key,
-                            filename: fixture.resource,
-                            contentType: fixture.contentType
-                        )
+                if #available(iOS 18.0, *) {
+                    for fixture in pdfStructuredTextFixtures {
+                        it("can extract structured document text for \(fixture.description) with WebView and native ONNX") {
+                            let configuration = DocumentWorkerController.Configuration(
+                                supportedWorkKinds: [.structuredDocumentText],
+                                usesNativeONNXForStructuredDocumentText: true,
+                                structuredDocumentTextRuntime: .webView
+                            )
+                            let webViewNativeONNXDocumentWorkerController = DocumentWorkerController(
+                                fileStorage: TestControllers.fileStorage,
+                                configuration: configuration
+                            )
+                            webViewNativeONNXDocumentWorkerController.webViewProvider = webViewProvider
+                            let key = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8))
+                            let file = makeFile(
+                                resource: fixture.resource,
+                                fileExtension: fixture.fileExtension,
+                                key: key,
+                                filename: fixture.resource,
+                                contentType: fixture.contentType
+                            )
 
-                        processStructuredDocumentText(
-                            file: file,
-                            expectedURL: fixtureURL(forResource: fixture.expected, withExtension: "json"),
-                            timeout: fixture.timeout,
-                            controller: webViewNativeONNXDocumentWorkerController,
-                            expectedRuntime: .webView
-                        )
+                            processStructuredDocumentText(
+                                file: file,
+                                expectedURL: fixtureURL(forResource: fixture.expected, withExtension: "json"),
+                                timeout: fixture.timeout,
+                                controller: webViewNativeONNXDocumentWorkerController,
+                                expectedRuntime: .webView
+                            )
+                        }
                     }
                 }
             }
