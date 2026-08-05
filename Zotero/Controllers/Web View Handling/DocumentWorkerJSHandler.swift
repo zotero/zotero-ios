@@ -13,11 +13,83 @@ import RxSwift
 final class DocumentWorkerJSHandler {
     typealias NativeONNXModelDataProvider = (String) throws -> Data
 
+    struct WorkerError: Swift.Error, CustomStringConvertible {
+        let name: String?
+        let message: String?
+        let stack: String?
+        let sourceURL: String?
+        let line: Int?
+        let column: Int?
+        let rawDescription: String?
+
+        init(value: Any) {
+            if let error = value as? [String: Any] {
+                name = error["name"] as? String
+                message = error["message"] as? String
+                stack = error["stack"] as? String
+                sourceURL = error["sourceURL"] as? String
+                line = Self.integer(from: error["line"])
+                column = Self.integer(from: error["column"])
+                rawDescription = error.isEmpty ? nil : String(describing: error)
+            } else {
+                name = nil
+                stack = nil
+                sourceURL = nil
+                line = nil
+                column = nil
+                if let error = value as? String {
+                    message = error
+                    rawDescription = error
+                } else {
+                    message = nil
+                    rawDescription = value is NSNull ? nil : String(describing: value)
+                }
+            }
+        }
+
+        var description: String {
+            var components: [String] = []
+            if let name, let message {
+                components.append("\(name): \(message)")
+            } else if let message {
+                components.append(message)
+            } else if let name {
+                components.append(name)
+            } else if let rawDescription {
+                components.append(rawDescription)
+            } else {
+                components.append("unknown worker error")
+            }
+
+            if let sourceURL {
+                var location = sourceURL
+                if let line {
+                    location += ":\(line)"
+                    if let column {
+                        location += ":\(column)"
+                    }
+                }
+                components.append(location)
+            }
+            if let stack, !stack.isEmpty {
+                components.append(stack)
+            }
+            return components.joined(separator: "\n")
+        }
+
+        private static func integer(from value: Any?) -> Int? {
+            if let value = value as? Int {
+                return value
+            }
+            return (value as? NSNumber)?.intValue
+        }
+    }
+
     enum Error: Swift.Error {
         case missingWorkFile
         case invalidMessage
         case unsupportedAction(String)
-        case workerError(String)
+        case workerError(WorkerError)
         case missingData
         case invalidBundledWorkerDataPath(String)
         case missingBundledWorkerData(String)
@@ -105,16 +177,20 @@ final class DocumentWorkerJSHandler {
             return
         }
 
-        if let responseId = body["responseID"] as? Int {
+        if let (responseId, result) = response(from: body) {
             pendingProgress[responseId] = nil
-            if let error = body["error"] as? [String: Any], let name = error["name"] as? String {
-                pending.removeValue(forKey: responseId)?(.failure(Error.workerError(name)))
-            } else if let data = body["data"] {
-                pending.removeValue(forKey: responseId)?(.success(data))
-            } else {
-                DDLogError("DocumentWorkerJSHandler: response \(responseId) missing data")
-                pending.removeValue(forKey: responseId)?(.failure(Error.missingData))
+            if case .failure(let error) = result {
+                if let error = error as? Error, case .workerError(let workerError) = error {
+                    DDLogError("DocumentWorkerJSHandler: response \(responseId) failed - \(workerError)")
+                } else {
+                    DDLogError("DocumentWorkerJSHandler: response \(responseId) missing data")
+                }
             }
+            guard let completion = pending.removeValue(forKey: responseId) else {
+                DDLogError("DocumentWorkerJSHandler: unexpected response \(responseId)")
+                return
+            }
+            completion(result)
             return
         }
 
@@ -148,6 +224,18 @@ final class DocumentWorkerJSHandler {
 
         default:
             respondWithError(to: engine, id: id, message: "unknown action \(action)")
+        }
+
+        func response(from body: [String: Any]) -> (id: Int, result: Result<Any, Swift.Error>)? {
+            guard let responseId = body["responseID"] as? Int else { return nil }
+            if body.keys.contains("error") {
+                let error = WorkerError(value: body["error"] ?? NSNull())
+                return (responseId, .failure(Error.workerError(error)))
+            }
+            if let data = body["data"] {
+                return (responseId, .success(data))
+            }
+            return (responseId, .failure(Error.missingData))
         }
 
         func respondWithData(to engine: DocumentWorkerJSEngine, id: Int, data: Any) throws {

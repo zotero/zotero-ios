@@ -10,6 +10,8 @@ import Foundation
 import JavaScriptCore
 import Security
 
+import CocoaLumberjackSwift
+
 final class DocumentWorkerJSEngine {
     enum EngineError: Swift.Error {
         case missingShim
@@ -57,6 +59,15 @@ final class DocumentWorkerJSEngine {
             throw EngineError.missingWorker
         }
         try evaluateScript(at: shimURL)
+        if #unavailable(iOS 18.0) {
+            let supportsMapIteratorFlatMap = try evaluate(script: "typeof new Map().values().flatMap === 'function'")?.toBool() == true
+            if !supportsMapIteratorFlatMap {
+                let installed = try evaluate(script: "__zoteroInstallMapIteratorFlatMap()")?.toBool() == true
+                if installed {
+                    DDLogInfo("DocumentWorkerJSEngine: installed Map iterator flatMap compatibility shim")
+                }
+            }
+        }
         try evaluateScript(at: workerURL)
     }
 

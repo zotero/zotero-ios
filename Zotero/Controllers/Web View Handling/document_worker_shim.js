@@ -5,6 +5,30 @@
   }
   var g = globalThis;
 
+  g.__zoteroInstallMapIteratorFlatMap = function () {
+    var prototype = Object.getPrototypeOf(new Map().values());
+    if (typeof prototype.flatMap === "function") {
+      return false;
+    }
+    Object.defineProperty(prototype, "flatMap", {
+      configurable: true,
+      writable: true,
+      value: function (mapper) {
+        var source = this;
+        return (function* () {
+          var index = 0;
+          for (var value of source) {
+            var mapped = mapper(value, index++);
+            for (var mappedValue of mapped) {
+              yield mappedValue;
+            }
+          }
+        })();
+      }
+    });
+    return true;
+  };
+
   g.console = g.console || {
     log: function () { __nativeLog(Array.prototype.slice.call(arguments)); },
     warn: function () { __nativeLog(Array.prototype.slice.call(arguments)); },
