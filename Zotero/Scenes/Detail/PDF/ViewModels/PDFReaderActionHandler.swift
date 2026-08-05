@@ -236,10 +236,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .export(let includeAnnotations):
             export(includeAnnotations: includeAnnotations, viewModel: viewModel)
 
-        case .clearTmpData:
-            // Clear page thumbnails
-            pdfThumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-
         case .setSettings(let settings):
             update(settings: settings, in: viewModel)
 
@@ -253,6 +249,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             filterAnnotations(with: searchTerm, filter: filter, in: viewModel)
 
         case .deinitialiseReader:
+            pdfThumbnailController.stop(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
             lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
 
         case .unlock(let password):
@@ -1505,6 +1502,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             let endTime = CFAbsoluteTimeGetCurrent()
 
+            pdfThumbnailController.start(forKey: key, libraryId: library.identifier)
             lastReadWatcher.submit(key: key, libraryId: library.identifier, date: Date())
 
             update(viewModel: viewModel) { state in
@@ -1658,6 +1656,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
         deleteDocumentAnnotationsCache(for: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         annotationPreviewController.deleteAll(parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+        pdfThumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         update(viewModel: viewModel) { state in
             state.documentMD5Changed = true
             state.changes = .md5
@@ -1818,6 +1817,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var deletedPdfAnnotations: [PSPDFKit.Annotation] = []
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
         var shouldRecomputeDefaultAnnotationPageLabel = false
+        var affectedThumbnailPages: Set<Int> = []
 
         // Check which annotations changed and update `Document`
         // Modifications are indexed by the previously observed items
@@ -1830,6 +1830,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let oldItem = databaseAnnotations[index]
             let key = PDFReaderAnnotationKey(key: oldItem.key, type: .database)
             guard let item = objects.filter(.key(key.key)).first else { continue }
+            if let oldAnnotation = PDFDatabaseAnnotation(item: oldItem) {
+                affectedThumbnailPages.insert(oldAnnotation.page)
+            }
 
             let newPageLabel = item.fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
             let oldPageLabel = oldItem.fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
@@ -1838,6 +1841,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             guard item.changeType != .syncResponse, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
+            affectedThumbnailPages.insert(annotation.page)
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
@@ -1897,10 +1901,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             shouldRecomputeDefaultAnnotationPageLabel = true
-            
-            guard let oldAnnotation = PDFDatabaseAnnotation(item: databaseAnnotations[index]),
-                  let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(oldAnnotation.page), with: oldAnnotation.key)
-            else { continue }
+
+            guard let oldAnnotation = PDFDatabaseAnnotation(item: databaseAnnotations[index]) else { continue }
+            affectedThumbnailPages.insert(oldAnnotation.page)
+
+            guard let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(oldAnnotation.page), with: oldAnnotation.key) else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
         }
@@ -1926,6 +1931,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 shouldCancelUpdate = true
                 break
             }
+            affectedThumbnailPages.insert(annotation.page)
             guard annotation.page < viewModel.state.document.pageCount else {
                 DDLogWarn("PDFReaderActionHandler: tried inserting page (\(annotation.page)) outside of document page count (\(viewModel.state.document.pageCount)); \(annotation.key); \(viewModel.state.key)")
                 continue
@@ -2018,6 +2024,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             viewModel.state.document.add(annotations: insertedPdfAnnotations, options: nil)
             annotationPreviewController.store(annotations: insertedPdfAnnotations, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance, notify: false)
         }
+        if !affectedThumbnailPages.isEmpty {
+            pdfThumbnailController.delete(pages: affectedThumbnailPages, forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+        }
         observeDocument(in: viewModel)
 
         // Update state
@@ -2034,6 +2043,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             state.annotationPages = annotationPages
 
             state.changedAnnotationKeys = updatedKeys
+            state.changedAnnotationPages = affectedThumbnailPages
 
             // Update selection
             if let key = selectKey {

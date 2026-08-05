@@ -116,11 +116,27 @@ class PDFThumbnailsViewController: UICollectionViewController {
         // The following updates should be ignored if the collection hasn't loaded yet for the first time.
         guard dataSource.snapshot().numberOfSections > 0 else { return }
 
-        if state.changes.contains(.appearance) || state.changes.contains(.reload) {
+        if state.changes.contains(.appearance) {
             updateQueue.async { [weak self] in
                 guard let self else { return }
                 var snapshot = dataSource.snapshot()
                 snapshot.reconfigureItems(snapshot.itemIdentifiers)
+                dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
+            }
+            return
+        }
+
+        if state.changes.contains(.reload), let pageIndices = state.reloadedPageIndices {
+            updateQueue.async { [weak self] in
+                guard let self else { return }
+                var snapshot = dataSource.snapshot()
+                let items = snapshot.itemIdentifiers
+                let updatedItems = pageIndices.compactMap({ pageIndex -> PDFThumbnailsState.Page? in
+                    guard items.indices.contains(pageIndex) else { return nil }
+                    return items[pageIndex]
+                })
+                guard !updatedItems.isEmpty else { return }
+                snapshot.reconfigureItems(updatedItems)
                 dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
             }
             return
@@ -137,6 +153,11 @@ extension PDFThumbnailsViewController: UICollectionViewDataSourcePrefetching {
     func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
         let toFetch = indexPaths.map({ $0.row }).map(UInt.init)
         viewModel.process(action: .prefetch(toFetch))
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+        let toCancel = indexPaths.map({ $0.row }).map(UInt.init)
+        viewModel.process(action: .cancelPrefetch(toCancel))
     }
 }
 

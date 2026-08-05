@@ -291,7 +291,7 @@ class PDFSidebarViewController: UIViewController {
                         thumbnailsViewModel.process(action: .setSelectedPage(pageIndex: state.visiblePage, type: .fromDocument))
                     }
                     if state.changes.contains(.annotations) {
-                        thumbnailsViewModel.process(action: .reloadThumbnails)
+                        thumbnailsViewModel.process(action: .reloadThumbnails(state.changedAnnotationPages ?? []))
                     }
                     if state.changes.contains(.appearance) {
                         thumbnailsViewModel.process(action: .setAppearance(.from(appearanceMode: state.settings.appearanceMode, interfaceStyle: state.interfaceStyle)))
