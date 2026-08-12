@@ -16,24 +16,6 @@ struct ReadAloudVoiceChange {
     let preferredLanguage: String?
 }
 
-protocol ReadAloudCoordinatorDelegate: AnyObject {
-    func showVoicePicker(
-        for voice: SpeechVoice,
-        language: String?,
-        detectedLanguage: String,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        selectionChanged: @escaping (ReadAloudVoiceChange) -> Void
-    )
-    func showReadAloudOnboarding(
-        from presenter: UIViewController,
-        language: String?,
-        detectedLanguage: String,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        completion: @escaping (SpeechVoice?) -> Void
-    )
-    func showReadAloudAddMoreTime(from presenter: UIViewController)
-}
-
 protocol ReadAloudViewDelegate: AnyObject {
     var isNavigationBarHidden: Bool { get }
     func readAloudToolbarChanged(height: CGFloat)

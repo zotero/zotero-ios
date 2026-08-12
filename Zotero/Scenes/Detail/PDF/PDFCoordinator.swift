@@ -16,7 +16,7 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
+protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate, ReadAloudCoordinatorDelegate {
     func showSearch(document: PSPDFKit.Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
@@ -53,8 +53,8 @@ final class PDFCoordinator: ReaderCoordinator {
     private let page: Int?
     private let preselectedAnnotationKey: String?
     private let previewRects: [CGRect]?
-    internal unowned let controllers: Controllers
-    private let remoteVoicesController: RemoteVoicesController
+    unowned let controllers: Controllers
+    let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
 
     init(
@@ -280,61 +280,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
         navigationController?.present(controller, animated: true)
-    }
-}
-
-extension PDFCoordinator: ReadAloudCoordinatorDelegate {
-    func showVoicePicker(
-        for voice: SpeechVoice,
-        language: String?,
-        detectedLanguage: String,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        selectionChanged: @escaping (ReadAloudVoiceChange) -> Void
-    ) {
-        guard let navigationController else { return }
-        let view = ReadAloudVoicePickerView(
-            selectedVoice: voice,
-            language: language,
-            detectedLanguage: detectedLanguage,
-            remoteVoicesController: remoteVoicesController,
-            dismiss: { change in
-                selectionChanged(change)
-                navigationController.dismiss(animated: true)
-            }
-        )
-        let controller = UIHostingController(rootView: view)
-        controller.overrideUserInterfaceStyle = userInterfaceStyle
-        controller.modalPresentationStyle = .formSheet
-        controller.isModalInPresentation = true
-        if let presentedController = navigationController.presentedViewController {
-            presentedController.present(controller, animated: true)
-        } else {
-            navigationController.present(controller, animated: true)
-        }
-    }
-
-    func showReadAloudOnboarding(from presenter: UIViewController, language: String?, detectedLanguage: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
-        let view = ReadAloudOnboardingView(
-            language: language,
-            detectedLanguage: detectedLanguage,
-            remoteVoicesController: remoteVoicesController,
-            dismiss: { selectedVoice in
-                presenter.dismiss(animated: true) {
-                    completion(selectedVoice)
-                }
-            }
-        )
-        let controller = UIHostingController(rootView: view)
-        controller.overrideUserInterfaceStyle = userInterfaceStyle
-        controller.modalPresentationStyle = .formSheet
-        presenter.present(controller, animated: true)
-    }
-
-    func showReadAloudAddMoreTime(from presenter: UIViewController) {
-        guard let url = URL(string: "https://www.zotero.org/settings/readaloud") else { return }
-        let controller = SFSafariViewController(url: url)
-        controller.modalPresentationStyle = .formSheet
-        (presenter.presentedViewController ?? presenter).present(controller, animated: true)
     }
 }
 
