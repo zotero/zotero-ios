@@ -291,8 +291,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // Confirm any in-progress read-aloud highlight session, matching the PDF reader behaviour when leaving the screen.
-        readAloudHandler?.confirmActiveHighlightSession()
+        if isMovingFromParent || isBeingDismissed {
+            readAloudHandler?.confirmActiveHighlightSession()
+        }
     }
 
     deinit {
