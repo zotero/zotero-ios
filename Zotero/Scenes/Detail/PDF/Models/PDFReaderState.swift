@@ -149,6 +149,9 @@ struct PDFReaderState: ViewModelState {
     var previewRects: [CGRect]?
     var unlockSuccessful: Bool?
     var unlockPassword: String?
+    var appearance: Appearance {
+        return .from(appearanceMode: settings.appearanceMode, interfaceStyle: interfaceStyle)
+    }
 
     init(
         url: URL,
