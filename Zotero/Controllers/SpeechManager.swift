@@ -685,7 +685,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     private func notifyAnnotationPreviewChanged(_ result: (text: String, pageIndex: Delegate.Index)) {
         let sourceLocation = highlightSessionManager.session?.range.location ?? 0
-        let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
+        let sourceTextLength = highlightSessionManager.session.map { $0.pageText.count } ?? 0
         let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
         delegate?.annotationPreviewChanged(
             text: result.text,
@@ -727,7 +727,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     func endHighlightSession() {
         // Capture range info and rects before `endSession()` clears the session.
         let sourceLocation = highlightSessionManager.session?.range.location ?? 0
-        let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
+        let sourceTextLength = highlightSessionManager.session.map { $0.pageText.count } ?? 0
         let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
         if let result = highlightSessionManager.endSession() {
             delegate?.createAnnotation(
@@ -984,7 +984,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
                 pageIndex: paragraph.page,
                 sourceLocation: paragraph.pageOffset + newHighlightRange.location,
-                sourceTextLength: pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length
+                sourceTextLength: pageTextLength[paragraph.page] ?? paragraph.text.count
             )
         }
 
@@ -1011,8 +1011,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     func speechRangeWillChange(to range: NSRange) {
         guard let page = currentSpeakingPage, let (index, _) = resolveParagraph(atPageTextOffset: range.location, page: page) else { return }
         let paragraph = paragraphs[index]
-        let intraLocation = max(0, range.location - paragraph.pageOffset)
-        let intraLength = min(range.length, max(0, paragraph.text.count - intraLocation))
+        let intraLocation = min(max(0, range.location - paragraph.pageOffset), paragraph.text.count)
+        let intraLength = min(range.length, paragraph.text.count - intraLocation)
         let intraRange = NSRange(location: intraLocation, length: intraLength)
         let granularity = highlightGranularity
 
@@ -1032,7 +1032,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
                 pageIndex: paragraph.page,
                 sourceLocation: paragraph.pageOffset + newHighlightRange.location,
-                sourceTextLength: pageTextLength[paragraph.page] ?? (paragraph.text as NSString).length
+                sourceTextLength: pageTextLength[paragraph.page] ?? paragraph.text.count
             )
         }
     }
@@ -1158,6 +1158,9 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
             synthesizer.stopSpeaking(at: .immediate)
         }
 
+        // `startIndex` is a `Character` offset in the page text. Clamped so that an out-of-range offset degrades to
+        // reading from the page's start/end instead of trapping when the text is indexed.
+        let startIndex = min(max(0, startIndex), text.count)
         self.text = text
         self.utteranceStartIndex = startIndex
         let remainingText = String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.endIndex])
@@ -1291,10 +1294,14 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
         guard characterRange.length > 0 else { return }
-        // AVSpeechSynthesizer reports ranges relative to the utterance text, which may be a substring
-        // of the original text starting at utteranceStartIndex. Adjust the range to be relative to
-        // the original full text.
-        let adjustedRange = NSRange(location: characterRange.location + utteranceStartIndex, length: characterRange.length)
+        // AVSpeechSynthesizer reports ranges in UTF-16 code units of the utterance text, while all speech offsets
+        // (page/paragraph offsets, tokenizer ranges, per-character rects) are `Character` offsets. Convert to
+        // `Character` offsets first, otherwise multi-unit graphemes (composed accents, emoji, math italics) make the
+        // reported position drift ahead of the audio.
+        guard let range = utterance.speechString.characterRange(fromUTF16Range: characterRange), range.length > 0 else { return }
+        // The utterance text may be a substring of the original text starting at utteranceStartIndex, so the range is
+        // adjusted to be relative to the original full text.
+        let adjustedRange = NSRange(location: range.location + utteranceStartIndex, length: range.length)
         delegate.speechRangeWillChange(to: adjustedRange)
     }
 }
@@ -1615,9 +1622,10 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     private func text(forPageTextRange range: NSRange) -> String? {
         for segment in segments where range.location >= segment.pageOffset && range.location < segment.pageOffset + segment.text.count {
+            // Page text ranges are `Character` offsets, so the segment text is sliced in the same index space (as
+            // opposed to `Range(_:in:)`, which would read `intra` as UTF-16 offsets).
             let intra = NSRange(location: range.location - segment.pageOffset, length: range.length)
-            guard let textRange = Range(intra, in: segment.text) else { return nil }
-            return String(segment.text[textRange])
+            return segment.text.substring(atCharacterRange: intra)
         }
         return nil
     }

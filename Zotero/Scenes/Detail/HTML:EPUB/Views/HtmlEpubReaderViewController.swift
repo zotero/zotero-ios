@@ -984,7 +984,7 @@ extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
             tool: tool,
             color: color,
             sourceLocation: session.range.location,
-            sourceTextLength: (session.pageText as NSString).length
+            sourceTextLength: session.pageText.count
         )
     }
 }
