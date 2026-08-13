@@ -122,6 +122,9 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
                     showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: state)
                 }
                 updateReadAloudButtonMenu(state: state)
+                if #available(iOS 17.4, *), case .outOfCredits = state {
+                    navbarHeadphonesButtonRef?.performPrimaryAction()
+                }
             })
             .disposed(by: disposeBag)
 
