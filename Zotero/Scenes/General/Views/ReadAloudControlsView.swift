@@ -21,8 +21,7 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
     private weak var widthConstraint: NSLayoutConstraint?
     private weak var heightConstraint: NSLayoutConstraint?
     private weak var settingsButton: UIButton?
-    private weak var remainingTimeLabel: UILabel?
-    private weak var remainingTimeClockImageView: UIImageView?
+    private weak var remainingTimeButton: UIButton?
     private let disposeBag = DisposeBag()
 
     init(type: Kind, speechManager: SpeechManager<Delegate>, playAction: @escaping () -> Void, settingsMenu: UIMenu, highlighterAction: (() -> Void)? = nil) {
@@ -112,7 +111,7 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
     }
 
     private func setupBottomToolbar(controls: ReadAloudControlsStackView<Delegate>, speechManager: SpeechManager<Delegate>, settingsMenu: UIMenu, highlighterAction: (() -> Void)?) {
-        let (leftView, settingsBtn, timeLabel, clockImage) = createLeftView(settingsMenu: settingsMenu)
+        let (leftView, settingsBtn, timeButton) = createLeftView(settingsMenu: settingsMenu)
         let highlighterButton = createHighlighterButton(action: highlighterAction)
         let outerStack = UIStackView(arrangedSubviews: [leftView, controls, highlighterButton])
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -137,14 +136,13 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
         heightConstraint = height
 
         self.settingsButton = settingsBtn
-        self.remainingTimeLabel = timeLabel
-        self.remainingTimeClockImageView = clockImage
+        self.remainingTimeButton = timeButton
         observeRemainingTime(speechManager: speechManager)
     }
 
     // MARK: - Left View (Settings Button / Remaining Time)
 
-    private func createLeftView(settingsMenu: UIMenu) -> (UIView, UIButton, UILabel, UIImageView) {
+    private func createLeftView(settingsMenu: UIMenu) -> (UIView, UIButton, UIButton) {
         let imageConfig = UIImage.SymbolConfiguration(scale: .large)
 
         // Settings button
@@ -156,39 +154,41 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
         settingsButton.menu = settingsMenu
         settingsButton.showsMenuAsPrimaryAction = true
 
-        // Remaining time views
-        let clockImage = UIImageView(image: UIImage(systemName: "clock", withConfiguration: UIImage.SymbolConfiguration(scale: .small)))
-        clockImage.translatesAutoresizingMaskIntoConstraints = false
-        clockImage.tintColor = .systemRed
-        clockImage.isHidden = true
-
-        let timeLabel = UILabel()
-        timeLabel.translatesAutoresizingMaskIntoConstraints = false
-        timeLabel.font = .preferredFont(forTextStyle: .caption1)
-        timeLabel.textColor = .systemRed
-        timeLabel.isHidden = true
-
-        let timeStack = UIStackView(arrangedSubviews: [clockImage, timeLabel])
-        timeStack.translatesAutoresizingMaskIntoConstraints = false
-        timeStack.axis = .horizontal
-        timeStack.spacing = 4
-        timeStack.alignment = .center
+        // Remaining time button. It replaces the settings button when the remaining time is low, so it takes over its
+        // tap area and menu. The clock image and the time are its own configuration content.
+        var timeConfig = UIButton.Configuration.plain()
+        timeConfig.image = UIImage(systemName: "clock", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+        timeConfig.imagePadding = 4
+        timeConfig.baseForegroundColor = .systemRed
+        timeConfig.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+        timeConfig.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var attributes = attributes
+            attributes.font = .preferredFont(forTextStyle: .caption1)
+            return attributes
+        }
+        let timeButton = UIButton(configuration: timeConfig)
+        timeButton.translatesAutoresizingMaskIntoConstraints = false
+        timeButton.contentHorizontalAlignment = .leading
+        timeButton.menu = settingsMenu
+        timeButton.showsMenuAsPrimaryAction = true
+        timeButton.isHidden = true
 
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(settingsButton)
-        container.addSubview(timeStack)
+        container.addSubview(timeButton)
         NSLayoutConstraint.activate([
             settingsButton.topAnchor.constraint(equalTo: container.topAnchor),
             settingsButton.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             settingsButton.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             settingsButton.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            timeStack.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            timeStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
-            timeStack.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -8)
+            timeButton.topAnchor.constraint(equalTo: container.topAnchor),
+            timeButton.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            timeButton.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            timeButton.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
 
-        return (container, settingsButton, timeLabel, clockImage)
+        return (container, settingsButton, timeButton)
     }
 
     // MARK: - Highlighter Button
@@ -220,13 +220,11 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
     private func updateRemainingTimeDisplay(_ remainingTime: TimeInterval?) {
         guard let remainingTime, RemainingTimeFormatter.isWarning(remainingTime) else {
             settingsButton?.isHidden = false
-            remainingTimeLabel?.isHidden = true
-            remainingTimeClockImageView?.isHidden = true
+            remainingTimeButton?.isHidden = true
             return
         }
         settingsButton?.isHidden = true
-        remainingTimeLabel?.isHidden = false
-        remainingTimeClockImageView?.isHidden = false
-        remainingTimeLabel?.text = RemainingTimeFormatter.formatted(remainingTime)
+        remainingTimeButton?.isHidden = false
+        remainingTimeButton?.configuration?.title = RemainingTimeFormatter.formatted(remainingTime)
     }
 }
