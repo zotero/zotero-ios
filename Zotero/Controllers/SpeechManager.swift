@@ -379,6 +379,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         if let speechWorker {
             documentWorkerController.cleanupWorker(speechWorker)
         }
+        DDLogInfo("SpeechManager deinitialized")
     }
 
     private func setupNowPlayingManager() {

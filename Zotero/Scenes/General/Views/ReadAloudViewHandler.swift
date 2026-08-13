@@ -9,6 +9,7 @@
 import AVFAudio
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 struct ReadAloudVoiceChange {
@@ -133,6 +134,10 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             .disposed(by: disposeBag)
     }
 
+    deinit {
+        DDLogInfo("ReadAloudViewHandler deinitialized")
+    }
+
     private func updateReadAloudButtonMenu(state: SpeechState) {
         guard let button = navbarHeadphonesButtonRef else { return }
         if !state.isStopped && !state.isOutOfCredits && activeOverlay?.type != .bottomToolbar {
@@ -191,12 +196,12 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
 
         func presentVoicePicker(controller: ReadAloudViewHandler) {
             guard let voice = controller.speechManager.voice else { return }
-            wasPlayingBeforeVoiceChange = controller.speechManager.state.value.isSpeakingOrLoading
+            controller.wasPlayingBeforeVoiceChange = controller.speechManager.state.value.isSpeakingOrLoading
             controller.speechManager.pause()
             controller.delegate?.presentReadAloudVoicePicker(
                 currentVoice: voice,
-                language: speechManager.language,
-                detectedLanguage: speechManager.detectedLanguage
+                language: controller.speechManager.language,
+                detectedLanguage: controller.speechManager.detectedLanguage
             ) { [weak controller] change in
                 guard let controller else { return }
                 processVoiceChange(change, controller: controller)
@@ -206,9 +211,9 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         func processVoiceChange(_ change: ReadAloudVoiceChange, controller: ReadAloudViewHandler) {
             try? controller.dbStorage.perform(request: SetSpeechLanguageDbRequest(key: controller.key, libraryId: controller.libraryId, language: change.preferredLanguage), on: .main)
             controller.speechManager.set(voice: change.voice, preferredLanguage: change.preferredLanguage)
-            if wasPlayingBeforeVoiceChange {
+            if controller.wasPlayingBeforeVoiceChange {
                 controller.speechManager.resume()
-                wasPlayingBeforeVoiceChange = false
+                controller.wasPlayingBeforeVoiceChange = false
             }
         }
 
