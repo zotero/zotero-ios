@@ -140,7 +140,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
 
     private func updateReadAloudButtonMenu(state: SpeechState) {
         guard let button = navbarHeadphonesButtonRef else { return }
-        if !state.isStopped && !state.isOutOfCredits && activeOverlay?.type != .bottomToolbar {
+        if (!state.isStopped || state.isOutOfCredits) && activeOverlay?.type != .bottomToolbar {
             button.menu = createReadAloudMenu()
             button.showsMenuAsPrimaryAction = true
         } else {
@@ -162,10 +162,12 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         func makeReadAloudMenuChildren(controller: ReadAloudViewHandler) -> [UIMenuElement] {
             let firstGroup = UIMenu(title: currentVoiceTitle(controller: controller), options: .displayInline, children: createControls(controller: controller))
             firstGroup.preferredElementSize = .medium
-            let speedGroup = UIMenu(title: "Speech Rate", options: [], children: createSpeedActions(controller: controller))
-            var elements: [UIMenuElement] = [firstGroup, speedGroup]
+            var elements: [UIMenuElement] = [firstGroup]
             if let warningGroup = createWarningGroupIfNeeded(controller: controller) {
-                elements.insert(warningGroup, at: 1)
+                elements.append(warningGroup)
+            } else {
+                let speedGroup = UIMenu(title: "Speech Rate", options: [], children: createSpeedActions(controller: controller))
+                elements.append(speedGroup)
             }
             return elements
         }
@@ -188,9 +190,11 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
                 guard let controller else { return }
                 presentVoicePicker(controller: controller)
             })
-            items.append(UIAction(title: "Stop", image: UIImage(systemName: "square.fill")) { [weak controller] _ in
-                controller?.speechManager.stop()
-            })
+            if !controller.speechManager.state.value.isOutOfCredits {
+                items.append(UIAction(title: "Stop", image: UIImage(systemName: "square.fill")) { [weak controller] _ in
+                    controller?.speechManager.stop()
+                })
+            }
             return items
         }
 
