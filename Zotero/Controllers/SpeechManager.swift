@@ -407,26 +407,38 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     // MARK: - Actions
 
     func start(_ target: StartTarget) {
-        guard let delegate else {
-            DDLogError("SpeechManager: can't get delegate")
-            return
-        }
-
-        nowPlayingManager.activate(title: delegate.documentTitle)
-
         state.accept(.initializing)
-        // Load (extract and cache) the whole document once, then detect the session language and start playback.
-        // No further document data is requested afterwards.
-        loadDocumentIfNeeded { [weak self] success in
+        // Ask the processor whether playback may start at all (remote voices need credits) before extracting the
+        // document, so that an out-of-credits session fails right away instead of after the whole document has been
+        // extracted and parsed. Local voices report back immediately.
+        processor.verifyPlaybackAllowed { [weak self] outOfCreditsReason in
             guard let self, state.value == .initializing else { return }
-            guard success else {
+            if let outOfCreditsReason {
+                DDLogInfo("SpeechManager: can't start playback, out of credits")
+                state.accept(.outOfCredits(outOfCreditsReason))
+                return
+            }
+            guard let delegate else {
+                DDLogError("SpeechManager: can't get delegate")
                 state.accept(.stopped)
                 return
             }
-            // Set the session language from the document metadata before playback starts, so that the voice stays
-            // constant for the whole session. No-op when the user has already picked a language or it was already set.
-            applySessionLanguageIfNeeded()
-            startPlayback(target: target)
+
+            // Load (extract and cache) the whole document once, then detect the session language and start playback.
+            // No further document data is requested afterwards.
+            loadDocumentIfNeeded { [weak self] success in
+                guard let self, state.value == .initializing else { return }
+                guard success else {
+                    state.accept(.stopped)
+                    return
+                }
+                // Playback is possible, so the audio session can be taken over from whatever else is playing.
+                nowPlayingManager.activate(title: delegate.documentTitle)
+                // Set the session language from the document metadata before playback starts, so that the voice stays
+                // constant for the whole session. No-op when the user has already picked a language or it was already set.
+                applySessionLanguageIfNeeded()
+                startPlayback(target: target)
+            }
         }
     }
 
@@ -1046,6 +1058,9 @@ private protocol VoiceProcessor {
     /// Time elapsed since current audio segment started playing.
     var segmentAudioElapsedTime: TimeInterval { get }
 
+    /// Checks whether a new playback session may start, before any document data is requested. Reports `nil` when
+    /// playback may proceed, or the reason why it can't (a remote voice without credits left).
+    func verifyPlaybackAllowed(completion: @escaping (SpeechState.OutOfCreditsReason?) -> Void)
     /// Starts speaking the page's `segments` (paragraphs, each with its page-text offset) from `startPageTextOffset`
     /// (a character offset within the page's readable text). The local voice joins the segments into one utterance;
     /// the remote voice reads them segment by segment.
@@ -1061,6 +1076,11 @@ private protocol VoiceProcessor {
 extension VoiceProcessor {
     var language: String {
         return preferredLanguage ?? detectedLanguage ?? "en"
+    }
+
+    /// Local voices are free, so playback can always start.
+    func verifyPlaybackAllowed(completion: @escaping (SpeechState.OutOfCreditsReason?) -> Void) {
+        completion(nil)
     }
 }
 
@@ -1710,6 +1730,53 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     // MARK: - Credits
 
+    /// Loads the credits remaining for the current tier and reports whether playback may start. A failed request
+    /// doesn't block playback - the 402 handling in `handleSpeechFailure` still catches an exhausted balance.
+    func verifyPlaybackAllowed(completion: @escaping (SpeechState.OutOfCreditsReason?) -> Void) {
+        remoteVoicesController.loadCredits()
+            .observe(on: MainScheduler.instance)
+            .do(onSuccess: { [weak self] credits in
+                self?.updateRemainingTimeDisplay(credits: credits)
+            })
+            .flatMap({ [weak self] credits -> Single<Bool> in
+                guard let self else {
+                    return Single.error(Error.cancelled)
+                }
+                switch tier {
+                case .standard:
+                    return Single.just(credits.standard == 0)
+
+                case .premium:
+                    return Single.just(credits.premium == 0)
+                }
+            })
+            .flatMap({ [weak self] isOutOfCredits -> Single<Bool> in
+                guard let self else {
+                    return Single.error(Error.cancelled)
+                }
+                if isOutOfCredits && voice == nil {
+                    // Load voice so that remaining out of credits functionality works.
+                    return loadVoice()
+                        .do(onSuccess: { [weak self] voice in
+                            self?.voice = voice
+                        })
+                        .flatMap({ _ -> Single<Bool> in .just(isOutOfCredits) })
+                } else {
+                    return Single.just(isOutOfCredits)
+                }
+            })
+            .subscribe(
+                onSuccess: { isOutOfCredits in
+                    completion(isOutOfCredits ? .quotaExceeded : nil)
+                },
+                onFailure: { error in
+                    DDLogError("RemoteVoiceProcessor: could not load credits before playback - \(error)")
+                    completion(nil)
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+
     private func startCreditPollTimer() {
         guard creditPollTimer == nil else { return }
         // Load credits immediately
@@ -1740,23 +1807,20 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func updateRemainingTimeDisplay(credits: (standard: Int, premium: Int)) {
-        guard let voice, voice.tier != .standard else {
+        switch tier {
+        case .standard:
             // Standard tier voice - report nil remaining time (unlimited)
             delegate.remainingTime.accept(nil)
-            return
-        }
-        // Select credits based on voice tier
-        let tierCredits: Int
-        switch voice.tier {
-        case .standard:
-            tierCredits = credits.standard
 
         case .premium:
-            tierCredits = credits.premium
+            if credits.premium == 0 {
+                delegate.remainingTime.accept(0)
+            } else if let voice {
+                // Calculate remaining time from credits (creditsPerMinute means credits per minute of audio)
+                let remainingTime = (TimeInterval(credits.premium) / TimeInterval(voice.creditsPerMinute)) * 60
+                delegate.remainingTime.accept(remainingTime)
+            }
         }
-        // Calculate remaining time from credits (creditsPerMinute means credits per minute of audio)
-        let remainingTime = (TimeInterval(tierCredits) / TimeInterval(voice.creditsPerMinute)) * 60
-        delegate.remainingTime.accept(remainingTime)
     }
 
     // MARK: - Helpers
