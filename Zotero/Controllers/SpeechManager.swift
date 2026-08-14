@@ -243,8 +243,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var paragraphs: [SpeechParagraph]
     /// Indices into `paragraphs`, grouped by page in reading order.
     private var paragraphIndicesByPage: [Delegate.Index: [Int]]
-    /// Total readable-text length per page (character count), used as the highlight hint denominator.
-    private var pageTextLength: [Delegate.Index: Int]
     /// Whether the whole document has already been extracted and cached.
     private var documentLoaded: Bool
     /// Document language (BCP-47 tag) read from the structured document text metadata, if any.
@@ -364,7 +362,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         self.documentWorkerController = documentWorkerController
         paragraphs = []
         paragraphIndicesByPage = [:]
-        pageTextLength = [:]
         documentLoaded = false
         highlightSessionManager = SpeechHighlightSessionManager<SpeechManager<Delegate>>()
         state = BehaviorRelay(value: .stopped)
@@ -583,22 +580,19 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     /// Stores parsed paragraphs, mapping structured-document-text page indices to the delegate's page index type and
-    /// building the per-page index and length lookups. Paragraphs whose page is out of bounds are dropped.
+    /// building the per-page index lookup. Paragraphs whose page is out of bounds are dropped.
     private func store(_ parsed: SpeechDocumentParser.ParsedDocument) {
         guard let delegate else { return }
         var paragraphs: [SpeechParagraph] = []
         var indicesByPage: [Delegate.Index: [Int]] = [:]
-        var lengths: [Delegate.Index: Int] = [:]
         for paragraph in parsed.paragraphs {
             guard let page = delegate.pageIndex(forStructuredDocumentTextPage: paragraph.page) else { continue }
             let index = paragraphs.count
             paragraphs.append(SpeechParagraph(text: paragraph.text, page: page, pageOffset: paragraph.pageOffset, rects: paragraph.rects, charRects: paragraph.charRects))
             indicesByPage[page, default: []].append(index)
-            lengths[page] = max(lengths[page] ?? 0, paragraph.pageOffset + paragraph.text.count)
         }
         self.paragraphs = paragraphs
         paragraphIndicesByPage = indicesByPage
-        pageTextLength = lengths
         documentLanguage = parsed.language
     }
 
@@ -611,7 +605,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         guard let delegate, let page = delegate.pageIndex(forStructuredDocumentTextPage: 0) else {
             paragraphs = []
             paragraphIndicesByPage = [:]
-            pageTextLength = [:]
             documentLanguage = language
             return
         }
@@ -646,7 +639,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         paragraphs = storedParagraphs
         paragraphIndicesByPage = [page: Array(storedParagraphs.indices)]
-        pageTextLength = storedParagraphs.isEmpty ? [:] : [page: pageLength]
         documentLanguage = language
     }
 
