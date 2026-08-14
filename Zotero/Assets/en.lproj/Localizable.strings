@@ -550,6 +550,7 @@
 "accessibility.pdf.export_annotated" = "Export annotated PDF";
 "accessibility.pdf.settings" = "Settings";
 "accessibility.pdf.color_picker" = "Color picker";
+"accessibility.pdf.color_wheel" = "Color wheel";
 "accessibility.pdf.highlight_annotation_tool" = "Create highlight annotation";
 "accessibility.pdf.note_annotation_tool" = "Create note annotation";
 "accessibility.pdf.image_annotation_tool" = "Create image annotation";

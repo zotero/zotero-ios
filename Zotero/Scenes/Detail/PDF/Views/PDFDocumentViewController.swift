@@ -41,7 +41,17 @@ final class PDFDocumentViewController: UIViewController {
     private let initialUIHidden: Bool
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool?] = []
-    
+    /// How long a pencil location is considered recent enough to place the color wheel at.
+    private static let pencilLocationLifetime: CFTimeInterval = 5
+    /// Above this altitude the pencil is held close to upright, where its azimuth is mostly noise and says nothing useful about where the hand is.
+    private static let maximumUsableAzimuthAltitude: CGFloat = 1.3
+    /// How long a pencil button may be held before the wheel gives up on hearing that it was released and closes itself.
+    private static let colorWheelHoldTimeout: TimeInterval = 4
+    /// Size of the markup tool previews at 100% zoom, roughly a line of text at a typical body size.
+    private static let markupPreviewLength: CGFloat = 26
+    private static let highlightPreviewThickness: CGFloat = 11
+    private static let underlinePreviewThickness: CGFloat = 3
+
     private var selectionView: SelectionView?
     // Used to decide whether text annotation should start editing on tap
     private var selectedAnnotationWasSelectedBefore: Bool
@@ -50,6 +60,17 @@ final class PDFDocumentViewController: UIViewController {
     // Holds the zoom scale captured right before a corner-tap (fast scroll) page navigation, so it can be re-applied
     // to the page that becomes visible after the scroll. `nil` means there's no pending zoom to restore.
     private var pendingCornerTapZoomScale: CGFloat?
+    private weak var colorWheelView: PDFColorWheelView?
+    /// Gestures belonging to PSPDFKit which this controller has added itself to as a second target. Weak, since they belong to page views which come and go.
+    private let observedPageGestures: NSHashTable<UIGestureRecognizer> = .weakObjects()
+    private weak var toolPreviewView: PencilToolPreviewView?
+    private var lastPencilHover: (point: CGPoint, handBearing: CGFloat?, timestamp: CFTimeInterval)?
+    private var isPencilHovering: Bool
+    private var colorWheelHoldTimeoutWorkItem: DispatchWorkItem?
+    /// Text is being edited somewhere, which for this controller means a free text annotation or the search field. Tracked from the keyboard rather than looked up on
+    /// every hover, which arrives far too often to go walking the view hierarchy for a first responder.
+    private var isEditingText: Bool
+    private var keyboardCancellables: [AnyCancellable] = []
     var currentPage: UInt {
         return pdfController?.pageIndex ?? 0
     }
@@ -63,6 +84,8 @@ final class PDFDocumentViewController: UIViewController {
         self.viewModel = viewModel
         self.initialUIHidden = initialUIHidden
         selectedAnnotationWasSelectedBefore = false
+        isPencilHovering = false
+        isEditingText = false
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -113,6 +136,7 @@ final class PDFDocumentViewController: UIViewController {
 
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
+        setupTextEditingObservingIfNeeded()
         setInterface(hidden: initialUIHidden)
         updateInterface(to: viewModel.state.settings.appearanceMode, userInterfaceStyle: traitCollection.userInterfaceStyle)
         if let (page, _) = viewModel.state.focusDocumentLocation, let annotation = viewModel.state.selectedAnnotation {
@@ -126,8 +150,15 @@ final class PDFDocumentViewController: UIViewController {
         DDLogInfo("PDFDocumentViewController deinitialized")
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        dismissColorWheel(animated: false)
+        pencilDidStopHovering()
+    }
+
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
+        dismissColorWheel(animated: false)
 
         guard viewIfLoaded != nil else { return }
 
@@ -241,6 +272,316 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
+    // MARK: - Color wheel
+
+    /// Whether the wheel is actually on screen, rather than merely still referenced. A wheel which has been taken out of the view hierarchy shouldn't go on suppressing
+    /// the tool preview just because it hasn't been released yet.
+    private var isColorWheelVisible: Bool {
+        return view.subviews.contains(where: { $0 is PDFColorWheelView })
+    }
+
+    /// Takes any wheel out of the view hierarchy, including one which outlived the reference to it. Nothing else can tell that a wheel is up, so one left behind here
+    /// goes on covering the document and suppressing the tool preview with no way to reach it.
+    private func removeColorWheelsFromViewHierarchy() {
+        for subview in view.subviews where subview is PDFColorWheelView {
+            subview.removeFromSuperview()
+        }
+    }
+
+    /// Shows a radial color picker around the pencil, or dismisses one which is already visible.
+    private func toggleColorWheel() {
+        guard colorWheelView == nil else {
+            dismissColorWheel(animated: true)
+            return
+        }
+        showColorWheel()
+    }
+
+    /// Called when the pencil button starts being held down. Shows the wheel if needed and starts tracking the pencil, or closes a wheel which is already up, so that
+    /// a second press still dismisses it.
+    private func beginColorWheelHold(at location: CGPoint) {
+        guard colorWheelView == nil else {
+            dismissColorWheel(animated: true)
+            return
+        }
+        showColorWheel(at: location)
+        colorWheelView?.beginFollowingPen()
+
+        // The squeeze doesn't always report that it ended, and a wheel left over from a hold nobody saw the end of sits there suppressing the tool preview until
+        // something is tapped. So the hold ends by itself if the release is never heard.
+        colorWheelHoldTimeoutWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.endColorWheelHold()
+        }
+        colorWheelHoldTimeoutWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.colorWheelHoldTimeout, execute: workItem)
+    }
+
+    /// Called when the pencil button is released. Picks the color the pencil points at, and closes the wheel either way. Leaving it up to be tapped instead reads as
+    /// the wheel being stuck: it stays there until something is tapped, and everything it suppresses while it's up stays suppressed with it. A double tap still opens
+    /// a wheel which waits to be tapped, so that way of picking a color isn't lost.
+    private func endColorWheelHold() {
+        colorWheelHoldTimeoutWorkItem?.cancel()
+        colorWheelHoldTimeoutWorkItem = nil
+
+        guard let wheel = colorWheelView else { return }
+
+        if let hexColor = wheel.highlightedHexColor {
+            apply(hexColor: hexColor)
+        }
+        dismissColorWheel(animated: true)
+    }
+
+    private func showColorWheel() {
+        showColorWheel(at: pencilAnchorLocation())
+    }
+
+    private func showColorWheel(at location: CGPoint) {
+        guard let tool = pdfController?.annotationStateManager.state else { return }
+
+        guard let hexColors = tool.toolbarTool?.annotationType?.colors, !hexColors.isEmpty else {
+            // Eraser has no colors, so keep showing the tool options popover, which is where its size slider lives.
+            parentDelegate?.toggleToolOptions()
+            return
+        }
+
+        let wheel = PDFColorWheelView(
+            hexColors: hexColors,
+            selectedHexColor: viewModel.state.toolColors[tool]?.hexString,
+            anchor: location,
+            handBearing: pencilHandBearing(),
+            colorPicked: { [weak self] hexColor in
+                guard let self else { return }
+                apply(hexColor: hexColor)
+                dismissColorWheel(animated: true)
+            },
+            dismissRequested: { [weak self] in
+                self?.dismissColorWheel(animated: true)
+            }
+        )
+        wheel.overrideUserInterfaceStyle = viewModel.state.settings.appearanceMode.userInterfaceStyle
+        // The wheel takes over the pencil, so the tool preview would only be a leftover dot underneath it.
+        hideToolPreview()
+        wheel.show(in: view)
+        // The wheel covers the page views, so PSPDFKit's gestures stop hearing about the pencil while it's up and it needs to follow the pencil itself. Nothing else
+        // watches this view, so there's nothing here to compete with.
+        let hoverRecognizer = UIHoverGestureRecognizer(target: self, action: #selector(pencilHoverChanged(_:)))
+        wheel.addGestureRecognizer(hoverRecognizer)
+        colorWheelView = wheel
+    }
+
+    /// Applies a color picked in the wheel to the active tool. Same action the tool options popover uses, so defaults, draw color and toolbar all follow.
+    private func apply(hexColor: String) {
+        guard let tool = pdfController?.annotationStateManager.state else { return }
+        viewModel.process(action: .setToolOptions(color: hexColor, size: nil, tool: tool))
+    }
+
+    private func dismissColorWheel(animated: Bool) {
+        guard let wheel = colorWheelView else { return }
+        // Cleared synchronously, so that a wheel triggered again during the dismissal animation is created immediately.
+        colorWheelView = nil
+        wheel.isUserInteractionEnabled = false
+        wheel.hide(animated: animated, completion: { [weak self] in
+            self?.removeColorWheelsFromViewHierarchy()
+        })
+        // The wheel was the only reason the preview was suppressed, so it comes straight back rather than waiting for the pencil to move again.
+        refreshToolPreview()
+    }
+
+    /// Most recent pencil location, falling back to the center of the document when it's not known or too old to be useful.
+    private func pencilAnchorLocation() -> CGPoint {
+        guard let location = recentPencilHover()?.point, view.bounds.contains(location) else {
+            return CGPoint(x: view.bounds.midX, y: view.bounds.midY)
+        }
+        return location
+    }
+
+    /// Direction of the pencil's barrel, and so roughly of the hand holding it, which is only known while the pencil hovers. `nil` when there's no usable recent hover,
+    /// in which case the wheel picks its own orientation.
+    private func pencilHandBearing() -> CGFloat? {
+        return recentPencilHover()?.handBearing
+    }
+
+    /// Uses the azimuth unit vector rather than the azimuth angle, because the vector is already in the view's coordinate space and so carries no sign ambiguity.
+    /// Points along the barrel, away from the tip and toward the hand.
+    private func handBearing(from recognizer: UIHoverGestureRecognizer) -> CGFloat? {
+        guard recognizer.altitudeAngle <= Self.maximumUsableAzimuthAltitude else { return nil }
+        let azimuth = recognizer.azimuthUnitVector(in: view)
+        return atan2(azimuth.dy, azimuth.dx)
+    }
+
+    private func recentPencilHover() -> (point: CGPoint, handBearing: CGFloat?, timestamp: CFTimeInterval)? {
+        guard let hover = lastPencilHover, isPencilHovering || (CACurrentMediaTime() - hover.timestamp) <= Self.pencilLocationLifetime else { return nil }
+        return hover
+    }
+
+    // MARK: - Tool preview
+
+    /// Shows what the active tool will draw, under the hovering pencil. Shown whenever a tool which draws something is active, except while the color wheel is up,
+    /// where it would only sit underneath the wheel saying nothing.
+    private func updateToolPreview(at location: CGPoint) {
+        guard !isColorWheelVisible, !isEditingText, let tool = pdfController?.annotationStateManager.state, let preview = toolPreview(for: tool, at: location) else {
+            hideToolPreview()
+            return
+        }
+
+        let previewView = toolPreviewView ?? makeToolPreviewView()
+        previewView.update(center: preview.center, shape: preview.shape, color: preview.color)
+        previewView.isHidden = false
+        // The color wheel and PSPDFKit both add views over the document, so the preview claims the top again whenever it's shown.
+        view.bringSubviewToFront(previewView)
+    }
+
+    private func toolPreview(for tool: PSPDFKit.Annotation.Tool, at location: CGPoint) -> (shape: PencilToolPreviewView.Shape, color: UIColor?, center: CGPoint)? {
+        let scale = pageScale(at: location)
+
+        switch tool {
+        case .ink:
+            return (.nib(diameter: viewModel.state.activeLineWidth * scale), viewModel.state.toolColors[tool], location)
+
+        case .eraser:
+            return (.nib(diameter: viewModel.state.activeEraserSize * scale), nil, location)
+
+        case .highlight, .underline:
+            let color = viewModel.state.toolColors[tool]
+
+            // Over a word, the preview takes that word's own shape, so it shows what would actually be marked rather than an approximation of it.
+            if let word = wordFrame(at: location) {
+                let size = tool == .highlight ? word.size : CGSize(width: word.width, height: Self.underlinePreviewThickness * scale)
+                let center = tool == .highlight ? CGPoint(x: word.midX, y: word.midY) : CGPoint(x: word.midX, y: word.maxY)
+                return (.band(size: size), color, center)
+            }
+
+            // Away from text there's nothing to take the shape of, so the markup tools fall back to something the size of a line of text. The highlighter stands
+            // upright, where it reads as a chisel tip waiting for a line rather than as a mark already made, and the underline stays flat, which is what it leaves.
+            let size = tool == .highlight
+                ? CGSize(width: Self.highlightPreviewThickness * scale, height: Self.markupPreviewLength * scale)
+                : CGSize(width: Self.markupPreviewLength * scale, height: Self.underlinePreviewThickness * scale)
+            return (.band(size: size), color, location)
+
+        default:
+            return nil
+        }
+    }
+
+    /// Frame of the word under given point, in this view's coordinates, or `nil` when the pencil isn't over text.
+    private func wordFrame(at location: CGPoint) -> CGRect? {
+        guard let pageView = pageView(at: location), let textParser = viewModel.state.document.textParserForPage(at: pageView.pageIndex) else { return nil }
+
+        let pointOnPage = pageView.convert(view.convert(location, to: pageView), to: pageView.pdfCoordinateSpace)
+
+        guard let word = textParser.words.first(where: { $0.frame.contains(pointOnPage) }) else { return nil }
+
+        return view.convert(pageView.convert(word.frame, from: pageView.pdfCoordinateSpace), from: pageView)
+    }
+
+    private func pageView(at location: CGPoint) -> PDFPageView? {
+        guard let pdfController else { return nil }
+        return pdfController.visiblePageViews.first(where: { $0.convert($0.bounds, to: view).contains(location) }) ?? pdfController.visiblePageViews.first
+    }
+
+    /// Tool sizes are in PDF points, so they have to be scaled to match what's actually drawn on screen. `scaleForPageView` is what PSPDFKit itself uses to turn a line
+    /// width into one, and it covers both how the page is fitted and how far it's zoomed in - the zoom alone would leave everything far too small.
+    private func pageScale(at location: CGPoint) -> CGFloat {
+        return pageView(at: location)?.scaleForPageView ?? 1
+    }
+
+    private func makeToolPreviewView() -> PencilToolPreviewView {
+        let previewView = PencilToolPreviewView(frame: CGRect())
+        view.addSubview(previewView)
+        toolPreviewView = previewView
+        return previewView
+    }
+
+    /// Re-evaluates the preview without waiting for the pencil to move. Picking a tool, a color or a size while the pencil already hovers produces no new hover event,
+    /// so the preview would otherwise only catch up once the pencil was moved.
+    private func refreshToolPreview() {
+        guard isPencilHovering, let location = lastPencilHover?.point else {
+            hideToolPreview()
+            return
+        }
+        updateToolPreview(at: location)
+    }
+
+    private func hideToolPreview() {
+        toolPreviewView?.isHidden = true
+    }
+
+    @objc private func pencilHoverChanged(_ recognizer: UIHoverGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed:
+            pencilDidHover(at: recognizer.location(in: view), handBearing: handBearing(from: recognizer))
+
+        case .ended, .cancelled, .failed:
+            pencilDidStopHovering()
+
+        case .possible:
+            break
+
+        @unknown default:
+            break
+        }
+    }
+
+    /// Listens in on the gestures PSPDFKit already runs on each page view, rather than adding more beside them and losing to them. Its hover gesture reports hovers over
+    /// a page reliably - that's what it's there for - so being told about the same ones is worth far more than winning a fight over them.
+    private func prepareHoverHandling(for pageView: PDFPageView) {
+        observePageGestures(in: pageView)
+        // Again once the page view has finished being put together, since PSPDFKit doesn't necessarily have its own gestures in place by the time a page is announced.
+        DispatchQueue.main.async { [weak self, weak pageView] in
+            guard let self, let pageView else { return }
+            observePageGestures(in: pageView)
+        }
+    }
+
+    /// Adds this controller as a second target of a page view's gestures, leaving whatever they already do completely alone. Hover gestures report where the pencil is,
+    /// and the rest report that something has started happening on the page, which is the moment the preview stops describing anything. Page views are recycled, so a
+    /// gesture which is already being listened to is left as it is.
+    private func observePageGestures(in view: UIView) {
+        for recognizer in view.gestureRecognizers ?? [] {
+            guard !observedPageGestures.contains(recognizer) else { continue }
+            observedPageGestures.add(recognizer)
+
+            if recognizer is UIHoverGestureRecognizer {
+                recognizer.isEnabled = true
+                recognizer.addTarget(self, action: #selector(pencilHoverChanged(_:)))
+            } else {
+                recognizer.addTarget(self, action: #selector(pageGestureChanged(_:)))
+            }
+        }
+
+        for subview in view.subviews {
+            observePageGestures(in: subview)
+        }
+    }
+
+    /// Something has started on the page - a stroke, a text selection drag, a tap. Whatever the preview was describing is now happening, so it goes away.
+    @objc private func pageGestureChanged(_ recognizer: UIGestureRecognizer) {
+        guard recognizer.state == .began else { return }
+        pencilDidStopHovering()
+    }
+
+    /// The pencil is above the screen at given location. The single way that becomes true, so that nothing which depends on it can disagree about it.
+    private func pencilDidHover(at location: CGPoint, handBearing: CGFloat?) {
+        isPencilHovering = true
+        lastPencilHover = (location, handBearing, CACurrentMediaTime())
+        // Hover updates are more frequent than squeeze updates, so they're what actually drives the wheel while the pencil button is held down.
+        colorWheelView?.setPenLocation(location, handBearing: handBearing)
+        updateToolPreview(at: location)
+    }
+
+    /// The pencil is no longer above the screen, whether it was lifted away or put down on it. The single way that becomes true, so that nothing which depends on it
+    /// can disagree about it.
+    ///
+    /// There was a timeout here as well, on the grounds that a hover might end without saying so, taken from a gap in hover updates. A pencil held still reports
+    /// nothing at all, so all it really did was take the preview away while the pencil was sitting right there.
+    private func pencilDidStopHovering() {
+        guard isPencilHovering else { return }
+        // The last known location is kept, it's still the best guess for where the pencil is if the color wheel is asked for right after.
+        isPencilHovering = false
+        hideToolPreview()
+    }
+
     private func update(state: PDFReaderState) {
         if let pdfController {
             update(state: state, pdfController: pdfController)
@@ -307,14 +648,17 @@ final class PDFDocumentViewController: UIViewController {
 
         if let tool = state.changedColorForTool, let color = state.toolColors[tool] {
             set(color: color, for: tool, in: pdfController.annotationStateManager, state: state)
+            refreshToolPreview()
         }
 
         if state.changes.contains(.activeLineWidth) {
             pdfController.annotationStateManager.lineWidth = state.activeLineWidth
+            refreshToolPreview()
         }
 
         if state.changes.contains(.activeEraserSize) {
             pdfController.annotationStateManager.lineWidth = state.activeEraserSize
+            refreshToolPreview()
         }
 
         if state.changes.contains(.activeFontSize) {
@@ -503,6 +847,10 @@ final class PDFDocumentViewController: UIViewController {
 
     func setInterface(hidden: Bool) {
         pdfController?.userInterfaceView.alpha = hidden ? 0 : 1
+        if hidden {
+            dismissColorWheel(animated: false)
+            pencilDidStopHovering()
+        }
     }
 
     // MARK: - Selection
@@ -590,6 +938,26 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     // MARK: - Setups
+
+    /// Text editing is watched from the keyboard rather than by looking up a first responder, which hover arrives far too often to be doing.
+    private func setupTextEditingObservingIfNeeded() {
+        guard keyboardCancellables.isEmpty else { return }
+
+        keyboardCancellables = [
+            NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.isEditingText = true
+                    self?.hideToolPreview()
+                },
+            NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.isEditingText = false
+                    self?.refreshToolPreview()
+                }
+        ]
+    }
 
     private func setupPdfController() {
         let pdfController = createPdfController(with: viewModel.state.document, settings: viewModel.state.settings)
@@ -740,6 +1108,8 @@ final class PDFDocumentViewController: UIViewController {
 
 extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
+        prepareHoverHandling(for: pageView)
+
         if !searchResults.isEmpty {
             pdfController.searchHighlightViewManager.addHighlight(searchResults, animated: false)
         }
@@ -950,6 +1320,9 @@ extension PDFDocumentViewController: AnnotationStateManagerDelegate {
         variant oldVariant: PSPDFKit.Annotation.Variant?,
         to newVariant: PSPDFKit.Annotation.Variant?
     ) {
+        dismissColorWheel(animated: true)
+        // Picking a tool is the moment the preview becomes meaningful, and there's usually no pencil movement right after it to bring the preview in by itself.
+        refreshToolPreview()
         parentDelegate?.annotationTool(didChangeStateFrom: oldState, to: newState, variantFrom: oldVariant, to: newVariant)
     }
 
@@ -986,7 +1359,7 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
             toggle(annotationTool: previous, color: color, tappedWithStylus: true)
 
         case .showColorPalette, .showInkAttributes, .showContextualPalette:
-            parentDelegate?.toggleToolOptions()
+            toggleColorWheel()
 
         case .runSystemShortcut, .ignore:
             break
@@ -1002,15 +1375,45 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
 
     @available(iOS 17.5, *)
     func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze) {
-        switch squeeze.phase {
-        case .ended:
-            process(action: UIPencilInteraction.preferredSqueezeAction)
+        let action = UIPencilInteraction.preferredSqueezeAction
 
-        case .began, .changed, .cancelled:
-            break
+        guard isColorPaletteAction(action) else {
+            // Other actions stay discrete, they're performed once the squeeze ends.
+            if squeeze.phase == .ended {
+                process(action: action)
+            }
+            return
+        }
+
+        guard parentDelegate?.isToolbarVisible == true else { return }
+
+        // A squeeze which requests colors is treated as a hold - the wheel is shown for as long as the button is held down, follows the pencil around and picks the
+        // color the pencil points at when the button is released.
+        switch squeeze.phase {
+        case .began:
+            beginColorWheelHold(at: pencilAnchorLocation())
+
+        case .changed:
+            colorWheelView?.setPenLocation(pencilAnchorLocation(), handBearing: pencilHandBearing())
+
+        case .ended:
+            endColorWheelHold()
+
+        case .cancelled:
+            dismissColorWheel(animated: true)
 
         @unknown default:
             break
+        }
+    }
+
+    private func isColorPaletteAction(_ action: UIPencilPreferredAction) -> Bool {
+        switch action {
+        case .showColorPalette, .showInkAttributes, .showContextualPalette:
+            return true
+
+        default:
+            return false
         }
     }
 }
@@ -1171,3 +1574,80 @@ extension PDFDocumentViewController: PSPDFKitUI.ScrubberBarDelegate {
 }
 
 extension PDFDocumentViewController: ParentWithSidebarDocumentController {}
+
+/// Preview of what the active tool will draw, shown under the Apple Pencil while it hovers, the way PencilKit previews a brush. Sized in screen points, so it reflects
+/// the current zoom as well as the tool's own size.
+final class PencilToolPreviewView: UIView {
+    /// What the tool leaves behind: a round nib for tools which draw a stroke, a flat one for the markup tools, which lay a band over a line of text.
+    enum Shape {
+        case nib(diameter: CGFloat)
+        case band(size: CGSize)
+    }
+
+    private static let outlineWidth: CGFloat = 1.5
+    /// A thin tool would otherwise preview as a dot too small to notice.
+    private static let minimumNibSize: CGFloat = 10
+    /// Bands take their size from the text they sit on, so they're only stopped from collapsing entirely rather than being held to a size of their own.
+    private static let minimumBandSize: CGFloat = 2
+    /// Drawn beneath the outline and a little wider, so that the outline reads against both the page and whatever is on it. A highlighter's own color over white paper
+    /// is nearly invisible on its own, which is the whole reason this is here.
+    private let contrastLayer: CAShapeLayer
+    private let shapeLayer: CAShapeLayer
+
+    override init(frame: CGRect) {
+        contrastLayer = CAShapeLayer()
+        shapeLayer = CAShapeLayer()
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        contrastLayer.fillColor = UIColor.clear.cgColor
+        contrastLayer.lineWidth = Self.outlineWidth + 1.5
+        shapeLayer.lineWidth = Self.outlineWidth
+        layer.addSublayer(contrastLayer)
+        layer.addSublayer(shapeLayer)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// - parameter shape: What the tool draws, already scaled to screen points.
+    /// - parameter color: Color the tool draws in, or `nil` for tools which only take away, like the eraser.
+    func update(center: CGPoint, shape: Shape, color: UIColor?) {
+        let size: CGSize
+        let cornerRadius: CGFloat
+
+        switch shape {
+        case .nib(let diameter):
+            let side = max(Self.minimumNibSize, diameter)
+            size = CGSize(width: side, height: side)
+            cornerRadius = side / 2
+
+        case .band(let bandSize):
+            size = CGSize(width: max(Self.minimumBandSize, bandSize.width), height: max(Self.minimumBandSize, bandSize.height))
+            cornerRadius = min(min(size.width, size.height) / 2, 2)
+        }
+
+        // Room for both outlines, the outer one being the wider of the two.
+        let inset = Self.outlineWidth + 1.5
+        bounds = CGRect(x: 0, y: 0, width: size.width + inset, height: size.height + inset)
+        self.center = center
+
+        let rect = CGRect(x: inset / 2, y: inset / 2, width: size.width, height: size.height)
+        let path = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).cgPath
+
+        contrastLayer.frame = layer.bounds
+        contrastLayer.path = path
+        shapeLayer.frame = layer.bounds
+        shapeLayer.path = path
+        // Filled for tools which add something, hollow for the eraser. The outline is the tool's own color over a wider one in the opposite color, so that it reads on
+        // white paper, on a dark page, and over a mark of its own color, which a single outline in the tool's color does not.
+        shapeLayer.fillColor = color?.withAlphaComponent(0.4).cgColor ?? UIColor.clear.cgColor
+        shapeLayer.strokeColor = (color ?? UIColor.label).resolvedColor(with: traitCollection).cgColor
+        contrastLayer.strokeColor = UIColor.systemBackground.resolvedColor(with: traitCollection).withAlphaComponent(0.85).cgColor
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.25
+        layer.shadowRadius = 2
+        layer.shadowOffset = CGSize(width: 0, height: 1)
+        layer.shadowPath = path
+    }
+}
