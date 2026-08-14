@@ -6,7 +6,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.org.zotero.ios.Zotero</string>
+		<string>$(ZOTERO_APP_GROUP)</string>
 	</array>
 	<key>com.apple.security.device.audio-input</key>
 	<true/>

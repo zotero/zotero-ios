@@ -9,7 +9,12 @@
 import Foundation
 
 struct AppGroup {
-    static var identifier: String {
-        return "group.org.zotero.ios.Zotero"
-    }
+    /// Identifier of the container shared between the app and the share extension. Comes from `ZOTERO_APP_GROUP` in `FeatureGates.xcconfig`, which can be
+    /// overridden in an uncommitted `Local.xcconfig` to build with an Apple Developer account outside of the Zotero organization.
+    static let identifier: String = {
+        guard let identifier = Bundle.main.object(forInfoDictionaryKey: "ZoteroAppGroupIdentifier") as? String, !identifier.isEmpty else {
+            return "group.org.zotero.ios.Zotero"
+        }
+        return identifier
+    }()
 }

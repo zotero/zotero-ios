@@ -90,3 +90,7 @@ bundled/document_worker
 Dependencies/ONNXRuntime
 Zotero/Controllers/Citation/citation/utilities
 bundled/reader
+
+# Local build settings
+
+Local.xcconfig

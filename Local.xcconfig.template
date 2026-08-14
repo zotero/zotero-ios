@@ -1,0 +1,37 @@
+// Local build settings, applied on top of FeatureGates.xcconfig.
+//
+// Copy this file to Local.xcconfig (which is gitignored) to build Zotero with an Apple Developer
+// account which isn't a member of the Zotero organization:
+//
+//     cp Local.xcconfig.template Local.xcconfig
+//
+// The identifiers below all have to be registered under the team that signs the app, which is why
+// the committed defaults can't be used by anyone outside that team. Pick values under a domain you
+// control. Your team ID is the ten character code in Xcode's Accounts tab, or in the OU field of
+// your signing certificate:
+//
+//     security find-identity -v -p codesigning
+//
+// With "Automatically manage signing" enabled, Xcode registers the App IDs, the app group and the
+// iCloud container under your team the first time you build. App groups and iCloud aren't available
+// to free "Personal Team" accounts, so this needs a paid Apple Developer Program membership - see
+// the note at the bottom for what to do without one.
+
+ZOTERO_DEVELOPMENT_TEAM = ABCDE12345
+ZOTERO_BUNDLE_ID_PREFIX = com.example
+ZOTERO_TESTS_BUNDLE_ID_PREFIX = com.example
+ZOTERO_APP_GROUP = group.com.example.zotero
+ZOTERO_ICLOUD_CONTAINER = iCloud.com.example.zotero
+
+// The app bundle identifier becomes $(ZOTERO_BUNDLE_ID_PREFIX).Zotero and the share extension's
+// becomes $(ZOTERO_BUNDLE_ID_PREFIX).Zotero.ZShare. The extension's identifier has to stay a child
+// of the app's, so override the prefix rather than the identifiers themselves.
+//
+// Still claimed by Zotero and not parameterized, because it doesn't block signing: the Associated
+// Domains entitlement in Zotero/Zotero.entitlements lists webcredentials:www.zotero.org. Any team
+// can request it, it just won't validate at runtime.
+//
+// Without a paid membership, remove the iCloud and App Groups capabilities from
+// Zotero/Zotero.entitlements and ZShare/ZShare.entitlements entirely. The app falls back to its own
+// documents directory when the app group container is unavailable (see Files.appGroupPath), at the
+// cost of the share extension no longer sharing storage with the app.

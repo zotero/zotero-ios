@@ -1,1 +1,13 @@
 SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) FEATURE_GATE_DOCUMENT_WORKER
+
+// Identifiers which have to be registered under the team that signs the app. The defaults below are the ones owned by the Zotero
+// organization, so they can only be built by members of that team. To build with a different Apple Developer account, copy
+// Local.xcconfig.template to Local.xcconfig and override them there. Local.xcconfig is not committed and the include at the bottom
+// of this file is optional, so nothing breaks when it's missing.
+ZOTERO_DEVELOPMENT_TEAM = 8LAYR367YV
+ZOTERO_BUNDLE_ID_PREFIX = org.zotero.ios
+ZOTERO_TESTS_BUNDLE_ID_PREFIX = org.zotero
+ZOTERO_APP_GROUP = group.org.zotero.ios.Zotero
+ZOTERO_ICLOUD_CONTAINER = iCloud.org.zotero.ios.Zotero
+
+#include? "Local.xcconfig"
