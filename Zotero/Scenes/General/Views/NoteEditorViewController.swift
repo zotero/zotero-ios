@@ -210,7 +210,11 @@ final class NoteEditorViewController: UIViewController {
     private func perform(action: String, data: [String: Any]) {
         switch action {
         case "initialized":
-            let data = WebViewEncoder.encodeAsJSONForJavascript(["value": viewModel.state.text, "readOnly": viewModel.state.kind.readOnly])
+            let data = WebViewEncoder.encodeAsJSONForJavascript([
+                "value": viewModel.state.text,
+                "readOnly": viewModel.state.kind.readOnly,
+                "showIndentButtons": UIDevice.current.userInterfaceIdiom == .phone
+            ])
             webView.call(javascript: "start(\(data));").subscribe().disposed(by: disposeBag)
 
         case "readerInitialized":
