@@ -760,16 +760,35 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             switch remoteVoice.tier {
             case .premium:
                 // Downgrade from premium to standard
-                guard let remoteProcessor = processor as? RemoteVoiceProcessor,
-                      let language = processor.preferredLanguage ?? processor.detectedLanguage,
-                      let standardVoice = remoteProcessor.standardVoice(for: language) else {
-                    // No standard voice available, fall through to local
+                guard let remoteProcessor = processor as? RemoteVoiceProcessor else {
                     downgradeToLocalVoice()
                     return
                 }
-                Defaults.shared.remoteVoiceTier = .standard
-                remoteProcessor.set(voice: standardVoice, preferredLanguage: remoteProcessor.preferredLanguage)
-                resume()
+                remoteProcessor.standardVoice(for: processor.language)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(
+                        onSuccess: { [weak self, weak remoteProcessor] standardVoice in
+                            guard let self, let remoteProcessor,
+                                  let currentProcessor = processor as? RemoteVoiceProcessor,
+                                  currentProcessor === remoteProcessor,
+                                  self.voice == .remote(remoteVoice),
+                                  state.value.isOutOfCredits
+                            else { return }
+                            guard let standardVoice else {
+                                // The catalogue loaded successfully, but it has no standard voice for this language.
+                                downgradeToLocalVoice()
+                                return
+                            }
+                            Defaults.shared.remoteVoiceTier = .standard
+                            remoteProcessor.set(voice: standardVoice, preferredLanguage: remoteProcessor.preferredLanguage)
+                            resume()
+                        },
+                        onFailure: { error in
+                            // Don't treat a failed catalogue request as proof that no standard voice is available.
+                            DDLogError("SpeechManager: can't load standard voice for downgrade - \(error)")
+                        }
+                    )
+                    .disposed(by: disposeBag)
 
             case .standard:
                 // Downgrade from standard to local voice
@@ -1374,7 +1393,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     // MARK: - Actions
 
     func set(voice: RemoteVoice, preferredLanguage: String?) {
-        let voiceChanged = self.voice?.id != voice.id
+        let voiceChanged = self.voice?.id != voice.id || tier != voice.tier
+        tier = voice.tier
         self.preferredLanguage = preferredLanguage
         self.voice = voice
 
@@ -1391,11 +1411,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
     }
 
-    /// Attempts to downgrade to standard tier using cached voices.
-    /// Returns the voice and language if successful, nil if no standard voice is available.
-    func standardVoice(for language: String) -> RemoteVoice? {
-        guard let allAvailableVoices else { return nil }
-        return VoiceUtility.findRemoteVoice(for: language, tier: .standard, response: allAvailableVoices)
+    /// Attempts to resolve a standard voice, loading and caching the voice catalogue when needed.
+    /// Returns nil only when a loaded catalogue has no matching standard voice; loading errors remain failures.
+    func standardVoice(for language: String) -> Single<RemoteVoice?> {
+        return loadAvailableVoices()
+            .map({ VoiceUtility.findRemoteVoice(for: language, tier: .standard, response: $0) })
     }
 
     func speak(segments: [SpeechDocumentParser.Segment], startPageTextOffset: Int) {
@@ -1523,18 +1543,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     // MARK: - Voices
 
     private func loadVoice() -> Single<RemoteVoice> {
-        if let allAvailableVoices {
-            return resolveVoice(language: language, tier: tier, allVoices: allAvailableVoices)
-        }
-        return remoteVoicesController.loadVoices()
-            .do(onSuccess: { [weak self] result in
-                self?.allAvailableVoices = result.response
-            })
-            .flatMap({ [weak self] result in
+        return loadAvailableVoices()
+            .flatMap({ [weak self] allVoices in
                 guard let self else {
                     return Single.error(Error.cancelled)
                 }
-                return resolveVoice(language: language, tier: tier, allVoices: result.response)
+                return resolveVoice(language: language, tier: tier, allVoices: allVoices)
             })
             .do(onSuccess: { [weak self] voice in
                 self?.voice = voice
@@ -1550,6 +1564,17 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 return Disposables.create()
             }
         }
+    }
+
+    private func loadAvailableVoices() -> Single<VoicesResponse> {
+        if let allAvailableVoices {
+            return .just(allAvailableVoices)
+        }
+        return remoteVoicesController.loadVoices()
+            .do(onSuccess: { [weak self] result in
+                self?.allAvailableVoices = result.response
+            })
+            .map({ $0.response })
     }
 
     // MARK: - Speech
