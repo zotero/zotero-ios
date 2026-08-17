@@ -203,7 +203,8 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
 
         func presentVoicePicker(controller: ReadAloudViewHandler) {
             guard let voice = controller.speechManager.voice else { return }
-            controller.wasPlayingBeforeVoiceChange = controller.speechManager.state.value.isSpeakingOrLoading
+            let state = controller.speechManager.state.value
+            controller.wasPlayingBeforeVoiceChange = state.isSpeakingOrLoading || state.isOutOfCredits
             controller.speechManager.pause()
             controller.delegate?.presentReadAloudVoicePicker(
                 currentVoice: voice,
