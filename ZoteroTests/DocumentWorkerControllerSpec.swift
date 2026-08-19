@@ -795,7 +795,28 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     return
                 }
                 if let expectedURL {
-                    compareJSON(actual: materializedData, expectedURL: expectedURL, ignoreKeys: ["dateCreated"])
+                    guard let golden = structureGolden(from: materializedData) else { return }
+                    compareJSON(actual: golden, expectedURL: expectedURL, ignoreKeys: [])
+                }
+
+                func structureGolden(from structure: [String: Any]) -> [String: Any]? {
+                    let processorVersions = ["pdf": 10, "epub": 1, "snapshot": 1]
+                    guard structure["schemaVersion"] as? String == "1.1.0",
+                          var metadata = structure["metadata"] as? [String: Any],
+                          var processor = metadata["processor"] as? [String: Any],
+                          let type = processor["type"] as? String,
+                          let expectedVersion = processorVersions[type] else {
+                        fail("unexpected structured document text metadata")
+                        return nil
+                    }
+                    expect(processor["version"] as? Int).to(equal(expectedVersion))
+
+                    processor.removeValue(forKey: "version")
+                    metadata["processor"] = processor
+                    metadata["dateCreated"] = "2000-01-01T00:00:00.000Z"
+                    var golden = structure
+                    golden["metadata"] = metadata
+                    return golden
                 }
             }
 

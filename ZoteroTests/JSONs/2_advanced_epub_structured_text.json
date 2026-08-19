@@ -1,7 +1,7 @@
 {
 	"schemaVersion": "1.1.0",
 	"metadata": {
-		"processor": {"type": "epub", "version": 1},
+		"processor": {"type": "epub"},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
 		"source": {
 			"contentType": "application/epub+zip",
