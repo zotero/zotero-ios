@@ -237,7 +237,7 @@ class PDFSidebarViewController: UIViewController {
                 viewModel: annotationsViewModel,
                 annotationProvider: viewModel.handler.annotationProvider,
                 annotationPreviewController: viewModel.handler.annotationPreviewController,
-                initialAppearance: viewModel.handler.appearance
+                initialAppearance: viewModel.state.appearance
             )
             annotationsController.parentDelegate = parentDelegate
             annotationsController.coordinatorDelegate = coordinatorDelegate
@@ -276,7 +276,7 @@ class PDFSidebarViewController: UIViewController {
                 libraryId: viewModel.state.library.identifier,
                 document: viewModel.state.document,
                 selectedPageIndex: viewModel.state.visiblePage,
-                appearance: viewModel.handler.appearance
+                appearance: viewModel.state.appearance
             )
             let thumbnailsViewModel = ViewModel(initialState: thumbnailsState, handler: PDFThumbnailsActionHandler(thumbnailController: viewModel.handler.pdfThumbnailController))
             let thumbnailsController = PDFThumbnailsViewController(viewModel: thumbnailsViewModel)

@@ -212,7 +212,7 @@ final class AnnotationToolbarHandler: NSObject {
         case .top, .pinned:
             rotation = .horizontal
         }
-        controller.set(rotation: rotation, isCompactSize: isCompactSize(for: rotation))
+        controller.set(rotation: rotation)
         delegate.layoutIfNeeded()
     }
     
@@ -242,13 +242,7 @@ final class AnnotationToolbarHandler: NSObject {
     }
 
     private func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool {
-        switch rotation {
-        case .horizontal:
-            return delegate.isCompactWidth
-
-        case .vertical:
-            return delegate.containerView.frame.height <= 400
-        }
+        return controller.delegate?.isCompactSize(for: rotation) ?? false
     }
 
     func topOffsets(statusBarVisible: Bool) -> (statusBarHeight: CGFloat, navigationBarHeight: CGFloat, total: CGFloat) {
@@ -375,7 +369,7 @@ final class AnnotationToolbarHandler: NSObject {
             toolbarLeading.isActive = true
             toolbarLeading.constant = inset + max(delegate.containerView.safeAreaInsets.left, delegate.additionalToolbarInsets.leading)
             toolbarTop.constant = inset + topOffsets(statusBarVisible: statusBarVisible).total
-            controller.set(rotation: .vertical, isCompactSize: isCompact)
+            controller.set(rotation: .vertical)
         }
 
         func setupTrailingConstraints(isCompact: Bool, statusBarVisible: Bool) {
@@ -384,7 +378,7 @@ final class AnnotationToolbarHandler: NSObject {
             toolbarTrailing.isActive = true
             toolbarTrailing.constant = inset + max(delegate.containerView.safeAreaInsets.right, delegate.additionalToolbarInsets.trailing)
             toolbarTop.constant = inset + topOffsets(statusBarVisible: statusBarVisible).total
-            controller.set(rotation: .vertical, isCompactSize: isCompact)
+            controller.set(rotation: .vertical)
         }
 
         func setupTopConstraints(isCompact: Bool, isPinned: Bool, statusBarVisible: Bool) {
@@ -394,7 +388,7 @@ final class AnnotationToolbarHandler: NSObject {
             toolbarLeading.constant = max(0, delegate.additionalToolbarInsets.leading)
             let topOffsets = topOffsets(statusBarVisible: statusBarVisible)
             toolbarTop.constant = isPinned ? topOffsets.statusBarHeight : topOffsets.total
-            controller.set(rotation: .horizontal, isCompactSize: isCompact)
+            controller.set(rotation: .horizontal)
         }
     }
 

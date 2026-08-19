@@ -6,12 +6,14 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SafariServices
+import SwiftUI
 import UIKit
 
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
+protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate, ReadAloudCoordinatorDelegate {
     func showDocumentChangedAlert(completed: @escaping () -> Void)
     func show(url: URL)
     func showSearch(
@@ -35,7 +37,8 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     private let url: URL
     private let readerURL: URL?
     private let preselectedAnnotationKey: String?
-    internal unowned let controllers: Controllers
+    unowned let controllers: Controllers
+    let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
 
     init(
@@ -56,6 +59,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         self.preselectedAnnotationKey = preselectedAnnotationKey
         self.navigationController = navigationController
         self.controllers = controllers
+        remoteVoicesController = RemoteVoicesController(apiClient: controllers.apiClient)
         childCoordinators = []
         disposeBag = DisposeBag()
 
@@ -103,7 +107,10 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         )
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
-            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
+            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
+            dbStorage: dbStorage,
+            documentWorkerController: userControllers.documentWorkerController,
+            remoteVoicesController: remoteVoicesController
         )
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: false)
