@@ -44,7 +44,7 @@ struct ReadAloudVoicePickerView: View {
                 ReadAloudVoicesSection(model: model, selectedVoice: $model.selectedVoice)
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Voice")
+            .navigationTitle(L10n.Speech.voice)
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: String.self) { value in
                 if value == "languages" {
@@ -66,7 +66,7 @@ struct ReadAloudVoicePickerView: View {
                         guard let voice = model.selectedVoice else { return }
                         dismiss(ReadAloudVoiceChange(voice: voice, preferredLanguage: model.preferredLanguageForDismiss))
                     } label: {
-                        Text("Close")
+                        Text(L10n.close)
                     }
                 }
             }

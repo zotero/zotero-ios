@@ -56,7 +56,7 @@ struct ReadAloudLanguagePickerView: View {
             }
 
             if !isAutoEnabled {
-                Section(header: Text("LANGUAGE")) {
+                Section(header: Text(L10n.Speech.language.uppercased())) {
                     ForEach(languages) { language in
                         HStack {
                             Text(language.name)
@@ -74,7 +74,7 @@ struct ReadAloudLanguagePickerView: View {
                 }
             }
         }
-        .navigationTitle("Language")
+        .navigationTitle(L10n.Speech.language)
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: isAutoEnabled) { newValue in
             if newValue {

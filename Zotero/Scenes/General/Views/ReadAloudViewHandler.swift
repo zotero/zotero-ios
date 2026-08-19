@@ -169,7 +169,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             if let warningGroup = createWarningGroupIfNeeded(controller: controller) {
                 elements.append(warningGroup)
             } else {
-                let speedGroup = UIMenu(title: "Speech Rate", options: [], children: createSpeedActions(controller: controller))
+                let speedGroup = UIMenu(title: L10n.Speech.speechRate, options: [], children: createSpeedActions(controller: controller))
                 elements.append(speedGroup)
             }
             return elements
@@ -189,12 +189,12 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
                     }
                 )
             }
-            items.append(UIAction(title: "Switch", image: UIImage(systemName: "person.wave.2")) { [weak controller] _ in
+            items.append(UIAction(title: L10n.Speech.switch, image: UIImage(systemName: "person.wave.2")) { [weak controller] _ in
                 guard let controller else { return }
                 presentVoicePicker(controller: controller)
             })
             if !controller.speechManager.state.value.isOutOfCredits {
-                items.append(UIAction(title: "Stop", image: UIImage(systemName: "square.fill")) { [weak controller] _ in
+                items.append(UIAction(title: L10n.Speech.stop, image: UIImage(systemName: "square.fill")) { [weak controller] _ in
                     controller?.speechManager.stop()
                 })
             }
@@ -228,7 +228,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         func createWarningGroupIfNeeded(controller: ReadAloudViewHandler) -> UIMenu? {
             guard let remainingTime = controller.speechManager.remainingTime.value, RemainingTimeFormatter.isWarning(remainingTime) else { return nil }
             var items: [UIMenuElement] = []
-            items.append(UIAction(title: "Add More Time", image: nil) { [weak controller] _ in
+            items.append(UIAction(title: L10n.Speech.addTime, image: nil) { [weak controller] _ in
                 controller?.delegate?.presentReadAloudAddMoreTime()
             })
             if remainingTime <= 0, let title = continueWithDowngradeTitle(voice: controller.speechManager.voice) {
@@ -244,10 +244,10 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             case .remote(let remoteVoice):
                 switch remoteVoice.tier {
                 case .premium:
-                    return "Continue Reading With Standard Voices"
+                    return L10n.Speech.continueStandard
 
                 case .standard:
-                    return "Continue Reading With Local Voices"
+                    return L10n.Speech.continueLocal
                 }
 
             case .local, .none:
@@ -275,7 +275,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         }
 
         func currentVoiceTitle(controller: ReadAloudViewHandler) -> String {
-            guard let voice = controller.speechManager.voice else { return L10n.Speech.unknownVoice }
+            guard let voice = controller.speechManager.voice else { return L10n.Speech.voice }
             switch voice {
             case .local(let value):
                 return value.name

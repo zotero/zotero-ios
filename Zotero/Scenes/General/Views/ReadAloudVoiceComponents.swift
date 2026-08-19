@@ -140,14 +140,14 @@ struct ReadAloudLanguageSection: View {
     var body: some View {
         Section {
             HStack {
-                Text("Language")
+                Text(L10n.Speech.language)
                 Spacer()
                 switch language {
                 case .auto:
                     Text("\(L10n.Speech.automatic) - \(detectedLanguageName)").foregroundColor(.gray)
 
                 case .language(let code):
-                    Text(Locale.current.localizedString(forLanguageCode: code) ?? "Unknown").foregroundColor(.gray)
+                    Text(Locale.current.localizedString(forLanguageCode: code) ?? L10n.unknown).foregroundColor(.gray)
                 }
                 Image(systemName: "chevron.right")
                     .foregroundColor(.gray)

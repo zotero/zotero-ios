@@ -287,7 +287,7 @@
 "accessibility_popup.show_reader" = "Reading Mode";
 "accessibility_popup.show_speech" = "Read Aloud";
 "speech.title" = "Read Aloud";
-"speech.unknown_voice" = "Voice";
+"speech.voice" = "Voice";
 "speech.speak" = "Speak";
 "speech.automatic" = "Automatic";
 "speech.no_voices_for_tier" = "No voices found for detected language %@ in this tier. Pick a different tier or choose language manually.";
@@ -314,6 +314,13 @@
 "speech.voices" = "Voices";
 "speech.region" = "Region";
 "speech.local_sample" = "I am the local voice %@.";
+"speech.language" = "Language";
+"speech.speech_rate" = "Speech Rate";
+"speech.switch" = "Switch";
+"speech.stop" = "Stop";
+"speech.add_time" = "Add More Time";
+"speech.continue_standard" = "Continue Reading With Standard Voices";
+"speech.continue_local" = "Continue Reading With Local Voices";
 
 "settings.title" = "Settings";
 "settings.logout" = "Sign Out";
