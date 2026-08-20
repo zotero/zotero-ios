@@ -566,6 +566,13 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     (description: "cocaine-related ischemic strokes PDF", resource: "cocaine-related-ischemic-strokes", fileExtension: "pdf", key: "ddddddd3", contentType: "application/pdf", expected: "cocaine_related_ischemic_strokes_pdf_structured_text", timeout: 240),
                     (description: "ethics in law enforcement PDF", resource: "ethics-in-law-enforcement", fileExtension: "pdf", key: "ddddddd4", contentType: "application/pdf", expected: "ethics_in_law_enforcement_pdf_structured_text", timeout: 240),
                     (description: "FRAI 06 1128212 PDF", resource: "frai-06-1128212", fileExtension: "pdf", key: "ddddddd5", contentType: "application/pdf", expected: "frai_06_1128212_pdf_structured_text", timeout: 240),
+                    (description: "advancing mathematics PDF", resource: "advancing-mathematics-by-guiding-human-intuition-with-ai", fileExtension: "pdf", key: "ddddddd6", contentType: "application/pdf", expected: "advancing_mathematics_by_guiding_human_intuition_with_ai_pdf_structured_text", timeout: 240),
+                    (description: "cross-page numbered references PDF", resource: "cross-page-numbered-references", fileExtension: "pdf", key: "ddddddd7", contentType: "application/pdf", expected: "cross_page_numbered_references_pdf_structured_text", timeout: 240),
+                    (description: "cross-page width tolerance PDF", resource: "cross-page-width-tolerance", fileExtension: "pdf", key: "ddddddd8", contentType: "application/pdf", expected: "cross_page_width_tolerance_pdf_structured_text", timeout: 240),
+                    (description: "paint scene pathologies PDF", resource: "paint-scene-pathologies", fileExtension: "pdf", key: "ddddddd9", contentType: "application/pdf", expected: "paint_scene_pathologies_pdf_structured_text", timeout: 240),
+                    (description: "synthetic cross-page mixed notes PDF", resource: "synthetic-cross-page-mixed-notes", fileExtension: "pdf", key: "ddddddda", contentType: "application/pdf", expected: "synthetic_cross_page_mixed_notes_pdf_structured_text", timeout: 240),
+                    (description: "synthetic cross-page reference continuation PDF", resource: "synthetic-cross-page-reference-continuation", fileExtension: "pdf", key: "dddddddb", contentType: "application/pdf", expected: "synthetic_cross_page_reference_continuation_pdf_structured_text", timeout: 240),
+                    (description: "synthetic printed contents outline PDF", resource: "synthetic-printed-contents-outline", fileExtension: "pdf", key: "dddddddc", contentType: "application/pdf", expected: "synthetic_printed_contents_outline_pdf_structured_text", timeout: 240),
                     (description: "EPUB", resource: "1", fileExtension: "epub", key: "eeeeeeee", contentType: "application/epub+zip", expected: "1_epub_structured_text", timeout: 30),
                     (description: "advanced EPUB", resource: "1_advanced", fileExtension: "epub", key: "eeeeeee1", contentType: "application/epub+zip", expected: "1_advanced_epub_structured_text", timeout: 60),
                     (description: "EPUB 2", resource: "2", fileExtension: "epub", key: "eeeeeee2", contentType: "application/epub+zip", expected: "2_epub_structured_text", timeout: 60),
@@ -737,12 +744,12 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 }
             }
 
-            func process(updates: [DocumentWorkerController.Update.Kind], ignoreKeys: Set<String> = [], jsonFileName: String) {
+            func process(updates: [DocumentWorkerController.Update.Kind], jsonFileName: String) {
                 let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
-                process(updates: updates, ignoreKeys: ignoreKeys, jsonURL: url)
+                process(updates: updates, jsonURL: url)
             }
 
-            func assertStructuredDocumentTextPack(updates: [DocumentWorkerController.Update.Kind], expectedURL: URL? = nil) {
+            func assertStructuredDocumentTextPack(updates: [DocumentWorkerController.Update.Kind], expectedURL: URL) {
                 let magic = Data([0x89, 0x53, 0x44, 0x54, 0x0d, 0x0a, 0x1a, 0x0a])
                 var materializedData: [String: Any]?
                 for (index, update) in updates.enumerated() {
@@ -794,8 +801,27 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     fail("missing materialized SDTPack data")
                     return
                 }
-                if let expectedURL {
-                    compareJSON(actual: materializedData, expectedURL: expectedURL, ignoreKeys: ["dateCreated"])
+                guard let golden = structureGolden(from: materializedData) else { return }
+                compareJSON(actual: golden, expectedURL: expectedURL)
+
+                func structureGolden(from structure: [String: Any]) -> [String: Any]? {
+                    let processorVersions = ["pdf": 10, "epub": 1, "snapshot": 1]
+                    guard structure["schemaVersion"] as? String == "1.1.0",
+                          var metadata = structure["metadata"] as? [String: Any],
+                          var processor = metadata["processor"] as? [String: Any],
+                          let type = processor["type"] as? String,
+                          let expectedVersion = processorVersions[type] else {
+                        fail("unexpected structured document text metadata")
+                        return nil
+                    }
+                    expect(processor["version"] as? Int).to(equal(expectedVersion))
+
+                    processor.removeValue(forKey: "version")
+                    metadata["processor"] = processor
+                    metadata["dateCreated"] = "2000-01-01T00:00:00.000Z"
+                    var golden = structure
+                    golden["metadata"] = metadata
+                    return golden
                 }
             }
 
@@ -991,7 +1017,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 return Array(Set([0, count / 2, count - 1])).sorted()
             }
 
-            func process(updates: [DocumentWorkerController.Update.Kind], ignoreKeys: Set<String> = [], jsonURL: URL) {
+            func process(updates: [DocumentWorkerController.Update.Kind], jsonURL: URL) {
                 for (index, update) in updates.enumerated() {
                     switch update {
                     case .queued:
@@ -1006,7 +1032,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                             fail("expected JSON-compatible result at \(jsonURL.lastPathComponent)")
                             return
                         }
-                        compareJSON(actual: data, expectedURL: jsonURL, ignoreKeys: ignoreKeys)
+                        compareJSON(actual: data, expectedURL: jsonURL)
 
                     default:
                         fail("unexpected update \(index): \(update)")
@@ -1027,27 +1053,27 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 }
             }
 
-            func compareJSON(actual: [String: Any], expectedURL: URL, ignoreKeys: Set<String>) {
+            func compareJSON(actual: [String: Any], expectedURL: URL) {
                 let expectedData = try! Data(contentsOf: expectedURL)
                 let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
-                compareJSONObjects(actual: actual, expected: expectedJSONData, ignoreKeys: ignoreKeys, context: expectedURL.lastPathComponent)
+                compareJSONObjects(actual: actual, expected: expectedJSONData, context: expectedURL.lastPathComponent)
 
-                func compareJSONObjects(actual: [String: Any], expected: [String: Any], ignoreKeys: Set<String>, context: String) {
-                    let actualKeys = Set(actual.keys).subtracting(ignoreKeys)
-                    let expectedKeys = Set(expected.keys).subtracting(ignoreKeys)
+                func compareJSONObjects(actual: [String: Any], expected: [String: Any], context: String) {
+                    let actualKeys = Set(actual.keys)
+                    let expectedKeys = Set(expected.keys)
                     expect(actualKeys).to(equal(expectedKeys))
                     for key in expectedKeys {
-                        compareJSONValues(actual: actual[key], expected: expected[key], ignoreKeys: ignoreKeys, context: "\(context).\(key)")
+                        compareJSONValues(actual: actual[key], expected: expected[key], context: "\(context).\(key)")
                     }
                 }
 
-                func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
+                func compareJSONValues(actual: Any?, expected: Any?, context: String) {
                     if let expected = expected as? [String: Any] {
                         guard let actual = actual as? [String: Any] else {
                             fail("expected object at \(context), got \(String(describing: actual))")
                             return
                         }
-                        compareJSONObjects(actual: actual, expected: expected, ignoreKeys: ignoreKeys, context: context)
+                        compareJSONObjects(actual: actual, expected: expected, context: context)
                         return
                     }
 
@@ -1059,7 +1085,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                         expect(actual.count).to(equal(expected.count), description: context)
                         guard actual.count == expected.count else { return }
                         for index in expected.indices {
-                            compareJSONValues(actual: actual[index], expected: expected[index], ignoreKeys: ignoreKeys, context: "\(context)[\(index)]")
+                            compareJSONValues(actual: actual[index], expected: expected[index], context: "\(context)[\(index)]")
                         }
                         return
                     }

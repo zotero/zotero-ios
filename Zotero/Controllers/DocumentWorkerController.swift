@@ -220,7 +220,7 @@ final class DocumentWorkerController {
             }
 
             fileprivate struct Cache: Work.Cache {
-                let location = CacheLocation(path: "text", version: 1)
+                let location = CacheLocation(path: "text", version: 2)
 
                 func cachedResult(for work: Work, in worker: Worker, fileStorage: FileStorage) -> DocumentWorkerController.Result? {
                     guard case .fullText(let pages) = work else { return nil }
@@ -343,7 +343,7 @@ final class DocumentWorkerController {
             }
 
             fileprivate struct Cache: Work.Cache {
-                let location = CacheLocation(path: "sdt", version: 4)
+                let location = CacheLocation(path: "sdt", version: 5)
 
                 func cachedResult(for work: Work, in worker: Worker, fileStorage: FileStorage) -> DocumentWorkerController.Result? {
                     guard case .structuredDocumentText = work else { return nil }
