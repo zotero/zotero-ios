@@ -18,6 +18,27 @@ class HtmlEpubDocumentViewController: UIViewController {
         case log = "logHandler"
     }
 
+    /// State of an active read-aloud highlight session. The annotation is created by the reader, so that the user sees it
+    /// while the session is active, but it's stored in the database only when the session ends. The latest annotation
+    /// reported by the reader is therefore kept here, because the reader's own (debounced) saves are ignored.
+    private struct ReadAloudAnnotationSession {
+        enum PendingEnd {
+            case store
+            case discard
+        }
+
+        /// Key assigned to the annotation by the reader. `nil` until the reader responds to the first request.
+        var key: String?
+        /// Latest annotation reported by the reader.
+        var annotation: [String: Any]?
+        /// Identifier of the request which is currently in flight, `nil` when the reader responded to all requests.
+        var requestID: Int?
+        /// Latest params requested while a request was in flight. Sent as soon as the reader responds.
+        var pendingParams: [String: Any]?
+        /// Set when the session ended while a request was in flight. Performed as soon as the reader responds.
+        var pendingEnd: PendingEnd?
+    }
+
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
     private let disposeBag: DisposeBag
 
@@ -34,6 +55,7 @@ class HtmlEpubDocumentViewController: UIViewController {
     private var readAloudSegmentRequests: [Int: ([SpeechReaderSegment]?) -> Void] = [:]
     private var readAloudStartBlockIndexRequests: [Int: (Int?) -> Void] = [:]
     private var nextReadAloudRequestID = 0
+    private var readAloudAnnotationSession: ReadAloudAnnotationSession?
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -164,8 +186,13 @@ class HtmlEpubDocumentViewController: UIViewController {
             .disposed(by: disposeBag)
     }
 
-    /// Creates or resizes the highlight-session PREVIEW annotation spanning `sdtStart`…`sdtEnd`. The reader renders it
-    /// but withholds it from the database until `confirmReadAloudAnnotation`. Fire-and-forget.
+    /// Creates or resizes/restyles the highlight-session annotation spanning `sdtStart`…`sdtEnd`. The annotation is only
+    /// rendered in the document while the session is active, it's stored in the database when the session ends
+    /// (`endReadAloudAnnotationSession(store: true)`).
+    ///
+    /// The first call of a session starts it. Only one request can be in flight at a time, because the reader assigns the
+    /// annotation key and it has to be known before the annotation can be resized instead of created again. While a
+    /// request is in flight only the latest requested range is remembered and sent when the reader responds.
     func setReadAloudAnnotation(type: AnnotationTool, color: String, sdtStart: [Int], sdtEnd: [Int]) {
         let readerType: String
         switch type {
@@ -185,30 +212,96 @@ class HtmlEpubDocumentViewController: UIViewController {
             "startPosition": ["start": sdtStart, "end": sdtStart],
             "endPosition": ["start": sdtEnd, "end": sdtEnd]
         ]
-        webViewHandler.call(javascript: "setReadAloudAnnotation({ params: \(WebViewEncoder.encodeAsJSONForJavascript(params)) });")
+
+        if var session = readAloudAnnotationSession {
+            guard session.pendingEnd == nil else { return }
+            if session.requestID != nil {
+                session.pendingParams = params
+                readAloudAnnotationSession = session
+                return
+            }
+            send(readAloudAnnotationParams: params)
+            return
+        }
+
+        // The session has to be started in the view model before the reader is asked to create the annotation, so that
+        // its saves are ignored. The reader can report them synchronously, before it responds with the annotation.
+        readAloudAnnotationSession = ReadAloudAnnotationSession()
+        viewModel.process(action: .startReadAloudAnnotationSession)
+        send(readAloudAnnotationParams: params)
+    }
+
+    private func send(readAloudAnnotationParams params: [String: Any]) {
+        guard var session = readAloudAnnotationSession else { return }
+        var params = params
+        if let key = session.key {
+            params["id"] = key
+        }
+        let requestID = nextReadAloudRequestID
+        nextReadAloudRequestID += 1
+        session.requestID = requestID
+        readAloudAnnotationSession = session
+        webViewHandler.call(javascript: "setReadAloudAnnotation({ params: \(WebViewEncoder.encodeAsJSONForJavascript(params)), requestID: \(requestID) });")
             .observe(on: MainScheduler.instance)
-            .subscribe(onFailure: { error in
+            .subscribe(onFailure: { [weak self] error in
                 DDLogError("HtmlEpubDocumentViewController: setting read aloud annotation failed - \(error)")
+                self?.process(readAloudAnnotation: nil, requestID: requestID)
             })
             .disposed(by: disposeBag)
     }
 
-    /// Confirms the highlight session: the reader persists the preview annotation (single DB write via `onSaveAnnotations`).
-    func confirmReadAloudAnnotation() {
-        webViewHandler.call(javascript: "confirmReadAloudAnnotation();")
-            .subscribe(onFailure: { error in
-                DDLogError("HtmlEpubDocumentViewController: confirming read aloud annotation failed - \(error)")
-            })
-            .disposed(by: disposeBag)
+    /// Ends the highlight session. `store: true` stores the annotation reported by the reader in the database (the single
+    /// write of a session), `store: false` discards it and removes it from the document.
+    ///
+    /// Called for both a confirmed and a discarded session, in this order, so the first call decides the outcome.
+    func endReadAloudAnnotationSession(store: Bool) {
+        guard var session = readAloudAnnotationSession, session.pendingEnd == nil else { return }
+
+        if session.requestID != nil {
+            // Wait for the reader to respond, otherwise the last change would be lost and the key of the annotation
+            // which has to be removed from the document may not be known yet.
+            session.pendingEnd = store ? .store : .discard
+            session.pendingParams = nil
+            readAloudAnnotationSession = session
+            return
+        }
+
+        readAloudAnnotationSession = nil
+
+        if !store, let key = session.key {
+            webViewHandler.call(javascript: "unsetReadAloudAnnotation({ key: '\(key)' });")
+                .subscribe(onFailure: { error in
+                    DDLogError("HtmlEpubDocumentViewController: unsetting read aloud annotation failed - \(error)")
+                })
+                .disposed(by: disposeBag)
+        }
+
+        viewModel.process(action: .endReadAloudAnnotationSession(annotation: store ? session.annotation : nil, key: session.key))
     }
 
-    /// Cancels the highlight session: the reader discards the preview annotation. No database change (it was never saved).
-    func cancelReadAloudAnnotation() {
-        webViewHandler.call(javascript: "cancelReadAloudAnnotation();")
-            .subscribe(onFailure: { error in
-                DDLogError("HtmlEpubDocumentViewController: cancelling read aloud annotation failed - \(error)")
-            })
-            .disposed(by: disposeBag)
+    /// Processes the reader's response to `setReadAloudAnnotation` - caches the annotation, so that it can be stored when
+    /// the session ends, and performs whatever was requested while the request was in flight.
+    private func process(readAloudAnnotation annotation: [String: Any]?, requestID: Int) {
+        guard var session = readAloudAnnotationSession, session.requestID == requestID else { return }
+        session.requestID = nil
+        if let annotation, let key = annotation["id"] as? String {
+            session.key = key
+            session.annotation = annotation
+        } else {
+            DDLogWarn("HtmlEpubDocumentViewController: reader didn't create read aloud annotation")
+        }
+        readAloudAnnotationSession = session
+
+        if let pendingEnd = session.pendingEnd {
+            readAloudAnnotationSession?.pendingEnd = nil
+            endReadAloudAnnotationSession(store: pendingEnd == .store)
+            return
+        }
+
+        if let params = session.pendingParams {
+            readAloudAnnotationSession?.pendingParams = nil
+            send(readAloudAnnotationParams: params)
+        }
     }
 
     /// Spotlights the currently-read segment (`sdtStart`…`sdtEnd`) in the reader. The reader maps the SDT position to a
@@ -435,6 +528,14 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 DDLogInfo("HtmlEpubDocumentViewController: \(params)")
                 viewModel.process(action: .saveAnnotations(params))
+
+            case "onReadAloudAnnotation":
+                // Reader responded to a `setReadAloudAnnotation` request with the resulting annotation.
+                guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing requestID - \(message)")
+                    return
+                }
+                process(readAloudAnnotation: params["annotation"] as? [String: Any], requestID: requestID)
 
             case "onSetAnnotationPopup":
                 guard let params = data["params"] as? [String: Any] else {

@@ -53,13 +53,15 @@ protocol SpeechManagerDelegate: AnyObject {
     ///   - sdtEnd: Reader SDT position (`end` path) of the unit's last character. Nil when unavailable (e.g. PDF).
     ///   - pageIndex: The page index where the text is located.
     func readAloudHighlightChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Index)
-    /// Called when the annotation preview highlight changes during a highlight session; see `readAloudHighlightChanged`
-    /// for `rects`/`sdtStart`/`sdtEnd`. Nothing is persisted here — this is a transient preview only.
+    /// Called when the annotation preview highlight changes during a highlight session (session start, move, extend,
+    /// tool/color change); see `readAloudHighlightChanged` for `rects`/`sdtStart`/`sdtEnd`. Nothing is persisted here —
+    /// this is a transient preview only.
     func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Index, tool: AnnotationTool, color: String)
     /// Called only when the user confirms an annotation from the highlighter overlay (never during move/extend/cancel).
     /// This is the single point at which the annotation is written to the database and synced.
     func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: Index)
-    /// Called when the highlight session ends, to remove the annotation preview highlight.
+    /// Called when the highlight session ends (both confirmed and discarded), to remove the annotation preview highlight.
+    /// In the confirmed case it's called right after `createAnnotation`.
     func clearAnnotationPreview()
 }
 
@@ -412,7 +414,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     processor.detectedLanguage = nil
                     pendingNavigation?.workItem.cancel()
                     pendingNavigation = nil
-                    highlightSessionManager.cancelSession()
                     nowPlayingManager.deactivate()
                 }
             })

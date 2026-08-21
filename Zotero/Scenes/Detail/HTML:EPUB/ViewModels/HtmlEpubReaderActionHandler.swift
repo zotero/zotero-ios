@@ -60,6 +60,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .removeAnnotation(let key):
             removeAnnotation(key: key, in: viewModel)
 
+        case .startReadAloudAnnotationSession:
+            startReadAloudAnnotationSession(in: viewModel)
+
+        case .endReadAloudAnnotationSession(let annotation, let key):
+            endReadAloudAnnotationSession(annotation: annotation, key: key, in: viewModel)
+
         case .saveAnnotations(let params):
             saveAnnotations(params: params, in: viewModel)
 
@@ -442,6 +448,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         guard !keys.isEmpty else { return }
 
+        // Remember the keys, so that a save which was already scheduled in the document can't recreate a deleted annotation.
+        update(viewModel: viewModel, notifyListeners: false) { state in
+            state.ignoredAnnotationKeys.formUnion(keys)
+        }
+
         let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: keys, libraryId: viewModel.state.library.identifier)
         perform(request: request) { [weak self, weak viewModel] error in
             guard let self, let error, let viewModel else { return }
@@ -708,7 +719,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             return
         }
 
-        let annotations = parse(annotations: rawAnnotations, author: viewModel.state.username, isAuthor: true)
+        let storedAnnotations = rawAnnotations.filter({ shouldStore(rawAnnotation: $0, in: viewModel) })
+
+        guard !storedAnnotations.isEmpty else { return }
+
+        let annotations = parse(annotations: storedAnnotations, author: viewModel.state.username, isAuthor: true)
 
         guard !annotations.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: could not parse annotations")
@@ -722,6 +737,55 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.changes = .activeTool
                 _select(key: annotation.key, didSelectInDocument: true, state: &state)
             }
+        }
+
+        createDatabaseAnnotations(annotations: annotations, in: viewModel)
+    }
+
+    /// Decides whether an annotation saved by the document should be stored in the database. The document saves annotations with a delay, so its saves can arrive at any time, even for annotations
+    /// which are already deleted, or which shouldn't be stored at all.
+    private func shouldStore(rawAnnotation: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> Bool {
+        guard let key = rawAnnotation["id"] as? String else { return false }
+
+        if viewModel.state.ignoredAnnotationKeys.contains(key) {
+            DDLogInfo("HtmlEpubReaderActionHandler: ignoring save of annotation \(key)")
+            return false
+        }
+
+        // The annotation of an active read aloud highlight session is stored when the session ends. Its saves can arrive before the reader reports its key, so any annotation which is not stored yet
+        // is treated as the session annotation - it's the only annotation which can be created in the document during a session.
+        if viewModel.state.isReadAloudAnnotationSessionActive && viewModel.state.annotations[key] == nil {
+            DDLogInfo("HtmlEpubReaderActionHandler: ignoring save of read aloud session annotation \(key)")
+            return false
+        }
+
+        return true
+    }
+
+    private func startReadAloudAnnotationSession(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        DDLogInfo("HtmlEpubReaderActionHandler: read aloud annotation session started")
+        update(viewModel: viewModel, notifyListeners: false) { state in
+            state.isReadAloudAnnotationSessionActive = true
+        }
+    }
+
+    private func endReadAloudAnnotationSession(annotation: [String: Any]?, key: String?, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        DDLogInfo("HtmlEpubReaderActionHandler: read aloud annotation session ended; store=\(annotation != nil); key=\(key ?? "nil")")
+        update(viewModel: viewModel, notifyListeners: false) { state in
+            state.isReadAloudAnnotationSessionActive = false
+            // The document can still save the session annotation after the session ended (it saves with a delay), it's already stored (or discarded) at that point.
+            if let key {
+                state.ignoredAnnotationKeys.insert(key)
+            }
+        }
+
+        guard let annotation else { return }
+
+        let annotations = parse(annotations: [annotation], author: viewModel.state.username, isAuthor: true)
+
+        guard !annotations.isEmpty else {
+            DDLogError("HtmlEpubReaderActionHandler: could not parse read aloud session annotation")
+            return
         }
 
         createDatabaseAnnotations(annotations: annotations, in: viewModel)

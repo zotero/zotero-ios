@@ -911,19 +911,19 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
     }
 
     func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Int, tool: AnnotationTool, color: String) {
-        // Render/resize the live preview annotation in the reader. It is withheld from the database until confirm.
+        // Render/resize/restyle the preview annotation in the document. It's stored in the database when the session is confirmed.
         guard let sdtStart, let sdtEnd else { return }
         documentController?.setReadAloudAnnotation(type: tool, color: color, sdtStart: sdtStart, sdtEnd: sdtEnd)
     }
 
     func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: Int) {
-        // Confirmed highlight session: persist the preview annotation (single DB write via `onSaveAnnotations`).
-        documentController?.confirmReadAloudAnnotation()
+        // Confirmed highlight session: store the preview annotation reported by the document (single DB write).
+        documentController?.endReadAloudAnnotationSession(store: true)
     }
 
     func clearAnnotationPreview() {
-        // Session ended: discard any unconfirmed preview annotation from the reader (no-op if it was just confirmed).
-        documentController?.cancelReadAloudAnnotation()
+        // Session ended. This is also called right after `createAnnotation` when the session was confirmed, in which case the session is already ended and nothing is discarded.
+        documentController?.endReadAloudAnnotationSession(store: false)
     }
 }
 
@@ -1021,7 +1021,7 @@ extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
     }
 
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
-        // Re-style the live preview annotation (same range, new tool/color) mid-session.
+        // Re-style the preview annotation (same range, new tool/color) mid-session.
         guard let sdt = readAloudHandler?.speechManager.currentHighlightSDTRange else { return }
         documentController?.setReadAloudAnnotation(type: tool, color: color, sdtStart: sdt.start, sdtEnd: sdt.end)
     }
