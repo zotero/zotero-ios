@@ -129,6 +129,13 @@ struct HtmlEpubReaderState: ViewModelState {
     var selectedAnnotationCommentActive: Bool
     /// Selected annotations when annotations are being edited in sidebar
     var selectedAnnotationsDuringEditing: Set<String>
+    /// Keys of annotations whose saves reported by the document are ignored. The document saves annotations with a delay,
+    /// so a save can arrive after the annotation was deleted (which would recreate it), or after a read aloud highlight
+    /// session which created it already ended (the annotation is stored, or discarded, when the session ends).
+    var ignoredAnnotationKeys: Set<String>
+    /// Indicates whether a read aloud highlight session is in progress. While it is, the document renders its annotation,
+    /// but the annotation is stored in the database only when the session ends.
+    var isReadAloudAnnotationSessionActive: Bool
     /// Temporary params of selected text, used to create highlight/underline with UIMenu buttons
     var selectedTextParams: [String: Any]?
     var annotationPopoverKey: String?
@@ -203,6 +210,8 @@ struct HtmlEpubReaderState: ViewModelState {
         changes = []
         deletionEnabled = false
         selectedAnnotationsDuringEditing = []
+        ignoredAnnotationKeys = []
+        isReadAloudAnnotationSessionActive = false
         outlines = []
         outlineSearch = ""
         documentSearchResults = []

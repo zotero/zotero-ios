@@ -46,7 +46,7 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
             return NSRange(location: first.location, length: last.location + last.length - first.location)
         }
 
-        /// The page's readable text, derived by joining the segments (used to extract highlighted text and as the hint denominator).
+        /// The page's readable text, derived by joining the segments (used to extract the highlighted text).
         var pageText: String {
             return segments.map(\.text).joined(separator: SpeechDocumentParser.segmentSeparator)
         }

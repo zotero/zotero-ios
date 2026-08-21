@@ -31,29 +31,60 @@ protocol SpeechManagerDelegate: AnyObject {
     func pageIndex(forStructuredDocumentTextPage page: Int) -> Index?
     func moved(to pageIndex: Index, from previousPageIndex: Index)
     func focusPage(_ pageIndex: Index)
+    /// Sends the structured-document-text pack to the reader (if the reader needs it) and returns the reader's own
+    /// read-aloud segments — the source of truth for HTML/EPUB, whose `sdtStart`/`sdtEnd` positions are needed to create
+    /// annotations. Returns nil to fall back to the built-in `SpeechDocumentParser` (PDF); a default nil implementation
+    /// is provided, so only readers that use reader segments override it.
+    func readAloudReaderSegments(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int, completion: @escaping ([SpeechReaderSegment]?) -> Void)
+    /// The structured-document-text block index currently in view, so playback starts where the reader is. Read fresh at
+    /// each play (not cached), reflecting the current scroll position. Nil (the default) means "start at the beginning".
+    func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void)
     /// Called when the highlighted text changes during text-to-speech playback.
     /// The highlight covers the current text unit (sentence or paragraph) being spoken, matching the voice's
     /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
     /// remote voices with paragraph granularity highlight paragraphs.
     ///
-    /// Both a geometric and a textual description of the unit are provided so each reader can use whichever fits its
-    /// render layer: the PDF reader draws `rects` directly (authoritative structured-document-text geometry), while the
-    /// HTML/EPUB reader resolves `text` against its DOM using the `sourceLocation`/`sourceTextLength` hint.
+    /// Both a geometric and a positional description of the unit are provided so each reader can use whichever fits its
+    /// render layer: the PDF reader draws `rects` directly (structured-document-text geometry), while the HTML/EPUB
+    /// reader maps `sdtStart`/`sdtEnd` (reader SDT positions) to the DOM.
     /// - Parameters:
-    ///   - text: The highlighted unit's text.
-    ///   - rects: Bounding rects (PDF coordinate space) of the unit. Empty when the unit has no known geometry (e.g. EPUB).
+    ///   - rects: Bounding rects (PDF coordinate space) of the unit. Empty when the unit has no geometry (e.g. EPUB).
+    ///   - sdtStart: Reader SDT position (`start` path) of the unit's first character. Nil when unavailable (e.g. PDF).
+    ///   - sdtEnd: Reader SDT position (`end` path) of the unit's last character. Nil when unavailable (e.g. PDF).
     ///   - pageIndex: The page index where the text is located.
-    ///   - sourceLocation: UTF-16 offset of `text` in the source page text (disambiguates duplicate occurrences).
-    ///   - sourceTextLength: UTF-16 length of the source page text, a proportional hint paired with `sourceLocation`.
-    func readAloudHighlightChanged(text: String, rects: [CGRect], pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
-    /// Called when the annotation preview highlight changes during a highlight session. Carries both the PDF `rects` and
-    /// the `text`/`sourceLocation`/`sourceTextLength` hint; see `readAloudHighlightChanged`.
-    func annotationPreviewChanged(text: String, rects: [CGRect], pageIndex: Index, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int)
-    /// Called when the user confirms an annotation from the highlighter overlay. Carries both the PDF `rects` and the
-    /// `text`/`sourceLocation`/`sourceTextLength` hint; see `readAloudHighlightChanged`.
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, rects: [CGRect], onPage pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
-    /// Called when the highlight session ends, to remove the annotation preview highlight.
+    func readAloudHighlightChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Index)
+    /// Called when the annotation preview highlight changes during a highlight session (session start, move, extend,
+    /// tool/color change); see `readAloudHighlightChanged` for `rects`/`sdtStart`/`sdtEnd`. Nothing is persisted here —
+    /// this is a transient preview only.
+    func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Index, tool: AnnotationTool, color: String)
+    /// Called only when the user confirms an annotation from the highlighter overlay (never during move/extend/cancel).
+    /// This is the single point at which the annotation is written to the database and synced.
+    func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: Index)
+    /// Called when the highlight session ends (both confirmed and discarded), to remove the annotation preview highlight.
+    /// In the confirmed case it's called right after `createAnnotation`.
     func clearAnnotationPreview()
+}
+
+extension SpeechManagerDelegate {
+    /// Default: no reader segments — use the built-in structured-document-text parser (PDF).
+    func readAloudReaderSegments(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int, completion: @escaping ([SpeechReaderSegment]?) -> Void) {
+        completion(nil)
+    }
+
+    /// Default: no in-view block (PDF picks its start page from `getCurrentPageIndex`).
+    func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
+        completion(nil)
+    }
+}
+
+/// A read-aloud segment produced by the HTML/EPUB reader (`getReadAloudSegments`): the spoken `text`, its reader SDT
+/// position (`start`/`end` child-index paths into the content tree), and whether it begins a new paragraph. Used to
+/// build the read-aloud paragraph model and to create annotations from a selected text range.
+struct SpeechReaderSegment {
+    let text: String
+    let start: [Int]
+    let end: [Int]
+    let isParagraphStart: Bool
 }
 
 enum SpeechState: Equatable {
@@ -140,6 +171,17 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let rects: [CGRect]
         /// Per-character glyph rect (PDF space) aligned 1:1 with `text`; see `SpeechDocumentParser.Paragraph.charRects`.
         let charRects: [CGRect?]
+        /// Reader SDT positions for slices of `text` (HTML/EPUB only; empty for PDF). See `SpeechDocumentParser.SDTSpan`.
+        let sdtSpans: [SpeechDocumentParser.SDTSpan]
+
+        init(text: String, page: Delegate.Index, pageOffset: Int, rects: [CGRect], charRects: [CGRect?], sdtSpans: [SpeechDocumentParser.SDTSpan] = []) {
+            self.text = text
+            self.page = page
+            self.pageOffset = pageOffset
+            self.rects = rects
+            self.charRects = charRects
+            self.sdtSpans = sdtSpans
+        }
     }
 
     /// Current speech position, anchored to a paragraph.
@@ -203,8 +245,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var paragraphs: [SpeechParagraph]
     /// Indices into `paragraphs`, grouped by page in reading order.
     private var paragraphIndicesByPage: [Delegate.Index: [Int]]
-    /// Total readable-text length per page (character count), used as the highlight hint denominator.
-    private var pageTextLength: [Delegate.Index: Int]
     /// Whether the whole document has already been extracted and cached.
     private var documentLoaded: Bool
     /// Document language (BCP-47 tag) read from the structured document text metadata, if any.
@@ -278,7 +318,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// voice processors and used to derive highlight rects.
     private func segments(forPage page: Delegate.Index) -> [SpeechDocumentParser.Segment] {
         return (paragraphIndicesByPage[page] ?? []).map {
-            SpeechDocumentParser.Segment(text: paragraphs[$0].text, pageOffset: paragraphs[$0].pageOffset, charRects: paragraphs[$0].charRects)
+            SpeechDocumentParser.Segment(text: paragraphs[$0].text, pageOffset: paragraphs[$0].pageOffset, charRects: paragraphs[$0].charRects, sdtSpans: paragraphs[$0].sdtSpans)
         }
     }
 
@@ -287,6 +327,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private func highlightRects(paragraph: SpeechParagraph, highlightRange: NSRange) -> [CGRect] {
         let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
         return SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments(forPage: paragraph.page))
+    }
+
+    /// Reader SDT position range (`start`/`end`) for `highlightRange` (character offsets within `paragraph.text`),
+    /// derived from the paragraph's `sdtSpans`. Nil for readers without reader segments (e.g. PDF).
+    private func highlightSDTRange(paragraph: SpeechParagraph, highlightRange: NSRange) -> (start: [Int], end: [Int])? {
+        let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
+        return SpeechDocumentParser.sdtPositionRange(forRange: pageTextRange, in: segments(forPage: paragraph.page))
     }
 
     /// The page's readable text (paragraphs joined by a blank line). Derived on demand; used by the local voice utterance
@@ -317,7 +364,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         self.documentWorkerController = documentWorkerController
         paragraphs = []
         paragraphIndicesByPage = [:]
-        pageTextLength = [:]
         documentLoaded = false
         highlightSessionManager = SpeechHighlightSessionManager<SpeechManager<Delegate>>()
         state = BehaviorRelay(value: .stopped)
@@ -368,7 +414,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     processor.detectedLanguage = nil
                     pendingNavigation?.workItem.cancel()
                     pendingNavigation = nil
-                    highlightSessionManager.cancelSession()
                     nowPlayingManager.deactivate()
                 }
             })
@@ -480,21 +525,48 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     extractionProgress.accept(nil)
                     switch result {
                     case .structuredDocumentText(let result):
-                        // Parsing the whole document can be heavy, so do it off the main thread.
-                        parsingQueue.async { [weak self] in
-                            let parsed: SpeechDocumentParser.ParsedDocument
-                            do {
-                                parsed = SpeechDocumentParser.parse(materialized: try result.pack().materialize())
-                            } catch {
-                                DDLogError("SpeechManager: could not parse structured document text - \(error)")
-                                parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
-                            }
-                            DispatchQueue.main.async { [weak self] in
-                                guard let self else { return }
-                                store(parsed)
+                        let pack: SDTPack
+                        do {
+                            pack = try result.pack()
+                        } catch {
+                            DDLogError("SpeechManager: could not open structured document text pack - \(error)")
+                            speechWorker = nil
+                            completion(false)
+                            return
+                        }
+                        // Deref the delegate weakly (don't capture it in this long-lived subscription — that would retain
+                        // the reader). Readers that provide their own segments (HTML/EPUB) are the source of truth — they
+                        // carry the SDT positions needed to create annotations. Others (PDF) return nil and use the parser.
+                        guard let delegate = self.delegate else {
+                            completion(false)
+                            return
+                        }
+                        delegate.readAloudReaderSegments(sdtPackData: pack.rawData, packVersion: pack.packVersion, schemaMajorVersion: pack.schemaMajorVersion) { [weak self] readerSegments in
+                            guard let self else { return }
+                            if let readerSegments {
+                                let language = (try? pack.metadataDictionary()).flatMap { SpeechDocumentParser.language(from: ["metadata": $0]) }
+                                store(readerSegments: readerSegments, language: language)
                                 documentLoaded = true
-                                DDLogInfo("SpeechManager: extracted \(paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
+                                DDLogInfo("SpeechManager: loaded \(paragraphs.count) reader paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
                                 completion(true)
+                                return
+                            }
+                            // Parsing the whole document can be heavy, so do it off the main thread.
+                            parsingQueue.async { [weak self] in
+                                let parsed: SpeechDocumentParser.ParsedDocument
+                                do {
+                                    parsed = SpeechDocumentParser.parse(materialized: try pack.materialize())
+                                } catch {
+                                    DDLogError("SpeechManager: could not parse structured document text - \(error)")
+                                    parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
+                                }
+                                DispatchQueue.main.async { [weak self] in
+                                    guard let self else { return }
+                                    store(parsed)
+                                    documentLoaded = true
+                                    DDLogInfo("SpeechManager: extracted \(paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
+                                    completion(true)
+                                }
                             }
                         }
 
@@ -509,23 +581,66 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     /// Stores parsed paragraphs, mapping structured-document-text page indices to the delegate's page index type and
-    /// building the per-page index and length lookups. Paragraphs whose page is out of bounds are dropped.
+    /// building the per-page index lookup. Paragraphs whose page is out of bounds are dropped.
     private func store(_ parsed: SpeechDocumentParser.ParsedDocument) {
         guard let delegate else { return }
         var paragraphs: [SpeechParagraph] = []
         var indicesByPage: [Delegate.Index: [Int]] = [:]
-        var lengths: [Delegate.Index: Int] = [:]
         for paragraph in parsed.paragraphs {
             guard let page = delegate.pageIndex(forStructuredDocumentTextPage: paragraph.page) else { continue }
             let index = paragraphs.count
             paragraphs.append(SpeechParagraph(text: paragraph.text, page: page, pageOffset: paragraph.pageOffset, rects: paragraph.rects, charRects: paragraph.charRects))
             indicesByPage[page, default: []].append(index)
-            lengths[page] = max(lengths[page] ?? 0, paragraph.pageOffset + paragraph.text.count)
         }
         self.paragraphs = paragraphs
         paragraphIndicesByPage = indicesByPage
-        pageTextLength = lengths
         documentLanguage = parsed.language
+    }
+
+    /// Stores paragraphs built from the reader's own read-aloud segments (HTML/EPUB). Consecutive segments are grouped
+    /// into a paragraph at each `isParagraphStart`; a paragraph's text is its segments joined by a space, and each
+    /// segment's character range within that text plus its reader SDT position is recorded as an `SDTSpan` so a selected
+    /// text range can be turned into an annotation. All content lives on structured-document-text page 0 (HTML/EPUB has
+    /// no page geometry).
+    private func store(readerSegments segments: [SpeechReaderSegment], language: String?) {
+        guard let delegate, let page = delegate.pageIndex(forStructuredDocumentTextPage: 0) else {
+            paragraphs = []
+            paragraphIndicesByPage = [:]
+            documentLanguage = language
+            return
+        }
+
+        var storedParagraphs: [SpeechParagraph] = []
+        var pageLength = 0
+        var text = ""
+        var spans: [SpeechDocumentParser.SDTSpan] = []
+
+        func flush() {
+            guard !text.isEmpty else { return }
+            let offset = pageLength == 0 ? 0 : pageLength + SpeechDocumentParser.segmentSeparator.count
+            pageLength = offset + text.count
+            storedParagraphs.append(SpeechParagraph(text: text, page: page, pageOffset: offset, rects: [], charRects: [], sdtSpans: spans))
+            text = ""
+            spans = []
+        }
+
+        for segment in segments {
+            guard !segment.text.isEmpty else { continue }
+            if segment.isParagraphStart {
+                flush()
+            }
+            if !text.isEmpty {
+                text += " "
+            }
+            let start = text.count
+            text += segment.text
+            spans.append(SpeechDocumentParser.SDTSpan(range: NSRange(location: start, length: text.count - start), start: segment.start, end: segment.end))
+        }
+        flush()
+
+        paragraphs = storedParagraphs
+        paragraphIndicesByPage = [page: Array(storedParagraphs.indices)]
+        documentLanguage = language
     }
 
     private func startPlayback(target: StartTarget) {
@@ -550,17 +665,35 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
         // A PSPDFKit text selection maps to a page-text offset, which we then resolve to a paragraph. Only honored when
         // the readable page is the page the user is on.
-        let startOffset: Int
         if case .pageTextOffset(let map) = target, page == currentIndex {
-            startOffset = map(pageText(forPage: page))
-        } else {
-            startOffset = 0
+            beginPlayback(page: page, startOffset: map(pageText(forPage: page)))
+            return
         }
+        // Default play: begin near where the reader currently is. The in-view block index is read fresh at play time
+        // (async for HTML/EPUB; immediately nil for PDF, which starts at the top of the readable page).
+        delegate.readAloudVisibleStartBlockIndex { [weak self] blockIndex in
+            guard let self, state.value == .initializing else { return }
+            beginPlayback(page: page, startOffset: startOffset(forVisibleBlockIndex: blockIndex, page: page))
+        }
+    }
+
+    /// Resolves `startOffset` (page-text offset) to a paragraph on `page` and begins speaking there.
+    private func beginPlayback(page: Delegate.Index, startOffset: Int) {
         guard let (paragraphIndex, offset) = resolveParagraph(atPageTextOffset: startOffset, page: page) else {
             state.accept(.stopped)
             return
         }
         startSpeaking(paragraphIndex: paragraphIndex, offset: offset, reportPageChange: false)
+    }
+
+    /// The page-text offset of the first paragraph on `page` that reaches `blockIndex` — mirrors the reader's
+    /// `findSegmentIndexForSDTPosition` (first paragraph whose last SDT span ends at or past the target block). Returns
+    /// 0 when there is no in-view block or no paragraph reaches it (start at the beginning of the page).
+    private func startOffset(forVisibleBlockIndex blockIndex: Int?, page: Delegate.Index) -> Int {
+        guard let blockIndex else { return 0 }
+        let indices = paragraphIndicesByPage[page] ?? []
+        guard let index = indices.first(where: { (paragraphs[$0].sdtSpans.last?.end.first ?? .min) >= blockIndex }) else { return 0 }
+        return paragraphs[index].pageOffset
     }
 
     /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice stays
@@ -684,17 +817,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     private func notifyAnnotationPreviewChanged(_ result: (text: String, pageIndex: Delegate.Index)) {
-        let sourceLocation = highlightSessionManager.session?.range.location ?? 0
-        let sourceTextLength = highlightSessionManager.session.map { $0.pageText.count } ?? 0
         let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
+        let sdt = highlightSessionManager.session.flatMap { SpeechDocumentParser.sdtPositionRange(forRange: $0.range, in: $0.segments) }
         delegate?.annotationPreviewChanged(
-            text: result.text,
             rects: rects,
+            sdtStart: sdt?.start,
+            sdtEnd: sdt?.end,
             pageIndex: result.pageIndex,
             tool: highlightSessionManager.annotationTool,
-            color: highlightSessionManager.annotationColor,
-            sourceLocation: sourceLocation,
-            sourceTextLength: sourceTextLength
+            color: highlightSessionManager.annotationColor
         )
     }
 
@@ -724,20 +855,26 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         highlightSessionManager.annotationColor
     }
 
+    /// The reader SDT position range of the current highlight session's selection, if any. Lets the reader re-style the
+    /// live preview when the annotation tool or color changes mid-session (HTML/EPUB).
+    var currentHighlightSDTRange: (start: [Int], end: [Int])? {
+        guard let session = highlightSessionManager.session else { return nil }
+        return SpeechDocumentParser.sdtPositionRange(forRange: session.range, in: session.segments)
+    }
+
     func endHighlightSession() {
-        // Capture range info and rects before `endSession()` clears the session.
-        let sourceLocation = highlightSessionManager.session?.range.location ?? 0
-        let sourceTextLength = highlightSessionManager.session.map { $0.pageText.count } ?? 0
+        // Capture rects and SDT positions before `endSession()` clears the session. This is the single point at which
+        // the annotation is created (and thus written to the DB and synced) — never during move/extend or on cancel.
         let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
+        let sdt = highlightSessionManager.session.flatMap { SpeechDocumentParser.sdtPositionRange(forRange: $0.range, in: $0.segments) }
         if let result = highlightSessionManager.endSession() {
             delegate?.createAnnotation(
                 ofType: highlightSessionManager.annotationTool,
                 color: highlightSessionManager.annotationColor,
-                forText: result.text,
                 rects: rects,
-                onPage: result.pageIndex,
-                sourceLocation: sourceLocation,
-                sourceTextLength: sourceTextLength
+                sdtStart: sdt?.start,
+                sdtEnd: sdt?.end,
+                onPage: result.pageIndex
             )
         }
         delegate?.clearAnnotationPreview()
@@ -997,13 +1134,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         position = Position(paragraphIndex: index, range: sentence.range, highlightRange: newHighlightRange, highlightGranularity: granularity)
         processor.invalidateCurrentPlayback()
 
-        if let highlightText {
+        if highlightText != nil {
+            let sdt = highlightSDTRange(paragraph: paragraph, highlightRange: newHighlightRange)
             delegate?.readAloudHighlightChanged(
-                text: highlightText,
                 rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
-                pageIndex: paragraph.page,
-                sourceLocation: paragraph.pageOffset + newHighlightRange.location,
-                sourceTextLength: pageTextLength[paragraph.page] ?? paragraph.text.count
+                sdtStart: sdt?.start,
+                sdtEnd: sdt?.end,
+                pageIndex: paragraph.page
             )
         }
 
@@ -1045,13 +1182,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let newHighlightRange = unit?.range ?? intraRange
         position = Position(paragraphIndex: index, range: intraRange, highlightRange: newHighlightRange, highlightGranularity: granularity)
 
-        if let highlightText = unit?.text {
+        if unit != nil {
+            let sdt = highlightSDTRange(paragraph: paragraph, highlightRange: newHighlightRange)
             delegate?.readAloudHighlightChanged(
-                text: highlightText,
                 rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
-                pageIndex: paragraph.page,
-                sourceLocation: paragraph.pageOffset + newHighlightRange.location,
-                sourceTextLength: pageTextLength[paragraph.page] ?? paragraph.text.count
+                sdtStart: sdt?.start,
+                sdtEnd: sdt?.end,
+                pageIndex: paragraph.page
             )
         }
     }

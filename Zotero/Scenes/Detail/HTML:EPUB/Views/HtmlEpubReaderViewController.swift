@@ -17,6 +17,7 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
 
     func show(url: URL)
     func toggleInterfaceVisibility()
+    func setReaderBackground(color: UIColor)
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
@@ -42,6 +43,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private weak var pageIndicatorLabel: UILabel?
     private var documentBottomToSafeArea: NSLayoutConstraint?
     private var documentBottomToIndicator: NSLayoutConstraint?
+    private var documentBottomToView: NSLayoutConstraint?
+    private var pageIndicatorBottom: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
     var annotationToolbarHandler: AnnotationToolbarHandler?
     weak var sidebarController: HtmlEpubSidebarViewController?
@@ -157,7 +160,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         observeViewModel()
         setupNavigationBar()
         setupViews()
-//        setupReadAloudIfNeeded()
+        setupReadAloudIfNeeded()
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
 
@@ -231,7 +234,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let documentTopConstraint = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
             let documentBottomToSafeArea = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
-            let documentBottomToIndicator = pageIndicator.topAnchor.constraint(equalTo: documentController.view.bottomAnchor, constant: 12)
+            let documentBottomToIndicator = pageIndicator.topAnchor.constraint(equalTo: documentController.view.bottomAnchor, constant: 8)
+            let documentBottomToView = view.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
+            let pageIndicatorBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 0)
 
             NSLayoutConstraint.activate([
                 documentTopConstraint,
@@ -239,7 +244,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor),
                 documentLeftConstraint,
                 pageIndicator.centerXAnchor.constraint(equalTo: documentController.view.centerXAnchor),
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 12),
+                pageIndicatorBottom,
                 pageIndicatorLabel.topAnchor.constraint(equalTo: pageIndicator.topAnchor, constant: 6),
                 pageIndicator.bottomAnchor.constraint(equalTo: pageIndicatorLabel.bottomAnchor, constant: 6),
                 pageIndicatorLabel.leadingAnchor.constraint(equalTo: pageIndicator.leadingAnchor, constant: 12),
@@ -254,6 +259,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             self.pageIndicatorLabel = pageIndicatorLabel
             self.documentBottomToSafeArea = documentBottomToSafeArea
             self.documentBottomToIndicator = documentBottomToIndicator
+            self.documentBottomToView = documentBottomToView
+            self.pageIndicatorBottom = pageIndicatorBottom
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler!.performInitialLayout()
         }
@@ -284,8 +291,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // Confirm any in-progress read-aloud highlight session, matching the PDF reader behaviour when leaving the screen.
-        readAloudHandler?.confirmActiveHighlightSession()
+        if isMovingFromParent || isBeingDismissed {
+            readAloudHandler?.confirmActiveHighlightSession()
+        }
     }
 
     deinit {
@@ -465,11 +473,16 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         guard let pageIndicator else { return }
         let hasInfo = viewModel.state.currentPage != nil && viewModel.state.pagesCount != nil
         let shouldShow = hasInfo && !navBarHidden
-        if shouldShow {
-            documentBottomToSafeArea?.isActive = false
+        // Pick the document's bottom anchor: full screen fills to the very bottom (under the home indicator), otherwise
+        // it stops above the page indicator (when shown) or at the safe area.
+        documentBottomToView?.isActive = false
+        documentBottomToIndicator?.isActive = false
+        documentBottomToSafeArea?.isActive = false
+        if navBarHidden {
+            documentBottomToView?.isActive = true
+        } else if shouldShow {
             documentBottomToIndicator?.isActive = true
         } else {
-            documentBottomToIndicator?.isActive = false
             documentBottomToSafeArea?.isActive = true
         }
         pageIndicator.alpha = shouldShow ? 1 : 0
@@ -710,6 +723,10 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
         coordinatorDelegate?.show(url: url)
     }
 
+    func setReaderBackground(color: UIColor) {
+        view.backgroundColor = color
+    }
+
     func toggleInterfaceVisibility() {
         let isHidden = !(navigationController?.navigationBar.isHidden ?? false)
         let shouldChangeNavigationBarVisibility = !toolbarState.visible || toolbarState.position != .pinned
@@ -838,24 +855,24 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
         return nil
     }
 
+    // Read-aloud treats the whole HTML/EPUB document as a single structured-document-text page (index 0): its content
+    // has no page geometry (DomAnchor), so all read-aloud paragraphs live on page 0. The reader's reflowable view pages
+    // don't map to SDT pages, so these report the single page 0 (playback starts at the document beginning; page-follow
+    // is not supported — see `moved(to:from:)`).
     func getCurrentPageIndex() -> Int {
-        return viewModel.state.currentPage?.index ?? 0
+        return 0
     }
 
     func getNextPageIndex(from currentPageIndex: Int) -> Int? {
-        guard let count = viewModel.state.pagesCount, currentPageIndex + 1 < count else { return nil }
-        return currentPageIndex + 1
+        return nil
     }
 
     func getPreviousPageIndex(from currentPageIndex: Int) -> Int? {
-        guard currentPageIndex > 0 else { return nil }
-        return currentPageIndex - 1
+        return nil
     }
 
     func pageIndex(forStructuredDocumentTextPage page: Int) -> Int? {
-        guard page >= 0 else { return nil }
-        if let count = viewModel.state.pagesCount, page >= count { return nil }
-        return page
+        return page == 0 ? 0 : nil
     }
 
     func moved(to pageIndex: Int, from previousPageIndex: Int) {
@@ -867,28 +884,54 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
         // See `moved(to:from:)`. No-op for now.
     }
 
-    func readAloudHighlightChanged(text: String, rects: [CGRect], pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
-        // Highlighting the currently-spoken text in the web view is not yet implemented. No-op for now.
-        // (`rects` are PDF-space geometry and don't apply to the HTML/EPUB web view, which highlights via the DOM.)
+    func readAloudReaderSegments(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int, completion: @escaping ([SpeechReaderSegment]?) -> Void) {
+        guard let documentController else {
+            completion(nil)
+            return
+        }
+        // The reader is the source of truth for HTML/EPUB read-aloud: hand it the SDT pack, then fetch the segments
+        // (with their SDT positions) used for playback, navigation, and annotation creation. Sentence granularity gives
+        // the finest units; paragraphs are reconstructed from the `paragraphStart` flags.
+        documentController.setSDTPack(bytes: sdtPackData, packVersion: packVersion, schemaMajorVersion: schemaMajorVersion)
+        documentController.getReadAloudSegments(granularity: "sentence", completion: completion)
     }
 
-    func annotationPreviewChanged(text: String, rects: [CGRect], pageIndex: Int, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int) {
-        documentController?.updateReadAloudAnnotationPreview(text: text, tool: tool, color: color, sourceLocation: sourceLocation, sourceTextLength: sourceTextLength)
+    func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
+        guard let documentController else {
+            completion(nil)
+            return
+        }
+        documentController.getReadAloudStartBlockIndex(completion: completion)
     }
 
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, rects: [CGRect], onPage pageIndex: Int, sourceLocation: Int, sourceTextLength: Int) {
-        documentController?.commitReadAloudAnnotation()
+    func readAloudHighlightChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Int) {
+        // Spotlight the currently-spoken segment in the web view via its reader SDT position.
+        guard let sdtStart, let sdtEnd else { return }
+        documentController?.setReadAloudSpotlight(sdtStart: sdtStart, sdtEnd: sdtEnd)
+    }
+
+    func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Int, tool: AnnotationTool, color: String) {
+        // Render/resize/restyle the preview annotation in the document. It's stored in the database when the session is confirmed.
+        guard let sdtStart, let sdtEnd else { return }
+        documentController?.setReadAloudAnnotation(type: tool, color: color, sdtStart: sdtStart, sdtEnd: sdtEnd)
+    }
+
+    func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: Int) {
+        // Confirmed highlight session: store the preview annotation reported by the document (single DB write).
+        documentController?.endReadAloudAnnotationSession(store: true)
     }
 
     func clearAnnotationPreview() {
-        documentController?.clearReadAloudAnnotationPreview()
+        // Session ended. This is also called right after `createAnnotation` when the session was confirmed, in which case the session is already ended and nothing is discarded.
+        documentController?.endReadAloudAnnotationSession(store: false)
     }
 }
 
 extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
     func readAloudToolbarChanged(height: CGFloat) {
-        // Make room for the bottom read-aloud controls toolbar by shrinking the document from the safe-area bottom.
-        documentBottomToSafeArea?.constant = height
+        let toolbarHeightAboveSafeArea = max(0, height - view.safeAreaInsets.bottom)
+        documentBottomToSafeArea?.constant = toolbarHeightAboveSafeArea
+        pageIndicatorBottom?.constant = toolbarHeightAboveSafeArea + 8
         view.layoutIfNeeded()
     }
 
@@ -925,7 +968,8 @@ extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
     }
 
     func clearSpeechHighlight() {
-        documentController?.clearReadAloudAnnotationPreview()
+        // Clear the read-aloud spotlight when playback stops.
+        documentController?.clearReadAloudSpotlight()
     }
 
     func showSpeechHighlighterOverlay(_ overlay: ReadAloudHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool) {
@@ -977,14 +1021,8 @@ extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
     }
 
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
-        guard let session = readAloudHandler?.speechManager.highlightSessionManager.session,
-              let text = readAloudHandler?.speechManager.highlightSessionManager.currentText() else { return }
-        documentController?.updateReadAloudAnnotationPreview(
-            text: text,
-            tool: tool,
-            color: color,
-            sourceLocation: session.range.location,
-            sourceTextLength: session.pageText.count
-        )
+        // Re-style the preview annotation (same range, new tool/color) mid-session.
+        guard let sdt = readAloudHandler?.speechManager.currentHighlightSDTRange else { return }
+        documentController?.setReadAloudAnnotation(type: tool, color: color, sdtStart: sdt.start, sdtEnd: sdt.end)
     }
 }

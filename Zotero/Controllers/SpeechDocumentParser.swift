@@ -36,6 +36,16 @@ enum SpeechDocumentParser {
         let charRects: [CGRect?]
     }
 
+    /// A reader `SDTPosition` (`{start, end}`) for a slice of a segment's text: `range` is the character range within the
+    /// segment/paragraph text that this position covers. Used by the HTML/EPUB reader to create annotations from a
+    /// selected text range (empty/unused for PDF, which highlights by geometry). `start`/`end` are child-index paths into
+    /// the structured document text content tree ending in a character offset.
+    struct SDTSpan {
+        let range: NSRange
+        let start: [Int]
+        let end: [Int]
+    }
+
     /// Page-local unit handed to voice processors and the segment-query helpers. `pageOffset` is the character offset of
     /// the segment within its page's readable text, so page-text offsets and per-segment offsets are interchangeable.
     struct Segment {
@@ -43,11 +53,14 @@ enum SpeechDocumentParser {
         let pageOffset: Int
         /// Per-character glyph rect (PDF coordinate space) aligned 1:1 with `text`; see `Paragraph.charRects`.
         let charRects: [CGRect?]
+        /// Reader SDT positions for slices of `text`, in text order (HTML/EPUB only; empty for PDF). See `SDTSpan`.
+        let sdtSpans: [SDTSpan]
 
-        init(text: String, pageOffset: Int, charRects: [CGRect?] = []) {
+        init(text: String, pageOffset: Int, charRects: [CGRect?] = [], sdtSpans: [SDTSpan] = []) {
             self.text = text
             self.pageOffset = pageOffset
             self.charRects = charRects
+            self.sdtSpans = sdtSpans
         }
     }
 
@@ -409,6 +422,30 @@ enum SpeechDocumentParser {
             }
         }
         return mergeLineRects(rects)
+    }
+
+    /// The reader `SDTPosition` endpoints spanning `range` (page-text character offsets) across `segments`: the `start`
+    /// of the first `SDTSpan` the range touches and the `end` of the last. Used to create HTML/EPUB annotations for a
+    /// selected text range. Returns nil when the range touches no positioned spans (e.g. PDF, which has none).
+    static func sdtPositionRange(forRange range: NSRange, in segments: [Segment]) -> (start: [Int], end: [Int])? {
+        guard range.length > 0 else { return nil }
+        let rangeStart = range.location
+        let rangeEnd = range.location + range.length
+        var start: [Int]?
+        var end: [Int]?
+        for segment in segments {
+            let segmentStart = segment.pageOffset
+            for span in segment.sdtSpans {
+                let spanStart = segmentStart + span.range.location
+                let spanEnd = spanStart + span.range.length
+                // Include any span that overlaps the range (half-open intersection).
+                guard spanStart < rangeEnd, spanEnd > rangeStart else { continue }
+                if start == nil { start = span.start }
+                end = span.end
+            }
+        }
+        guard let start, let end else { return nil }
+        return (start, end)
     }
 
     /// Merges consecutive same-line rects into one rect per visual line (rects arrive in reading order). Port of the
