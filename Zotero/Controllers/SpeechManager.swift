@@ -549,10 +549,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                             completion(false)
                             return
                         }
-                        delegate.readAloudReaderSegments(sdtPackData: pack.rawData, packVersion: pack.packVersion, schemaMajorVersion: pack.schemaMajorVersion) { [weak self] readerSegments in
+                        delegate.readAloudReaderSegments(sdtPackData: pack.data, packVersion: pack.header.packVersion, schemaMajorVersion: pack.header.schemaMajorVersion) { [weak self] readerSegments in
                             guard let self else { return }
                             if let readerSegments {
-                                let language = (try? pack.metadataDictionary()).flatMap { SpeechDocumentParser.language(from: ["metadata": $0]) }
+                                let language = (try? pack.metadataResult.get()).flatMap { SpeechDocumentParser.language(from: ["metadata": $0]) }
                                 store(readerSegments: readerSegments, language: language)
                                 documentLoaded = true
                                 DDLogInfo("SpeechManager: loaded \(paragraphs.count) reader paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")

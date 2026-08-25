@@ -772,8 +772,8 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                         expect(Data(data.prefix(magic.count))).to(equal(magic))
                         do {
                             let pack = try structuredDocumentText.pack()
-                            let metadata = try pack.getMetadata()
-                            let catalog = try pack.getCatalog()
+                            let metadata = try pack.metadataResult.get()
+                            let catalog = try pack.catalogResult.get()
                             let materialized = try pack.materialize()
                             materializedData = materialized
                             guard let materializedMetadata = materialized["metadata"] as? [String: Any] else {

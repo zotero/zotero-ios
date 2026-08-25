@@ -22,9 +22,12 @@ final class SDTPack {
         case invalidJSON
     }
 
-    private struct Header {
-        let packVersion: UInt8
+    struct Header {
+        /// Pack format version (the reader validates this against its own `SDT_PACK_VERSION`).
+        let packVersion: Int
         let schemaVersion: String
+        /// Major component of `schemaVersion` (the reader validates this against its schema major version).
+        let schemaMajorVersion: Int
         let indexLength: Int
     }
 
@@ -41,21 +44,14 @@ final class SDTPack {
     private static let u32Size = 4
     private static let supportedPackVersion: UInt8 = 1
 
-    private let data: Data
-    private let header: Header
-    private let index: Index
-
     /// The raw pack bytes, for handing the pack to the reader web view (`setSDTPack`).
-    var rawData: Data { data }
-    /// Pack format version (the reader validates this against its own `SDT_PACK_VERSION`).
-    var packVersion: Int { Int(header.packVersion) }
-    /// Major component of the schema version (the reader validates this against its schema major version).
-    var schemaMajorVersion: Int { Int(header.schemaVersion.split(separator: ".").first.flatMap { Int($0) } ?? 0) }
+    let data: Data
+    let header: Header
+    private let index: Index
 
     /// The document metadata dictionary (the `metadata` value of `materialize()`), decoded on its own without
     /// materializing the whole content — cheap enough for e.g. reading the document language.
-    func metadataDictionary() throws -> [String: Any] { try metadataResult.get() }
-    private lazy var metadataResult: Result<[String: Any], Swift.Error> = {
+    lazy var metadataResult: Result<[String: Any], Swift.Error> = {
         return Result { try readDictionaryJSON(range: metadataRange()) }
 
         func metadataRange() -> Range<Int> {
@@ -63,7 +59,8 @@ final class SDTPack {
             return start..<(start + index.metadataLength)
         }
     }()
-    private lazy var catalogResult: Result<[String: Any], Swift.Error> = {
+    /// The document catalog dictionary (the `catalog` value of `materialize()`), decoded on its own.
+    lazy var catalogResult: Result<[String: Any], Swift.Error> = {
         return Result { try readDictionaryJSON(range: catalogRange()) }
 
         func catalogRange() -> Range<Int> {
@@ -89,8 +86,9 @@ final class SDTPack {
         }
 
         let header = Header(
-            packVersion: packVersion,
+            packVersion: Int(packVersion),
             schemaVersion: "\(data[9]).\(data[10]).\(data[11])",
+            schemaMajorVersion: Int(data[9]),
             indexLength: indexLength
         )
         let index = try Self.readIndex(in: data, header: header)
@@ -102,8 +100,8 @@ final class SDTPack {
     }
 
     func materialize() throws -> [String: Any] {
-        let metadata = try getMetadata()
-        let catalog = try getCatalog()
+        let metadata = try metadataResult.get()
+        let catalog = try catalogResult.get()
         var content: [Any] = []
 
         for chunkIndex in 0..<(index.chunkByteOffsets.count - 1) {
@@ -121,14 +119,6 @@ final class SDTPack {
             "catalog": catalog,
             "content": content
         ]
-    }
-
-    func getMetadata() throws -> [String: Any] {
-        return try metadataResult.get()
-    }
-
-    func getCatalog() throws -> [String: Any] {
-        return try catalogResult.get()
     }
 
     func getTopLevelBlockCount() -> Int {
@@ -198,7 +188,7 @@ final class SDTPack {
 
     func getPageBlocks(pageIndex: Int) throws -> [[String: Any]] {
         guard pageIndex >= 0 else { return [] }
-        let catalog = try getCatalog()
+        let catalog = try catalogResult.get()
         guard let pages = catalog["pages"] as? [[String: Any]], pageIndex < pages.count else {
             return []
         }
