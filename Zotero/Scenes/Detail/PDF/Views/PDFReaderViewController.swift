@@ -361,6 +361,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 .subscribe(onNext: { [weak self] _ in
                     guard let self else { return }
                     previousTraitCollection = traitCollection
+                    readAloudHandler?.confirmActiveHighlightSession()
                     if let page = documentController?.pdfController?.pageIndex {
                         viewModel.process(action: .submitPendingPage(Int(page)))
                     }
@@ -376,17 +377,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         applyNavigationBarButtons(windowSize: windowSize)
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        readAloudHandler?.confirmActiveHighlightSession()
+    }
+
     deinit {
         viewModel.process(action: .changeIdleTimerDisabled(false))
         viewModel.process(action: .deinitialiseReader)
         DDLogInfo("PDFReaderViewController deinitialized")
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if isMovingFromParent || isBeingDismissed {
-            readAloudHandler?.confirmActiveHighlightSession()
-        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -936,6 +935,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
     }
 
     func toggle(tool: AnnotationTool, options: AnnotationToolOptions) {
+        readAloudHandler?.confirmActiveHighlightSession()
         let pspdfkitTool = tool.pspdfkitTool
         let color = viewModel.state.toolColors[pspdfkitTool]
         documentController?.toggle(annotationTool: pspdfkitTool, color: color, tappedWithStylus: (options == .stylus))

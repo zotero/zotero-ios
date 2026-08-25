@@ -155,6 +155,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         super.viewDidLoad()
 
         setActivity()
+        setupObserving()
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemBackground
         observeViewModel()
@@ -280,6 +281,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             let openItem = OpenItem(kind: kind, userIndex: 0)
             set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId).set(title: viewModel.state.title))
         }
+
+        func setupObserving() {
+            NotificationCenter.default.rx
+                .notification(UIApplication.willResignActiveNotification)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    readAloudHandler?.confirmActiveHighlightSession()
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -291,9 +303,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if isMovingFromParent || isBeingDismissed {
-            readAloudHandler?.confirmActiveHighlightSession()
-        }
+        readAloudHandler?.confirmActiveHighlightSession()
     }
 
     deinit {
@@ -363,6 +373,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         }
 
         if state.changes.contains(.activeTool) {
+            if state.activeTool != nil {
+                readAloudHandler?.confirmActiveHighlightSession()
+            }
             select(activeTool: state.activeTool)
         }
 
