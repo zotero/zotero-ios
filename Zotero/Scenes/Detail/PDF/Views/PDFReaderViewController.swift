@@ -1172,21 +1172,23 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         documentController?.focus(page: pageIndex)
     }
 
-    func readAloudHighlightChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: UInt) {
-        // PDF highlights by geometry; the reader SDT positions are unused here.
+    func readAloudHighlightChanged(position: ReadAloudPosition, pageIndex: UInt) {
+        // PDF highlights by geometry.
+        guard case .pdf(let rects) = position else { return }
         documentController?.updateReadAloudHighlight(rects: rects, page: PageIndex(pageIndex))
     }
 
-    func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: UInt, tool: AnnotationTool, color: String) {
+    func annotationPreviewChanged(position: ReadAloudPosition, pageIndex: UInt, tool: AnnotationTool, color: String) {
+        guard case .pdf(let rects) = position else { return }
         if documentController?.currentPage != pageIndex {
             documentController?.focus(page: pageIndex)
         }
         documentController?.updateAnnotationPreview(rects: rects, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
     }
 
-    func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: UInt) {
+    func createAnnotation(ofType tool: AnnotationTool, color: String, position: ReadAloudPosition, onPage pageIndex: UInt) {
         let page = PageIndex(pageIndex)
-        guard !rects.isEmpty else { return }
+        guard case .pdf(let rects) = position, !rects.isEmpty else { return }
         switch tool {
         case .highlight:
             viewModel.process(action: .createHighlight(pageIndex: page, rects: rects, color: color))

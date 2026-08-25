@@ -917,19 +917,19 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
         documentController.getReadAloudStartBlockIndex(completion: completion)
     }
 
-    func readAloudHighlightChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Int) {
+    func readAloudHighlightChanged(position: ReadAloudPosition, pageIndex: Int) {
         // Spotlight the currently-spoken segment in the web view via its reader SDT position.
-        guard let sdtStart, let sdtEnd else { return }
+        guard case .htmlEpub(let sdtStart, let sdtEnd) = position else { return }
         documentController?.setReadAloudSpotlight(sdtStart: sdtStart, sdtEnd: sdtEnd)
     }
 
-    func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Int, tool: AnnotationTool, color: String) {
+    func annotationPreviewChanged(position: ReadAloudPosition, pageIndex: Int, tool: AnnotationTool, color: String) {
         // Render/resize/restyle the preview annotation in the document. It's stored in the database when the session is confirmed.
-        guard let sdtStart, let sdtEnd else { return }
+        guard case .htmlEpub(let sdtStart, let sdtEnd) = position else { return }
         documentController?.setReadAloudAnnotation(type: tool, color: color, sdtStart: sdtStart, sdtEnd: sdtEnd)
     }
 
-    func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: Int) {
+    func createAnnotation(ofType tool: AnnotationTool, color: String, position: ReadAloudPosition, onPage pageIndex: Int) {
         // Confirmed highlight session: store the preview annotation reported by the document (single DB write).
         documentController?.endReadAloudAnnotationSession(store: true)
     }

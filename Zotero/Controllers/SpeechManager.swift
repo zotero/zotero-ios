@@ -15,6 +15,15 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
+/// Position of a read-aloud text unit, in the form the reader's render layer needs: the PDF reader draws
+/// structured-document-text geometry, while the HTML/EPUB reader maps reader SDT positions to the DOM.
+enum ReadAloudPosition {
+    /// Bounding rects (PDF coordinate space) of the unit. Empty when the unit has no geometry.
+    case pdf(rects: [CGRect])
+    /// Reader SDT positions of the unit's first (`start` path) and last (`end` path) character.
+    case htmlEpub(sdtStart: [Int], sdtEnd: [Int])
+}
+
 protocol SpeechManagerDelegate: AnyObject {
     associatedtype Index: Hashable
 
@@ -44,22 +53,17 @@ protocol SpeechManagerDelegate: AnyObject {
     /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
     /// remote voices with paragraph granularity highlight paragraphs.
     ///
-    /// Both a geometric and a positional description of the unit are provided so each reader can use whichever fits its
-    /// render layer: the PDF reader draws `rects` directly (structured-document-text geometry), while the HTML/EPUB
-    /// reader maps `sdtStart`/`sdtEnd` (reader SDT positions) to the DOM.
     /// - Parameters:
-    ///   - rects: Bounding rects (PDF coordinate space) of the unit. Empty when the unit has no geometry (e.g. EPUB).
-    ///   - sdtStart: Reader SDT position (`start` path) of the unit's first character. Nil when unavailable (e.g. PDF).
-    ///   - sdtEnd: Reader SDT position (`end` path) of the unit's last character. Nil when unavailable (e.g. PDF).
+    ///   - position: Position of the unit, in the form matching the reader's render layer.
     ///   - pageIndex: The page index where the text is located.
-    func readAloudHighlightChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Index)
+    func readAloudHighlightChanged(position: ReadAloudPosition, pageIndex: Index)
     /// Called when the annotation preview highlight changes during a highlight session (session start, move, extend,
-    /// tool/color change); see `readAloudHighlightChanged` for `rects`/`sdtStart`/`sdtEnd`. Nothing is persisted here —
-    /// this is a transient preview only.
-    func annotationPreviewChanged(rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, pageIndex: Index, tool: AnnotationTool, color: String)
+    /// tool/color change); see `readAloudHighlightChanged` for `position`. Nothing is persisted here — this is a
+    /// transient preview only.
+    func annotationPreviewChanged(position: ReadAloudPosition, pageIndex: Index, tool: AnnotationTool, color: String)
     /// Called only when the user confirms an annotation from the highlighter overlay (never during move/extend/cancel).
     /// This is the single point at which the annotation is written to the database and synced.
-    func createAnnotation(ofType tool: AnnotationTool, color: String, rects: [CGRect], sdtStart: [Int]?, sdtEnd: [Int]?, onPage pageIndex: Index)
+    func createAnnotation(ofType tool: AnnotationTool, color: String, position: ReadAloudPosition, onPage pageIndex: Index)
     /// Called when the highlight session ends (both confirmed and discarded), to remove the annotation preview highlight.
     /// In the confirmed case it's called right after `createAnnotation`.
     func clearAnnotationPreview()
@@ -329,11 +333,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments(forPage: paragraph.page))
     }
 
-    /// Reader SDT position range (`start`/`end`) for `highlightRange` (character offsets within `paragraph.text`),
-    /// derived from the paragraph's `sdtSpans`. Nil for readers without reader segments (e.g. PDF).
-    private func highlightSDTRange(paragraph: SpeechParagraph, highlightRange: NSRange) -> (start: [Int], end: [Int])? {
+    /// Position of `highlightRange` (character offsets within `paragraph.text`) for the delegate: reader SDT positions
+    /// when the paragraph model was built from reader segments (HTML/EPUB), PDF geometry otherwise.
+    private func highlightPosition(paragraph: SpeechParagraph, highlightRange: NSRange) -> ReadAloudPosition {
         let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
-        return SpeechDocumentParser.sdtPositionRange(forRange: pageTextRange, in: segments(forPage: paragraph.page))
+        let segments = segments(forPage: paragraph.page)
+        if let sdt = SpeechDocumentParser.sdtPositionRange(forRange: pageTextRange, in: segments) {
+            return .htmlEpub(sdtStart: sdt.start, sdtEnd: sdt.end)
+        }
+        return .pdf(rects: SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments))
     }
 
     /// The page's readable text (paragraphs joined by a blank line). Derived on demand; used by the local voice utterance
@@ -817,16 +825,23 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     private func notifyAnnotationPreviewChanged(_ result: (text: String, pageIndex: Delegate.Index)) {
-        let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
-        let sdt = highlightSessionManager.session.flatMap { SpeechDocumentParser.sdtPositionRange(forRange: $0.range, in: $0.segments) }
+        guard let position = highlightSessionPosition() else { return }
         delegate?.annotationPreviewChanged(
-            rects: rects,
-            sdtStart: sdt?.start,
-            sdtEnd: sdt?.end,
+            position: position,
             pageIndex: result.pageIndex,
             tool: highlightSessionManager.annotationTool,
             color: highlightSessionManager.annotationColor
         )
+    }
+
+    /// Position of the current highlight session's selection for the delegate: reader SDT positions for HTML/EPUB, PDF
+    /// geometry otherwise. Nil when there is no session.
+    private func highlightSessionPosition() -> ReadAloudPosition? {
+        guard let session = highlightSessionManager.session else { return nil }
+        if let sdt = SpeechDocumentParser.sdtPositionRange(forRange: session.range, in: session.segments) {
+            return .htmlEpub(sdtStart: sdt.start, sdtEnd: sdt.end)
+        }
+        return .pdf(rects: SpeechDocumentParser.pdfLineRects(forRange: session.range, in: session.segments))
     }
 
     func setHighlightAnnotationTool(_ tool: AnnotationTool) {
@@ -863,17 +878,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     func endHighlightSession() {
-        // Capture rects and SDT positions before `endSession()` clears the session. This is the single point at which
-        // the annotation is created (and thus written to the DB and synced) — never during move/extend or on cancel.
-        let rects = highlightSessionManager.session.map { SpeechDocumentParser.pdfLineRects(forRange: $0.range, in: $0.segments) } ?? []
-        let sdt = highlightSessionManager.session.flatMap { SpeechDocumentParser.sdtPositionRange(forRange: $0.range, in: $0.segments) }
-        if let result = highlightSessionManager.endSession() {
+        // Capture the position before `endSession()` clears the session. This is the single point at which the
+        // annotation is created (and thus written to the DB and synced) — never during move/extend or on cancel.
+        let position = highlightSessionPosition()
+        if let result = highlightSessionManager.endSession(), let position {
             delegate?.createAnnotation(
                 ofType: highlightSessionManager.annotationTool,
                 color: highlightSessionManager.annotationColor,
-                rects: rects,
-                sdtStart: sdt?.start,
-                sdtEnd: sdt?.end,
+                position: position,
                 onPage: result.pageIndex
             )
         }
@@ -1135,13 +1147,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         processor.invalidateCurrentPlayback()
 
         if highlightText != nil {
-            let sdt = highlightSDTRange(paragraph: paragraph, highlightRange: newHighlightRange)
-            delegate?.readAloudHighlightChanged(
-                rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
-                sdtStart: sdt?.start,
-                sdtEnd: sdt?.end,
-                pageIndex: paragraph.page
-            )
+            delegate?.readAloudHighlightChanged(position: highlightPosition(paragraph: paragraph, highlightRange: newHighlightRange), pageIndex: paragraph.page)
         }
 
         if pageDidChange, let previousPage {
@@ -1183,13 +1189,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         position = Position(paragraphIndex: index, range: intraRange, highlightRange: newHighlightRange, highlightGranularity: granularity)
 
         if unit != nil {
-            let sdt = highlightSDTRange(paragraph: paragraph, highlightRange: newHighlightRange)
-            delegate?.readAloudHighlightChanged(
-                rects: highlightRects(paragraph: paragraph, highlightRange: newHighlightRange),
-                sdtStart: sdt?.start,
-                sdtEnd: sdt?.end,
-                pageIndex: paragraph.page
-            )
+            delegate?.readAloudHighlightChanged(position: highlightPosition(paragraph: paragraph, highlightRange: newHighlightRange), pageIndex: paragraph.page)
         }
     }
 }
