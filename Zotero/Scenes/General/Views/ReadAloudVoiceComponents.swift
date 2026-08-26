@@ -193,14 +193,7 @@ struct ReadAloudLocalVoicesSection: View {
     @Binding var selectedVoice: SpeechVoice?
     let language: String
 
-    private let synthesizer: AVSpeechSynthesizer
-
-    init(voices: [AVSpeechSynthesisVoice], selectedVoice: Binding<SpeechVoice?>, language: String) {
-        self.voices = voices
-        self._selectedVoice = selectedVoice
-        self.language = language
-        self.synthesizer = .init()
-    }
+    @State private var synthesizer: AVSpeechSynthesizer = .init()
 
     var body: some View {
         if voices.isEmpty {
@@ -226,9 +219,7 @@ struct ReadAloudLocalVoicesSection: View {
     }
 
     private func playSample(withVoice voice: AVSpeechSynthesisVoice) {
-        if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .immediate)
-        }
+        synthesizer.stopSpeaking(at: .immediate)
         let utterance = AVSpeechUtterance(string: L10n.Speech.localSample(voice.name))
         utterance.voice = voice
         synthesizer.speak(utterance)
