@@ -174,6 +174,9 @@ final class Defaults {
     @CodableUserDefault(key: "SpeechRemoteVoiceTier", defaultValue: nil, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var remoteVoiceTier: RemoteVoice.Tier?
 
+    @UserDefault(key: "ReadAloudSpeechRate", defaultValue: 1)
+    var speechRate: Float
+
     @UserDefault(key: "DidShowReadAloudOnboarding", defaultValue: false)
     var didShowReadAloudOnboarding: Bool
 
@@ -276,6 +279,7 @@ final class Defaults {
         underlineColorHex = AnnotationsConfig.defaultActiveColor
         textColorHex = AnnotationsConfig.defaultActiveColor
         pdfSettings = PDFSettings.default
+        speechRate = 1
         didShowReadAloudOnboarding = false
         #endif
     }

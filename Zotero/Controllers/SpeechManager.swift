@@ -385,19 +385,20 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         highlightSessionManager.onSessionTimedOut = { [weak self] in
             self?.onHighlightSessionTimedOut?()
         }
+        // Speech rate is remembered across documents, so that reading always starts with the previously used rate.
+        let storedSpeechRate = Defaults.shared.speechRate
         if let remoteVoiceTier {
             processor = RemoteVoiceProcessor(
                 language: voiceLanguage,
                 detectedLanguage: nil,
                 tier: remoteVoiceTier,
-                speechRateModifier: 1,
+                speechRateModifier: storedSpeechRate,
                 delegate: self,
                 remoteVoicesController: remoteVoicesController
             )
         } else {
-            processor = LocalVoiceProcessor(language: voiceLanguage, detectedLanguage: nil, speechRateModifier: 1, delegate: self)
+            processor = LocalVoiceProcessor(language: voiceLanguage, detectedLanguage: nil, speechRateModifier: storedSpeechRate, delegate: self)
         }
-        processor.speechRateModifier = speechRateModifier
 
         setupNowPlayingManager()
 
@@ -768,6 +769,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     func set(rateModifier: Float) {
         processor.speechRateModifier = rateModifier
+        Defaults.shared.speechRate = rateModifier
     }
 
     // MARK: - Highlight Session
