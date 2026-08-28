@@ -308,7 +308,7 @@ struct ItemResponse {
 
     /// `true` if this response describes an attachment which can store a file (`imported_file`, `imported_url`, `embedded_image`), but the remote copy of the file is missing.
     /// The remote file is considered available if the response reports both `md5` and `mtime` (submitted by the client after a WebDAV upload, set by the backend for ZFS uploads),
-    /// or if it contains an `enclosure` link.
+    /// or if it contains an `enclosure` link. When syncing to WebDAV the file is always reported as missing, since the response can't say anything about the WebDAV server.
     var isFileAttachmentWithMissingRemoteFile: Bool {
         guard rawType == ItemTypes.attachment,
               let linkMode = fields[KeyBaseKeyPair(key: FieldKeys.Item.Attachment.linkMode, baseKey: nil)].flatMap(LinkMode.init(rawValue:))
@@ -320,6 +320,9 @@ struct ItemResponse {
         case .linkedFile, .linkedUrl:
             // These attachments never store a file remotely, so there's nothing missing.
             return false
+        }
+        guard !Defaults.shared.webDavEnabled else {
+            return true
         }
         guard links?.enclosure == nil else { return false }
         return !hasValue(forField: FieldKeys.Item.Attachment.md5) || !hasValue(forField: FieldKeys.Item.Attachment.mtime)
