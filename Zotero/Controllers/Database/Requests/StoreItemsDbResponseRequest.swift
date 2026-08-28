@@ -102,9 +102,18 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
 
         if self.preferRemoteData {
+            DDLogInfo("StoreItemDbRequest: reset item (\(response.key)) internal flags")
             item.deleted = false
             item.deleteAllChanges(database: database)
-            item.attachmentNeedsSync = false
+            if response.isFileAttachmentWithMissingRemoteFile {
+                // `attachmentNeedsSync` both queues the file for upload and protects the local file from cleanup. The remote item reports no file, so the local file has not been uploaded yet
+                // and the flag has to be kept, otherwise the upload would be cancelled permanently and the local file could be removed afterwards.
+                if item.attachmentNeedsSync {
+                    DDLogWarn("StoreItemDbRequest: keeping attachmentNeedsSync for \(response.key); remote item has no file")
+                }
+            } else {
+                item.attachmentNeedsSync = false
+            }
         }
 
         return try StoreItemDbRequest.update(
