@@ -321,7 +321,7 @@ struct ItemResponse {
             // These attachments never store a file remotely, so there's nothing missing.
             return false
         }
-        guard !Defaults.shared.webDavEnabled else {
+        if library.libraryId == .custom(.myLibrary), Defaults.shared.webDavEnabled {
             return true
         }
         guard links?.enclosure == nil else { return false }
