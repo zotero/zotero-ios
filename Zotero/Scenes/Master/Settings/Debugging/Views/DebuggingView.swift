@@ -80,6 +80,7 @@ struct DebuggingView: View {
                 }
             }
         }
+        .background(Color(UIColor.systemGroupedBackground))
         .onTapGesture(count: 6, perform: {
             self.viewModel.process(action: .setAdvancedVisible(true))
         })
