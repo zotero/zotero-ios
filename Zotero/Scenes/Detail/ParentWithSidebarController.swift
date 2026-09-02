@@ -114,7 +114,7 @@ extension ParentWithSidebarController {
             }
         } else {
             let checkbox = CheckboxButton(
-                image: image?.applyingSymbolConfiguration(.init(scale: .large)),
+                image: (image?.applyingSymbolConfiguration(.init(scale: .large)))!,
                 contentInsets: NSDirectionalEdgeInsets(top: 11, leading: 6, bottom: 9, trailing: 6)
             )
             checkbox.scalesLargeContentImage = true
