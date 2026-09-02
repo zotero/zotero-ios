@@ -91,6 +91,7 @@ final class CheckboxButton: MenuTrackingButton {
                 configuration.baseForegroundColor = tintColor
                 button.configuration = configuration
             }
+        }
     }
 
     override func layoutSubviews() {

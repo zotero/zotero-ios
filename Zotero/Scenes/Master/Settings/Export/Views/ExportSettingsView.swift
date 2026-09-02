@@ -36,6 +36,7 @@ struct ExportSettingsView: View {
                 ToggleRow(title: L10n.Settings.Export.copyAsHtml, isOn: self.viewModel.binding(keyPath: \.copyAsHtml, action: { .setCopyAsHtml($0) }))
             }
         }
+        .background(Color(UIColor.systemGroupedBackground))
         .navigationBarTitle(Text(L10n.Settings.Export.title))
     }
 }
