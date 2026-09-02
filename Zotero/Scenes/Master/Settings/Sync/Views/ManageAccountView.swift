@@ -36,5 +36,6 @@ struct ManageAccountView: View {
             }
         }
         .navigationBarTitle(L10n.Settings.Sync.manageAccount)
+        .background(Color(UIColor.systemGroupedBackground))
     }
 }

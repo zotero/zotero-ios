@@ -485,7 +485,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             }
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             updateToolbarButtonSelection(isSelected: toolbarState.visible)
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+            updateNavigationBarTrailingItems()
+            applyNavigationBarButtons(windowSize: windowSize)
         }
 
         if let tool = state.changedColorForTool, documentController?.pdfController?.annotationStateManager.state == tool, let color = state.toolColors[tool] {

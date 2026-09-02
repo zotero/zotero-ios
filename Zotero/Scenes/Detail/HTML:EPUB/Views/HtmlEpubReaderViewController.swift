@@ -439,7 +439,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             let hidden = !state.library.metadataEditable || !toolbarState.visible
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             updateToolbarButtonSelection(isSelected: toolbarState.visible)
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+            updateNavigationBarTrailingItems()
+            applyNavigationBarButtons(windowSize: windowSize)
         }
 
         if state.changes.contains(.pages) {

@@ -18,6 +18,7 @@ struct SavingSettingsView: View {
             SettingsToggleRow(title: L10n.Settings.Saving.tagsTitle, subtitle: L10n.Settings.Saving.tagsMessage,
                               value: self.viewModel.binding(keyPath: \.includeTags, action: { .setIncludeTags($0) }))
         }
+        .background(Color(UIColor.systemGroupedBackground))
         .navigationBarTitle(L10n.Settings.Saving.title)
     }
 }

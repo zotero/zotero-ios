@@ -84,6 +84,7 @@ struct SettingsListView: View {
             }
         }
         .listStyle(GroupedListStyle())
+        .background(Color(UIColor.systemGroupedBackground))
         .navigationTitle(L10n.Settings.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
