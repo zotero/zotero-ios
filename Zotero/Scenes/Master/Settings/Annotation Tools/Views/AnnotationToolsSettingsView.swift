@@ -44,6 +44,7 @@ struct AnnotationToolsSettingsView: View {
             }
         }
         .listStyle(GroupedListStyle())
+        .background(Color(UIColor.systemGroupedBackground))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(L10n.Settings.AnnotationTools.reset) {

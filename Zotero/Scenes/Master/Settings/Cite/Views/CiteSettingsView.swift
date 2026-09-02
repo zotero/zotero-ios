@@ -42,6 +42,7 @@ struct CiteSettingsView: View {
         }
         .listStyle(GroupedListStyle())
         .navigationBarTitle(L10n.Settings.Cite.title)
+        .background(Color(UIColor.systemGroupedBackground))
         .onAppear {
             self.viewModel.process(action: .load)
         }

@@ -85,5 +85,6 @@ final class LibraryCell: UITableViewCell {
         iconView.image = libraryState.image.withRenderingMode(.alwaysTemplate)
         titleLabel.text = name
         titleLabel.accessibilityLabel = libraryState.accessibilityNamePrefix + name
+        backgroundColor = .clear
     }
 }

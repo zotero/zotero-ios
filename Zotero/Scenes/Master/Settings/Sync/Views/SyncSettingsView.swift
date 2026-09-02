@@ -40,6 +40,7 @@ struct SyncSettingsView: View {
             }
         }
         .navigationBarTitle(L10n.Settings.Sync.title)
+        .background(Color(UIColor.systemGroupedBackground))
         .onDisappear {
             viewModel.process(action: .dismiss)
         }
