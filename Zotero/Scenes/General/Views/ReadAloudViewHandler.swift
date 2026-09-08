@@ -321,7 +321,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
 
     func createReadAloudButton(isSelected: Bool, isEnabled: Bool = true) -> UIBarButtonItem {
         let button = CheckboxButton(
-            image: UIImage(systemName: "headphones", withConfiguration: UIImage.SymbolConfiguration(scale: .large))!.withRenderingMode(.alwaysTemplate),
+            image: UIImage(systemName: "headphones", withConfiguration: UIImage.SymbolConfiguration(scale: .large))?.withRenderingMode(.alwaysTemplate),
             contentInsets: NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
             cornerStyle: .capsule
         )
