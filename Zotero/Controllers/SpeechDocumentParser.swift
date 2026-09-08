@@ -424,6 +424,33 @@ enum SpeechDocumentParser {
         return mergeLineRects(rects)
     }
 
+    /// The page-text character offset whose glyph rect lies closest to `point` (PDF coordinate space) across `segments`.
+    /// Distance is measured to the rect itself (zero when `point` falls inside it), so a press in a margin, in a gap
+    /// between columns or between two lines resolves to the nearest character of the nearest line. Whitespace has no
+    /// geometry, so the result always points at a real glyph. Returns nil when no character on the page has geometry.
+    static func closestPageTextOffset(to point: CGPoint, in segments: [Segment]) -> Int? {
+        var closestOffset: Int?
+        var closestDistance = CGFloat.greatestFiniteMagnitude
+        for segment in segments {
+            for (index, rect) in segment.charRects.enumerated() {
+                guard let rect else { continue }
+                let distance = squaredDistance(from: point, to: rect)
+                guard distance < closestDistance else { continue }
+                closestDistance = distance
+                closestOffset = segment.pageOffset + index
+            }
+        }
+        return closestOffset
+    }
+
+    /// Squared distance from `point` to the nearest edge of `rect`, or 0 when `point` lies inside it. Squared, since it's
+    /// only ever compared against other distances.
+    private static func squaredDistance(from point: CGPoint, to rect: CGRect) -> CGFloat {
+        let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
+        let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
+        return (dx * dx) + (dy * dy)
+    }
+
     /// The reader `SDTPosition` endpoints spanning `range` (page-text character offsets) across `segments`: the `start`
     /// of the first `SDTSpan` the range touches and the `end` of the last. Used to create HTML/EPUB annotations for a
     /// selected text range. Returns nil when the range touches no positioned spans (e.g. PDF, which has none).

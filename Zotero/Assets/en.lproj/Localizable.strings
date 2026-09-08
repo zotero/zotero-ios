@@ -288,7 +288,7 @@
 "accessibility_popup.show_speech" = "Read Aloud";
 "speech.title" = "Read Aloud";
 "speech.voice" = "Voice";
-"speech.speak" = "Speak";
+"speech.speak" = "Read Aloud";
 "speech.automatic" = "Automatic";
 "speech.no_voices_for_tier" = "No voices found for detected language %@ in this tier. Pick a different tier or choose language manually.";
 "speech.onboarding.title" = "Choose your preferred Read Aloud voice:";
