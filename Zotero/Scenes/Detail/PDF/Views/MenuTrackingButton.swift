@@ -55,7 +55,7 @@ final class CheckboxButton: MenuTrackingButton {
         }
     }
 
-    init(image: UIImage, contentInsets: NSDirectionalEdgeInsets, cornerStyle: UIButton.Configuration.CornerStyle = .fixed) {
+    init(image: UIImage?, contentInsets: NSDirectionalEdgeInsets, cornerStyle: UIButton.Configuration.CornerStyle = .fixed) {
         // Capsule-styled buttons use the view's own layer for the background so callers can control `layer.maskedCorners` to round individual corners.
         useLayerBackground = (cornerStyle == .capsule)
         super.init(frame: .zero)
