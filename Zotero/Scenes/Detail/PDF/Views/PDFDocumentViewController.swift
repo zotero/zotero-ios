@@ -862,7 +862,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 
     func pdfViewController(_ sender: PDFViewController, menuForCreatingAnnotationAt point: CGPoint, onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
         let origin = pageView.convert(point, to: pageView.pdfCoordinateSpace)
-        let children: [UIMenuElement] = [
+        var children: [UIMenuElement] = [
             UIAction(title: L10n.Pdf.AnnotationToolbar.note, handler: { [weak viewModel] _ in
                 viewModel?.process(action: .createNote(pageIndex: pageView.pageIndex, origin: origin))
             }),
@@ -870,6 +870,11 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 viewModel?.process(action: .createImage(pageIndex: pageView.pageIndex, origin: origin))
             })
         ]
+        if parentDelegate?.isReadAloudAvailable == true {
+            children.append(UIAction(title: L10n.Speech.title, handler: { [weak self] _ in
+                self?.parentDelegate?.speakClosestSentence(to: origin, pageIndex: pageView.pageIndex)
+            }))
+        }
         return UIMenu(children: children)
     }
 
@@ -952,6 +957,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         func replace(commandMenu menu: UIMenu) -> UIMenuElement? {
             switch menu.identifier {
             case .speech:
+                guard parentDelegate?.isReadAloudAvailable == true else { return menu }
                 return UIAction(title: L10n.Speech.speak, image: menu.image) { [weak self] _ in
                     self?.parentDelegate?.speak(glyphs: glyphs, pageIndex: pageView.pageIndex)
                 }

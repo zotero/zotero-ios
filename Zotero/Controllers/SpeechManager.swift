@@ -218,6 +218,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         case currentPage
         /// Start at a page-text offset resolved by the closure (used for a PSPDFKit text selection), then map to a paragraph.
         case pageTextOffset((String) -> Int)
+        /// Start at the beginning of the sentence lying closest to `point` (PDF coordinate space) on `page`. Used by the
+        /// PDF reader's long-press menu, where the press lands on empty space rather than on a text selection.
+        case closestSentence(point: CGPoint, page: Delegate.Index)
         /// Resume at a previously reported paragraph anchor.
         case resume(ResumePosition)
     }
@@ -666,6 +669,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             return
         }
 
+        // A long press in the document maps to a point on a specific page (not necessarily the delegate's current page),
+        // so it resolves against that page's geometry directly. Falls through to the default behavior when the page has
+        // no readable text with geometry.
+        if case .closestSentence(let point, let page) = target, let offset = closestSentenceStartOffset(to: point, onPage: page) {
+            beginPlayback(page: page, startOffset: offset)
+            return
+        }
+
         let currentIndex = delegate.getCurrentPageIndex()
         guard let page = firstReadablePage(atOrAfter: currentIndex) else {
             DDLogWarn("SpeechManager: no readable content to play")
@@ -703,6 +714,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let indices = paragraphIndicesByPage[page] ?? []
         guard let index = indices.first(where: { (paragraphs[$0].sdtSpans.last?.end.first ?? .min) >= blockIndex }) else { return 0 }
         return paragraphs[index].pageOffset
+    }
+
+    /// The page-text offset of the start of the sentence closest to `point` (PDF coordinate space) on `page`, so that
+    /// reading begins at the sentence's beginning rather than mid-sentence. Nil when the page has no readable geometry.
+    private func closestSentenceStartOffset(to point: CGPoint, onPage page: Delegate.Index) -> Int? {
+        let segments = segments(forPage: page)
+        guard let offset = SpeechDocumentParser.closestPageTextOffset(to: point, in: segments) else { return nil }
+        return SpeechDocumentParser.unitRange(containing: offset, granularity: .sentence, in: segments)?.location ?? offset
     }
 
     /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice stays
