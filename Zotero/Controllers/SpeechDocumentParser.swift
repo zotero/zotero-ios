@@ -475,6 +475,35 @@ enum SpeechDocumentParser {
         return (start, end)
     }
 
+    /// The page-text offset of the `SDTSpan` across `segments` covering `sdtStart` (the `start` path of a reader SDT
+    /// position) — the first span whose `end` lies past it, or the span following the position when it falls in a gap.
+    /// Based on the reader's `findSegmentIndexForSDTPosition`, with two deliberate differences:
+    ///
+    /// - The comparison is strict. Spans end exclusively — a span's `end` path *is* the next span's `start` path — so at
+    ///   a boundary the position belongs to the span starting there, not the one ending there. The reader's `>=` resolves
+    ///   a selection on a sentence's first character to the previous sentence.
+    /// - Nothing covering the position returns nil rather than falling back to the last span, so the caller picks its own
+    ///   fallback.
+    ///
+    /// The inverse of `sdtPositionRange(forRange:in:)`. Returns nil when the segments carry no positions (PDF).
+    static func pageTextOffset(forSDTPositionStart sdtStart: [Int], in segments: [Segment]) -> Int? {
+        for segment in segments {
+            for span in segment.sdtSpans where compareSDTPaths(span.end, sdtStart) > 0 {
+                return segment.pageOffset + span.range.location
+            }
+        }
+        return nil
+    }
+
+    /// Orders two SDT content paths (child-index paths ending in a character offset): element-wise, then by depth. Port
+    /// of the structured-document-text package's `compareRefs`.
+    private static func compareSDTPaths(_ lhs: [Int], _ rhs: [Int]) -> Int {
+        for (left, right) in zip(lhs, rhs) where left != right {
+            return left - right
+        }
+        return lhs.count - rhs.count
+    }
+
     /// Merges consecutive same-line rects into one rect per visual line (rects arrive in reading order). Port of the
     /// desktop `mergeLineRects`.
     private static func mergeLineRects(_ rects: [CGRect]) -> [CGRect] {
