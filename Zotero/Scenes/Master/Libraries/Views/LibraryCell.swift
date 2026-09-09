@@ -85,6 +85,8 @@ final class LibraryCell: UITableViewCell {
         iconView.image = libraryState.image.withRenderingMode(.alwaysTemplate)
         titleLabel.text = name
         titleLabel.accessibilityLabel = libraryState.accessibilityNamePrefix + name
-        backgroundColor = .clear
+        if #available(iOS 26.0.0, *) {
+            backgroundColor = .clear
+        }
     }
 }
