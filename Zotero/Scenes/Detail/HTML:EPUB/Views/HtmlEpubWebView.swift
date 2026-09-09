@@ -34,6 +34,7 @@ class HtmlEpubWebView: WKWebView {
         super.buildMenu(with: builder)
         let newMenu = UIMenu(title: "", options: .displayInline, children: customMenuActions)
         builder.insertSibling(newMenu, afterMenu: .standardEdit)
+        builder.remove(menu: .speech)
     }
 
     @objc func customAction(_ sender: Any?) {

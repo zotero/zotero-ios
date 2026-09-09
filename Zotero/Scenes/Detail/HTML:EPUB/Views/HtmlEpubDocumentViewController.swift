@@ -54,6 +54,7 @@ class HtmlEpubDocumentViewController: UIViewController {
     /// response event (`onReadAloudSegments` / `onReadAloudStartBlockIndex`).
     private var readAloudSegmentRequests: [Int: ([SpeechReaderSegment]?) -> Void] = [:]
     private var readAloudStartBlockIndexRequests: [Int: (Int?) -> Void] = [:]
+    private var sourceSDTPositionRequests: [Int: (SDTPosition?) -> Void] = [:]
     private var nextReadAloudRequestID = 0
     private var readAloudAnnotationSession: ReadAloudAnnotationSession?
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
@@ -100,9 +101,21 @@ class HtmlEpubDocumentViewController: UIViewController {
                 self?.deselectText()
             }
 
+            var menuActions = [highlightAction, underlineAction]
+            if FeatureGates.enabled.contains(.speech) {
+                menuActions.append(UIAction(title: L10n.Speech.speak) { [weak self] _ in
+                    guard let self else { return }
+                    // The reader already reported the selection's source position with the selection popup; it's mapped
+                    // to an SDT position later, once read aloud has handed the reader the SDT pack.
+                    let annotation = viewModel.state.selectedTextParams?["annotation"] as? [String: Any]
+                    parentDelegate?.startReadAloudFromSelection(sourcePosition: annotation?["position"] as? ReaderSourcePosition)
+                    deselectText()
+                })
+            }
+
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-            let webView = HtmlEpubWebView(customMenuActions: [highlightAction, underlineAction], configuration: configuration)
+            let webView = HtmlEpubWebView(customMenuActions: menuActions, configuration: configuration)
             webView.translatesAutoresizingMaskIntoConstraints = false
             webView.isOpaque = false
             webView.scrollView.contentInsetAdjustmentBehavior = .never
@@ -182,6 +195,22 @@ class HtmlEpubDocumentViewController: UIViewController {
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("HtmlEpubDocumentViewController: getting read aloud start block index failed - \(error)")
                 self?.readAloudStartBlockIndexRequests.removeValue(forKey: requestID)?(nil)
+            })
+            .disposed(by: disposeBag)
+    }
+
+    /// Maps a reader source position (from a text selection) to a reader SDT position, so read aloud can start at the
+    /// selected sentence. Needs the SDT pack, so it's only called once `setSDTPack` has run. Resolved asynchronously via
+    /// the `onSourceSDTPosition` event, keyed by `requestID`.
+    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
+        let requestID = nextReadAloudRequestID
+        nextReadAloudRequestID += 1
+        sourceSDTPositionRequests[requestID] = completion
+        webViewHandler.call(javascript: "sourceToSDTPosition({ position: \(WebViewEncoder.encodeAsJSONForJavascript(source)), requestID: \(requestID) });")
+            .observe(on: MainScheduler.instance)
+            .subscribe(onFailure: { [weak self] error in
+                DDLogError("HtmlEpubDocumentViewController: mapping source position to SDT position failed - \(error)")
+                self?.sourceSDTPositionRequests.removeValue(forKey: requestID)?(nil)
             })
             .disposed(by: disposeBag)
     }
@@ -337,6 +366,11 @@ class HtmlEpubDocumentViewController: UIViewController {
     /// Coerces a JS number array (bridged as `[NSNumber]`) into `[Int]`.
     private static func intArray(_ value: Any?) -> [Int]? {
         return (value as? [Any])?.compactMap { ($0 as? NSNumber)?.intValue }
+    }
+
+    private static func parseSDTPosition(_ value: Any?) -> SDTPosition? {
+        guard let position = value as? [String: Any], let start = intArray(position["start"]), let end = intArray(position["end"]) else { return nil }
+        return SDTPosition(start: start, end: end)
     }
 
     private func process(state: HtmlEpubReaderState) {
@@ -620,6 +654,15 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 let completion = readAloudStartBlockIndexRequests.removeValue(forKey: requestID)
                 completion?((params["blockIndex"] as? NSNumber)?.intValue)
+
+            case "onSourceSDTPosition":
+                // Reader responded to a `sourceToSDTPosition` request; resolve the matching pending completion.
+                guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing requestID - \(message)")
+                    return
+                }
+                let sourcePositionCompletion = sourceSDTPositionRequests.removeValue(forKey: requestID)
+                sourcePositionCompletion?(Self.parseSDTPosition(params["position"]))
 
             default:
                 break
