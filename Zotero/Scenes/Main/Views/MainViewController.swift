@@ -32,6 +32,12 @@ protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
 }
 
 final class MainViewController: UISplitViewController {
+    private struct PendingItemsPresentation {
+        let collection: Collection
+        let libraryId: LibraryIdentifier
+        let searchItemKeys: [String]?
+    }
+
     // Constants
     private let controllers: Controllers
     private let disposeBag: DisposeBag
@@ -53,6 +59,8 @@ final class MainViewController: UISplitViewController {
         }
     }
     private var detailCoordinatorGetter: (libraryId: LibraryIdentifier?, collectionId: CollectionIdentifier?, completion: (DetailCoordinator) -> Void)?
+    private var pendingItemsPresentation: PendingItemsPresentation?
+    private var isWaitingForMasterNavigationTransition = false
     private lazy var tagFilterViewModel: ViewModel<TagFilterActionHandler>? = {
         guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
         let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
@@ -131,13 +139,72 @@ final class MainViewController: UISplitViewController {
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
-        // Reuse the detail navigation controller that is already on screen instead of creating a new one for every collection.
-        // In iOS 26 the split view controller hoists the secondary column's toolbar items into its shared bottom toolbar. Swapping in a brand-new navigation controller
-        // for each collection leaves the previous (now deallocated) controller's items behind in that shared toolbar, so the filter/sort buttons pile up with every selection.
-        // Reusing the same navigation controller keeps the secondary column identity stable, so its toolbar items are replaced rather than accumulated. The coordinator holds the
-        // navigation controller weakly, so once it is actually gone (e.g. popped during back navigation in collapsed layout) this is nil and a fresh one is created and shown again.
-        let existingNavigationController = detailCoordinator?.navigationController
-        let navigationController = existingNavigationController ?? UINavigationController()
+        if #available(iOS 27.0, *) {
+            // On iPadOS 27, presenting a new secondary controller synchronously while the master navigation transition is being configured can leave the secondary attached but invisible.
+            // Schedule the detail presentation alongside the configured transition.
+            let presentation = PendingItemsPresentation(collection: collection, libraryId: libraryId, searchItemKeys: searchItemKeys)
+            if isWaitingForMasterNavigationTransition {
+                pendingItemsPresentation = presentation
+                DDLogInfo("MainViewController: coalescing items presentation during master transition; collection=\(collection.id); library=\(libraryId)")
+                return
+            }
+            if !isCollapsed, let transitionCoordinator = masterCoordinator?.navigationController?.transitionCoordinator {
+                pendingItemsPresentation = presentation
+                isWaitingForMasterNavigationTransition = true
+                DDLogInfo("MainViewController: scheduling items presentation alongside master transition; collection=\(collection.id); library=\(libraryId)")
+                let queued = transitionCoordinator.animate { [weak self] _ in
+                    self?.presentPendingItemsAlongsideTransition()
+                } completion: { [weak self] context in
+                    self?.finishItemsTransition(cancelled: context.isCancelled)
+                }
+                if !queued {
+                    DDLogWarn("MainViewController: couldn't queue items presentation alongside master transition; collection=\(collection.id); library=\(libraryId)")
+                }
+                return
+            }
+        }
+
+        presentItems(for: collection, in: libraryId, searchItemKeys: searchItemKeys)
+    }
+
+    private func presentPendingItemsAlongsideTransition() {
+        guard isWaitingForMasterNavigationTransition else { return }
+        guard let presentation = pendingItemsPresentation else {
+            DDLogWarn("MainViewController: missing pending items presentation during master transition")
+            return
+        }
+        pendingItemsPresentation = nil
+        guard masterCoordinator?.visibleLibraryId == presentation.libraryId else {
+            DDLogInfo("MainViewController: ignoring stale items presentation during master transition; collection=\(presentation.collection.id); library=\(presentation.libraryId)")
+            return
+        }
+        presentItems(
+            for: presentation.collection,
+            in: presentation.libraryId,
+            searchItemKeys: presentation.searchItemKeys
+        )
+    }
+
+    private func finishItemsTransition(cancelled: Bool) {
+        guard isWaitingForMasterNavigationTransition else { return }
+        isWaitingForMasterNavigationTransition = false
+        if cancelled {
+            DDLogInfo("MainViewController: master transition cancelled during items presentation")
+        }
+
+        if let presentation = pendingItemsPresentation {
+            pendingItemsPresentation = nil
+            DDLogInfo("MainViewController: presenting latest items request after master transition; collection=\(presentation.collection.id); library=\(presentation.libraryId)")
+            if masterCoordinator?.visibleLibraryId == presentation.libraryId {
+                presentItems(for: presentation.collection, in: presentation.libraryId, searchItemKeys: presentation.searchItemKeys)
+            } else {
+                DDLogInfo("MainViewController: ignoring stale items presentation after master transition; collection=\(presentation.collection.id); library=\(presentation.libraryId)")
+            }
+        }
+    }
+
+    private func presentItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
+        let navigationController = UINavigationController()
         let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
         let newDetailCoordinator = DetailCoordinator(
@@ -162,10 +229,7 @@ final class MainViewController: UISplitViewController {
         }
         detailCoordinator = newDetailCoordinator
 
-        if existingNavigationController == nil {
-            // Only present when a new navigation controller was created; a reused one is already the secondary column (or pushed in the collapsed stack).
-            showDetailViewController(navigationController, sender: nil)
-        }
+        showDetailViewController(navigationController, sender: nil)
     }
 }
 
