@@ -10,6 +10,7 @@ import Foundation
 import OrderedCollections
 
 import CocoaLumberjackSwift
+import RealmSwift
 
 struct ItemDetailDataCreator {
     enum Kind {
@@ -27,6 +28,8 @@ struct ItemDetailDataCreator {
     /// - returns: Populated data for given type.
     static func createData(
         from type: Kind,
+        library: Library,
+        collections: Results<RCollection>,
         schemaController: SchemaController,
         dateParser: DateParser,
         fileStorage: FileStorage,
@@ -36,11 +39,21 @@ struct ItemDetailDataCreator {
     ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         switch type {
         case .new(let itemType, let child):
-            return try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
+            return try creationData(
+                itemType: itemType,
+                child: child,
+                library: library,
+                schemaController: schemaController,
+                dateParser: dateParser,
+                urlDetector: urlDetector,
+                doiDetector: doiDetector
+            )
 
         case .existing(let item, let ignoreChildren):
             return try itemData(
                 item: item,
+                collections: collections,
+                library: library,
                 ignoreChildren: ignoreChildren,
                 schemaController: schemaController,
                 dateParser: dateParser,
@@ -59,8 +72,14 @@ struct ItemDetailDataCreator {
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
-    private static func creationData(itemType: String, child: Attachment?, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector,
-                                     doiDetector: (String) -> Bool) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
+    private static func creationData(
+        itemType: String,
+        child: Attachment?,
+        library: Library,
+        schemaController: SchemaController,
+        dateParser: DateParser, urlDetector: UrlDetector,
+        doiDetector: (String) -> Bool
+    ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: itemType) else {
             DDLogError("ItemDetailDataCreator: schema not initialized - can't create localized type")
             throw ItemDetailError.cantCreateData
@@ -76,6 +95,8 @@ struct ItemDetailDataCreator {
             creators: [:],
             fields: fields,
             abstract: (hasAbstract ? "" : nil),
+            library: library,
+            collections: nil,
             dateModified: date,
             dateAdded: date
         )
@@ -94,6 +115,8 @@ struct ItemDetailDataCreator {
     /// - returns: Data for item detail state.
     private static func itemData(
         item: RItem,
+        collections: Results<RCollection>,
+        library: Library,
         ignoreChildren: Bool,
         schemaController: SchemaController,
         dateParser: DateParser,
@@ -165,6 +188,8 @@ struct ItemDetailDataCreator {
                                                  })
             attachments = Array(mappedAttachments)
         }
+        
+        let collectionTree = CollectionTreeBuilder.collections(from: item, allCollections: collections)
 
         let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
         let data = ItemDetailState.Data(
@@ -174,6 +199,8 @@ struct ItemDetailDataCreator {
             creators: creators,
             fields: fields,
             abstract: abstract,
+            library: library,
+            collections: collectionTree,
             dateModified: item.dateModified,
             dateAdded: item.dateAdded
         )

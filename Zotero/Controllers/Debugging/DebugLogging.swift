@@ -181,7 +181,7 @@ final class DebugLogging {
             data = try self.data(from: logs)
         } catch let error {
             DDLogError("DebugLogging: can't read all logs - \(error)")
-            inMainThread {
+            inMainThread { [weak self] in
                 completionAlert(.failure((error as? Error) ?? .contentReading),
                                 logs, { [weak self] in // Retry block
                                     self?.submit(logs: logs, userId: userId, customAlertMessage: customAlertMessage)

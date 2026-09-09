@@ -14,15 +14,30 @@ import SwiftUI
 import CocoaLumberjackSwift
 import RxSwift
 
+enum ShowItemsReason {
+    case userSelectedCollection
+    case initialCollectionsLoad
+    case splitExpansion
+    case restoration
+}
+
 protocol MainCoordinatorDelegate: AnyObject {
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier)
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { get }
+    
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason)
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier)
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType)
 }
 
 final class MainViewController: UISplitViewController {
+    private struct PendingItemsPresentation {
+        let collection: Collection
+        let libraryId: LibraryIdentifier
+        let searchItemKeys: [String]?
+    }
+
     // Constants
     private let controllers: Controllers
     private let disposeBag: DisposeBag
@@ -44,6 +59,14 @@ final class MainViewController: UISplitViewController {
         }
     }
     private var detailCoordinatorGetter: (libraryId: LibraryIdentifier?, collectionId: CollectionIdentifier?, completion: (DetailCoordinator) -> Void)?
+    private var pendingItemsPresentation: PendingItemsPresentation?
+    private var isWaitingForMasterNavigationTransition = false
+    private lazy var tagFilterViewModel: ViewModel<TagFilterActionHandler>? = {
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
+        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
+        let handler = TagFilterActionHandler(dbStorage: dbStorage)
+        return ViewModel(initialState: state, handler: handler)
+    }()
 
     // MARK: - Lifecycle
 
@@ -78,8 +101,13 @@ final class MainViewController: UISplitViewController {
 
         delegate = self
         preferredPrimaryColumnWidthFraction = 1 / 3
-        maximumPrimaryColumnWidth = .infinity
         minimumPrimaryColumnWidth = 320
+        if #available(iOS 26.0.0, *) {
+            maximumPrimaryColumnWidth = Self.automaticDimension
+            presentsWithGesture = false
+        } else {
+            maximumPrimaryColumnWidth = .infinity
+        }
 
         DDLogInfo("MainViewController: viewDidLoad")
     }
@@ -111,6 +139,71 @@ final class MainViewController: UISplitViewController {
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
+        if #available(iOS 27.0, *) {
+            // On iPadOS 27, presenting a new secondary controller synchronously while the master navigation transition is being configured can leave the secondary attached but invisible.
+            // Schedule the detail presentation alongside the configured transition.
+            let presentation = PendingItemsPresentation(collection: collection, libraryId: libraryId, searchItemKeys: searchItemKeys)
+            if isWaitingForMasterNavigationTransition {
+                pendingItemsPresentation = presentation
+                DDLogInfo("MainViewController: coalescing items presentation during master transition; collection=\(collection.id); library=\(libraryId)")
+                return
+            }
+            if !isCollapsed, let transitionCoordinator = masterCoordinator?.navigationController?.transitionCoordinator {
+                pendingItemsPresentation = presentation
+                isWaitingForMasterNavigationTransition = true
+                DDLogInfo("MainViewController: scheduling items presentation alongside master transition; collection=\(collection.id); library=\(libraryId)")
+                let queued = transitionCoordinator.animate { [weak self] _ in
+                    self?.presentPendingItemsAlongsideTransition()
+                } completion: { [weak self] context in
+                    self?.finishItemsTransition(cancelled: context.isCancelled)
+                }
+                if !queued {
+                    DDLogWarn("MainViewController: couldn't queue items presentation alongside master transition; collection=\(collection.id); library=\(libraryId)")
+                }
+                return
+            }
+        }
+
+        presentItems(for: collection, in: libraryId, searchItemKeys: searchItemKeys)
+    }
+
+    private func presentPendingItemsAlongsideTransition() {
+        guard isWaitingForMasterNavigationTransition else { return }
+        guard let presentation = pendingItemsPresentation else {
+            DDLogWarn("MainViewController: missing pending items presentation during master transition")
+            return
+        }
+        pendingItemsPresentation = nil
+        guard masterCoordinator?.visibleLibraryId == presentation.libraryId else {
+            DDLogInfo("MainViewController: ignoring stale items presentation during master transition; collection=\(presentation.collection.id); library=\(presentation.libraryId)")
+            return
+        }
+        presentItems(
+            for: presentation.collection,
+            in: presentation.libraryId,
+            searchItemKeys: presentation.searchItemKeys
+        )
+    }
+
+    private func finishItemsTransition(cancelled: Bool) {
+        guard isWaitingForMasterNavigationTransition else { return }
+        isWaitingForMasterNavigationTransition = false
+        if cancelled {
+            DDLogInfo("MainViewController: master transition cancelled during items presentation")
+        }
+
+        if let presentation = pendingItemsPresentation {
+            pendingItemsPresentation = nil
+            DDLogInfo("MainViewController: presenting latest items request after master transition; collection=\(presentation.collection.id); library=\(presentation.libraryId)")
+            if masterCoordinator?.visibleLibraryId == presentation.libraryId {
+                presentItems(for: presentation.collection, in: presentation.libraryId, searchItemKeys: presentation.searchItemKeys)
+            } else {
+                DDLogInfo("MainViewController: ignoring stale items presentation after master transition; collection=\(presentation.collection.id); library=\(presentation.libraryId)")
+            }
+        }
+    }
+
+    private func presentItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
         let navigationController = UINavigationController()
         let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
@@ -119,6 +212,7 @@ final class MainViewController: UISplitViewController {
             collection: collection,
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
+            mainCoordinatorDelegate: self,
             itemsTagFilterDelegate: tagFilterController,
             controllers: controllers
         )
@@ -142,30 +236,35 @@ final class MainViewController: UISplitViewController {
 extension MainViewController: UISplitViewControllerDelegate { }
 
 extension MainViewController: MainCoordinatorDelegate {
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        guard isCollapsed || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
-        showItems(for: collection, in: libraryId, searchItemKeys: nil)
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
+
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason) {
+        guard detailCoordinator?.libraryId == libraryId && detailCoordinator?.collection.identifier == collection.identifier else {
+            showItems(for: collection, in: libraryId, searchItemKeys: nil)
+            return
+        }
+        switch reason {
+        case .userSelectedCollection:
+            guard let navigationController = detailCoordinator?.navigationController else {
+                showItems(for: collection, in: libraryId, searchItemKeys: nil)
+                return
+            }
+            if navigationController.viewControllers.count > 1 {
+                navigationController.popToRootViewController(animated: !isCollapsed)
+            }
+            if isCollapsed {
+                showDetailViewController(navigationController, sender: nil)
+            }
+
+        case .initialCollectionsLoad, .splitExpansion, .restoration:
+            break
+        }
     }
 }
 
 extension MainViewController: MainCoordinatorSyncToolbarDelegate {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-
-        do {
-            var collectionType: CollectionIdentifier.CustomType?
-
-            try dbStorage.perform(on: .main, with: { coordinator in
-                let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
-                collectionType = isAnyInTrash ? .trash : .all
-            })
-
-            guard let collectionType else { return }
-
-            masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
-            showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
-        } catch let error {
-            DDLogError("MainViewController: can't load searched keys - \(error)")
-        }
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType) {
+        masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
+        showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
     }
 }

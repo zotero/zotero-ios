@@ -25,4 +25,5 @@ enum ItemDetailError: Error, Equatable, Hashable {
     case cantSaveTags
     case cantRemoveItem
     case cantRemoveParent
+    case cantRemoveCollection
 }

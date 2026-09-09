@@ -20,12 +20,17 @@ struct AnnotationToolOptions: OptionSet {
     static let stylus = AnnotationToolOptions(rawValue: 1 << 0)
 }
 
+protocol AnnotationToolbarLeadingView: UIView {
+    func update(toRotation rotation: AnnotationToolbarViewController.Rotation)
+}
+
 protocol AnnotationToolbarDelegate: AnyObject {
     var activeAnnotationTool: AnnotationTool? { get }
     var canUndo: Bool { get }
     var canRedo: Bool { get }
     var maxAvailableToolbarSize: CGFloat { get }
 
+    func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool
     func toggle(tool: AnnotationTool, options: AnnotationToolOptions)
     func showToolOptions(sourceItem: UIPopoverPresentationControllerSourceItem)
     func closeAnnotationToolbar()
@@ -43,361 +48,152 @@ class AnnotationToolbarViewController: UIViewController {
         let title: String
         let accessibilityLabel: String
         let image: UIImage
-        let isHidden: Bool
-
-        func copy(isHidden: Bool) -> ToolButton {
-            return ToolButton(type: type, title: title, accessibilityLabel: accessibilityLabel, image: image, isHidden: isHidden)
-        }
+        var isHidden: Bool
     }
 
-    let size: CGFloat
+    // MARK: - Constants
+
     static let estimatedVerticalHeight: CGFloat = 500
-    private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 12 : 12
+    private static let buttonSpacing: CGFloat = 12
     private static let buttonCompactSpacing: CGFloat = 8
+    private static let pickerToToolsGap: CGFloat = 8
+    private static let pickerToToolsCompactGap: CGFloat = 4
+    private static let toolsToAdditionalOffset: CGFloat = 20
     private static let buttonContentInsets: NSDirectionalEdgeInsets = UIDevice.current.userInterfaceIdiom == .pad
         ? NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
         : NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2)
-    private static let toolsToAdditionalFullOffset: CGFloat = 70
-    private static let toolsToAdditionalCompactOffset: CGFloat = 20
-    private let disposeBag: DisposeBag
-    private let undoRedoEnabled: Bool
 
-    private var horizontalHeight: NSLayoutConstraint!
-    private weak var stackView: UIStackView!
-    private weak var additionalStackView: UIStackView!
+    /// Horizontal layout: top/bottom padding of all items inside the toolbar.
+    private static let horizontalCrossAxisInset: CGFloat = 8
+    /// Horizontal layout: left inset of the tools stack from safe area when no leading view.
+    private static let horizontalToolsLeadingInset: CGFloat = 20
+    /// Horizontal layout: right inset of the additional buttons stack from safe area.
+    private static let horizontalAdditionalTrailingInset: CGFloat = 15
+    /// Horizontal layout: left inset of the leading view from the view's left edge.
+    private static let horizontalLeadingViewInset: CGFloat = 15
+    /// Horizontal layout: minimum gap between the leading view and the tools stack.
+    private static let horizontalLeadingViewToToolsGap: CGFloat = 8
+
+    /// Vertical layout: left/right padding of all items inside the toolbar.
+    private static let verticalCrossAxisInset: CGFloat = 8
+    /// Vertical layout: top inset of the tools stack (or leading view) from the view's top edge.
+    private static let verticalToolsTopInset: CGFloat = 15
+    /// Vertical layout: bottom inset of the additional buttons stack from the view's bottom edge.
+    private static let verticalAdditionalBottomInset: CGFloat = 8
+    /// Vertical layout: minimum gap between the leading view and the tools stack.
+    private static let verticalLeadingViewToToolsGap: CGFloat = 20
+
+    // MARK: - Public
+
+    let size: CGFloat
+    weak var delegate: AnnotationToolbarDelegate?
     private(set) weak var colorPickerButton: UIButton!
-    private var colorPickerTop: NSLayoutConstraint!
-    private var colorPickerLeading: NSLayoutConstraint!
-    private var colorPickerToAdditionalHorizontal: NSLayoutConstraint!
-    private var colorPickerTrailing: NSLayoutConstraint!
-    private var colorPickerToAdditionalVertical: NSLayoutConstraint!
-    private var colorPickerBottom: NSLayoutConstraint!
     private(set) weak var undoButton: UIButton?
     private(set) weak var redoButton: UIButton?
-    private var additionalTop: NSLayoutConstraint!
-    private var additionalLeading: NSLayoutConstraint!
-    private weak var additionalTrailing: NSLayoutConstraint!
-    private weak var additionalBottom: NSLayoutConstraint!
-    private weak var containerTop: NSLayoutConstraint!
-    private weak var containerLeading: NSLayoutConstraint!
-    private var containerBottom: NSLayoutConstraint!
-    private var containerTrailing: NSLayoutConstraint!
-    private var containerToPickerVertical: NSLayoutConstraint!
-    private var containerToPickerHorizontal: NSLayoutConstraint!
-    private var hairlineView: UIView!
+
+    // MARK: - Private state
+
+    private let undoRedoEnabled: Bool
+    private let disposeBag: DisposeBag
     private var toolButtons: [ToolButton]
-    weak var delegate: AnnotationToolbarDelegate?
+    private var rotation: Rotation = .horizontal
+    private var lastAppliedIsCompactSize: Bool?
+    private var lastLaidOutVariableDimension: CGFloat = 0
+    private var lastSeenMaxAvailableSize: CGFloat = 0
     private var lastGestureRecognizerTouch: UITouch?
+
+    private var isCompactSize: Bool {
+        return delegate?.isCompactSize(for: rotation) ?? false
+    }
+
+    // MARK: - Subviews
+
+    private weak var leadingView: AnnotationToolbarLeadingView?
+    private weak var toolsStackView: UIStackView!
+    private weak var additionalStackView: UIStackView!
+    private weak var hairlineView: UIView!
+
+    // MARK: - Constraints
+
+    private var fixedDimensionConstraint: NSLayoutConstraint!
+    private var layoutConstraints: [NSLayoutConstraint] = []
+    private weak var pickerToToolsGapConstraint: NSLayoutConstraint?
+    private weak var toolsToAdditionalSeparatorConstraint: NSLayoutConstraint?
+
+    // MARK: - Init
 
     init(tools: [AnnotationTool], undoRedoEnabled: Bool, size: CGFloat) {
         self.size = size
-        toolButtons = tools.map({ button(from: $0) })
+        self.toolButtons = tools.map({ ToolButton(type: $0, title: $0.name, accessibilityLabel: $0.accessibilityLabel, image: $0.image, isHidden: false) })
         self.undoRedoEnabled = undoRedoEnabled
-        disposeBag = DisposeBag()
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
-
-        func button(from tool: AnnotationTool) -> ToolButton {
-            switch tool {
-            case .highlight:
-                ToolButton(
-                    type: .highlight,
-                    title: L10n.Pdf.AnnotationToolbar.highlight,
-                    accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool,
-                    image: Asset.Images.Annotations.highlightLarge.image,
-                    isHidden: false
-                )
-
-            case .note:
-                ToolButton(
-                    type: .note,
-                    title: L10n.Pdf.AnnotationToolbar.note,
-                    accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool,
-                    image: Asset.Images.Annotations.noteLarge.image,
-                    isHidden: false
-                )
-
-            case .image:
-                ToolButton(
-                    type: .image,
-                    title: L10n.Pdf.AnnotationToolbar.image,
-                    accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool,
-                    image: Asset.Images.Annotations.areaLarge.image,
-                    isHidden: false
-                )
-
-            case .ink:
-                ToolButton(
-                    type: .ink,
-                    title: L10n.Pdf.AnnotationToolbar.ink,
-                    accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool,
-                    image: Asset.Images.Annotations.inkLarge.image,
-                    isHidden: false
-                )
-
-            case .eraser:
-                ToolButton(
-                    type: .eraser,
-                    title: L10n.Pdf.AnnotationToolbar.eraser,
-                    accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool,
-                    image: Asset.Images.Annotations.eraserLarge.image,
-                    isHidden: false
-                )
-
-            case .underline:
-                ToolButton(
-                    type: .underline,
-                    title: L10n.Pdf.AnnotationToolbar.underline,
-                    accessibilityLabel: L10n.Accessibility.Pdf.underlineAnnotationTool,
-                    image: Asset.Images.Annotations.underlineLarge.image,
-                    isHidden: false
-                )
-
-            case .freeText:
-                ToolButton(
-                    type: .freeText,
-                    title: L10n.Pdf.AnnotationToolbar.text,
-                    accessibilityLabel: L10n.Accessibility.Pdf.textAnnotationTool,
-                    image: Asset.Images.Annotations.textLarge.image,
-                    isHidden: false
-                )
-            }
-        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - View lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = Asset.Colors.navbarBackground.color
         view.addInteraction(UILargeContentViewerInteraction())
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.setContentHuggingPriority(.required, for: .horizontal)
+        view.setContentHuggingPriority(.required, for: .vertical)
 
-        setupViews()
+        setupSubviews()
 
-        func setupViews() {
-            view.translatesAutoresizingMaskIntoConstraints = false
+        fixedDimensionConstraint = view.heightAnchor.constraint(equalToConstant: size)
+        fixedDimensionConstraint.priority = .required
+        fixedDimensionConstraint.isActive = true
 
-            let stackView = UIStackView(arrangedSubviews: createToolButtons(from: toolButtons))
-            stackView.showsLargeContentViewer = true
-            stackView.axis = .vertical
-            stackView.spacing = 0
-            stackView.distribution = .fill
-            stackView.translatesAutoresizingMaskIntoConstraints = false
-            stackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-            stackView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-            stackView.setContentHuggingPriority(.required, for: .vertical)
-            stackView.setContentHuggingPriority(.required, for: .horizontal)
-            view.addSubview(stackView)
+        applyLayout()
+    }
 
-            let picker = createColorPickerButton()
-            view.addSubview(picker)
-            colorPickerButton = picker
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
 
-            let additionalStackView = UIStackView(arrangedSubviews: createAdditionalItems())
-            additionalStackView.showsLargeContentViewer = true
-            additionalStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
-            additionalStackView.setContentCompressionResistancePriority(.required, for: .vertical)
-            additionalStackView.setContentHuggingPriority(.required, for: .vertical)
-            additionalStackView.setContentHuggingPriority(.required, for: .horizontal)
-            additionalStackView.axis = .vertical
-            additionalStackView.spacing = 0
-            additionalStackView.distribution = .fill
-            additionalStackView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(additionalStackView)
+        var shouldRecalculate = false
 
-            let hairline = UIView()
-            hairline.translatesAutoresizingMaskIntoConstraints = false
-            hairline.backgroundColor = UIColor.separator
-            view.addSubview(hairline)
-            hairlineView = hairline
+        // Re-evaluate compact-size state from the delegate. Window/container resizes (e.g. iPad Stage Manager drag)
+        // can change the threshold without any explicit notification, leaving spacings stale.
+        if isCompactSize != lastAppliedIsCompactSize {
+            applyCompactSizeStyling()
+            shouldRecalculate = true
+        }
 
-            horizontalHeight = view.heightAnchor.constraint(equalToConstant: size)
-            horizontalHeight.priority = .required
-            containerBottom = view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
-            containerTrailing = view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
-            additionalTop = additionalStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 8)
-            additionalLeading = additionalStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
-            containerToPickerVertical = picker.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: 0)
-            containerToPickerVertical.priority = .required
-            containerToPickerHorizontal = picker.leadingAnchor.constraint(equalTo: stackView.trailingAnchor)
-            containerToPickerHorizontal.priority = .required
-            colorPickerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: picker.bottomAnchor)
-            colorPickerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: picker.trailingAnchor, constant: 0)
-            colorPickerTop = picker.topAnchor.constraint(equalTo: view.topAnchor)
-            colorPickerBottom = view.bottomAnchor.constraint(equalTo: picker.bottomAnchor)
-            colorPickerLeading = picker.leadingAnchor.constraint(equalTo: view.leadingAnchor)
-            colorPickerTrailing = view.trailingAnchor.constraint(equalTo: picker.trailingAnchor)
-            let containerTop = stackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 15)
-            let containerLeading = stackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 15)
-            let additionalBottom = view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: 8)
-            let additionalTrailing = view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
-            let hairlineHeight = hairline.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
-            let hairlineLeading = hairline.leadingAnchor.constraint(equalTo: view.leadingAnchor)
-            let hairlineTrailing = hairline.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-            let hairlineBottom = hairline.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        // The toolbar's own bounds may not change even when the available space does — e.g. in vertical mode the
+        // toolbar's height is intrinsic, so when the navigation bar hides/shows or the scrubber appears, the
+        // document controller's frame moves but our bounds stay the same. Re-run the button-count calculation
+        // whenever the delegate's reported maximum changes.
+        let currentMax = delegate?.maxAvailableToolbarSize ?? 0
+        if abs(currentMax - lastSeenMaxAvailableSize) > 0.5 {
+            lastSeenMaxAvailableSize = currentMax
+            shouldRecalculate = true
+        }
 
-            NSLayoutConstraint.activate([
-                containerTop,
-                containerLeading,
-                containerTrailing,
-                containerToPickerVertical,
-                colorPickerLeading,
-                colorPickerTrailing,
-                additionalBottom,
-                colorPickerToAdditionalVertical,
-                additionalTrailing,
-                additionalLeading,
-                hairlineHeight,
-                hairlineLeading,
-                hairlineTrailing,
-                hairlineBottom
-            ])
+        // Also catch direct changes to our own bounds (covers any case the delegate's max doesn't reflect, e.g.
+        // explicit external sizing).
+        let currentDim = (rotation == .horizontal) ? view.bounds.width : view.bounds.height
+        if abs(currentDim - lastLaidOutVariableDimension) > 0.5 {
+            lastLaidOutVariableDimension = currentDim
+            shouldRecalculate = true
+        }
 
-            self.containerTop = containerTop
-            self.containerLeading = containerLeading
-            self.additionalTrailing = additionalTrailing
-            self.additionalBottom = additionalBottom
-            self.stackView = stackView
-            self.additionalStackView = additionalStackView
-
-            func createToolButtons(from tools: [ToolButton]) -> [UIView] {
-                var showMoreConfig = UIButton.Configuration.plain()
-                showMoreConfig.contentInsets = Self.buttonContentInsets
-                showMoreConfig.image = UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate)
-                let showMoreButton = UIButton(type: .custom)
-                showMoreButton.configuration = showMoreConfig
-                showMoreButton.translatesAutoresizingMaskIntoConstraints = false
-                showMoreButton.showsLargeContentViewer = true
-                showMoreButton.accessibilityLabel = L10n.Accessibility.Pdf.showMoreTools
-                showMoreButton.largeContentTitle = L10n.Accessibility.Pdf.showMoreTools
-                showMoreButton.setContentCompressionResistancePriority(.required, for: .vertical)
-                showMoreButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-                showMoreButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-                showMoreButton.showsMenuAsPrimaryAction = true
-                showMoreButton.widthAnchor.constraint(equalTo: showMoreButton.heightAnchor).isActive = true
-
-                return tools.map { tool in
-                    let button = CheckboxButton(image: tool.image.withRenderingMode(.alwaysTemplate), contentInsets: Self.buttonContentInsets)
-                    button.translatesAutoresizingMaskIntoConstraints = false
-                    button.showsLargeContentViewer = true
-                    button.accessibilityLabel = tool.accessibilityLabel
-                    button.largeContentTitle = tool.title
-                    button.deselectedBackgroundColor = .clear
-                    button.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-                    button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
-                    button.selectedTintColor = .white
-                    button.setContentCompressionResistancePriority(.required, for: .vertical)
-                    button.setContentCompressionResistancePriority(.required, for: .horizontal)
-                    button.isHidden = true
-                    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
-                    button.setNeedsUpdateConfiguration()
-
-                    let recognizer = UITapGestureRecognizer()
-                    recognizer.delegate = self
-                    recognizer.rx.event
-                        .subscribe(onNext: { [weak self] _ in
-                            guard let self else { return }
-                            delegate?.toggle(tool: tool.type, options: currentAnnotationOptions)
-                        })
-                        .disposed(by: disposeBag)
-                    button.addGestureRecognizer(recognizer)
-
-                    return button
-                } + [showMoreButton]
-            }
-
-            func createColorPickerButton() -> UIButton {
-                var pickerConfig = UIButton.Configuration.plain()
-                pickerConfig.contentInsets = Self.buttonContentInsets
-                pickerConfig.image = UIImage(systemName: "circle.fill")?.applyingSymbolConfiguration(.init(scale: .large))
-                let picker = UIButton()
-                picker.configuration = pickerConfig
-                picker.showsLargeContentViewer = true
-                picker.translatesAutoresizingMaskIntoConstraints = false
-                picker.setContentCompressionResistancePriority(.required, for: .horizontal)
-                picker.setContentCompressionResistancePriority(.required, for: .vertical)
-                picker.widthAnchor.constraint(equalTo: picker.heightAnchor).isActive = true
-                picker.isHidden = true
-                picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
-                picker.largeContentTitle = L10n.Accessibility.Pdf.colorPicker
-                picker.rx.controlEvent(.touchUpInside)
-                    .subscribe(onNext: { [weak self] _ in
-                        guard let self else { return }
-                        delegate?.showToolOptions(sourceItem: colorPickerButton)
-                    })
-                    .disposed(by: disposeBag)
-                return picker
-            }
+        if shouldRecalculate {
+            sizeDidChange()
         }
     }
 
-    // MARK: - Undo/Redo state
+    // MARK: - Public API
 
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool) {
         undoButton?.isEnabled = undoEnabled
         redoButton?.isEnabled = redoEnabled
-    }
-
-    // MARK: - Layout
-
-    func prepareForSizeChange() {
-        for (idx, view) in stackView.arrangedSubviews.enumerated() {
-            if idx == stackView.arrangedSubviews.count - 1 {
-                view.alpha = 1
-                view.isHidden = false
-            } else {
-                view.alpha = 0
-                view.isHidden = true
-            }
-        }
-    }
-
-    func sizeDidChange() {
-        guard stackView.arrangedSubviews.count == toolButtons.count + 1 else {
-            DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(stackView.arrangedSubviews.count). Tools: \(toolButtons.count)")
-            return
-        }
-        guard let button = stackView.arrangedSubviews.last, let maxAvailableSize = delegate?.maxAvailableToolbarSize, maxAvailableSize > 0 else { return }
-
-        let isHorizontal = view.frame.width > view.frame.height
-        let buttonSize = isHorizontal ? button.frame.width : button.frame.height
-
-        guard buttonSize > 0 else { return }
-
-        let stackViewOffset = isHorizontal ? containerLeading.constant : containerTop.constant
-        let additionalSize = isHorizontal ? additionalStackView.frame.width : additionalStackView.frame.height
-        let containerToPickerOffset = isHorizontal ? containerToPickerHorizontal.constant : containerToPickerVertical.constant
-        let pickerSize = isHorizontal ? colorPickerButton.frame.width : colorPickerButton.frame.height
-        let pickerToAdditionalOffset = isHorizontal ? colorPickerToAdditionalHorizontal.constant : colorPickerToAdditionalVertical.constant
-        let additionalOffset = isHorizontal ? additionalTrailing.constant : additionalBottom.constant
-        let remainingSize = maxAvailableSize - stackViewOffset - containerToPickerOffset - pickerSize - pickerToAdditionalOffset - additionalSize - additionalOffset
-        if remainingSize < 0 {
-            DDLogWarn("AnnotationToolbarViewController: not enough \(isHorizontal ? "horizontal" : "vertical") minimum size")
-        }
-        let buttonSpacing = stackView.spacing
-        let count = max(0, min(Int(floor((remainingSize + buttonSpacing) / (buttonSize + buttonSpacing))), toolButtons.count))
-
-        for idx in 0..<count {
-            guard idx < (count - 1) || count == toolButtons.count else { continue }
-            stackView.arrangedSubviews[idx].alpha = 1
-            stackView.arrangedSubviews[idx].isHidden = false
-            toolButtons[idx] = toolButtons[idx].copy(isHidden: false)
-        }
-
-        if count < toolButtons.count {
-            for idx in max(0, count - 1)..<toolButtons.count {
-                toolButtons[idx] = toolButtons[idx].copy(isHidden: true)
-            }
-        } else {
-            stackView.arrangedSubviews.last?.alpha = 0
-            stackView.arrangedSubviews.last?.isHidden = true
-        }
-
-        if stackView.arrangedSubviews.last?.isHidden == false {
-            (stackView.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
-        }
     }
 
     func set(activeColor: UIColor) {
@@ -407,8 +203,8 @@ class AnnotationToolbarViewController: UIViewController {
     func set(selected: Bool, to tool: AnnotationTool, color: UIColor?) {
         guard let idx = toolButtons.firstIndex(where: { $0.type == tool }) else { return }
 
-        (stackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
-        (stackView.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
+        (toolsStackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
+        (toolsStackView.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
 
         colorPickerButton.isHidden = !selected
 
@@ -428,79 +224,25 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    func set(rotation: Rotation, isCompactSize: Bool) {
-        view.layer.cornerRadius = rotation == .vertical ? 8 : 0
-        view.layer.masksToBounds = false
+    func set(rotation: Rotation) {
+        // Only rebuild constraints when the rotation actually changes. The handler calls this on every
+        // interface-visibility change (which doesn't affect rotation), and tearing down + reactivating
+        // the whole constraint set mid-animation leaves UIStackView with stale layout state.
+        guard self.rotation != rotation else { return }
+        self.rotation = rotation
+        applyLayout()
+    }
 
-        switch rotation {
-        case .vertical:
-            setVerticalLayout(isCompactSize: isCompactSize)
-
-        case .horizontal:
-            setHorizontalLayout(isCompactSize: isCompactSize)
+    func setLeadingView(view: AnnotationToolbarLeadingView?) {
+        if let oldView = leadingView {
+            oldView.removeFromSuperview()
+            leadingView = nil
         }
-
-        let inset: CGFloat = isCompactSize ? Self.buttonCompactSpacing : Self.buttonSpacing
-        stackView.spacing = inset
-        additionalStackView.spacing = inset
-
-        func setVerticalLayout(isCompactSize: Bool) {
-            horizontalHeight.isActive = false
-            additionalTop.isActive = false
-            containerBottom.isActive = false
-            containerToPickerHorizontal.isActive = false
-            colorPickerToAdditionalHorizontal.isActive = false
-            colorPickerTop.isActive = false
-            colorPickerBottom.isActive = false
-            additionalLeading.isActive = true
-            containerTrailing.isActive = true
-            containerToPickerVertical.isActive = true
-            colorPickerToAdditionalVertical.isActive = true
-            colorPickerLeading.isActive = true
-            colorPickerTrailing.isActive = true
-
-            stackView.axis = .vertical
-            additionalStackView.axis = .vertical
-
-            additionalBottom.constant = 8
-            additionalTrailing.constant = 8
-            containerLeading.constant = 8
-            containerTop.constant = 15
-            colorPickerLeading.constant = 8
-            colorPickerTrailing.constant = 8
-            colorPickerToAdditionalVertical.constant = isCompactSize ? Self.toolsToAdditionalCompactOffset : Self.toolsToAdditionalFullOffset
-            containerToPickerVertical.constant = isCompactSize ? 4 : 8
-            hairlineView.isHidden = true
+        if let view {
+            self.view.addSubview(view)
+            self.leadingView = view
         }
-
-        func setHorizontalLayout(isCompactSize: Bool) {
-            additionalLeading.isActive = false
-            containerTrailing.isActive = false
-            containerToPickerVertical.isActive = false
-            colorPickerToAdditionalVertical.isActive = false
-            colorPickerLeading.isActive = false
-            colorPickerTrailing.isActive = false
-            horizontalHeight.isActive = true
-            additionalTop.isActive = true
-            containerBottom.isActive = true
-            containerToPickerHorizontal.isActive = true
-            colorPickerToAdditionalHorizontal.isActive = true
-            colorPickerTop.isActive = true
-            colorPickerBottom.isActive = true
-
-            stackView.axis = .horizontal
-            additionalStackView.axis = .horizontal
-
-            additionalBottom.constant = 8
-            additionalTrailing.constant = 15
-            containerLeading.constant = 20
-            containerTop.constant = 8
-            colorPickerToAdditionalHorizontal.constant = isCompactSize ? Self.toolsToAdditionalCompactOffset : Self.toolsToAdditionalFullOffset
-            containerToPickerHorizontal.constant = isCompactSize ? 4 : 8
-            colorPickerBottom.constant = 8
-            colorPickerTop.constant = 8
-            hairlineView.isHidden = false
-        }
+        applyLayout()
     }
 
     func updateAdditionalButtons() {
@@ -512,30 +254,353 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    private var currentAnnotationOptions: AnnotationToolOptions {
-        if lastGestureRecognizerTouch?.type == .stylus {
-            return .stylus
+    func prepareForSizeChange() {
+        for (idx, view) in toolsStackView.arrangedSubviews.enumerated() {
+            let isMoreButton = idx == toolsStackView.arrangedSubviews.count - 1
+            view.alpha = isMoreButton ? 1 : 0
+            view.isHidden = !isMoreButton
         }
-        return []
+    }
+
+    func sizeDidChange() {
+        guard toolsStackView.arrangedSubviews.count == toolButtons.count + 1 else {
+            DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(toolsStackView.arrangedSubviews.count). Tools: \(toolButtons.count)")
+            return
+        }
+        guard let maxAvailableSize = delegate?.maxAvailableToolbarSize, maxAvailableSize > 0 else { return }
+
+        let referenceButton = toolsStackView.arrangedSubviews.last!
+        let buttonSize = (rotation == .horizontal) ? referenceButton.frame.width : referenceButton.frame.height
+        guard buttonSize > 0 else { return }
+
+        let remainingSize = availableToolsSize(maxAvailableSize: maxAvailableSize)
+        if remainingSize < 0 {
+            DDLogWarn("AnnotationToolbarViewController: not enough \(rotation == .horizontal ? "horizontal" : "vertical") minimum size")
+        }
+        let spacing = toolsStackView.spacing
+        let count = max(0, min(Int(floor((remainingSize + spacing) / (buttonSize + spacing))), toolButtons.count))
+        let hasOverflow = count < toolButtons.count
+        // When there's overflow the last visible slot is taken by the "more" button, so only (count - 1) tool buttons fit.
+        let visibleToolCount = hasOverflow ? max(0, count - 1) : toolButtons.count
+
+        var didChangeVisibility = false
+
+        for idx in 0..<toolButtons.count {
+            let shouldShow = idx < visibleToolCount
+            toolButtons[idx].isHidden = !shouldShow
+            let view = toolsStackView.arrangedSubviews[idx]
+            // Only mutate isHidden when it actually changes — UIStackView can leave arranged subviews
+            // (including ones whose visibility isn't changing) at stale frames if isHidden is re-set
+            // to its current value during the same pass.
+            if view.isHidden != !shouldShow {
+                view.isHidden = !shouldShow
+                didChangeVisibility = true
+            }
+            view.alpha = shouldShow ? 1 : 0
+        }
+
+        let moreButton = toolsStackView.arrangedSubviews.last
+        if let moreButton, moreButton.isHidden != !hasOverflow {
+            moreButton.isHidden = !hasOverflow
+            didChangeVisibility = true
+        }
+        moreButton?.alpha = hasOverflow ? 1 : 0
+
+        if hasOverflow {
+            (moreButton as? UIButton)?.menu = createHiddenToolsMenu()
+        }
+
+        if didChangeVisibility {
+            // UIStackView doesn't always re-propagate its intrinsic content size when arranged subview
+            // visibility changes. Invalidate explicitly so the toolbar's height (vertical mode) or width
+            // (horizontal mode) is recomputed, and the "more" button ends up below the newly-revealed
+            // tool buttons instead of overlapping them.
+            toolsStackView.invalidateIntrinsicContentSize()
+            view.setNeedsLayout()
+        }
+    }
+
+    // MARK: - Layout
+
+    private func applyLayout() {
+        view.layer.cornerRadius = rotation == .vertical ? 8 : 0
+        view.layer.masksToBounds = false
+        hairlineView.isHidden = rotation == .vertical
+
+        let stackAxis: NSLayoutConstraint.Axis = (rotation == .horizontal) ? .horizontal : .vertical
+        toolsStackView.axis = stackAxis
+        additionalStackView.axis = stackAxis
+
+        fixedDimensionConstraint.isActive = false
+        switch rotation {
+        case .horizontal:
+            fixedDimensionConstraint = view.heightAnchor.constraint(equalToConstant: size)
+
+        case .vertical:
+            fixedDimensionConstraint = view.widthAnchor.constraint(equalToConstant: size)
+        }
+        fixedDimensionConstraint.priority = .required
+        fixedDimensionConstraint.isActive = true
+
+        NSLayoutConstraint.deactivate(layoutConstraints)
+        layoutConstraints.removeAll(keepingCapacity: true)
+
+        switch rotation {
+        case .horizontal:
+            buildHorizontalConstraints()
+
+        case .vertical:
+            buildVerticalConstraints()
+        }
+
+        leadingView?.update(toRotation: rotation)
+
+        NSLayoutConstraint.activate(layoutConstraints)
+        applyCompactSizeStyling()
+        view.setNeedsLayout()
+    }
+
+    private func applyCompactSizeStyling() {
+        let compact = isCompactSize
+        lastAppliedIsCompactSize = compact
+        let spacing: CGFloat = compact ? Self.buttonCompactSpacing : Self.buttonSpacing
+        toolsStackView.spacing = spacing
+        additionalStackView.spacing = spacing
+        pickerToToolsGapConstraint?.constant = compact ? Self.pickerToToolsCompactGap : Self.pickerToToolsGap
+        toolsToAdditionalSeparatorConstraint?.constant = Self.toolsToAdditionalOffset
+    }
+
+    private func buildHorizontalConstraints() {
+        let cross = Self.horizontalCrossAxisInset
+        let pickerGap = colorPickerButton.leadingAnchor.constraint(equalTo: toolsStackView.trailingAnchor)
+        let separator = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: colorPickerButton.trailingAnchor)
+        pickerToToolsGapConstraint = pickerGap
+        toolsToAdditionalSeparatorConstraint = separator
+
+        layoutConstraints.append(contentsOf: [
+            // Vertically center all main items between top/bottom inset.
+            toolsStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: cross),
+            view.bottomAnchor.constraint(equalTo: toolsStackView.bottomAnchor, constant: cross),
+            colorPickerButton.topAnchor.constraint(equalTo: view.topAnchor, constant: cross),
+            view.bottomAnchor.constraint(equalTo: colorPickerButton.bottomAnchor, constant: cross),
+            additionalStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: cross),
+            view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: cross),
+            // Picker is anchored to the right of tools; additional buttons are anchored to the right side
+            // with a minimum gap from the picker (this is the visual separator).
+            pickerGap,
+            separator,
+            view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: Self.horizontalAdditionalTrailingInset)
+        ])
+
+        if let leadingView {
+            // Leading view pinned to the left; tools are centered horizontally (matching legacy visual behavior).
+            layoutConstraints.append(contentsOf: [
+                leadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Self.horizontalLeadingViewInset),
+                leadingView.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor),
+                view.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor),
+                leadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                toolsStackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: Self.horizontalLeadingViewToToolsGap),
+                toolsStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+            ])
+        } else {
+            layoutConstraints.append(toolsStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Self.horizontalToolsLeadingInset))
+        }
+    }
+
+    private func buildVerticalConstraints() {
+        let cross = Self.verticalCrossAxisInset
+        let pickerGap = colorPickerButton.topAnchor.constraint(equalTo: toolsStackView.bottomAnchor)
+        // Vertical mode: toolbar height is intrinsic to content, so the separator must be an exact distance —
+        // a `>=` leaves the height under-constrained and Auto Layout can keep it at its previous (larger) value
+        // when content shrinks, leaving the "more" button floating in unused space instead of moving up.
+        // Horizontal mode keeps `>=` because the toolbar's width is variable and the spacer must be allowed to grow.
+        let separator = additionalStackView.topAnchor.constraint(equalTo: colorPickerButton.bottomAnchor)
+        pickerToToolsGapConstraint = pickerGap
+        toolsToAdditionalSeparatorConstraint = separator
+
+        layoutConstraints.append(contentsOf: [
+            // Horizontally center all main items between left/right inset.
+            toolsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: cross),
+            view.trailingAnchor.constraint(equalTo: toolsStackView.trailingAnchor, constant: cross),
+            colorPickerButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: cross),
+            view.trailingAnchor.constraint(equalTo: colorPickerButton.trailingAnchor, constant: cross),
+            additionalStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: cross),
+            view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: cross),
+            // Picker is below tools; additional buttons are below the picker with a minimum gap (visual separator).
+            pickerGap,
+            separator,
+            view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: Self.verticalAdditionalBottomInset)
+        ])
+
+        if let leadingView {
+            layoutConstraints.append(contentsOf: [
+                leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor),
+                view.trailingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor),
+                leadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                leadingView.topAnchor.constraint(equalTo: view.topAnchor, constant: Self.verticalToolsTopInset),
+                toolsStackView.topAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: Self.verticalLeadingViewToToolsGap)
+            ])
+        } else {
+            layoutConstraints.append(toolsStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: Self.verticalToolsTopInset))
+        }
+    }
+
+    // Computes the size budget available for the tools stack (along the variable axis) after subtracting everything else.
+    private func availableToolsSize(maxAvailableSize: CGFloat) -> CGFloat {
+        let pickerGap: CGFloat = isCompactSize ? Self.pickerToToolsCompactGap : Self.pickerToToolsGap
+
+        switch rotation {
+        case .horizontal:
+            let pickerSize = colorPickerButton.frame.width
+            let additionalSize = additionalStackView.frame.width
+            let rightSide = pickerGap + pickerSize + Self.toolsToAdditionalOffset + additionalSize + Self.horizontalAdditionalTrailingInset
+
+            if let leadingView {
+                // Tools are centered, so each side of the center must accommodate the larger of leadingSide / rightSide.
+                let leadingSide = Self.horizontalLeadingViewInset + leadingView.frame.width + Self.horizontalLeadingViewToToolsGap
+                return maxAvailableSize - 2 * max(leadingSide, rightSide)
+            }
+            return maxAvailableSize - Self.horizontalToolsLeadingInset - rightSide
+
+        case .vertical:
+            let pickerSize = colorPickerButton.frame.height
+            let additionalSize = additionalStackView.frame.height
+            let bottomSide = pickerGap + pickerSize + Self.toolsToAdditionalOffset + additionalSize + Self.verticalAdditionalBottomInset
+
+            if let leadingView {
+                let topSide = Self.verticalToolsTopInset + leadingView.frame.height + Self.verticalLeadingViewToToolsGap
+                return maxAvailableSize - topSide - bottomSide
+            }
+            return maxAvailableSize - Self.verticalToolsTopInset - bottomSide
+        }
     }
 
     // MARK: - Setup
 
-    private func createHiddenToolsMenu() -> UIMenu {
-        let children = toolButtons.filter({ $0.isHidden }).map({ tool in
-            let isActive = delegate?.activeAnnotationTool == tool.type
-            return UIAction(
-                title: tool.title,
-                image: tool.image.withRenderingMode(.alwaysTemplate),
-                discoverabilityTitle: tool.accessibilityLabel,
-                state: (isActive ? .on : .off),
-                handler: { [weak self] _ in
-                    guard let self else { return }
-                    delegate?.toggle(tool: tool.type, options: currentAnnotationOptions)
-                }
-            )
-        })
-        return UIMenu(children: children)
+    private func setupSubviews() {
+        let tools = makeToolsStackView()
+        view.addSubview(tools)
+        toolsStackView = tools
+
+        let picker = makeColorPickerButton()
+        view.addSubview(picker)
+        colorPickerButton = picker
+
+        let additional = makeAdditionalStackView()
+        view.addSubview(additional)
+        additionalStackView = additional
+
+        let hairline = UIView()
+        hairline.translatesAutoresizingMaskIntoConstraints = false
+        hairline.backgroundColor = .separator
+        view.addSubview(hairline)
+        hairlineView = hairline
+
+        NSLayoutConstraint.activate([
+            hairline.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+            hairline.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hairline.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hairline.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    private func makeToolsStackView() -> UIStackView {
+        let buttons: [UIView] = toolButtons.map(makeToolButton(for:)) + [makeMoreButton()]
+        let stack = UIStackView(arrangedSubviews: buttons)
+        stack.showsLargeContentViewer = true
+        stack.axis = .horizontal
+        stack.spacing = 0
+        stack.distribution = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        stack.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        stack.setContentHuggingPriority(.required, for: .horizontal)
+        stack.setContentHuggingPriority(.required, for: .vertical)
+        return stack
+    }
+
+    private func makeToolButton(for tool: ToolButton) -> CheckboxButton {
+        let button = CheckboxButton(image: tool.image.withRenderingMode(.alwaysTemplate), contentInsets: Self.buttonContentInsets)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.showsLargeContentViewer = true
+        button.accessibilityLabel = tool.accessibilityLabel
+        button.largeContentTitle = tool.title
+        button.deselectedBackgroundColor = .clear
+        button.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
+        button.selectedTintColor = .white
+        button.setContentCompressionResistancePriority(.required, for: .vertical)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.isHidden = true
+        button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+        button.setNeedsUpdateConfiguration()
+
+        let recognizer = UITapGestureRecognizer()
+        recognizer.delegate = self
+        recognizer.rx.event
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                delegate?.toggle(tool: tool.type, options: currentAnnotationOptions)
+            })
+            .disposed(by: disposeBag)
+        button.addGestureRecognizer(recognizer)
+
+        return button
+    }
+
+    private func makeMoreButton() -> UIButton {
+        var config = UIButton.Configuration.plain()
+        config.contentInsets = Self.buttonContentInsets
+        config.image = UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate)
+        let button = UIButton(type: .custom)
+        button.configuration = config
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.showsLargeContentViewer = true
+        button.accessibilityLabel = L10n.Accessibility.Pdf.showMoreTools
+        button.largeContentTitle = L10n.Accessibility.Pdf.showMoreTools
+        button.setContentCompressionResistancePriority(.required, for: .vertical)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        button.showsMenuAsPrimaryAction = true
+        button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+        return button
+    }
+
+    private func makeColorPickerButton() -> UIButton {
+        var config = UIButton.Configuration.plain()
+        config.contentInsets = Self.buttonContentInsets
+        config.image = UIImage(systemName: "circle.fill")?.applyingSymbolConfiguration(.init(scale: .large))
+        let button = UIButton()
+        button.configuration = config
+        button.showsLargeContentViewer = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .vertical)
+        button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+        button.isHidden = true
+        button.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+        button.largeContentTitle = L10n.Accessibility.Pdf.colorPicker
+        button.rx.controlEvent(.touchUpInside)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                delegate?.showToolOptions(sourceItem: colorPickerButton)
+            })
+            .disposed(by: disposeBag)
+        return button
+    }
+
+    private func makeAdditionalStackView() -> UIStackView {
+        let stack = UIStackView(arrangedSubviews: createAdditionalItems())
+        stack.showsLargeContentViewer = true
+        stack.axis = .horizontal
+        stack.spacing = 0
+        stack.distribution = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.setContentCompressionResistancePriority(.required, for: .horizontal)
+        stack.setContentCompressionResistancePriority(.required, for: .vertical)
+        stack.setContentHuggingPriority(.required, for: .horizontal)
+        stack.setContentHuggingPriority(.required, for: .vertical)
+        return stack
     }
 
     private func createAdditionalItems() -> [UIView] {
@@ -608,6 +673,32 @@ class AnnotationToolbarViewController: UIViewController {
         }
 
         return items
+    }
+
+    // MARK: - Helpers
+
+    private var currentAnnotationOptions: AnnotationToolOptions {
+        if lastGestureRecognizerTouch?.type == .stylus {
+            return .stylus
+        }
+        return []
+    }
+
+    private func createHiddenToolsMenu() -> UIMenu {
+        let children = toolButtons.filter({ $0.isHidden }).map({ tool in
+            let isActive = delegate?.activeAnnotationTool == tool.type
+            return UIAction(
+                title: tool.title,
+                image: tool.image.withRenderingMode(.alwaysTemplate),
+                discoverabilityTitle: tool.accessibilityLabel,
+                state: (isActive ? .on : .off),
+                handler: { [weak self] _ in
+                    guard let self else { return }
+                    delegate?.toggle(tool: tool.type, options: currentAnnotationOptions)
+                }
+            )
+        })
+        return UIMenu(children: children)
     }
 }
 

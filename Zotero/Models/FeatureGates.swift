@@ -14,25 +14,23 @@ struct FeatureGates: OptionSet {
     let rawValue: Int8
 
     static let multipleOpenItems = FeatureGates(rawValue: 1 << 0)
-    static let pdfWorker = FeatureGates(rawValue: 1 << 1)
-    static let htmlEpubReader = FeatureGates(rawValue: 1 << 2)
-    static let downloadFilesAtSync = FeatureGates(rawValue: 1 << 3)
+    static let documentWorker = FeatureGates(rawValue: 1 << 1)
+    static let downloadFilesAtSync = FeatureGates(rawValue: 1 << 2)
+    static let speech = FeatureGates(rawValue: 1 << 3)
+    static let documentWorkerDebugging = FeatureGates(rawValue: 1 << 4)
 
     static var enabled: FeatureGates {
         var gates: FeatureGates = []
 
 #if FEATURE_GATE_ALL
         gates.insert(.multipleOpenItems)
-        gates.insert(.htmlEpubReader)
-        gates.insert(.pdfWorker)
+        gates.insert(.documentWorker)
         gates.insert(.downloadFilesAtSync)
+        gates.insert(.speech)
+        gates.insert(.documentWorkerDebugging)
 #else
-#if FEATURE_GATE_HTML_EPUB_READER
-        gates.insert(.htmlEpubReader)
-#endif
-
-#if FEATURE_GATE_PDF_WORKER
-        gates.insert(.pdfWorker)
+#if FEATURE_GATE_DOCUMENT_WORKER
+        gates.insert(.documentWorker)
 #endif
 
 #if FEATURE_GATE_MULTIPLE_OPEN_ITEMS
@@ -41,6 +39,16 @@ struct FeatureGates: OptionSet {
 
 #if FEATURE_GATE_DOWNLOAD_FILES_AT_SYNC
         gates.insert(.downloadFilesAtSync)
+#endif
+
+#if FEATURE_GATE_SPEECH
+        gates.insert(.speech)
+        gates.insert(.documentWorker)
+#endif
+
+#if FEATURE_GATE_DOCUMENT_WORKER_DEBUGGING
+        gates.insert(.documentWorkerDebugging)
+        gates.insert(.documentWorker)
 #endif
 #endif
 

@@ -79,6 +79,7 @@ enum SyncError {
         case webDavDownload(WebDavError.Download)
         case webDavUpload(WebDavError.Upload)
         case preconditionFailed(LibraryIdentifier)
+        case unexpectedMyLibraryLastReadDeletions(keys: [String])
 
         var isVersionMismatch: Bool {
             switch self {

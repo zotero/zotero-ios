@@ -64,22 +64,24 @@ struct ItemsState: ViewModelState {
     }
     
     struct IdentifierLookupBatchData: Equatable {
-        static let zero: Self = .init(saved: 0, total: 0)
+        static let zero: Self = .init(saved: 0, total: 0, failed: 0)
         
         let saved: Int
+        let failed: Int
         let total: Int
         
-        init(saved: Int, total: Int) {
+        init(saved: Int, total: Int, failed: Int) {
             self.saved = saved
+            self.failed = failed
             self.total = total
         }
         
         init(batchData: (savedCount: Int, failedCount: Int, totalCount: Int)) {
-            self.init(saved: batchData.savedCount, total: batchData.totalCount - batchData.failedCount)
+            self.init(saved: batchData.savedCount, total: batchData.totalCount, failed: batchData.failedCount)
         }
         
         var isFinished: Bool {
-            saved == total
+            saved + failed == total
         }
     }
 

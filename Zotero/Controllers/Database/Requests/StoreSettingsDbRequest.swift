@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct StoreSettingsDbRequest: DbRequest {
@@ -17,24 +18,62 @@ struct StoreSettingsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        if let response = self.response.tagColors {
-            self.syncTagColors(tags: response.value, in: database)
+        if let response = response.tagColors {
+            syncTagColors(tags: response.value, in: database)
         }
-        self.syncPages(pages: self.response.pageIndices.indices, in: database)
+
+        // Additional settings should be returned only by user library, just to be sure, let's ignore group sync
+        switch self.libraryId {
+        case .group:
+            return
+
+        case .custom:
+            break
+        }
+
+        syncPages(pages: response.pageIndices.indices, in: database)
+        syncLastReadValues(values: response.lastReadValues.values, in: database)
+    }
+
+    private func syncLastReadValues(values: [LastReadResponse], in database: Realm) {
+        for value in values {
+            let rDate: RLastReadDate
+            if let existing = database.objects(RLastReadDate.self).uniqueObject(key: value.key, libraryId: value.libraryId) {
+                rDate = existing
+            } else {
+                rDate = RLastReadDate()
+                database.add(rDate)
+                rDate.key = value.key
+                rDate.libraryId = value.libraryId
+            }
+            rDate.date = Date(timeIntervalSince1970: TimeInterval(value.value))
+            rDate.version = value.version
+
+            // No CR for settings, if it was changed locally, just reset it
+            rDate.deleteAllChanges(database: database)
+
+            // Assign value to item
+            if let item = database.objects(RItem.self).uniqueObject(key: value.key, libraryId: value.libraryId) {
+                item.lastRead = rDate.date
+                item.updateEffectiveLastRead()
+            } else {
+                let item = RItem()
+                item.key = value.key
+                item.libraryId = value.libraryId
+                item.lastRead = rDate.date
+                item.updateEffectiveLastRead()
+                item.syncState = .dirty
+                item.lastSyncDate = Date(timeIntervalSince1970: 0)
+                item.changeType = .sync
+                database.add(item)
+            }
+        }
     }
 
     private func syncPages(pages: [PageIndexResponse], in database: Realm) {
-        // Pages should be returned only by user library, just to be sure, let's ignore group sync
-        switch self.libraryId {
-        case .group: return
-        case .custom: break
-        }
-
-        let indices = database.objects(RPageIndex.self).filter(.library(with: self.libraryId))
-
         for index in pages {
             let rIndex: RPageIndex
-            if let existing = indices.filter(.key(index.key)).first {
+            if let existing = database.objects(RPageIndex.self).uniqueObject(key: index.key, libraryId: index.libraryId) {
                 rIndex = existing
             } else {
                 rIndex = RPageIndex()

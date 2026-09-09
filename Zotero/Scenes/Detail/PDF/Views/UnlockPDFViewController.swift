@@ -16,7 +16,6 @@ class UnlockPDFViewController: UIViewController {
 
     private weak var input: UITextField!
     private weak var additionalLabel: UILabel!
-    private weak var containerCenterY: NSLayoutConstraint!
 
     init(viewModel: ViewModel<PDFReaderActionHandler>) {
         self.viewModel = viewModel
@@ -44,13 +43,6 @@ class UnlockPDFViewController: UIViewController {
             self.input.text = ""
             self.input.becomeFirstResponder()
         }
-    }
-
-    private func setupKeyboardOffset(with keyboardData: KeyboardData) {
-        self.containerCenterY.constant = keyboardData.visibleHeight / 2
-        UIView.animate(withDuration: keyboardData.animationDuration, delay: 0, options: keyboardData.animationOptions, animations: {
-            self.view.layoutIfNeeded()
-        })
     }
 
     private func resetAdditionalLabelIfNeeded() {
@@ -119,15 +111,20 @@ class UnlockPDFViewController: UIViewController {
         container.axis = .vertical
         self.view.addSubview(container)
 
-        let centerY = self.view.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        let visibleArea = UILayoutGuide()
+        view.addLayoutGuide(visibleArea)
 
         NSLayoutConstraint.activate([
+            visibleArea.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            visibleArea.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            visibleArea.topAnchor.constraint(equalTo: view.topAnchor),
+            visibleArea.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
             self.view.safeAreaLayoutGuide.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor),
             container.trailingAnchor.constraint(greaterThanOrEqualTo: self.view.safeAreaLayoutGuide.trailingAnchor),
             container.topAnchor.constraint(greaterThanOrEqualTo: self.view.safeAreaLayoutGuide.topAnchor),
             self.view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: container.bottomAnchor),
             container.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
-            centerY,
+            container.centerYAnchor.constraint(equalTo: visibleArea.centerYAnchor),
             input.topAnchor.constraint(equalTo: inputContainer.topAnchor, constant: 4),
             input.leadingAnchor.constraint(equalTo: inputContainer.leadingAnchor, constant: 8),
             inputContainer.bottomAnchor.constraint(equalTo: input.bottomAnchor, constant: 4),
@@ -137,8 +134,6 @@ class UnlockPDFViewController: UIViewController {
             icon.heightAnchor.constraint(equalToConstant: 80),
             icon.widthAnchor.constraint(equalToConstant: 80)
         ])
-
-        self.containerCenterY = centerY
     }
 
     private func setupObserving() {
@@ -148,25 +143,5 @@ class UnlockPDFViewController: UIViewController {
                           self.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(with: self, onNext: { `self`, notification in
-                              if let data = notification.keyboardData {
-                                  self.setupKeyboardOffset(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(with: self, onNext: { `self`, notification in
-                              if let data = notification.keyboardData {
-                                  self.setupKeyboardOffset(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
     }
 }

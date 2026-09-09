@@ -146,7 +146,12 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
-            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            if #available(iOS 26.0.0, *) {
+                section.contentInsets.leading = 16
+                section.contentInsets.trailing = 16
+            }
+            return section
         }
     }
 }
@@ -158,10 +163,6 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDelegate {
         }
 
         let collection = self.dataSource.snapshot().itemIdentifiers(inSection: indexPath.section)[indexPath.row]
-
-        // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
-        // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-        guard self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollectionId else { return }
         self.viewModel.process(action: .select(collection.identifier))
     }
 
@@ -212,7 +213,7 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDelegate {
                         actions.append(trash)
                     }
 
-                case .publications, .all, .unfiled:
+                case .publications, .all, .unfiled, .recentlyRead:
                     actions.insert(downloadAttachmentsAction(for: collection.identifier, in: viewModel), at: 0)
                 }
 

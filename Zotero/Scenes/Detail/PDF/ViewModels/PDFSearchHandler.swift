@@ -42,6 +42,8 @@ extension PDFSearchHandler: DocumentSearchHandler {
             delegate?.set(footer: nil)
         }
 
+        cancel()
+
         let search = TextSearch(document: document)
         search.delegate = self
         search.comparisonOptions = [.caseInsensitive, .diacriticInsensitive]
@@ -55,6 +57,7 @@ extension PDFSearchHandler: DocumentSearchHandler {
     }
 
     private func finishSearch(with results: [SearchResult]) {
+        cancel()
         delegate?.stopSearchLoadingIndicator()
         self.results = results
         documentController.highlightSearchResults(results)
@@ -63,6 +66,7 @@ extension PDFSearchHandler: DocumentSearchHandler {
 
     func cancel() {
         currentSearch?.cancelAllOperations()
+        currentSearch = nil
     }
 }
 
@@ -86,6 +90,7 @@ extension PDFSearchHandler: TextSearchDelegate {
     }
 
     func didCancel(_ textSearch: TextSearch, term searchTerm: String, isFullSearch: Bool) {
+        guard currentSearch == nil else { return }
         delegate?.stopSearchLoadingIndicator()
     }
 }

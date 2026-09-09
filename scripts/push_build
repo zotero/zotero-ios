@@ -3,9 +3,12 @@ set -euo pipefail
 
 push_tag() {
     TAG="$1-date-$(date "+%Y%m%d%H%M%S")-$(echo $((RANDOM%10000)))"
-    git tag $TAG -m "$TAG"
-    git push origin $TAG
-    git tag -d $TAG
+    if [ -n "${2:-}" ]; then
+        TAG="$TAG-$2"
+    fi
+    git tag "$TAG" -m "$TAG"
+    git push origin "$TAG"
+    git tag -d "$TAG"
     CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
     COMMIT=$(git log -n 1 --pretty=format:"%h")
     echo "Pushed tag '$TAG' to branch '$CURRENT_BRANCH' at commit '$COMMIT'."
@@ -18,6 +21,7 @@ DEFAULT_TAG="$TAG_START-$TAG_BUMP-$DEFAULT_TAG_BUMP"
 
 # Parse arguments
 BETA_BUILD=false
+SKIP_SWIFTLINT=false
 VERSION_BUMP=""
 
 while [[ $# -gt 0 ]]; do
@@ -26,12 +30,16 @@ while [[ $# -gt 0 ]]; do
             BETA_BUILD=true
             shift
             ;;
+        --skip-swiftlint)
+            SKIP_SWIFTLINT=true
+            shift
+            ;;
         patch|minor|major)
             VERSION_BUMP="$1"
             shift
             ;;
         *)
-            echo "Invalid argument. Usage: $0 [patch|minor|major] [--beta]"
+            echo "Invalid argument. Usage: $0 [patch|minor|major] [--beta] [--skip-swiftlint]"
             exit 1
             ;;
     esac
@@ -48,13 +56,21 @@ if [ -z "$VERSION_BUMP" ]; then
 fi
 
 TAG="$TAG_START-$TAG_BUMP-$VERSION_BUMP"
+TAG_OPTIONS=""
+if [ "$SKIP_SWIFTLINT" = true ]; then
+    TAG_OPTIONS="skip-swiftlint"
+fi
 
-if [ "$TAG" != "$DEFAULT_TAG" ]; then
-    read -p "Are you sure you want to push tag '$TAG'? (y/n): " choice
+if [ "$TAG" != "$DEFAULT_TAG" ] || [ -n "$TAG_OPTIONS" ]; then
+    if [ -n "$TAG_OPTIONS" ]; then
+        read -p "Are you sure you want to push tag '$TAG' with options '$TAG_OPTIONS'? (y/n): " choice
+    else
+        read -p "Are you sure you want to push tag '$TAG'? (y/n): " choice
+    fi
     if [ "$choice" != "y" ]; then
         echo "Operation canceled."
         exit 0
     fi
 fi
 
-push_tag $TAG
+push_tag "$TAG" "$TAG_OPTIONS"

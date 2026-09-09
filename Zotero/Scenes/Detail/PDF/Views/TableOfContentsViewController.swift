@@ -20,6 +20,7 @@ class TableOfContentsViewController<O: Outline>: UIViewController, UICollectionV
     private let disposeBag: DisposeBag
 
     private weak var collectionView: UICollectionView!
+    private weak var emptyLabel: UILabel?
     private var dataSource: UICollectionViewDiffableDataSource<Section, TableOfContentsState<O>.Row>?
 
     var selectionAction: (O) -> Void
@@ -40,13 +41,10 @@ class TableOfContentsViewController<O: Outline>: UIViewController, UICollectionV
 
         self.view.backgroundColor = .systemGray6
 
-        if viewModel.state.outlines.isEmpty {
-            setupEmptyView()
-            return
-        }
-
         setupCollectionView()
         setupDataSource()
+        setupEmptyView()
+        updateEmptyState(isEmpty: viewModel.state.outlines.isEmpty)
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -66,8 +64,8 @@ class TableOfContentsViewController<O: Outline>: UIViewController, UICollectionV
                 case .searchBar:
                     return collectionView.dequeueConfiguredReusableCell(using: searchRegistration, for: indexPath, item: (self?.viewModel.state.search ?? ""))
 
-                case .outline(let outline, let isActive):
-                    return collectionView.dequeueConfiguredReusableCell(using: outlineRegistration, for: indexPath, item: (outline, isActive))
+                case .outline(let outline, let isActive, let isCurrent):
+                    return collectionView.dequeueConfiguredReusableCell(using: outlineRegistration, for: indexPath, item: (outline, isActive, isCurrent))
                 }
             })
 
@@ -110,8 +108,31 @@ class TableOfContentsViewController<O: Outline>: UIViewController, UICollectionV
 
     private func update(state: TableOfContentsState<O>) {
         if state.changes.contains(.snapshot), let snapshot = state.outlineSnapshot {
-            dataSource?.apply(snapshot, to: .outline)
+            updateEmptyState(isEmpty: state.outlines.isEmpty)
+            let shouldScrollToCurrent = state.changes.contains(.currentOutline)
+            let currentId = state.currentOutlineId
+            dataSource?.apply(snapshot, to: .outline, animatingDifferences: false) { [weak self] in
+                guard shouldScrollToCurrent else { return }
+                self?.scrollToCurrentOutline(id: currentId)
+            }
         }
+    }
+
+    private func updateEmptyState(isEmpty: Bool) {
+        collectionView.isHidden = isEmpty
+        emptyLabel?.isHidden = !isEmpty
+    }
+
+    private func scrollToCurrentOutline(id: UUID?) {
+        guard let id, let dataSource else { return }
+        let row = dataSource.snapshot().itemIdentifiers.first(where: { row in
+            if case .outline(let outline, _, _) = row {
+                return outline.id == id
+            }
+            return false
+        })
+        guard let row, let indexPath = dataSource.indexPath(for: row) else { return }
+        collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: true)
     }
 
     // MARK: - Empty view
@@ -126,6 +147,7 @@ class TableOfContentsViewController<O: Outline>: UIViewController, UICollectionV
         label.setContentHuggingPriority(.defaultLow, for: .vertical)
         label.textAlignment = .center
         view.addSubview(label)
+        emptyLabel = label
 
         NSLayoutConstraint.activate([
             label.topAnchor.constraint(equalTo: view.topAnchor),
@@ -137,19 +159,27 @@ class TableOfContentsViewController<O: Outline>: UIViewController, UICollectionV
 
     // MARK: - Collection view
 
-    private lazy var outlineRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, (O, Bool)> = {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, (O, Bool)> { [weak self] cell, _, data in
+    private lazy var outlineRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, (O, Bool, Bool)> = {
+        return UICollectionView.CellRegistration<UICollectionViewListCell, (O, Bool, Bool)> { [weak self] cell, _, data in
             guard let self = self, let dataSource = self.dataSource else { return }
 
+            let (outline, isActive, isCurrent) = data
             var configuration = cell.defaultContentConfiguration()
-            configuration.text = data.0.title
-            configuration.textProperties.color = data.1 ? .label : .systemGray
+            configuration.text = outline.title
+            configuration.textProperties.color = isActive ? .label : .systemGray
+            let baseFont = UIFont.preferredFont(forTextStyle: .body)
+            if isCurrent, let descriptor = baseFont.fontDescriptor.withSymbolicTraits(.traitBold) {
+                configuration.textProperties.font = UIFont(descriptor: descriptor, size: 0)
+            } else {
+                configuration.textProperties.font = baseFont
+            }
             cell.contentConfiguration = configuration
 
+            let row: TableOfContentsState<O>.Row = .outline(outline: outline, isActive: isActive, isCurrent: isCurrent)
             let snapshot = dataSource.snapshot(for: .outline)
             let showToggle = viewModel.state.search.isEmpty &&
-                            snapshot.contains(.outline(outline: data.0, isActive: data.1)) &&
-                            !snapshot.snapshot(of: .outline(outline: data.0, isActive: data.1), includingParent: false).items.isEmpty
+                            snapshot.contains(row) &&
+                            !snapshot.snapshot(of: row, includingParent: false).items.isEmpty
             cell.accessories = showToggle ? [.outlineDisclosure()] : []
         }
     }()
@@ -164,7 +194,7 @@ class TableOfContentsViewController<O: Outline>: UIViewController, UICollectionV
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
-        guard let row = dataSource?.itemIdentifier(for: indexPath), case .outline(let outline, let isActive) = row, isActive else { return }
+        guard let row = dataSource?.itemIdentifier(for: indexPath), case .outline(let outline, let isActive, _) = row, isActive else { return }
         selectionAction(outline)
     }
 

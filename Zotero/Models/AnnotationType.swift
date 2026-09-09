@@ -15,4 +15,10 @@ enum AnnotationType: String, CaseIterable {
     case ink
     case underline
     case freeText = "text"
+
+    #if MAINAPP
+    var colors: [String] {
+        return AnnotationsConfig.colors(for: self)
+    }
+    #endif
 }

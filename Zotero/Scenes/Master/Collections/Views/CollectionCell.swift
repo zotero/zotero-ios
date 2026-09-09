@@ -20,7 +20,6 @@ final class CollectionCell: UICollectionViewListCell {
 
         static let badge = Accessories(rawValue: 1 << 0)
         static let chevron = Accessories(rawValue: 1 << 1)
-        static let chevronSpace = Accessories(rawValue: 1 << 2)
     }
     
     struct ContentConfiguration: UIContentConfiguration {
@@ -71,6 +70,46 @@ final class CollectionCell: UICollectionViewListCell {
         }
     }
 
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        if #available(iOS 26.0.0, *) {
+            indentationWidth = 16
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        var backgroundConfiguration = UIBackgroundConfiguration.listPlainCell().updated(for: state)
+
+        if #available(iOS 26.0.0, *) {
+            if state.isHighlighted || state.isSelected {
+                switch traitCollection.splitViewControllerLayoutEnvironment {
+                case .expanded:
+                    let selectedBackgroundView = UIView()
+                    selectedBackgroundView.backgroundColor = .tertiarySystemFill
+                    selectedBackgroundView.cornerConfiguration = .capsule()
+                    self.selectedBackgroundView = selectedBackgroundView
+                    (contentView as? ContentView)?.contentView?.updateTitleLabel(emphasized: true)
+                    return
+
+                case .none, .collapsed:
+                    break
+
+                @unknown default:
+                    break
+                }
+                selectedBackgroundView = nil
+                backgroundConfiguration.backgroundColor = .systemGray5
+            }
+            (contentView as? ContentView)?.contentView?.updateTitleLabel(emphasized: false)
+        }
+
+        self.backgroundConfiguration = backgroundConfiguration
+    }
+
     final class ContentView: UIView, UIContentView {
         var configuration: UIContentConfiguration {
             didSet {
@@ -91,7 +130,7 @@ final class CollectionCell: UICollectionViewListCell {
 
             super.init(frame: .zero)
 
-            guard let view = UINib.init(nibName: "CollectionCellContentView", bundle: nil).instantiate(withOwner: self)[0] as? CollectionCellContentView else { return }
+            let view = CollectionCellContentView()
             self.setup(view: view)
         }
 

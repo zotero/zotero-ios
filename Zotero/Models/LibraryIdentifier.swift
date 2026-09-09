@@ -23,6 +23,10 @@ extension LibraryIdentifier {
         case .group: return true
         }
     }
+
+    var isMyLibrary: Bool {
+        return self == .custom(.myLibrary)
+    }
 }
 
 extension LibraryIdentifier: Codable {

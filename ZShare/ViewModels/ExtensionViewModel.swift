@@ -57,6 +57,7 @@ final class ExtensionViewModel {
         /// State for loading and processing attachment.
         /// - decoding: Decoding attachment and deciding what to do with it. This is the initial state.
         /// - translating: Translation is in progress. `String` is progress report from javascript code.
+        /// - challengePending: Challenge was detected. User must resolve it in web view and continue manually.
         /// - downloading: Translation has ended. The item has an attachment which is being downloaded.
         /// - processed: Processing of attachment has ended (either loading of URL or translation of web). Waiting for submission.
         /// - submitting: Submitting processed attachment to backend.
@@ -79,6 +80,8 @@ final class ExtensionViewModel {
                 case quotaLimit(LibraryIdentifier)
                 case forbidden(LibraryIdentifier)
                 case webDavNotVerified
+                case webDavUnauthorized
+                case webDavForbidden
                 case webDavFailure
                 case md5Missing
                 case mtimeMissing
@@ -106,6 +109,8 @@ final class ExtensionViewModel {
                          .webViewError,
                          .quotaLimit,
                          .webDavNotVerified,
+                         .webDavUnauthorized,
+                         .webDavForbidden,
                          .webDavFailure:
                         return false
                     }
@@ -124,6 +129,7 @@ final class ExtensionViewModel {
 
             case decoding
             case translating(String)
+            case challengePending
             case downloading(Double)
             case processed
             case failed(Error)
@@ -140,7 +146,7 @@ final class ExtensionViewModel {
 
             var translationInProgress: Bool {
                 switch self {
-                case .decoding, .translating, .downloading:
+                case .decoding, .translating, .challengePending, .downloading:
                     return true
 
                 default:
@@ -164,6 +170,7 @@ final class ExtensionViewModel {
                     default:
                         return true
                     }
+
                 default: return false
                 }
             }
@@ -317,6 +324,7 @@ final class ExtensionViewModel {
     @Published var state: State
     // Optional handler to deal with webs that provide PDFs through redirection
     private var redirectHandler: RedirectWebViewHandler?
+    private var challengePendingOriginalURL: URL?
     private weak var webView: WKWebView?
 
     private static let defaultLibraryId: LibraryIdentifier = .custom(.myLibrary)
@@ -406,6 +414,7 @@ final class ExtensionViewModel {
     // MARK: - Actions
 
     func start(with extensionItem: NSExtensionItem) {
+        challengePendingOriginalURL = nil
         // Start sync in background, so that collections are available for user to pick
         DDLogInfo("ExtensionViewModel: start sync")
         self.syncController.start(type: .collectionsOnly, libraries: .all, retryAttempt: 0)
@@ -422,11 +431,13 @@ final class ExtensionViewModel {
     }
 
     func cancel() {
+        challengePendingOriginalURL = nil
         guard let attachment = self.state.processedAttachment else { return }
         switch attachment {
         case .itemWithAttachment(_, _, let file), .file(let file, _):
             // Remove temporary local file if it exists
             try? self.fileStorage.remove(file)
+
         case .item: break
         }
     }
@@ -542,7 +553,7 @@ final class ExtensionViewModel {
         copyFile(from: url.path, to: tmpFile)
             .subscribe(onSuccess: { [weak self] _ in
                 guard let self else { return }
-                guard FeatureGates.enabled.contains(.pdfWorker), fileStorage.isPdf(file: tmpFile), let file = tmpFile as? FileData else {
+                guard FeatureGates.enabled.contains(.documentWorker), fileStorage.isPdf(file: tmpFile), let file = tmpFile as? FileData else {
                     updateState(with: .processed)
                     return
                 }
@@ -761,6 +772,10 @@ final class ExtensionViewModel {
         self.translationHandler.observable
                                .observe(on: MainScheduler.instance)
                                .subscribe(onNext: { [weak self] action in
+                                   if case .challengePending = self?.state.attachmentState {
+                                       DDLogWarn("ExtensionViewModel: received webview action while challenge is pending - \(action)")
+                                       return
+                                   }
                                    switch action {
                                    case .loadedItems(let data, let cookies, let userAgent, let referrer):
                                        DDLogInfo("ExtensionViewModel: webview action - loaded \(data.count) zotero items")
@@ -773,6 +788,10 @@ final class ExtensionViewModel {
                                    case .reportProgress(let progress):
                                        DDLogInfo("ExtensionViewModel: webview action - progress \(progress)")
                                        self?.state.attachmentState = .translating(progress)
+
+                                   case .challengeDetected(let challengeURL):
+                                       DDLogInfo("ExtensionViewModel: webview action - challenge detected \(challengeURL?.absoluteString ?? "-")")
+                                       self?.handleChallenge(challengeURL)
                                    }
                                }, onError: { [weak self] error in
                                    guard let self = self else { return }
@@ -780,6 +799,27 @@ final class ExtensionViewModel {
                                    self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
                                })
                                .disposed(by: self.disposeBag)
+    }
+
+    func continueAfterChallenge() {
+        guard let originalURL = challengePendingOriginalURL else { return }
+        DDLogInfo("ExtensionViewModel: continue after challenge")
+        challengePendingOriginalURL = nil
+        state.attachmentState = .decoding
+        webView?.isHidden = true
+        process(remoteUrl: originalURL)
+    }
+
+    private func handleChallenge(_ challengeURL: URL?) {
+        guard let originalURL = state.url.flatMap(URL.init(string:)) ?? challengeURL  else {
+            state.attachmentState = .failed(.requiresBrowser)
+            return
+        }
+        challengePendingOriginalURL = originalURL
+        state.url = originalURL.absoluteString
+        state.attachmentState = .challengePending
+        webView?.isHidden = false
+        webView?.load(URLRequest(url: originalURL))
     }
 
     /// Parses item from translation response, starts attachment download if available.
@@ -824,15 +864,31 @@ final class ExtensionViewModel {
         state.processedAttachment = .item(item)
         self.state = state
 
-        self.download(url: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
-                self?.processDownload(of: attachment, url: url, file: file, item: item, cookies: cookies, userAgent: userAgent, referrer: referrer)
-            }, onFailure: { [weak self] error in
-                DDLogError("ExtensionViewModel: could not download translated file - \(url.absoluteString) - \(error)")
-                self?.state.attachmentState = .failed(.downloadFailed)
-            })
-            .disposed(by: self.disposeBag)
+        addCloudflareCookie(host: url.host(percentEncoded: false) ?? "", existingCookies: cookies) { [weak self] cookies in
+            guard let self else { return }
+            download(url: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onSuccess: { [weak self] _ in
+                    self?.processDownload(of: attachment, url: url, file: file, item: item, cookies: cookies, userAgent: userAgent, referrer: referrer)
+                }, onFailure: { [weak self] error in
+                    DDLogError("ExtensionViewModel: could not download translated file - \(url.absoluteString) - \(error)")
+                    self?.state.attachmentState = .failed(.downloadFailed)
+                })
+                .disposed(by: disposeBag)
+        }
+
+        func addCloudflareCookie(host: String, existingCookies: String?, completion: @escaping (String?) -> Void) {
+            guard let webView else { return completion(existingCookies) }
+            let store = webView.configuration.websiteDataStore.httpCookieStore
+            store.getCloudflareCookies(host: host) { cloudflareCookies in
+                guard !cloudflareCookies.isEmpty else { return completion(existingCookies) }
+                var cookieString = cloudflareCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
+                if let existingCookies, !existingCookies.isEmpty {
+                    cookieString = existingCookies + "; " + cookieString
+                }
+                completion(cookieString)
+            }
+        }
     }
 
     private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse, cookies: String?, userAgent: String?, referrer: String?) {
@@ -1023,6 +1079,7 @@ final class ExtensionViewModel {
                            switch self.state.attachmentState {
                            case .downloading:
                                self.state.attachmentState = .downloading(progress.fractionCompleted)
+
                            default: break
                            }
                        })
@@ -1147,7 +1204,8 @@ final class ExtensionViewModel {
                 createdBy: nil,
                 lastModifiedBy: nil,
                 rects: nil,
-                paths: nil
+                paths: nil,
+                lastRead: nil
             )
 
             self.submit(
@@ -1257,6 +1315,24 @@ final class ExtensionViewModel {
         if let error = error as? State.AttachmentState.Error {
             return error
         }
+        if let error = error as? WebDavError.Verification {
+            DDLogError("ExtensionViewModel: webdav verification failed - \(error)")
+            return .webDavNotVerified
+        }
+        if let error = error as? WebDavError.Upload {
+            DDLogError("ExtensionViewModel: webdav upload failed - \(error)")
+            switch error {
+            case .cantCreatePropData:
+                return .webDavFailure
+
+            case .apiError(let alamoError, _):
+                return webDavError(from: alamoError)
+            }
+        }
+        if let error = error as? WebDavError.Download {
+            DDLogError("ExtensionViewModel: webdav download failed - \(error)")
+            return .webDavFailure
+        }
         if let error = error as? Parsing.Error {
             DDLogError("ExtensionViewModel: could not parse item - \(error)")
             return .parseError(error)
@@ -1295,6 +1371,32 @@ final class ExtensionViewModel {
             return .requiresBrowser
         }
         return .unknown
+
+        func webDavError(from error: AFError) -> State.AttachmentState.Error {
+            switch error {
+            case .responseValidationFailed(let reason):
+                switch reason {
+                case .unacceptableStatusCode(let code):
+                    switch code {
+                    case 401:
+                        return .webDavUnauthorized
+                        
+                    case 403:
+                        return .webDavForbidden
+
+                    default:
+                        break
+                    }
+
+                default:
+                    break
+                }
+
+            default:
+                break
+            }
+            return .webDavFailure
+        }
 
         func alamoErrorRequiresAbort(_ error: AFError, url: URL?, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
             let defaultError: State.AttachmentState.Error = (url?.absoluteString ?? ApiConstants.baseUrlString).contains(ApiConstants.baseUrlString) ? .apiFailure : .webDavFailure
@@ -1507,7 +1609,7 @@ final class ExtensionViewModel {
 
     private func handleSubmission(error: State.AttachmentState.Error, parentKey: String, libraryId: LibraryIdentifier) {
         switch error {
-        case .quotaLimit:
+        case .apiFailure, .quotaLimit:
             break
 
         default:

@@ -21,6 +21,7 @@ struct StorageSettingsView: View {
                 self.listView
             }
         }
+        .background(Color(UIColor.systemGroupedBackground))
         .onAppear {
             self.viewModel.process(action: .loadData)
         }

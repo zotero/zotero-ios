@@ -13,7 +13,7 @@ import RxSwift
 class CollectionsPickerViewController: UICollectionViewController {
     enum Mode {
         case single(title: String, selected: (Collection) -> Void)
-        case multiple(selected: (Set<String>) -> Void)
+        case multiple(selected: (Set<String>) -> Void, cancelled: () -> Void)
     }
 
     private enum TitleType {
@@ -34,6 +34,7 @@ class CollectionsPickerViewController: UICollectionViewController {
     private let titleType: TitleType
     private let collectionSelected: ((Collection) -> Void)?
     private let keysSelected: ((Set<String>) -> Void)?
+    private let cancelled: (() -> Void)?
     private let multipleSelectionAllowed: Bool
     private let updateQueue: DispatchQueue
 
@@ -51,12 +52,14 @@ class CollectionsPickerViewController: UICollectionViewController {
             titleType = .fixed(title)
             collectionSelected = selected
             keysSelected = nil
+            cancelled = nil
 
-        case .multiple(let selected):
+        case .multiple(let selected, let cancelled):
             multipleSelectionAllowed = true
             titleType = .dynamic
             keysSelected = selected
             collectionSelected = nil
+            self.cancelled = cancelled
         }
 
         super.init(collectionViewLayout: UICollectionViewFlowLayout())
@@ -100,6 +103,11 @@ class CollectionsPickerViewController: UICollectionViewController {
         close()
     }
 
+    private func cancelSelection() {
+        cancelled?()
+        close()
+    }
+
     private func close() {
         if multipleSelectionAllowed {
             presentingViewController?.dismiss(animated: true, completion: nil)
@@ -125,7 +133,11 @@ class CollectionsPickerViewController: UICollectionViewController {
     }
 
     private func updateTitle(with selectedCount: Int) {
-        title = L10n.Items.collectionsSelected(selectedCount)
+        if selectedCount == 0 {
+            title = L10n.Items.collectionsSelectPrompt
+        } else {
+            title = L10n.Items.collectionsSelected(selectedCount)
+        }
     }
 
     private func updateDataSource(with state: CollectionsPickerState, animated: Bool) {
@@ -206,16 +218,22 @@ class CollectionsPickerViewController: UICollectionViewController {
     private func setupNavigationBar() {
         guard multipleSelectionAllowed else { return }
 
-        let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: nil, action: nil)
-        cancel.rx.tap.subscribe(onNext: { [weak self] in
-            self?.close()
-        }).disposed(by: disposeBag)
+        let cancelPrimaryAction = UIAction { [weak self] _ in
+            self?.cancelSelection()
+        }
+        let cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
         navigationItem.leftBarButtonItem = cancel
 
-        let add = UIBarButtonItem(title: L10n.add, style: .plain, target: nil, action: nil)
-        add.rx.tap.subscribe(onNext: { [weak self] in
+        let addPrimaryAction = UIAction(title: L10n.add) { [weak self] _ in
             self?.confirmSelection()
-        }).disposed(by: disposeBag)
+        }
+        let add: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            add = UIBarButtonItem(systemItem: .add, primaryAction: addPrimaryAction)
+            add.tintColor = Asset.Colors.zoteroBlue.color
+        } else {
+            add = UIBarButtonItem(primaryAction: addPrimaryAction)
+        }
         addButton = add
         navigationItem.rightBarButtonItem = add
     }

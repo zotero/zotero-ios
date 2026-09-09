@@ -208,7 +208,7 @@ final class ItemsViewController: BaseItemsViewController {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
-        if state.changes.contains(.filters) || state.changes.contains(.batchData) {
+        if state.changes.contains(.filters) || state.changes.contains(.batchData) || state.changes.contains(.results) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
@@ -228,7 +228,7 @@ final class ItemsViewController: BaseItemsViewController {
         func process(error: ItemsError, state: ItemsState) {
             // Perform additional actions for individual errors if needed
             switch error {
-            case .itemMove, .deletion, .deletionFromCollection:
+            case .itemMove, .deletion, .deletionFromCollection, .deletionFromRecentlyRead:
                 if let snapshot = state.results {
                     dataSource.apply(snapshot: snapshot.freeze())
                 }
@@ -248,17 +248,30 @@ final class ItemsViewController: BaseItemsViewController {
         self.viewModel.process(action: .search(term))
     }
 
-    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, contextualActionCompletion: ItemContextualActionCompletion?) {
+        var completed: Bool? = false
+        defer {
+            if let contextualActionCompletion, let completed {
+                contextualActionCompletion(completed)
+            }
+        }
         switch action {
-        case .delete, .restore:
+        case .delete, .restore, .sort, .debugReader, .filter:
             break
 
         case .addToCollection:
-            guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCollectionsPicker(in: library, completed: { [weak self] collections in
-                self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
-                completionAction?(true)
-            })
+            guard !selectedKeys.isEmpty, let coordinatorDelegate else { return }
+            completed = nil
+            coordinatorDelegate.showCollectionsPicker(
+                in: library,
+                cancelled: {
+                    contextualActionCompletion?(false)
+                },
+                completed: { [weak self] collections in
+                    self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
+                    contextualActionCompletion?(true)
+                }
+            )
 
         case .createParent:
             guard let key = selectedKeys.first, case .attachment(let attachment, _) = viewModel.state.itemAccessories[key] else { return }
@@ -268,6 +281,7 @@ final class ItemsViewController: BaseItemsViewController {
                 scrolledToKey: nil,
                 animated: true
             )
+            completed = true
 
         case .retrieveMetadata:
             guard let key = selectedKeys.first,
@@ -289,57 +303,86 @@ final class ItemsViewController: BaseItemsViewController {
                     coordinatorDelegate?.showAttachmentError(error)
                 }
             }
+            completed = true
 
         case .duplicate:
             guard let key = selectedKeys.first else { return }
             viewModel.process(action: .loadItemToDuplicate(key))
+            completed = true
 
         case .removeFromCollection:
-            guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showRemoveFromCollectionQuestion(
-                count: viewModel.state.selectedItems.count
-            ) { [weak self] in
-                self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
-                completionAction?(true)
-            }
+            guard !selectedKeys.isEmpty, let coordinatorDelegate else { return }
+            completed = nil
+            coordinatorDelegate.showRemoveFromCollectionQuestion(
+                count: viewModel.state.selectedItems.count,
+                cancelAction: {
+                    contextualActionCompletion?(false)
+                },
+                confirmAction: { [weak self] in
+                    self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
+                    contextualActionCompletion?(true)
+                }
+            )
 
         case .trash:
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .trashItems(selectedKeys))
-
-        case .filter:
-            guard let button else { return }
-            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
-
-        case .sort:
-            guard let button else { return }
-            coordinatorDelegate?.showSortActions(
-                sortType: viewModel.state.sortType,
-                button: button,
-                changed: { [weak self] newValue in
-                    self?.viewModel.process(action: .setSortType(newValue))
-                }
-            )
+            completed = true
 
         case .share:
             guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier)
+            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier, sourceItem: button)
+            completed = true
 
         case .copyBibliography:
+            guard !selectedKeys.isEmpty else { return }
             var presenter: UIViewController = self
             if let searchController = navigationItem.searchController, searchController.isActive {
                 presenter = searchController
             }
             coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+            completed = true
 
         case .copyCitation:
-            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+            guard !selectedKeys.isEmpty else { return }
+            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil, sourceItem: nil)
+            completed = true
 
         case .download:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .download(selectedKeys))
+            completed = true
 
         case .removeDownload:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .removeDownloads(selectedKeys))
+            completed = true
+
+        case .removeFromRecentlyRead:
+            guard !selectedKeys.isEmpty else { return }
+            viewModel.process(action: .removeFromRecentlyRead(selectedKeys))
+            completed = true
+
+        case .getStructuredText:
+            guard let key = selectedKeys.first,
+                  case .attachment(let attachment, let parentKey) = viewModel.state.itemAccessories[key],
+                  attachment.supportsStructuredDocumentTextExtraction,
+                  let file = attachment.file as? FileData,
+                  attachment.location != nil,
+                  let downloader = controllers.userControllers?.fileDownloader,
+                  let documentWorkerController = controllers.userControllers?.documentWorkerController
+            else { return }
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey) { [weak coordinatorDelegate] result in
+                switch result {
+                case .success:
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
+                    _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
+
+                case .failure(let error):
+                    coordinatorDelegate?.showAttachmentError(error)
+                }
+            }
+            completed = true
         }
     }
 
@@ -371,9 +414,10 @@ final class ItemsViewController: BaseItemsViewController {
                 updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
 
             case .update(let results, let deletions, let insertions, let modifications):
+                let frozenResults = results.freeze()
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
-                viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                dataSource.apply(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
+                viewModel.process(action: .updateKeys(items: frozenResults, deletions: deletions, insertions: insertions, modifications: correctedModifications))
+                dataSource.apply(snapshot: frozenResults, modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
                     guard let self else { return }
                     updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
                 }
@@ -412,16 +456,22 @@ final class ItemsViewController: BaseItemsViewController {
             isEditing: state.isEditing,
             selectedItems: state.selectedItems,
             filters: state.filters,
+            sortType: state.sortType,
+            allowsManualSort: state.collection.identifier.allowsManualSort,
             downloadBatchData: state.downloadBatchData,
             remoteDownloadBatchData: state.remoteDownloadBatchData,
             identifierLookupBatchData: state.identifierLookupBatchData,
+            showsDocumentWorkerRecorder: controllers.userControllers?.documentWorkerController.recorder != nil,
             itemCount: state.results?.count ?? 0
         )
     }
 
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        let selectItems = rightBarButtonSelectItemTypes(for: state)
-        return state.library.metadataEditable ? [.add] + selectItems : selectItems
+        var selectItems = rightBarButtonSelectItemTypes(for: state)
+        if state.library.metadataEditable, state.collection.identifier != .custom(.publications) {
+            selectItems.insert(.add, at: 0)
+        }
+        return selectItems
 
         func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
             if !state.isEditing {
@@ -478,9 +528,23 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let object = dataSource.object(at: index) else { return }
-        process(action: action, for: [object.key], button: nil, completionAction: completionAction)
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, contextualActionCompletion: ItemContextualActionCompletion?) {
+        if action == .debugReader {
+            guard let tapAction = dataSource.tapAction(for: indexPath) else {
+                contextualActionCompletion?(false)
+                return
+            }
+            processDebugReaderAction(tapAction: tapAction) { [weak self] in
+                self?.process(tapAction: tapAction)
+                contextualActionCompletion?(true)
+            }
+            return
+        }
+        guard let object = dataSource.object(at: indexPath.row) else {
+            contextualActionCompletion?(false)
+            return
+        }
+        process(action: action, for: [object.key], button: nil, contextualActionCompletion: contextualActionCompletion)
     }
 
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
@@ -496,11 +560,27 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
 
 extension ItemsViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
-        process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
+        process(action: action, for: viewModel.state.selectedItems, button: button, contextualActionCompletion: nil)
     }
-    
+
     func showLookup() {
         coordinatorDelegate?.showLookup()
+    }
+
+    func showFilters(button: UIBarButtonItem) {
+        coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
+    }
+
+    func sortTypeChanged(_ sortType: ItemsSortType) {
+        viewModel.process(action: .setSortType(sortType))
+    }
+
+    func downloadsFilterChanged(enabled: Bool) {
+        if enabled {
+            viewModel.process(action: .enableFilter(.downloadedFiles))
+        } else {
+            viewModel.process(action: .disableFilter(.downloadedFiles))
+        }
     }
 }
 

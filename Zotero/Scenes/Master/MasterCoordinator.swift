@@ -14,7 +14,7 @@ import RxSwift
 
 protocol MasterLibrariesCoordinatorDelegate: AnyObject {
     func showCollections(for libraryId: LibraryIdentifier)
-    func showSettings()
+    func showSettings(sourceItem: UIPopoverPresentationControllerSourceItem?)
     func show(error: LibrariesError)
     func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>)
     func showDefaultLibrary()
@@ -23,15 +23,15 @@ protocol MasterLibrariesCoordinatorDelegate: AnyObject {
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
-    func showEditView(for data: CollectionStateEditingData, library: Library)
+    func showEditView(for data: CollectionStateEditingData, library: Library, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExportError()
     func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void)
-    func showDefaultCollection()
+    func showDefaultCollection(reason: ShowItemsReason)
 }
 
 protocol MasterContainerCoordinatorDelegate: AnyObject {
-    func showDefaultCollection()
+    func showDefaultCollection(reason: ShowItemsReason)
     func createBottomController() -> DraggableViewController?
 }
 
@@ -57,8 +57,8 @@ final class MasterCoordinator: NSObject, Coordinator {
         let librariesController = createLibrariesViewController(dbStorage: userControllers.dbStorage, syncScheduler: userControllers.syncScheduler)
         userControllers.identifierLookupController.webViewProvider = librariesController
         userControllers.citationController.webViewProvider = librariesController
-        userControllers.pdfWorkerController.webViewProvider = librariesController
         userControllers.recognizerController.webViewProvider = librariesController
+        userControllers.documentWorkerController.webViewProvider = librariesController
         let collectionsController = createCollectionsViewController(
             libraryId: Defaults.shared.selectedLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
@@ -213,44 +213,57 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                 viewControllers.removeLast(viewControllers.count - 1)
                 viewControllers.append(controller)
                 navigationController.setViewControllers(viewControllers, animated: animated)
-                showDefaultCollection()
+                showDefaultCollection(reason: .splitExpansion)
             }
         } else if let controller = navigationController.viewControllers[1] as? CollectionsViewController {
             // There is a Collections screen in the stack.
-            var modifiedViewControllers = false
             if count > 2 {
                 // Remove any extraneous controllers.
                 var viewControllers = navigationController.viewControllers
                 viewControllers.removeLast(viewControllers.count - 2)
                 navigationController.setViewControllers(viewControllers, animated: animated)
-                modifiedViewControllers = true
             }
-            if controller.selectedCollectionId != collectionId || modifiedViewControllers {
-                // Select proper collection.
-                controller.viewModel.process(action: .select(collectionId))
-            }
+            // Select proper collection.
+            controller.viewModel.process(action: .select(collectionId))
         }
     }
 
-    func showSettings() {
+    func showSettings(sourceItem: UIPopoverPresentationControllerSourceItem?) {
         guard let navigationController else { return }
-        let settingsNavigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: settingsNavigationController)
-        let coordinator = SettingsCoordinator(navigationController: settingsNavigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        navigationController.present(containerController, animated: true, completion: nil)
+        showSettings(
+            using: navigationController,
+            controllers: controllers,
+            animated: true,
+            initialScreen: nil,
+            sourceItem: sourceItem
+        )
     }
 }
 
 extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
-    func showEditView(for data: CollectionStateEditingData, library: Library) {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? {
+        return mainCoordinatorDelegate.sharedTagFilterViewModel
+    }
+    
+    func showEditView(for data: CollectionStateEditingData, library: Library, sourceItem: UIPopoverPresentationControllerSourceItem?) {
         guard let navigationController else { return }
         let editNavigationController = UINavigationController()
         editNavigationController.isModalInPresentation = true
-        editNavigationController.modalPresentationStyle = .formSheet
+
+        if #available(iOS 26.0, *) {
+            editNavigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = editNavigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = navigationController.view
+                    popoverPresentationController.sourceRect = CGRect(x: navigationController.view.bounds.midX, y: navigationController.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+        } else {
+            editNavigationController.modalPresentationStyle = .formSheet
+        }
 
         let coordinator = CollectionEditingCoordinator(data: data, library: library, navigationController: editNavigationController, controllers: controllers)
         coordinator.parentCoordinator = self
@@ -260,20 +273,13 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         navigationController.present(editNavigationController, animated: true, completion: nil)
     }
 
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        mainCoordinatorDelegate.showItems(for: collection, in: libraryId)
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason) {
+        mainCoordinatorDelegate.showItems(for: collection, in: libraryId, reason: reason)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
         guard let navigationController else { return }
-        let exportNavigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: exportNavigationController)
-        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: exportNavigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        navigationController.present(containerController, animated: true, completion: nil)
+        showCitationBibliographyExport(using: navigationController, for: itemIds, in: libraryId, controllers: controllers, animated: true, sourceItem: nil)
     }
 
     func showCiteExportError() {
@@ -295,17 +301,18 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         controller.present(searchController, animated: true, completion: nil)
     }
     
-    func showDefaultCollection() {
-        showItems(for: Collection(custom: .all), in: Defaults.shared.selectedLibraryId)
+    func showDefaultCollection(reason: ShowItemsReason) {
+        showItems(for: Collection(custom: .all), in: Defaults.shared.selectedLibraryId, reason: reason)
     }
 }
 
 extension MasterCoordinator: MasterContainerCoordinatorDelegate {
     func createBottomController() -> DraggableViewController? {
-        guard UIDevice.current.userInterfaceIdiom == .pad, let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
-        let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
+        guard UIDevice.current.userInterfaceIdiom == .pad, let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return nil }
         return TagFilterViewController(viewModel: viewModel)
     }
 }
+
+extension MasterCoordinator: SettingsPresenter { }
+
+extension MasterCoordinator: CitationBibliographyExportPresenter { }

@@ -21,7 +21,7 @@ final class RTypedTag: Object {
     @Persisted var item: RItem?
 }
 
-final class RTag: Object {
+final class RTag: Object, LibraryScoped {
     @Persisted(indexed: true) var name: String
     @Persisted var sortName: String
     @Persisted var color: String
@@ -56,32 +56,4 @@ final class RTag: Object {
     }
 
     // MARK: - Sync properties
-
-    var libraryId: LibraryIdentifier? {
-        get {
-            if let key = self.customLibraryKey {
-                return .custom(key)
-            }
-            if let key = self.groupKey {
-                return .group(key)
-            }
-            return nil
-        }
-
-        set {
-            guard let identifier = newValue else {
-                self.groupKey = nil
-                self.customLibraryKey = nil
-                return
-            }
-
-            switch identifier {
-            case .custom(let type):
-                self.customLibraryKey = type
-
-            case .group(let id):
-                self.groupKey = id
-            }
-        }
-    }
 }

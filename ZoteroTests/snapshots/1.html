@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test Snapshot</title>
+	<meta name="author" content="Test Author">
+	<meta name="description" content="A test HTML snapshot">
+</head>
+<body>
+	<h1>Main Title</h1>
+	<p>First paragraph with <strong>bold</strong> and <em>italic</em> text.</p>
+
+	<h2>Section One</h2>
+	<p>Some content in section one.</p>
+	<ul>
+		<li>Item one</li>
+		<li>Item two</li>
+		<li>Item three</li>
+	</ul>
+
+	<h2>Section Two</h2>
+	<p>Content with a <a href="https://example.com">link</a>.</p>
+
+	<h3>Subsection</h3>
+	<p>Deeper content.</p>
+
+	<blockquote>
+		<p>A quoted passage.</p>
+	</blockquote>
+
+	<table>
+		<tr><th>Header 1</th><th>Header 2</th></tr>
+		<tr><td>Cell 1</td><td>Cell 2</td></tr>
+	</table>
+
+	<nav>
+		<h2>Navigation Heading</h2>
+		<p>This should be excluded from outline.</p>
+	</nav>
+
+	<aside>
+		<h3>Sidebar Heading</h3>
+		<p>This should also be excluded from outline.</p>
+	</aside>
+
+	<footer>
+		<h4>Footer Heading</h4>
+	</footer>
+
+	<pre>Code block
+with preserved whitespace</pre>
+
+	<h2>NFC Stress Tests</h2>
+
+	<!-- NFD decomposed: e + combining acute = é -->
+	<p>Cafe&#x0301; latte&#x0301;s are nice.</p>
+
+	<!-- Multiple combining marks: o + combining tilde + combining acute -->
+	<p>Viet Nam: Ho&#x0303;&#x0301; Chi&#x0301; Minh</p>
+
+	<!-- Decomposed Hangul jamo: ᄒ + ᅡ + ᆫ = 한 -->
+	<p>Korean: &#x1112;&#x1161;&#x11AB;&#x1100;&#x1173;&#x11AF;</p>
+
+	<!-- Mixed NFC and NFD in same paragraph with inline elements -->
+	<p>Normal text, <strong>caf&#x00E9;</strong> is NFC but <em>cafe&#x0301;</em> is NFD, then more normal.</p>
+
+	<!-- Decomposed n + combining tilde = ñ, a + combining ring = å -->
+	<p>Espa&#x006E;&#x0303;ol and Swedi&#x0073;h: &#x0061;&#x030A;ngstr&#x006F;&#x0308;m</p>
+
+	<!-- Multiple consecutive decomposed characters -->
+	<p>&#x0041;&#x0300;&#x0042;&#x0301;&#x0043;&#x0302;&#x0044;&#x0303;&#x0045;&#x0308;</p>
+
+	<!-- Precomposed mixed with decomposed in preformatted block -->
+	<pre>NFC: café
+NFD: cafe&#x0301;</pre>
+</body>
+</html>
