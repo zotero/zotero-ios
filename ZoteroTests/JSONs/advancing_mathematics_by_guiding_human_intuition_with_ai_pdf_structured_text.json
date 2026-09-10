@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "1.1.0",
+	"schemaVersion": "1.2.0",
 	"metadata": {
 		"processor": {"type": "pdf"},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
@@ -33,24 +33,60 @@
 		],
 		"outline": [
 			{"title": "Advancing mathematics by guiding human intuition with AI", "ref": [2]},
-			{"title": "Guiding mathematical intuition with AI", "ref": [8]},
-			{"title": "Topology", "ref": [24]},
-			{"title": "Representation theory", "ref": [41]},
-			{"title": "Conclusion", "ref": [65]},
+			{"title": "Guiding mathematical intuition with AI", "ref": [8], "source": "native"},
+			{"title": "Topology", "ref": [24], "source": "native"},
+			{"title": "Representation theory", "ref": [41], "source": "native"},
+			{"title": "Conclusion", "ref": [65], "source": "native"},
 			{
 				"title": "Online content",
 				"ref": [68],
+				"source": "native",
 				"children": [
 					{"title": "Framework", "ref": [76]},
 					{"title": "Topology", "ref": [79]},
 					{"title": "Representation theory", "ref": [98]}
 				]
 			},
+			{
+				"title": "Fig. 1 Flowchart of the framework.",
+				"target": {"position": {"pageIndex": 1, "rect": [39, 582, 39, 582]}},
+				"source": "native"
+			},
+			{
+				"title": "Fig. 2 Examples of invariants for three hyperbolic knots.",
+				"target": {"position": {"pageIndex": 2, "rect": [39, 602, 39, 602]}},
+				"source": "native"
+			},
+			{
+				"title": "Fig. 3 Knot theory attribution.",
+				"target": {"position": {"pageIndex": 2, "rect": [39, 75, 39, 75]}},
+				"source": "native"
+			},
+			{
+				"title": "Fig. 4 Two example dataset elements, one from S5 and one from S6.",
+				"target": {"position": {"pageIndex": 3, "rect": [39, 634, 39, 634]}},
+				"source": "native"
+			},
+			{
+				"title": "Fig. 5 Representation theory attribution.",
+				"target": {"position": {"pageIndex": 3, "rect": [39, 106, 39, 106]}},
+				"source": "native"
+			},
 			{"title": "Code availability", "ref": [108]},
 			{
 				"title": "Data availability",
 				"ref": [110],
 				"children": [{"title": "Additional information", "ref": [116]}]
+			},
+			{
+				"title": "Extended Data Fig. 1 Empirical relationship between slope and signature.",
+				"target": {"position": {"pageIndex": 8, "rect": [39, 549, 39, 549]}},
+				"source": "native"
+			},
+			{
+				"title": "Extended Data Table 1 Model accuracies at predicting KL coefficients from Bruhat intervals in S9.",
+				"target": {"position": {"pageIndex": 9, "rect": [39, 746, 39, 746]}},
+				"source": "native"
 			}
 		]
 	},

@@ -14,6 +14,8 @@
 		417E71A0B5569A2CB7414341 /* PDFAnnotationsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6148A17CEF16C1C227498D0 /* PDFAnnotationsActionHandler.swift */; };
 		4BBADCFA6CF912207C4A0F8A /* SpeechHighlightSessionManagerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FA2F2A8ADAA23B7B81ADE02 /* SpeechHighlightSessionManagerSpec.swift */; };
 		4D896D5665DE2B8D416327C0 /* PDFAnnotationsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5CF4FE84148F21217E7790 /* PDFAnnotationsState.swift */; };
+		52A94A0133C1789500B9D6E1 /* SetReaderScaleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A94A0333C1789500B9D6E1 /* SetReaderScaleDbRequest.swift */; };
+		52A94A0233C1789500B9D6E1 /* SetReaderScaleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A94A0333C1789500B9D6E1 /* SetReaderScaleDbRequest.swift */; };
 		561E08F0D1D341A09184D875 /* ReadAttachmentUploadsDbRequestSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6869C0F7335B4F30B5D8C9EC /* ReadAttachmentUploadsDbRequestSpec.swift */; };
 		5ECD47C4C5AE63E78DA60C6C /* ReadDocumentAnnotationsCacheDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5297BAC833EEE6973ACA9818 /* ReadDocumentAnnotationsCacheDbRequest.swift */; };
 		6102D2B22D68ABF100505E6A /* bitcoin_pdf_recognizer_data.json in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */; };
@@ -127,6 +129,10 @@
 		61C0DE122F9D00010000001E /* synthetic_cross_page_mixed_notes_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000001E /* synthetic_cross_page_mixed_notes_pdf_structured_text.json */; };
 		61C0DE122F9D00010000001F /* synthetic_cross_page_reference_continuation_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000001F /* synthetic_cross_page_reference_continuation_pdf_structured_text.json */; };
 		61C0DE122F9D000100000020 /* synthetic_printed_contents_outline_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000020 /* synthetic_printed_contents_outline_pdf_structured_text.json */; };
+		61C0DE122F9D000100000021 /* crs-r48555.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000021 /* crs-r48555.pdf */; };
+		61C0DE122F9D000100000022 /* raster-text-flow.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000022 /* raster-text-flow.pdf */; };
+		61C0DE122F9D000100000023 /* crs_r48555_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000023 /* crs_r48555_pdf_structured_text.json */; };
+		61C0DE122F9D000100000024 /* raster_text_flow_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000024 /* raster_text_flow_pdf_structured_text.json */; };
 		61C0DE132FBD000100000001 /* SDTPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C0DE132FBD000100000000 /* SDTPack.swift */; };
 		61C0DE132FBD000100000002 /* SDTPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C0DE132FBD000100000000 /* SDTPack.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
@@ -903,8 +909,6 @@
 		B37434C82E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */; };
 		B37434CA2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */; };
 		B37434CB2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */; };
-		52A94A0133C1789500B9D6E1 /* SetReaderScaleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A94A0333C1789500B9D6E1 /* SetReaderScaleDbRequest.swift */; };
-		52A94A0233C1789500B9D6E1 /* SetReaderScaleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A94A0333C1789500B9D6E1 /* SetReaderScaleDbRequest.swift */; };
 		B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */; };
 		B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D2126566F6900ED05F8 /* ContainerViewController.swift */; };
 		B3756E8F2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */; };
@@ -1473,6 +1477,7 @@
 		1FA2F2A8ADAA23B7B81ADE02 /* SpeechHighlightSessionManagerSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechHighlightSessionManagerSpec.swift; sourceTree = "<group>"; };
 		31036750BE9088FB94205ED4 /* PDFReaderAnnotationKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderAnnotationKey.swift; sourceTree = "<group>"; };
 		5297BAC833EEE6973ACA9818 /* ReadDocumentAnnotationsCacheDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadDocumentAnnotationsCacheDbRequest.swift; sourceTree = "<group>"; };
+		52A94A0333C1789500B9D6E1 /* SetReaderScaleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetReaderScaleDbRequest.swift; sourceTree = "<group>"; };
 		54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDocumentAnnotationsCacheInfo.swift; sourceTree = "<group>"; };
 		6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_recognizer_data.json; sourceTree = "<group>"; };
 		6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_full_text.json; sourceTree = "<group>"; };
@@ -1557,6 +1562,10 @@
 		61C0DE112F9D00010000001E /* synthetic_cross_page_mixed_notes_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = synthetic_cross_page_mixed_notes_pdf_structured_text.json; sourceTree = "<group>"; };
 		61C0DE112F9D00010000001F /* synthetic_cross_page_reference_continuation_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = synthetic_cross_page_reference_continuation_pdf_structured_text.json; sourceTree = "<group>"; };
 		61C0DE112F9D000100000020 /* synthetic_printed_contents_outline_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = synthetic_printed_contents_outline_pdf_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D000100000021 /* crs-r48555.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "crs-r48555.pdf"; sourceTree = "<group>"; };
+		61C0DE112F9D000100000022 /* raster-text-flow.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "raster-text-flow.pdf"; sourceTree = "<group>"; };
+		61C0DE112F9D000100000023 /* crs_r48555_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = crs_r48555_pdf_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D000100000024 /* raster_text_flow_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = raster_text_flow_pdf_structured_text.json; sourceTree = "<group>"; };
 		61C0DE132FBD000100000000 /* SDTPack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTPack.swift; sourceTree = "<group>"; };
 		61D0C0D12FBD100100C0DE01 /* DocumentWorkerRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerRecorderView.swift; sourceTree = "<group>"; };
 		61DE1A1C2FBD000100C0DE01 /* DeletableObjectSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletableObjectSpec.swift; sourceTree = "<group>"; };
@@ -2096,7 +2105,6 @@
 		B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailsLayout.swift; sourceTree = "<group>"; };
 		B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetSpeechLanguageDbRequest.swift; sourceTree = "<group>"; };
 		B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSpeechLanguageDbRequest.swift; sourceTree = "<group>"; };
-		52A94A0333C1789500B9D6E1 /* SetReaderScaleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetReaderScaleDbRequest.swift; sourceTree = "<group>"; };
 		B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3748D2126566F6900ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntraDocumentNavigationButtonsHandler.swift; sourceTree = "<group>"; };
@@ -3636,6 +3644,8 @@
 				61C0DE112F9D00010000001E /* synthetic_cross_page_mixed_notes_pdf_structured_text.json */,
 				61C0DE112F9D00010000001F /* synthetic_cross_page_reference_continuation_pdf_structured_text.json */,
 				61C0DE112F9D000100000020 /* synthetic_printed_contents_outline_pdf_structured_text.json */,
+				61C0DE112F9D000100000023 /* crs_r48555_pdf_structured_text.json */,
+				61C0DE112F9D000100000024 /* raster_text_flow_pdf_structured_text.json */,
 				61C0DE012F9D000100000006 /* 1_html_structured_text.json */,
 				61C0DE112F9D00010000000C /* 2_html_structured_text.json */,
 				6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */,
@@ -4383,6 +4393,8 @@
 				61C0DE112F9D000100000017 /* synthetic-cross-page-mixed-notes.pdf */,
 				61C0DE112F9D000100000018 /* synthetic-cross-page-reference-continuation.pdf */,
 				61C0DE112F9D000100000019 /* synthetic-printed-contents-outline.pdf */,
+				61C0DE112F9D000100000021 /* crs-r48555.pdf */,
+				61C0DE112F9D000100000022 /* raster-text-flow.pdf */,
 			);
 			path = PDFs;
 			sourceTree = "<group>";
@@ -5401,6 +5413,10 @@
 				61C0DE122F9D00010000001E /* synthetic_cross_page_mixed_notes_pdf_structured_text.json in Resources */,
 				61C0DE122F9D00010000001F /* synthetic_cross_page_reference_continuation_pdf_structured_text.json in Resources */,
 				61C0DE122F9D000100000020 /* synthetic_printed_contents_outline_pdf_structured_text.json in Resources */,
+				61C0DE122F9D000100000021 /* crs-r48555.pdf in Resources */,
+				61C0DE122F9D000100000022 /* raster-text-flow.pdf in Resources */,
+				61C0DE122F9D000100000023 /* crs_r48555_pdf_structured_text.json in Resources */,
+				61C0DE122F9D000100000024 /* raster_text_flow_pdf_structured_text.json in Resources */,
 				B32A3C8D248008A2009E2C5D /* test_search.json in Resources */,
 				B3B1EDFD2502498100D8BC1E /* collectionresponse_knownfields.json in Resources */,
 				B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */,
