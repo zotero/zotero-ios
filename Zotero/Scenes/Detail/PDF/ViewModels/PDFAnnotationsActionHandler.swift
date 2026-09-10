@@ -163,13 +163,13 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
 
     private func updateSortedKeys(in state: inout PDFAnnotationsState) {
         let sortedKeys = createSortedKeys(fromDatabaseAnnotations: state.databaseAnnotations, documentAnnotationKeys: state.documentAnnotationKeys)
-        if sortedKeys != state.snapshotKeys ?? state.sortedKeys {
+        if sortedKeys != (state.snapshotKeys ?? state.sortedKeys) {
             state.sortedKeys = sortedKeys
             state.snapshotKeys = nil
         }
 
         func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>?, documentAnnotationKeys: [PDFReaderAnnotationKey]) -> OrderedSet<PDFReaderAnnotationKey> {
-            var keys: [PDFReaderAnnotationKey] = []
+            var keys: OrderedSet<PDFReaderAnnotationKey> = []
             if let databaseAnnotations {
                 for item in databaseAnnotations {
                     guard let annotation = PDFDatabaseAnnotation(item: item), isValid(databaseAnnotation: annotation) else { continue }
@@ -186,7 +186,7 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 }
                 return lhs.type == .database && rhs.type == .document
             })
-            return OrderedSet(keys)
+            return keys
 
             func isValid(databaseAnnotation: PDFDatabaseAnnotation) -> Bool {
                 guard databaseAnnotation._page != nil else { return false }
