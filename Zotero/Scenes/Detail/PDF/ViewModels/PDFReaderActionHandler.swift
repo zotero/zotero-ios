@@ -742,16 +742,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             state.selectedAnnotationCommentActive = false
         }
 
+        state.selectedAnnotationKey = key
         state.selectionFromDocument = didSelectInDocument
         state.changes.insert(.selection)
 
-        guard let key else {
-            state.selectedAnnotationKey = nil
-            return
-        }
-
-        state.selectedAnnotationKey = key
-
+        guard let key else { return }
         if !didSelectInDocument, let annotation = state.annotation(for: key) {
             state.focusDocumentLocation = (annotation.page, annotation.boundingBox(boundingBoxConverter: state.document))
         }
@@ -2038,6 +2033,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 notify: false
             )
         }
+        let filterAffectedPageIndices = Set(updatedPdfAnnotations.map({ $0.0.pageIndex }) + insertedPdfAnnotations.map({ $0.pageIndex }))
+        annotationProvider?.refreshFilter(on: filterAffectedPageIndices)
         if !affectedThumbnailPages.isEmpty {
             pdfThumbnailController.delete(pages: affectedThumbnailPages, forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         }
@@ -2111,6 +2108,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             if let blendMode {
                 pdfAnnotation.blendMode = blendMode
             }
+            pdfAnnotation.baseColor = hexColor
 
             changes.insert(.color)
         }

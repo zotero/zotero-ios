@@ -16,9 +16,9 @@ typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
 
 struct PDFReaderState: ViewModelState {
     struct Changes: OptionSet {
-        typealias RawValue = UInt32
+        typealias RawValue = UInt16
 
-        let rawValue: UInt32
+        let rawValue: UInt16
 
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)

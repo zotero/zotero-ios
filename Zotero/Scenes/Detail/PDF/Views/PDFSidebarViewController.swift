@@ -197,7 +197,7 @@ class PDFSidebarViewController: UIViewController {
                         if let selectedAnnotationKey = state.selectedAnnotationKey {
                             viewModel.process(action: .selectAnnotation(selectedAnnotationKey))
                         } else {
-                            viewModel.process(action: .deselectSelectedAnnotationFromDocument)
+                            viewModel.process(action: .deselectSelectedAnnotation)
                         }
                     }
                     guard let action = state.outgoingAction else { return }

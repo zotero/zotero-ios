@@ -8,6 +8,7 @@
 
 import UIKit
 
+import OrderedCollections
 import PSPDFKit
 import RealmSwift
 
@@ -35,9 +36,9 @@ struct PDFAnnotationsState: ViewModelState, ReaderState {
     var library: Library
     var settings: PDFSettings
     var interfaceStyle: UIUserInterfaceStyle
-    var sortedKeys: [PDFReaderAnnotationKey]
+    var sortedKeys: OrderedSet<PDFReaderAnnotationKey>
     var annotationPages: IndexSet
-    var snapshotKeys: [PDFReaderAnnotationKey]?
+    var snapshotKeys: OrderedSet<PDFReaderAnnotationKey>?
     var updatedAnnotationKeys: [PDFReaderAnnotationKey]?
     var selectedAnnotationKey: PDFReaderAnnotationKey?
     var selectionFromSidebar: Bool

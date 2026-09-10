@@ -9,6 +9,7 @@
 import Foundation
 
 import CocoaLumberjackSwift
+import OrderedCollections
 import RealmSwift
 
 final class PDFAnnotationsActionHandler: ViewModelActionHandler {
@@ -32,26 +33,16 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 applyFilter(to: &state)
                 state.updatedAnnotationKeys = changedAnnotationKeys?.filter({ state.sortedKeys.contains($0) })
                 state.changes = .annotations
-                let selectionChanged: Bool
-                let newSelectedAnnotationKey: PDFReaderAnnotationKey?
                 if selectionFromDocument, state.selectedAnnotationKey != selectedAnnotationKey {
-                    selectionChanged = true
-                    newSelectedAnnotationKey = selectedAnnotationKey
-                } else if let selectedAnnotationKey = state.selectedAnnotationKey, !state.sortedKeys.contains(selectedAnnotationKey) {
-                    selectionChanged = true
-                    newSelectedAnnotationKey = nil
-                } else {
-                    selectionChanged = false
-                    newSelectedAnnotationKey = nil
-                }
-                if selectionChanged {
                     updateSelection(
-                        to: newSelectedAnnotationKey,
-                        selectionFromDocument: selectionFromDocument,
-                        selectionFromSidebar: false,
+                        to: selectedAnnotationKey,
+                        selectionFromDocument: true,
                         state: &state
                     )
+                } else {
+                    removeSelectionIfNeeded(state: &state, selectionFromDocument: selectionFromDocument)
                 }
+                updateEditingSelectionIfNeeded(state: &state)
 
                 // If sidebar editing is enabled and there are no results, disable it.
                 if state.sidebarEditingEnabled, (state.snapshotKeys ?? state.sortedKeys).isEmpty {
@@ -68,7 +59,6 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 updateSelection(
                     to: selectedAnnotationKey,
                     selectionFromDocument: selectionFromDocument,
-                    selectionFromSidebar: !selectionFromDocument,
                     state: &state
                 )
             }
@@ -96,13 +86,6 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                     }
                 }
                 state.changes.insert(.sidebarEditing)
-            }
-
-        case .setSidebarEditingSelection(let deletionEnabled, let mergingEnabled):
-            update(viewModel: viewModel) { state in
-                state.deletionEnabled = deletionEnabled
-                state.mergingEnabled = mergingEnabled
-                state.changes = .sidebarEditingSelection
             }
 
         case .selectAnnotationDuringEditing(let key):
@@ -139,6 +122,8 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 state.searchTerm = normalizedTerm
                 applyFilter(to: &state)
                 state.changes = [.annotations, .filter]
+                removeSelectionIfNeeded(state: &state, selectionFromDocument: false)
+                updateEditingSelectionIfNeeded(state: &state)
             }
 
         case .setFilter(let filter):
@@ -147,6 +132,8 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 state.filter = filter
                 applyFilter(to: &state)
                 state.changes = [.annotations, .filter]
+                removeSelectionIfNeeded(state: &state, selectionFromDocument: false)
+                updateEditingSelectionIfNeeded(state: &state)
             }
 
         case .setLibrary(let library):
@@ -176,13 +163,13 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
 
     private func updateSortedKeys(in state: inout PDFAnnotationsState) {
         let sortedKeys = createSortedKeys(fromDatabaseAnnotations: state.databaseAnnotations, documentAnnotationKeys: state.documentAnnotationKeys)
-        if sortedKeys != state.sortedKeys {
+        if sortedKeys != (state.snapshotKeys ?? state.sortedKeys) {
             state.sortedKeys = sortedKeys
             state.snapshotKeys = nil
         }
 
-        func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>?, documentAnnotationKeys: [PDFReaderAnnotationKey]) -> [PDFReaderAnnotationKey] {
-            var keys: [PDFReaderAnnotationKey] = []
+        func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>?, documentAnnotationKeys: [PDFReaderAnnotationKey]) -> OrderedSet<PDFReaderAnnotationKey> {
+            var keys: OrderedSet<PDFReaderAnnotationKey> = []
             if let databaseAnnotations {
                 for item in databaseAnnotations {
                     guard let annotation = PDFDatabaseAnnotation(item: item), isValid(databaseAnnotation: annotation) else { continue }
@@ -264,7 +251,7 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
         }
         state.sortedKeys = filteredKeys(from: snapshotKeys, state: state)
 
-        func filteredKeys(from snapshotKeys: [PDFReaderAnnotationKey], state: PDFAnnotationsState) -> [PDFReaderAnnotationKey] {
+        func filteredKeys(from snapshotKeys: OrderedSet<PDFReaderAnnotationKey>, state: PDFAnnotationsState) -> OrderedSet<PDFReaderAnnotationKey> {
             return snapshotKeys.filter({ key in
                 guard let annotation = state.annotation(for: key) else { return false }
                 return annotation.matches(term: state.searchTerm, filter: state.filter, displayName: state.displayName, username: state.username)
@@ -272,7 +259,7 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func updateSelection(to selectedAnnotationKey: PDFReaderAnnotationKey?, selectionFromDocument: Bool, selectionFromSidebar: Bool, state: inout PDFAnnotationsState) {
+    private func updateSelection(to selectedAnnotationKey: PDFReaderAnnotationKey?, selectionFromDocument: Bool, state: inout PDFAnnotationsState) {
         let selectionChanged = state.selectedAnnotationKey != selectedAnnotationKey
         if selectionChanged {
             state.updatedAnnotationKeys = state.updatedAnnotationKeys ?? []
@@ -280,11 +267,35 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
         }
         state.selectedAnnotationKey = selectedAnnotationKey
         state.focusOnSelectionIfNeeded = selectionFromDocument && (selectedAnnotationKey != nil)
-        state.selectionFromSidebar = selectionFromSidebar
+        state.selectionFromSidebar = !selectionFromDocument
         state.changes.insert(.selection)
         if selectionChanged && state.selectedAnnotationCommentActive {
             state.selectedAnnotationCommentActive = false
             state.changes.insert(.activeComment)
+        }
+    }
+
+    private func removeSelectionIfNeeded(state: inout PDFAnnotationsState, selectionFromDocument: Bool) {
+        if let selectedAnnotationKey = state.selectedAnnotationKey, !state.sortedKeys.contains(selectedAnnotationKey) {
+            updateSelection(
+                to: nil,
+                selectionFromDocument: selectionFromDocument,
+                state: &state
+            )
+        }
+    }
+
+    private func updateEditingSelectionIfNeeded(state: inout PDFAnnotationsState) {
+        guard state.sidebarEditingEnabled else { return }
+        let selectedAnnotations = state.selectedAnnotationsDuringEditing.filter({ state.sortedKeys.contains($0) })
+        // Recheck eligibility even if the keys are unchanged, since annotation properties may have changed.
+        let deletionEnabled = selectedAnnotationsDeletable(selected: selectedAnnotations, state: state)
+        let mergingEnabled = selectedAnnotationsMergeable(selected: selectedAnnotations, state: state)
+        if selectedAnnotations != state.selectedAnnotationsDuringEditing || deletionEnabled != state.deletionEnabled || mergingEnabled != state.mergingEnabled {
+            state.selectedAnnotationsDuringEditing = selectedAnnotations
+            state.deletionEnabled = deletionEnabled
+            state.mergingEnabled = mergingEnabled
+            state.changes.insert(.sidebarEditingSelection)
         }
     }
 
@@ -303,7 +314,7 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
             if state.selectedAnnotationsDuringEditing.count == 1 {
                 state.mergingEnabled = false
             } else {
-                state.mergingEnabled = selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, in: viewModel)
+                state.mergingEnabled = selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, state: state)
             }
 
             state.changes = .sidebarEditingSelection
@@ -324,7 +335,7 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                 }
             } else {
                 // Check whether deletion state changed after removing this annotation.
-                let deletionEnabled = selectedAnnotationsDeletable(selected: state.selectedAnnotationsDuringEditing, in: viewModel)
+                let deletionEnabled = selectedAnnotationsDeletable(selected: state.selectedAnnotationsDuringEditing, state: state)
                 if state.deletionEnabled != deletionEnabled {
                     state.deletionEnabled = deletionEnabled
                     state.changes = .sidebarEditingSelection
@@ -335,21 +346,23 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
                         state.changes = .sidebarEditingSelection
                     }
                 } else {
-                    state.mergingEnabled = selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, in: viewModel)
+                    state.mergingEnabled = selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, state: state)
                     state.changes = .sidebarEditingSelection
                 }
             }
         }
-
-        func selectedAnnotationsDeletable(selected: Set<PDFReaderAnnotationKey>, in viewModel: ViewModel<PDFAnnotationsActionHandler>) -> Bool {
-            return !selected.contains(where: { key in
-                guard let annotation = viewModel.state.annotation(for: key) else { return false }
-                return !annotation.isSyncable || annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library) == .notEditable
-            })
-        }
     }
 
-    private func selectedAnnotationsMergeable(selected: Set<PDFReaderAnnotationKey>, in viewModel: ViewModel<PDFAnnotationsActionHandler>) -> Bool {
+    private func selectedAnnotationsDeletable(selected: Set<PDFReaderAnnotationKey>, state: PDFAnnotationsState) -> Bool {
+        guard !selected.isEmpty else { return false }
+        return selected.allSatisfy({ key in
+            guard let annotation = state.annotation(for: key) else { return false }
+            return annotation.isSyncable && annotation.editability(currentUserId: state.userId, library: state.library) != .notEditable
+        })
+    }
+
+    private func selectedAnnotationsMergeable(selected: Set<PDFReaderAnnotationKey>, state: PDFAnnotationsState) -> Bool {
+        guard selected.count > 1 else { return false }
         var page: Int?
         var type: AnnotationType?
         var color: String?
@@ -376,7 +389,7 @@ final class PDFAnnotationsActionHandler: ViewModelActionHandler {
         }
 
         for key in selected {
-            guard let annotation = viewModel.state.annotation(for: key) else { continue }
+            guard let annotation = state.annotation(for: key) else { return false }
             guard annotation.isSyncable else { return false }
 
             if let page = page {

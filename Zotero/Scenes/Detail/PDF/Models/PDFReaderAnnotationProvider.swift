@@ -347,6 +347,19 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         }
     }
 
+    public func refreshFilter(on pageIndices: Set<PageIndex>) {
+        performWrite { [weak self] in
+            guard let self, !currentFilterContext.isEmpty else { return }
+            let loadedPageIndices = pageIndices
+                .intersection(loadedFilePageIndices)
+                .intersection(loadedDocumentCachePageIndices)
+                .intersection(loadedDatabaseCachePageIndices)
+            for pageIndex in loadedPageIndices.sorted() {
+                applyCurrentFilterForPage(at: pageIndex, notify: true)
+            }
+        }
+    }
+
     public func update(metadataEditable: Bool) {
         performWrite { [weak self] in
             guard let self, metadataEditable != self.metadataEditable else { return }
