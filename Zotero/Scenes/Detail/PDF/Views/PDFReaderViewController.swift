@@ -454,6 +454,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             // Enable bar buttons across every logical group (leading, trailing-fixed and overflow).
             for item in navigationBarLeadingItems + navigationBarTrailingFixedItems + navigationBarOverflowItems {
                 item.isEnabled = true
+                item.checkboxButton?.isEnabled = true
                 item.checkboxButton?.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             }
             interfaceVisibilityDidChange(to: !toolbarState.visible)
