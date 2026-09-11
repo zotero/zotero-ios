@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "1.1.0",
+	"schemaVersion": "1.2.0",
 	"metadata": {
 		"processor": {"type": "epub"},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
@@ -80,29 +80,43 @@
 			{"label": "55", "contentRange": [[234], [240]]}
 		],
 		"outline": [
-			{"title": "Titlepage", "ref": [0], "target": {"position": {"pageIndex": 0}}},
-			{"title": "Imprint", "ref": [3], "target": {"position": {"pageIndex": 0}}},
+			{"title": "Titlepage", "source": "native", "ref": [0], "target": {"position": {"pageIndex": 0}}},
+			{"title": "Imprint", "source": "native", "ref": [3], "target": {"position": {"pageIndex": 0}}},
 			{
 				"title": "Introductory",
+				"source": "native",
 				"ref": [9],
 				"target": {"position": {"pageIndex": 0}},
 				"children": [
-					{"title": "The Family of Mendoza", "ref": [10], "target": {"position": {"pageIndex": 0}}},
+					{
+						"title": "The Family of Mendoza",
+						"source": "native",
+						"ref": [10],
+						"target": {"position": {"pageIndex": 0}}
+					},
 					{
 						"title": "Don Diego Hurtado de Mendoza, Author of Lazarillo de Tormes",
+						"source": "native",
 						"ref": [32],
 						"target": {"position": {"pageIndex": 3}}
 					},
 					{
 						"title": "The Book, Lazarillo de Tormes",
+						"source": "native",
 						"ref": [42],
 						"target": {"position": {"pageIndex": 5}},
 						"children": [
-							{"title": "English Translations", "ref": [48], "target": {"position": {"pageIndex": 6}}}
+							{
+								"title": "English Translations",
+								"source": "native",
+								"ref": [48],
+								"target": {"position": {"pageIndex": 6}}
+							}
 						]
 					},
 					{
 						"title": "Notes on the Character of Lazaro",
+						"source": "native",
 						"ref": [55],
 						"target": {"position": {"pageIndex": 7}}
 					}
@@ -110,33 +124,96 @@
 			},
 			{
 				"title": "The Life of Lazarillo de Tormes",
+				"source": "native",
 				"ref": [67],
 				"target": {"position": {"pageIndex": 10}},
 				"children": [
-					{"title": "Prologue", "ref": [68], "target": {"position": {"pageIndex": 10}}},
+					{
+						"title": "Prologue",
+						"source": "native",
+						"ref": [68],
+						"target": {"position": {"pageIndex": 10}}
+					},
 					{
 						"title": "I: Lazaro Relates the Way of His Birth and Tells Whose Son He Is",
+						"source": "native",
 						"ref": [73],
 						"target": {"position": {"pageIndex": 11}}
 					},
-					{"title": "First Master", "ref": [83], "target": {"position": {"pageIndex": 13}}},
-					{"title": "Second Master", "ref": [108], "target": {"position": {"pageIndex": 21}}},
-					{"title": "Third Master", "ref": [128], "target": {"position": {"pageIndex": 28}}},
-					{"title": "Fourth Master", "ref": [168], "target": {"position": {"pageIndex": 42}}},
-					{"title": "Fifth Master", "ref": [171], "target": {"position": {"pageIndex": 42}}},
-					{"title": "Sixth Master", "ref": [183], "target": {"position": {"pageIndex": 46}}},
-					{"title": "Seventh Master", "ref": [186], "target": {"position": {"pageIndex": 47}}}
+					{
+						"title": "First Master",
+						"source": "native",
+						"ref": [83],
+						"target": {"position": {"pageIndex": 13}}
+					},
+					{
+						"title": "Second Master",
+						"source": "native",
+						"ref": [108],
+						"target": {"position": {"pageIndex": 21}}
+					},
+					{
+						"title": "Third Master",
+						"source": "native",
+						"ref": [128],
+						"target": {"position": {"pageIndex": 28}}
+					},
+					{
+						"title": "Fourth Master",
+						"source": "native",
+						"ref": [168],
+						"target": {"position": {"pageIndex": 42}}
+					},
+					{
+						"title": "Fifth Master",
+						"source": "native",
+						"ref": [171],
+						"target": {"position": {"pageIndex": 42}}
+					},
+					{
+						"title": "Sixth Master",
+						"source": "native",
+						"ref": [183],
+						"target": {"position": {"pageIndex": 46}}
+					},
+					{
+						"title": "Seventh Master",
+						"source": "native",
+						"ref": [186],
+						"target": {"position": {"pageIndex": 47}}
+					}
 				]
 			},
 			{
 				"title": "Sketch Map of the Route from Salamanca to Toledo",
+				"source": "native",
 				"ref": [194],
 				"target": {"position": {"pageIndex": 49}}
 			},
-			{"title": "Endnotes", "ref": [196], "target": {"position": {"pageIndex": 49}}},
-			{"title": "List of Illustrations", "ref": [226], "target": {"position": {"pageIndex": 53}}},
-			{"title": "Colophon", "ref": [228], "target": {"position": {"pageIndex": 53}}},
-			{"title": "Uncopyright", "ref": [235], "target": {"position": {"pageIndex": 54}}}
+			{
+				"title": "Endnotes",
+				"source": "native",
+				"ref": [196],
+				"target": {"position": {"pageIndex": 49}}
+			},
+			{
+				"title": "List of Illustrations",
+				"source": "native",
+				"ref": [226],
+				"target": {"position": {"pageIndex": 53}}
+			},
+			{
+				"title": "Colophon",
+				"source": "native",
+				"ref": [228],
+				"target": {"position": {"pageIndex": 53}}
+			},
+			{
+				"title": "Uncopyright",
+				"source": "native",
+				"ref": [235],
+				"target": {"position": {"pageIndex": 54}}
+			}
 		],
 		"pageMappingType": "locations"
 	},

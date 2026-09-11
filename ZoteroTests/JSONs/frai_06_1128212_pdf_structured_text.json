@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "1.1.0",
+	"schemaVersion": "1.2.0",
 	"metadata": {
 		"processor": {"type": "pdf"},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
@@ -39,84 +39,84 @@
 			{"viewRect": [0, 0, 595.26, 842.116], "contentRange": [[257], [260]], "label": "15"}
 		],
 		"outline": [
-			{"title": "COPYRIGHT", "ref": [7]},
-			{"title": "No silver bullet: interpretable ML models must be explained", "ref": [9]},
-			{"title": "KEYWORDS", "ref": [13]},
-			{"title": "1. Introduction", "ref": [15]},
+			{"title": "1. Introduction", "source": "native", "ref": [15]},
 			{
 				"title": "2. Preliminaries",
+				"source": "native",
 				"ref": [28],
 				"children": [
-					{"title": "2.1. Classification problems", "ref": [29]},
+					{"title": "2.1. Classification problems", "source": "native", "ref": [29]},
 					{
 						"title": "2.2. ML models regarded as interpretable",
+						"source": "native",
 						"ref": [33],
 						"children": [
-							{"title": "2.2.1. Decision trees", "ref": [35]},
-							{"title": "2.2.2. Decision lists and sets", "ref": [40]}
+							{"title": "2.2.1. Decision trees", "source": "native", "ref": [35]},
+							{"title": "2.2.2. Decision lists and sets", "source": "native", "ref": [40]}
 						]
 					},
-					{"title": "2.3. Logic foundations", "ref": [50]}
+					{"title": "2.3. Logic foundations", "source": "native", "ref": [50]}
 				]
 			},
 			{
 				"title": "3. Logic-based explainable AI",
+				"source": "native",
 				"ref": [53],
 				"children": [
-					{"title": "3.1. Abductive explanations (AXp’s)", "ref": [60]},
-					{"title": "3.2. Contrastive explanations (CXp’s)", "ref": [80]},
-					{"title": "3.3. Duality between AXp’s and CXp’s", "ref": [92]},
-					{"title": "3.4. Current status of logic-based explainability", "ref": [97]}
+					{"title": "3.1. Abductive explanations (AXp's)", "source": "native", "ref": [60]},
+					{"title": "3.2. Contrastive explanations (CXp's)", "source": "native", "ref": [80]},
+					{"title": "3.3. Duality between AXp's and CXp's", "source": "native", "ref": [92]},
+					{"title": "3.4. Current status of logic-based explainability", "source": "native", "ref": [97]}
 				]
 			},
 			{
 				"title": "4. How to understand interpretable ML models?",
+				"source": "native",
 				"ref": [103],
 				"children": [
-					{
-						"title": "4.1. How to comprehend predictions?",
-						"ref": [105],
-						"children": [{"title": "“Given an instance (v, c), why is the prediction c?”", "ref": [107]}]
-					},
-					{"title": "4.2. Defining model comprehensibility", "ref": [115]},
+					{"title": "4.1. How to comprehend predictions?", "source": "native", "ref": [105]},
+					{"title": "4.2. Defining model comprehensibility", "source": "native", "ref": [115]},
 					{
 						"title": "4.3. Are interpretable models indeed comprehensible?",
+						"source": "native",
 						"ref": [126],
 						"children": [
-							{"title": "4.3.1. Decision trees", "ref": [128]},
-							{"title": "4.3.2. Decision lists", "ref": [139]}
+							{"title": "4.3.1. Decision trees", "source": "native", "ref": [128]},
+							{"title": "4.3.2. Decision lists", "source": "native", "ref": [139]}
 						]
 					}
 				]
 			},
 			{
 				"title": "5. Non-comprehensibility of interpretable models",
+				"source": "native",
 				"ref": [161],
 				"children": [
-					{"title": "5.1. Non-comprehensibility of decision trees", "ref": [163]},
-					{"title": "5.2. Non-comprehensibility of decision lists", "ref": [169]},
-					{"title": "5.3. Non-comprehensibility of decision sets", "ref": [173]},
-					{"title": "5.4. Answering WHYNOT questions can be hard", "ref": [175]}
+					{"title": "5.1. Non-comprehensibility of decision trees", "source": "native", "ref": [163]},
+					{"title": "5.2. Non-comprehensibility of decision lists", "source": "native", "ref": [169]},
+					{"title": "5.3. Non-comprehensibility of decision sets", "source": "native", "ref": [173]},
+					{"title": "5.4. Answering WHYNOT questions can be hard", "source": "native", "ref": [175]}
 				]
 			},
 			{
 				"title": "6. Experimental evidence",
+				"source": "native",
 				"ref": [198],
 				"children": [
-					{"title": "6.1. Measuring explanation redundancy", "ref": [204]},
-					{"title": "6.2. Redundancy of default explanations", "ref": [211]},
-					{"title": "6.3. Additional classifiers", "ref": [215]}
+					{"title": "6.1. Measuring explanation redundancy", "source": "native", "ref": [204]},
+					{"title": "6.2. Redundancy of default explanations", "source": "native", "ref": [211]},
+					{"title": "6.3. Additional classifiers", "source": "native", "ref": [215]}
 				]
 			},
-			{"title": "7. Discussion", "ref": [218]},
-			{"title": "8. Conclusion and research directions", "ref": [230]},
-			{"title": "Data availability statement", "ref": [239]},
-			{"title": "Author contributions", "ref": [241]},
-			{"title": "Funding", "ref": [243]},
-			{"title": "Acknowledgments", "ref": [245]},
-			{"title": "Conflict of interest", "ref": [247]},
-			{"title": "Publisher’s note", "ref": [249]},
-			{"title": "References", "ref": [251]}
+			{"title": "7. Discussion", "source": "native", "ref": [218]},
+			{"title": "8. Conclusion and research directions", "source": "native", "ref": [230]},
+			{"title": "Data availability statement", "source": "native", "ref": [239]},
+			{"title": "Author contributions", "source": "native", "ref": [241]},
+			{"title": "Funding", "source": "native", "ref": [243]},
+			{"title": "Acknowledgments", "source": "native", "ref": [245]},
+			{"title": "Conflict of interest", "source": "native", "ref": [247]},
+			{"title": "Publisher's note", "source": "native", "ref": [249]},
+			{"title": "References", "source": "native", "ref": [251]}
 		]
 	},
 	"content": [

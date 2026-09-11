@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "1.1.0",
+	"schemaVersion": "1.2.0",
 	"metadata": {
 		"processor": {"type": "epub"},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
@@ -124,49 +124,196 @@
 			{"label": "99", "contentRange": [[712], [714]]}
 		],
 		"outline": [
-			{"title": "Titlepage", "ref": [0], "target": {"position": {"pageIndex": 0}}},
-			{"title": "Imprint", "ref": [3], "target": {"position": {"pageIndex": 0}}},
-			{"title": "Dedication", "ref": [9], "target": {"position": {"pageIndex": 0}}},
+			{"title": "Titlepage", "source": "native", "ref": [0], "target": {"position": {"pageIndex": 0}}},
+			{"title": "Imprint", "source": "native", "ref": [3], "target": {"position": {"pageIndex": 0}}},
+			{
+				"title": "Dedication",
+				"source": "native",
+				"ref": [9],
+				"target": {"position": {"pageIndex": 0}}
+			},
 			{
 				"title": "The Portent",
+				"source": "native",
 				"ref": [20],
 				"target": {"position": {"pageIndex": 1}},
 				"children": [
-					{"title": "I: My Boyhood", "ref": [21], "target": {"position": {"pageIndex": 1}}},
-					{"title": "II: The Second Hearing", "ref": [27], "target": {"position": {"pageIndex": 4}}},
-					{"title": "III: My Old Nurses Story", "ref": [37], "target": {"position": {"pageIndex": 6}}},
-					{"title": "IV: Hilton Hall", "ref": [84], "target": {"position": {"pageIndex": 18}}},
-					{"title": "V: Lady Alice", "ref": [94], "target": {"position": {"pageIndex": 21}}},
-					{"title": "VI: My Quarters", "ref": [103], "target": {"position": {"pageIndex": 24}}},
-					{"title": "VII: The Library", "ref": [114], "target": {"position": {"pageIndex": 26}}},
-					{"title": "VIII: The Somnambulist", "ref": [122], "target": {"position": {"pageIndex": 28}}},
-					{"title": "IX: The First Waking", "ref": [130], "target": {"position": {"pageIndex": 30}}},
-					{"title": "X: Love and Power", "ref": [171], "target": {"position": {"pageIndex": 33}}},
-					{"title": "XI: A New Pupil", "ref": [198], "target": {"position": {"pageIndex": 39}}},
-					{"title": "XII: Confession", "ref": [236], "target": {"position": {"pageIndex": 42}}},
-					{"title": "XIII: Questioning", "ref": [251], "target": {"position": {"pageIndex": 45}}},
-					{"title": "XIV: Jealousy", "ref": [272], "target": {"position": {"pageIndex": 47}}},
+					{
+						"title": "I: My Boyhood",
+						"source": "native",
+						"ref": [21],
+						"target": {"position": {"pageIndex": 1}}
+					},
+					{
+						"title": "II: The Second Hearing",
+						"source": "native",
+						"ref": [27],
+						"target": {"position": {"pageIndex": 4}}
+					},
+					{
+						"title": "III: My Old Nurses Story",
+						"source": "native",
+						"ref": [37],
+						"target": {"position": {"pageIndex": 6}}
+					},
+					{
+						"title": "IV: Hilton Hall",
+						"source": "native",
+						"ref": [84],
+						"target": {"position": {"pageIndex": 18}}
+					},
+					{
+						"title": "V: Lady Alice",
+						"source": "native",
+						"ref": [94],
+						"target": {"position": {"pageIndex": 21}}
+					},
+					{
+						"title": "VI: My Quarters",
+						"source": "native",
+						"ref": [103],
+						"target": {"position": {"pageIndex": 24}}
+					},
+					{
+						"title": "VII: The Library",
+						"source": "native",
+						"ref": [114],
+						"target": {"position": {"pageIndex": 26}}
+					},
+					{
+						"title": "VIII: The Somnambulist",
+						"source": "native",
+						"ref": [122],
+						"target": {"position": {"pageIndex": 28}}
+					},
+					{
+						"title": "IX: The First Waking",
+						"source": "native",
+						"ref": [130],
+						"target": {"position": {"pageIndex": 30}}
+					},
+					{
+						"title": "X: Love and Power",
+						"source": "native",
+						"ref": [171],
+						"target": {"position": {"pageIndex": 33}}
+					},
+					{
+						"title": "XI: A New Pupil",
+						"source": "native",
+						"ref": [198],
+						"target": {"position": {"pageIndex": 39}}
+					},
+					{
+						"title": "XII: Confession",
+						"source": "native",
+						"ref": [236],
+						"target": {"position": {"pageIndex": 42}}
+					},
+					{
+						"title": "XIII: Questioning",
+						"source": "native",
+						"ref": [251],
+						"target": {"position": {"pageIndex": 45}}
+					},
+					{
+						"title": "XIV: Jealousy",
+						"source": "native",
+						"ref": [272],
+						"target": {"position": {"pageIndex": 47}}
+					},
 					{
 						"title": "XV: The Chamber of Ghosts",
+						"source": "native",
 						"ref": [282],
 						"target": {"position": {"pageIndex": 49}}
 					},
-					{"title": "XVI: The Clanking Shoe", "ref": [309], "target": {"position": {"pageIndex": 53}}},
-					{"title": "XVII: The Physician", "ref": [359], "target": {"position": {"pageIndex": 59}}},
-					{"title": "XVIII: Old Friends", "ref": [376], "target": {"position": {"pageIndex": 62}}},
-					{"title": "XIX: Old Constancy", "ref": [409], "target": {"position": {"pageIndex": 64}}},
-					{"title": "XX: Margaret", "ref": [418], "target": {"position": {"pageIndex": 65}}},
-					{"title": "XXI: Hilton", "ref": [508], "target": {"position": {"pageIndex": 75}}},
-					{"title": "XXII: The Sleeper", "ref": [538], "target": {"position": {"pageIndex": 78}}},
-					{"title": "XXIII: My Old Room", "ref": [584], "target": {"position": {"pageIndex": 82}}},
-					{"title": "XXIV: Prison-Breaking", "ref": [606], "target": {"position": {"pageIndex": 85}}},
-					{"title": "XXV: New Entrenchments", "ref": [642], "target": {"position": {"pageIndex": 88}}},
-					{"title": "XXVI: Escape", "ref": [672], "target": {"position": {"pageIndex": 92}}},
-					{"title": "XXVII: Freedom", "ref": [695], "target": {"position": {"pageIndex": 96}}}
+					{
+						"title": "XVI: The Clanking Shoe",
+						"source": "native",
+						"ref": [309],
+						"target": {"position": {"pageIndex": 53}}
+					},
+					{
+						"title": "XVII: The Physician",
+						"source": "native",
+						"ref": [359],
+						"target": {"position": {"pageIndex": 59}}
+					},
+					{
+						"title": "XVIII: Old Friends",
+						"source": "native",
+						"ref": [376],
+						"target": {"position": {"pageIndex": 62}}
+					},
+					{
+						"title": "XIX: Old Constancy",
+						"source": "native",
+						"ref": [409],
+						"target": {"position": {"pageIndex": 64}}
+					},
+					{
+						"title": "XX: Margaret",
+						"source": "native",
+						"ref": [418],
+						"target": {"position": {"pageIndex": 65}}
+					},
+					{
+						"title": "XXI: Hilton",
+						"source": "native",
+						"ref": [508],
+						"target": {"position": {"pageIndex": 75}}
+					},
+					{
+						"title": "XXII: The Sleeper",
+						"source": "native",
+						"ref": [538],
+						"target": {"position": {"pageIndex": 78}}
+					},
+					{
+						"title": "XXIII: My Old Room",
+						"source": "native",
+						"ref": [584],
+						"target": {"position": {"pageIndex": 82}}
+					},
+					{
+						"title": "XXIV: Prison-Breaking",
+						"source": "native",
+						"ref": [606],
+						"target": {"position": {"pageIndex": 85}}
+					},
+					{
+						"title": "XXV: New Entrenchments",
+						"source": "native",
+						"ref": [642],
+						"target": {"position": {"pageIndex": 88}}
+					},
+					{
+						"title": "XXVI: Escape",
+						"source": "native",
+						"ref": [672],
+						"target": {"position": {"pageIndex": 92}}
+					},
+					{
+						"title": "XXVII: Freedom",
+						"source": "native",
+						"ref": [695],
+						"target": {"position": {"pageIndex": 96}}
+					}
 				]
 			},
-			{"title": "Colophon", "ref": [702], "target": {"position": {"pageIndex": 97}}},
-			{"title": "Uncopyright", "ref": [709], "target": {"position": {"pageIndex": 97}}}
+			{
+				"title": "Colophon",
+				"source": "native",
+				"ref": [702],
+				"target": {"position": {"pageIndex": 97}}
+			},
+			{
+				"title": "Uncopyright",
+				"source": "native",
+				"ref": [709],
+				"target": {"position": {"pageIndex": 97}}
+			}
 		],
 		"pageMappingType": "locations"
 	},

@@ -573,6 +573,8 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     (description: "synthetic cross-page mixed notes PDF", resource: "synthetic-cross-page-mixed-notes", fileExtension: "pdf", key: "ddddddda", contentType: "application/pdf", expected: "synthetic_cross_page_mixed_notes_pdf_structured_text", timeout: 240),
                     (description: "synthetic cross-page reference continuation PDF", resource: "synthetic-cross-page-reference-continuation", fileExtension: "pdf", key: "dddddddb", contentType: "application/pdf", expected: "synthetic_cross_page_reference_continuation_pdf_structured_text", timeout: 240),
                     (description: "synthetic printed contents outline PDF", resource: "synthetic-printed-contents-outline", fileExtension: "pdf", key: "dddddddc", contentType: "application/pdf", expected: "synthetic_printed_contents_outline_pdf_structured_text", timeout: 240),
+                    (description: "CRS R48555 PDF", resource: "crs-r48555", fileExtension: "pdf", key: "ddddddde", contentType: "application/pdf", expected: "crs_r48555_pdf_structured_text", timeout: 240),
+                    (description: "raster text flow PDF", resource: "raster-text-flow", fileExtension: "pdf", key: "dddddddf", contentType: "application/pdf", expected: "raster_text_flow_pdf_structured_text", timeout: 240),
                     (description: "EPUB", resource: "1", fileExtension: "epub", key: "eeeeeeee", contentType: "application/epub+zip", expected: "1_epub_structured_text", timeout: 30),
                     (description: "advanced EPUB", resource: "1_advanced", fileExtension: "epub", key: "eeeeeee1", contentType: "application/epub+zip", expected: "1_advanced_epub_structured_text", timeout: 60),
                     (description: "EPUB 2", resource: "2", fileExtension: "epub", key: "eeeeeee2", contentType: "application/epub+zip", expected: "2_epub_structured_text", timeout: 60),
@@ -805,8 +807,8 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 compareJSON(actual: golden, expectedURL: expectedURL)
 
                 func structureGolden(from structure: [String: Any]) -> [String: Any]? {
-                    let processorVersions = ["pdf": 10, "epub": 1, "snapshot": 1]
-                    guard structure["schemaVersion"] as? String == "1.1.0",
+                    let processorVersions = ["pdf": 14, "epub": 2, "snapshot": 1]
+                    guard structure["schemaVersion"] as? String == "1.2.0",
                           var metadata = structure["metadata"] as? [String: Any],
                           var processor = metadata["processor"] as? [String: Any],
                           let type = processor["type"] as? String,

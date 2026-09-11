@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "1.1.0",
+	"schemaVersion": "1.2.0",
 	"metadata": {
 		"processor": {"type": "epub"},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
@@ -282,40 +282,76 @@
 			{"label": "258", "contentRange": [[1226], [1227]]}
 		],
 		"outline": [
-			{"title": "Cover", "ref": [0], "target": {"position": {"pageIndex": 0}}},
-			{"title": "Half Title", "ref": [1], "target": {"position": {"pageIndex": 0}}},
-			{"title": "Title Page", "ref": [4], "target": {"position": {"pageIndex": 2}}},
-			{"title": "Copyright Page", "ref": [8], "target": {"position": {"pageIndex": 2}}},
-			{"title": "Dedication", "ref": [29], "target": {"position": {"pageIndex": 5}}},
-			{"title": "Table of Contents", "ref": [30], "target": {"position": {"pageIndex": 6}}},
-			{"title": "Acknowledgements", "ref": [33], "target": {"position": {"pageIndex": 8}}},
+			{"title": "Cover", "source": "native", "ref": [0], "target": {"position": {"pageIndex": 0}}},
+			{
+				"title": "Half Title",
+				"source": "native",
+				"ref": [1],
+				"target": {"position": {"pageIndex": 0}}
+			},
+			{
+				"title": "Title Page",
+				"source": "native",
+				"ref": [4],
+				"target": {"position": {"pageIndex": 2}}
+			},
+			{
+				"title": "Copyright Page",
+				"source": "native",
+				"ref": [8],
+				"target": {"position": {"pageIndex": 2}}
+			},
+			{
+				"title": "Dedication",
+				"source": "native",
+				"ref": [29],
+				"target": {"position": {"pageIndex": 5}}
+			},
+			{
+				"title": "Table of Contents",
+				"source": "native",
+				"ref": [30],
+				"target": {"position": {"pageIndex": 6}}
+			},
+			{
+				"title": "Acknowledgements",
+				"source": "native",
+				"ref": [33],
+				"target": {"position": {"pageIndex": 8}}
+			},
 			{
 				"title": "Introduction: The Joys of Forgetting, Reinventing and Coping with the Archive Fever",
+				"source": "native",
 				"ref": [37],
 				"target": {"position": {"pageIndex": 10}}
 			},
 			{
 				"title": "I New Frontiers? Between Absence and Presence of Archives",
+				"source": "native",
 				"ref": [86],
 				"target": {"position": {"pageIndex": 20}},
 				"children": [
 					{
 						"title": "1 What Are Film Archives For? (and Why We Need Them to Change), or: Adventures in the Archive World",
+						"source": "native",
 						"ref": [89],
 						"target": {"position": {"pageIndex": 22}}
 					},
 					{
 						"title": "2 Viewing the Ottoman Lands in Early Travel Films",
+						"source": "native",
 						"ref": [160],
 						"target": {"position": {"pageIndex": 38}}
 					},
 					{
 						"title": "3 How Social Media Platforms Replace Film Archives When There Are No Archives",
+						"source": "native",
 						"ref": [253],
 						"target": {"position": {"pageIndex": 56}}
 					},
 					{
 						"title": "4 The Intersecting Paths of Eveline T. Scott and Traugott Fuchs: How Do Private Collections Speak to Us?",
+						"source": "native",
 						"ref": [353],
 						"target": {"position": {"pageIndex": 76}}
 					}
@@ -323,26 +359,31 @@
 			},
 			{
 				"title": "II The God of Small Films, or what you Have Found is not what you Have Lost",
+				"source": "native",
 				"ref": [452],
 				"target": {"position": {"pageIndex": 98}},
 				"children": [
 					{
 						"title": "5 The Ethics of Appropriation: Found Footage between Archive and Internet",
+						"source": "native",
 						"ref": [455],
 						"target": {"position": {"pageIndex": 100}}
 					},
 					{
 						"title": "6 The Infra-ordinary Archive: On Turkish 8 mm Home Movies",
+						"source": "native",
 						"ref": [509],
 						"target": {"position": {"pageIndex": 114}}
 					},
 					{
 						"title": "7 Interview with Gustav Deutsch: “Categorisation Limits”",
+						"source": "native",
 						"ref": [571],
 						"target": {"position": {"pageIndex": 130}}
 					},
 					{
 						"title": "8 Old Footage, New Meanings: The Case of The Atomic Cafe",
+						"source": "native",
 						"ref": [738],
 						"target": {"position": {"pageIndex": 148}}
 					}
@@ -350,28 +391,37 @@
 			},
 			{
 				"title": "III What the Prints (don’t) Tell",
+				"source": "native",
 				"ref": [917],
 				"target": {"position": {"pageIndex": 178}},
 				"children": [
 					{
 						"title": "9 Preservation and Resignation: A Study of Survival",
+						"source": "native",
 						"ref": [920],
 						"target": {"position": {"pageIndex": 180}}
 					},
 					{
 						"title": "10 Memory and Trust in a Time of Un-framing Film Heritage",
+						"source": "native",
 						"ref": [999],
 						"target": {"position": {"pageIndex": 198}}
 					},
 					{
 						"title": "11 “Uncontained” Archives of Cinema",
+						"source": "native",
 						"ref": [1073],
 						"target": {"position": {"pageIndex": 214}}
 					}
 				]
 			},
-			{"title": "Bibliography", "ref": [1172], "target": {"position": {"pageIndex": 234}}},
-			{"title": "Index", "ref": [1175], "target": {"position": {"pageIndex": 246}}}
+			{
+				"title": "Bibliography",
+				"source": "native",
+				"ref": [1172],
+				"target": {"position": {"pageIndex": 234}}
+			},
+			{"title": "Index", "source": "native", "ref": [1175], "target": {"position": {"pageIndex": 246}}}
 		],
 		"pageMappingType": "physical"
 	},

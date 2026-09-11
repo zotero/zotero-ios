@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "1.1.0",
+	"schemaVersion": "1.2.0",
 	"metadata": {
 		"processor": {"type": "pdf"},
 		"dateCreated": "2000-01-01T00:00:00.000Z",
@@ -191,338 +191,145 @@
 			{"viewRect": [0, 0, 612, 792], "contentRange": [[1078], [1085]], "label": "161"}
 		],
 		"outline": [
-			{"title": "Cover image attribution:", "ref": [12]},
 			{
-				"title": "Accessibility Statement",
-				"ref": [26],
-				"children": [
-					{"title": "Accessibility features of the web version of this resource", "ref": [29]},
-					{"title": "Other file formats available", "ref": [32]},
-					{"title": "Known accessibility issues and areas for improvement", "ref": [35]},
-					{"title": "Let us know if you are having problems accessing this book", "ref": [37]},
-					{"title": "Help us improve the accessibility of our resources", "ref": [45]}
-				]
+				"title": "Contents",
+				"source": "native",
+				"target": {"position": {"pageIndex": 4, "rect": [0, 735, 0, 735]}}
 			},
-			{"title": "About BCcampus Open Education", "ref": [49]},
-			{
-				"title": "Introduction",
-				"ref": [55],
-				"children": [{"title": "Learning Objectives", "ref": [58]}]
-			},
+			{"title": "Accessibility Statement", "source": "native", "ref": [26]},
+			{"title": "About BCcampus Open Education", "source": "native", "ref": [49]},
+			{"title": "Introduction", "source": "native", "ref": [55]},
 			{
 				"title": "Chapter 1: Ethical Behaviour",
+				"source": "native",
 				"ref": [63],
 				"children": [
-					{
-						"title": "1.1 The Importance of Ethical Behaviour",
-						"ref": [65],
-						"children": [
-							{"title": "How do you know as an individual if you pass the ethics test?", "ref": [74]}
-						]
-					},
+					{"title": "1.1 The Importance of Ethical Behaviour", "source": "native", "ref": [65]},
 					{
 						"title": "1.2 Ethics and the Pursuit of a Law Enforcement Career",
-						"ref": [77],
-						"children": [
-							{"title": "Action x is prima facie (or believed to be) morally permissible", "ref": [87]},
-							{"title": "Therefore x is immoral", "ref": [89]}
-						]
+						"source": "native",
+						"ref": [77]
 					},
-					{
-						"title": "1.3 As Employees in Law Enforcement Agencies",
-						"ref": [96],
-						"children": [
-							{"title": "How do law enforcement officers know if they pass the ethics test?", "ref": [105]}
-						]
-					}
+					{"title": "1.3 As Employees in Law Enforcement Agencies", "source": "native", "ref": [96]},
+					{"title": "References", "source": "native", "ref": [108]}
 				]
 			},
-			{"title": "References", "ref": [108]},
 			{
-				"title": "2.1 Major Ethical Systems",
-				"ref": [113],
-				"children": [{"title": "Overview of Ethical Theories", "ref": [118]}]
-			},
-			{"title": "2.2 Utilitarian Ethics", "ref": [130]},
-			{
-				"title": "Q. How can utilitarian theory assist law enforcement in moral dilemmas?",
-				"ref": [147],
+				"title": "Chapter 2: Ethical Systems",
+				"source": "native",
+				"target": {"position": {"pageIndex": 20, "rect": [0, 735, 0, 735]}},
 				"children": [
-					{"title": "The Problems with Utilitarianism", "ref": [153]},
-					{"title": "2.3 Deontology", "ref": [160]}
+					{"title": "2.1 Major Ethical Systems", "source": "native", "ref": [113]},
+					{"title": "2.2 Utilitarian Ethics", "source": "native", "ref": [130]},
+					{"title": "2.3 Deontology", "source": "native", "ref": [160]},
+					{"title": "2.4 Virtue Ethics", "source": "native", "ref": [179]},
+					{"title": "2.5 Ethics of Care", "source": "native", "ref": [197]},
+					{"title": "2.6 Egoism", "source": "native", "ref": [204]},
+					{"title": "2.7 Religion or Divine Command Theory", "source": "native", "ref": [220]},
+					{"title": "2.8 Natural Law", "source": "native", "ref": [244]},
+					{"title": "2.9 Social Contract Theory", "source": "native", "ref": [255]},
+					{"title": "2.10 Rawls’ Theory of Justice", "source": "native", "ref": [275]},
+					{"title": "2.11 Moral Relativism", "source": "native", "ref": [282]},
+					{"title": "References", "source": "native", "ref": [292]}
 				]
 			},
 			{
-				"title": "Q. How can deontological theory assist law enforcement in moral dilemmas?",
-				"ref": [171],
-				"children": [
-					{"title": "2.4 Virtue Ethics", "ref": [179]},
-					{"title": "2.5 Ethics of Care", "ref": [197]}
-				]
-			},
-			{
-				"title": "Q. How can ethics of care theory assist law enforcement in moral dilemmas?",
-				"ref": [200],
-				"children": [{"title": "2.6 Egoism", "ref": [204]}]
-			},
-			{
-				"title": "Q. How can egoism assist law enforcement in moral dilemmas?",
-				"ref": [211],
-				"children": [
-					{"title": "Criticisms of Egoism", "ref": [217]},
-					{
-						"title": "2.7 Religion or Divine Command Theory",
-						"ref": [220],
-						"children": [{"title": "Criticisms of Divine Command Theory", "ref": [237]}]
-					},
-					{"title": "2.8 Natural Law", "ref": [244]}
-				]
-			},
-			{
-				"title": "Q. How can natural law assist law enforcement in moral dilemmas?",
-				"ref": [249],
-				"children": [
-					{"title": "Criticisms of Natural Law", "ref": [252]},
-					{"title": "2.9 Social Contract Theory", "ref": [255]}
-				]
-			},
-			{
-				"title": "Q. How can social contract theory assist law enforcement in moral dilemmas?",
-				"ref": [269],
-				"children": [
-					{"title": "2.10 Rawls’ Theory of Justice", "ref": [275]},
-					{"title": "2.11 Moral Relativism", "ref": [282]}
-				]
-			},
-			{"title": "References", "ref": [292]},
-			{
-				"title": "Chapter 3: Ethical Dilemmas and the Process of",
+				"title": "Chapter 3: Ethical Dilemmas and the Process of Effective Resolution",
+				"source": "native",
 				"ref": [297],
 				"children": [
-					{"title": "3.1 Ethical Dilemmas", "ref": [300]},
-					{
-						"title": "3.2 Values",
-						"ref": [304],
-						"children": [
-							{"title": "Canada Border Services Agency (CBSA)", "ref": [307]},
-							{"title": "BC Corrections1", "ref": [309]},
-							{
-								"title": "Vancouver Police Department",
-								"ref": [315],
-								"children": [
-									{"title": "Role at the Theatre Values", "ref": [330]},
-									{"title": "Flexibility Responsive to change", "ref": [340]}
-								]
-							}
-						]
-					},
-					{"title": "3.3 Solving Ethical Dilemmas", "ref": [347]}
+					{"title": "3.1 Ethical Dilemmas", "source": "native", "ref": [300]},
+					{"title": "3.2 Values", "source": "native", "ref": [304]},
+					{"title": "3.3 Solving Ethical Dilemmas", "source": "native", "ref": [347]},
+					{"title": "References", "source": "native", "ref": [373]}
 				]
 			},
-			{"title": "1. Establish the facts surrounding the ethical dilemma.", "ref": [352]},
-			{"title": "2. Determine your legal obligations and duties.", "ref": [354]},
-			{"title": "3. Establish the interested participants involved.", "ref": [359]},
-			{"title": "4. Determine the ethical values of each participant.", "ref": [361]},
-			{
-				"title": "5. Consider normative ethical theories as an aide to determine a course of action.",
-				"ref": [363]
-			},
-			{"title": "6. Consider options that would be ethically sound.", "ref": [365]},
-			{"title": "References", "ref": [373]},
 			{
 				"title": "Chapter 4: Key Ethical Issues within Law Enforcement",
+				"source": "native",
 				"ref": [380],
 				"children": [
-					{"title": "4.1 Ethical Issues", "ref": [382]},
-					{"title": "4.2 The Ethics of Power and Authority", "ref": [387]},
-					{
-						"title": "4.3 The Milgram Experiment",
-						"ref": [400],
-						"children": [
-							{
-								"title": "Milgram’s Studies on Obedience to Authority",
-								"ref": [402],
-								"children": [{"title": "Text Attribution", "ref": [423]}]
-							}
-						]
-					},
+					{"title": "4.1 Ethical Issues", "source": "native", "ref": [382]},
+					{"title": "4.2 The Ethics of Power and Authority", "source": "native", "ref": [387]},
+					{"title": "4.3 The Milgram Experiment", "source": "native", "ref": [400]},
 					{
 						"title": "4.4 Person, Gender, and Cultural Differences in Conformity",
-						"ref": [428],
-						"children": [
-							{"title": "Person Differences", "ref": [429]},
-							{"title": "Gender Differences", "ref": [434]},
-							{
-								"title": "Cultural Differences",
-								"ref": [449],
-								"children": [{"title": "Culture and Conformity", "ref": [454]}]
-							},
-							{
-								"title": "Psychological Reactance",
-								"ref": [457],
-								"children": [{"title": "Text Attribution", "ref": [471]}]
-							}
-						]
+						"source": "native",
+						"ref": [428]
 					},
-					{
-						"title": "4.5 Ethical Issues during an Investigation",
-						"ref": [476],
-						"children": [
-							{"title": "Caseload Management", "ref": [477]},
-							{"title": "Lies, Deception, and Tricks", "ref": [480]}
-						]
-					},
-					{"title": "4.6 Gratuities", "ref": [497]},
-					{
-						"title": "4.7 Use of Force Philosophy Theory and Law",
-						"ref": [511],
-						"children": [
-							{"title": "Introduction", "ref": [512]},
-							{"title": "History of Force in a Sovereign State", "ref": [518]},
-							{"title": "Use of Force Theory and Background", "ref": [530]},
-							{"title": "History", "ref": [533]},
-							{"title": "Core Values of the Use of Force Framework", "ref": [537]},
-							{"title": "The National Use of Force Model", "ref": [544]}
-						]
-					}
+					{"title": "4.5 Ethical Issues during an Investigation", "source": "native", "ref": [476]},
+					{"title": "4.6 Gratuities", "source": "native", "ref": [497]},
+					{"title": "4.7 Use of Force Philosophy Theory and Law", "source": "native", "ref": [511]},
+					{"title": "References", "source": "native", "ref": [711]}
 				]
 			},
-			{"title": "Media Attributions", "ref": [425]},
-			{"title": "Media Attributions", "ref": [473]},
-			{"title": "Situation:", "ref": [548]},
-			{"title": "Subject Behaviour", "ref": [554]},
-			{
-				"title": "Response Options",
-				"ref": [564],
-				"children": [{"title": "Perception and Tactical Considerations", "ref": [571]}]
-			},
-			{
-				"title": "Perception",
-				"ref": [576],
-				"children": [
-					{"title": "Tactical Considerations", "ref": [580]},
-					{"title": "Risk Assessment", "ref": [588]}
-				]
-			},
-			{
-				"title": "Stages of Risk Assessment",
-				"ref": [590],
-				"children": [
-					{
-						"title": "Legal Justification for the Use of Force",
-						"ref": [598],
-						"children": [{"title": "Corrections and Conditional Release Act, if", "ref": [609]}]
-					},
-					{"title": "Theory Meets Practice and Case Law – Subject Behaviour", "ref": [631]},
-					{"title": "Allowances for Misconceptions", "ref": [648]},
-					{"title": "Use of Force on Persons Held in Custody", "ref": [651]},
-					{"title": "Authorization for Use of Mechanical Restraints", "ref": [654]},
-					{"title": "Supreme Court", "ref": [656]},
-					{"title": "Articulation of the Use of Force", "ref": [663]}
-				]
-			},
-			{"title": "1. Scope of Employment", "ref": [665]},
-			{"title": "2. Severity of the Crime", "ref": [670]},
-			{"title": "3. Level of Force Used", "ref": [675]},
-			{"title": "4. Warnings", "ref": [681]},
-			{"title": "5. Nature of the Crime", "ref": [685]},
-			{"title": "6. Officer’s State of Mind", "ref": [692]},
-			{"title": "7. Medical Care", "ref": [698]},
-			{"title": "Conclusion", "ref": [704]},
-			{"title": "Media Attributions", "ref": [708]},
-			{"title": "References", "ref": [711]},
 			{
 				"title": "Chapter 5: Accountability and Investigation",
+				"source": "native",
 				"ref": [716],
 				"children": [
-					{"title": "5.1 Autonomy and Accountability", "ref": [718]},
-					{"title": "5.2 British Columbia’s Police Act", "ref": [727]},
-					{
-						"title": "5.3 The Royal Canadian Mounted Police Act",
-						"ref": [737],
-						"children": [
-							{"title": "Jurisdiction of the Current Commission for Public Complaints", "ref": [751]}
-						]
-					},
-					{"title": "5.4 Investigation Models", "ref": [756]},
-					{"title": "5.5 Independent Investigations Office", "ref": [762]}
+					{"title": "5.1 Autonomy and Accountability", "source": "native", "ref": [718]},
+					{"title": "5.2 British Columbia’s Police Act", "source": "native", "ref": [727]},
+					{"title": "5.3 The Royal Canadian Mounted Police Act", "source": "native", "ref": [737]},
+					{"title": "5.4 Investigation Models", "source": "native", "ref": [756]},
+					{"title": "5.5 Independent Investigations Office", "source": "native", "ref": [762]},
+					{"title": "References", "source": "native", "ref": [769]}
 				]
 			},
-			{"title": "References", "ref": [769]},
 			{
 				"title": "Chapter 6: Policing",
+				"source": "native",
 				"ref": [772],
 				"children": [
-					{"title": "6.1 Noble Cause Corruption", "ref": [774]},
-					{"title": "6.2 Policing Public Demonstrations and Crowd Control", "ref": [781]},
-					{"title": "6.3 Sex Offender Notification Laws", "ref": [800]},
-					{"title": "6.4 Ethics of Private Policing", "ref": [825]}
+					{"title": "6.1 Noble Cause Corruption", "source": "native", "ref": [774]},
+					{
+						"title": "6.2 Policing Public Demonstrations and Crowd Control",
+						"source": "native",
+						"ref": [781]
+					},
+					{"title": "6.3 Sex Offender Notification Laws", "source": "native", "ref": [800]},
+					{"title": "6.4 Ethics of Private Policing", "source": "native", "ref": [825]},
+					{"title": "References", "source": "native", "ref": [856]}
 				]
 			},
-			{"title": "References", "ref": [856]},
 			{
 				"title": "Chapter 7: Discretion, Supervision, and Leadership",
+				"source": "native",
 				"ref": [867],
 				"children": [
-					{"title": "7.1 The Ethics Surrounding Discretion", "ref": [869]},
-					{"title": "7.2 Discretion and Supervision", "ref": [892]},
-					{"title": "7.3 Selective Enforcement", "ref": [901]},
-					{"title": "7.4 Loyalty", "ref": [906]},
-					{"title": "7.5 Ethical Leadership", "ref": [922]},
-					{"title": "7.6 Transactional and Transformational Leadership", "ref": [935]}
+					{"title": "7.1 The Ethics Surrounding Discretion", "source": "native", "ref": [869]},
+					{"title": "7.2 Discretion and Supervision", "source": "native", "ref": [892]},
+					{"title": "7.3 Selective Enforcement", "source": "native", "ref": [901]},
+					{"title": "7.4 Loyalty", "source": "native", "ref": [906]},
+					{"title": "7.5 Ethical Leadership", "source": "native", "ref": [922]},
+					{
+						"title": "7.6 Transactional and Transformational Leadership",
+						"source": "native",
+						"ref": [935]
+					},
+					{"title": "References", "source": "native", "ref": [949]}
 				]
 			},
-			{"title": "References", "ref": [949]},
 			{
 				"title": "Chapter 8: The Culture of Law Enforcement",
+				"source": "native",
 				"ref": [956],
 				"children": [
-					{"title": "8.1 Police Subculture", "ref": [958]},
-					{"title": "8.2 Socialization of Police", "ref": [976]},
-					{"title": "8.3 Skepticism and Cynicism", "ref": [996]},
-					{"title": "8.4 Moral Culpability versus Legal Culpability", "ref": [1006]}
+					{"title": "8.1 Police Subculture", "source": "native", "ref": [958]},
+					{"title": "8.2 Socialization of Police", "source": "native", "ref": [976]},
+					{"title": "8.3 Skepticism and Cynicism", "source": "native", "ref": [996]},
+					{"title": "8.4 Moral Culpability versus Legal Culpability", "source": "native", "ref": [1006]},
+					{"title": "References", "source": "native", "ref": [1011]}
 				]
 			},
-			{"title": "References", "ref": [1011]},
 			{
 				"title": "Appendix. The British Columbia Police Code of Ethics",
-				"ref": [1016],
-				"children": [
-					{"title": "Fundamental Principles", "ref": [1018]},
-					{"title": "Guiding Values", "ref": [1021]},
-					{"title": "Primary Responsibilities", "ref": [1026]},
-					{"title": "The Public", "ref": [1028]},
-					{"title": "The Policing Profession and Partners", "ref": [1030]},
-					{"title": "Personally", "ref": [1034]},
-					{"title": "Ethical Decision-Making", "ref": [1036]}
-				]
+				"source": "native",
+				"ref": [1016]
 			},
-			{"title": "About the Authors", "ref": [1045]},
-			{
-				"title": "Versioning History",
-				"ref": [1049],
-				"children": [
-					{"title": "1.00 March 14, 2015 Book published", "ref": [1055]},
-					{"title": "2.00 July 11, 2019 Entire book revised for accessibility.", "ref": [1058]},
-					{"title": "Accessibility remediation:", "ref": [1059]},
-					{"title": "2.02 September 9, 2021 New content added", "ref": [1063]}
-				]
-			},
-			{
-				"title": "List of Links by Chapters for Print Users",
-				"ref": [1068],
-				"children": [
-					{"title": "Accessibility Statement", "ref": [1069]},
-					{"title": "About BCcampus Open Education", "ref": [1071]},
-					{
-						"title": "Chapter 3: Ethical Dilemmas and the Process of Effective Resolution",
-						"ref": [1075]
-					},
-					{"title": "Chapter 4: Key Ethical Issues within Law Enforcement", "ref": [1078]},
-					{"title": "Chapter 5: Accountability and Investigation", "ref": [1080]},
-					{"title": "Appendix. The British Columbia Police Code of Ethics", "ref": [1082]}
-				]
-			}
+			{"title": "About the Authors", "source": "native", "ref": [1045]},
+			{"title": "Versioning History", "source": "native", "ref": [1049]},
+			{"title": "List of Links by Chapters for Print Users", "source": "native", "ref": [1068]}
 		]
 	},
 	"content": [
