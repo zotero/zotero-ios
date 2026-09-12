@@ -48,6 +48,10 @@ protocol SpeechManagerDelegate: AnyObject {
     /// The structured-document-text block index currently in view, so playback starts where the reader is. Read fresh at
     /// each play (not cached), reflecting the current scroll position. Nil (the default) means "start at the beginning".
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void)
+    /// Maps a reader source position to a reader SDT position. Asked for once the document has loaded, because the reader
+    /// can only map after it's been handed the structured-document-text pack. Nil (the default) means the reader can't
+    /// map positions.
+    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void)
     /// Called when the highlighted text changes during text-to-speech playback.
     /// The highlight covers the current text unit (sentence or paragraph) being spoken, matching the voice's
     /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
@@ -79,7 +83,23 @@ extension SpeechManagerDelegate {
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
         completion(nil)
     }
+
+    /// Default: no position mapping (PDF resolves its text selection to a page-text offset instead).
+    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
+        completion(nil)
+    }
 }
+
+/// A reader structured-document-text position: `start`/`end` child-index paths into the content tree, each ending in a
+/// character offset. The same shape the reader uses for read-aloud segments and annotation creation.
+struct SDTPosition {
+    let start: [Int]
+    let end: [Int]
+}
+
+/// An opaque reader source position (an EPUB CFI `FragmentSelector`, a snapshot `CssSelector`) as the reader reports it
+/// for a text selection. Never interpreted here — it's handed back to the reader to be mapped to an `SDTPosition`.
+typealias ReaderSourcePosition = [String: Any]
 
 /// A read-aloud segment produced by the HTML/EPUB reader (`getReadAloudSegments`): the spoken `text`, its reader SDT
 /// position (`start`/`end` child-index paths into the content tree), and whether it begins a new paragraph. Used to
@@ -218,6 +238,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         case currentPage
         /// Start at a page-text offset resolved by the closure (used for a PSPDFKit text selection), then map to a paragraph.
         case pageTextOffset((String) -> Int)
+        /// Start at the beginning of the sentence lying closest to `point` (PDF coordinate space) on `page`. Used by the
+        /// PDF reader's long-press menu, where the press lands on empty space rather than on a text selection.
+        case closestSentence(point: CGPoint, page: Delegate.Index)
+        /// Start at the reader's text selection, given as the source position the reader reported for it. Mapped to an
+        /// SDT position once the document has loaded (see `SpeechManagerDelegate.mapSDTPosition(forSourcePosition:)`),
+        /// because only then does the reader have the structured-document-text pack it needs to map. Used by the
+        /// HTML/EPUB reader's selection menu; falls back to starting where the reader is when the position can't be
+        /// mapped or covers no read-aloud segment.
+        case readerSelection(ReaderSourcePosition)
         /// Resume at a previously reported paragraph anchor.
         case resume(ResumePosition)
     }
@@ -666,6 +695,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             return
         }
 
+        // A long press in the document maps to a point on a specific page (not necessarily the delegate's current page),
+        // so it resolves against that page's geometry directly. Falls through to the default behavior when the page has
+        // no readable text with geometry.
+        if case .closestSentence(let point, let page) = target, let offset = closestSentenceStartOffset(to: point, onPage: page) {
+            beginPlayback(page: page, startOffset: offset)
+            return
+        }
+
         let currentIndex = delegate.getCurrentPageIndex()
         guard let page = firstReadablePage(atOrAfter: currentIndex) else {
             DDLogWarn("SpeechManager: no readable content to play")
@@ -678,8 +715,31 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             beginPlayback(page: page, startOffset: map(pageText(forPage: page)))
             return
         }
-        // Default play: begin near where the reader currently is. The in-view block index is read fresh at play time
-        // (async for HTML/EPUB; immediately nil for PDF, which starts at the top of the readable page).
+        // A text selection is mapped here, and not when the user picked the action, because the reader can only map a
+        // source position once it has the structured-document-text pack — which it was handed while the document loaded,
+        // just above.
+        if case .readerSelection(let source) = target {
+            delegate.mapSDTPosition(forSourcePosition: source) { [weak self] position in
+                guard let self, state.value == .initializing else { return }
+                guard let position, let offset = pageTextOffset(forSDTPosition: position, onPage: page) else {
+                    // The selection couldn't be mapped, or covers no read-aloud segment (an image, say).
+                    beginPlaybackAtReaderPosition(page: page)
+                    return
+                }
+                beginPlayback(page: page, startOffset: offset)
+            }
+            return
+        }
+        beginPlaybackAtReaderPosition(page: page)
+    }
+
+    /// Begins playback near where the reader currently is. The in-view block index is read fresh at play time (async for
+    /// HTML/EPUB; immediately nil for PDF, which starts at the top of the readable page).
+    private func beginPlaybackAtReaderPosition(page: Delegate.Index) {
+        guard let delegate else {
+            state.accept(.stopped)
+            return
+        }
         delegate.readAloudVisibleStartBlockIndex { [weak self] blockIndex in
             guard let self, state.value == .initializing else { return }
             beginPlayback(page: page, startOffset: startOffset(forVisibleBlockIndex: blockIndex, page: page))
@@ -703,6 +763,20 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let indices = paragraphIndicesByPage[page] ?? []
         guard let index = indices.first(where: { (paragraphs[$0].sdtSpans.last?.end.first ?? .min) >= blockIndex }) else { return 0 }
         return paragraphs[index].pageOffset
+    }
+
+    /// The page-text offset of the read-aloud segment covering `position` on `page`. Segments are requested at sentence
+    /// granularity, so this offset is already a sentence start. Nil when no segment reaches the position.
+    private func pageTextOffset(forSDTPosition position: SDTPosition, onPage page: Delegate.Index) -> Int? {
+        return SpeechDocumentParser.pageTextOffset(forSDTPositionStart: position.start, in: segments(forPage: page))
+    }
+
+    /// The page-text offset of the start of the sentence closest to `point` (PDF coordinate space) on `page`, so that
+    /// reading begins at the sentence's beginning rather than mid-sentence. Nil when the page has no readable geometry.
+    private func closestSentenceStartOffset(to point: CGPoint, onPage page: Delegate.Index) -> Int? {
+        let segments = segments(forPage: page)
+        guard let offset = SpeechDocumentParser.closestPageTextOffset(to: point, in: segments) else { return nil }
+        return SpeechDocumentParser.unitRange(containing: offset, granularity: .sentence, in: segments)?.location ?? offset
     }
 
     /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice stays
