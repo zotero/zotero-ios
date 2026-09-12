@@ -105,15 +105,15 @@ final class ItemsToolbarController {
             viewController.navigationItem.searchBarPlacementAllowsToolbarIntegration = usesBottomToolbarSearch
         }
         if data.isEditing {
-            viewController.toolbarItems = createEditingToolbarItems(from: editingActions)
-            updateEditingToolbarItems(for: data.selectedItems)
-            if #available(iOS 26.0, *) {
-                clearStatusSubtitle()
-            }
+            let toolbarItems = createEditingToolbarItems(from: editingActions)
+            updateEditingToolbarItems(toolbarItems, for: data.selectedItems)
+            viewController.toolbarItems = toolbarItems
+            clearStatusSubtitle()
         } else {
             let filters = sizeClassSpecificFilters(from: data.filters)
-            viewController.toolbarItems = createNormalToolbarItems(for: filters)
+            let toolbarItems = createNormalToolbarItems()
             updateNormalToolbarItems(
+                toolbarItems,
                 for: filters,
                 sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
@@ -121,6 +121,7 @@ final class ItemsToolbarController {
                 identifierLookupBatchData: data.identifierLookupBatchData,
                 itemCount: data.itemCount
             )
+            viewController.toolbarItems = toolbarItems
         }
 
         func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
@@ -186,14 +187,13 @@ final class ItemsToolbarController {
             }
         }
 
-        func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
+        func createNormalToolbarItems() -> [UIBarButtonItem] {
             let fixedSpaceWidth: CGFloat = 16
 
             let filterButton = UIBarButtonItem()
             filterButton.tintColor = Asset.Colors.zoteroBlue.color
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
-            configureFilterButton(filterButton, filters: filters)
 
             var items: [UIBarButtonItem]
             if usesBottomToolbarSearch, #available(iOS 26.0, *) {
@@ -218,12 +218,12 @@ final class ItemsToolbarController {
                 }
                 documentWorkerButton.tag = ToolbarItem.documentWorkerRecorder.tag
                 documentWorkerButton.accessibilityLabel = "Document Worker"
-                items.insert(documentWorkerButton, at: 1)
+                items.insert(documentWorkerButton, at: items.firstIndex(of: filterButton) ?? 0)
             }
 
             if data.allowsManualSort {
                 let action = ItemAction(type: .sort)
-                let sortButton = UIBarButtonItem(image: action.image, menu: createSortMenu(for: data.sortType))
+                let sortButton = UIBarButtonItem(image: action.image)
                 sortButton.tintColor = Asset.Colors.zoteroBlue.color
                 sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
@@ -279,9 +279,10 @@ final class ItemsToolbarController {
 
     func reloadToolbarItems(for data: Data) {
         if data.isEditing {
-            updateEditingToolbarItems(for: data.selectedItems)
+            updateEditingToolbarItems(viewController.toolbarItems, for: data.selectedItems)
         } else {
             updateNormalToolbarItems(
+                viewController.toolbarItems,
                 for: sizeClassSpecificFilters(from: data.filters),
                 sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
@@ -296,7 +297,7 @@ final class ItemsToolbarController {
         // There is different functionality based on horizontal size class. iPhone and compact iPad show tag filters in filter popup in items screen while iPad shows tag filters in master controller.
         // So filter icon and description should always show up on iPhone and compact iPad, while it should not show up on regular iPad for tag filters.
         // Therefore we ignore `.tag` filter on iPhone and compact iPad, and keep it on regular iPad.
-        if delegate?.traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone {
+        if isCompact {
             return filters
         }
         return filters.filter({
@@ -313,12 +314,18 @@ final class ItemsToolbarController {
     /// Applies the current filter state to the filter bar button item: the icon reflects whether any filter is active, and the tap behavior differs by size class (a menu on regular
     /// width, a popover-presenting action on compact width). Shared by the initial toolbar build and later reloads so the two stay in sync.
     private func configureFilterButton(_ item: UIBarButtonItem, filters: [ItemsFilter]) {
-        let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease" : "line.horizontal.3.decrease.fill"
-        let filterImage = UIImage(systemName: filterImageName)
-        item.image = filterImage
+        let hasActiveFilters = !filters.isEmpty
+        let imageName: String
+        if #available(iOS 26.0, *) {
+            imageName = "line.horizontal.3.decrease"
+            item.isSelected = hasActiveFilters
+        } else {
+            imageName = hasActiveFilters ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
+        }
+        item.image = UIImage(systemName: imageName)
         if isCompact {
             item.menu = nil
-            item.primaryAction = createFilterPrimaryAction(image: filterImage)
+            item.primaryAction = createFilterPrimaryAction(image: item.image)
         } else {
             item.primaryAction = nil
             item.menu = createFilterMenu(downloadsFilterEnabled: filters.contains(where: { $0.isDownloadedFilesFilter }))
@@ -365,8 +372,8 @@ final class ItemsToolbarController {
 
     // MARK: - Helpers
 
-    private func updateEditingToolbarItems(for selectedItems: Set<AnyHashable>) {
-        viewController.toolbarItems?.forEach({ item in
+    private func updateEditingToolbarItems(_ toolbarItems: [UIBarButtonItem]?, for selectedItems: Set<AnyHashable>) {
+        toolbarItems?.forEach({ item in
             switch ToolbarItem(rawValue: item.tag) {
             case .empty:
                 item.isEnabled = !selectedItems.isEmpty
@@ -381,6 +388,7 @@ final class ItemsToolbarController {
     }
 
     private func updateNormalToolbarItems(
+        _ toolbarItems: [UIBarButtonItem]?,
         for filters: [ItemsFilter],
         sortType: ItemsSortType,
         downloadBatchData: ItemsState.DownloadBatchData?,
@@ -388,11 +396,11 @@ final class ItemsToolbarController {
         identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
         itemCount: Int
     ) {
-        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.sort.tag }) {
+        if let item = toolbarItems?.first(where: { $0.tag == ToolbarItem.sort.tag }) {
             item.menu = createSortMenu(for: sortType)
         }
 
-        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
+        if let item = toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             configureFilterButton(item, filters: filters)
         }
 
@@ -420,18 +428,20 @@ final class ItemsToolbarController {
         } else {
             // iPad / classic layout: the status lives in the bottom toolbar title item, so make sure no navigation bar status (subtitle / interactive title) is set.
             clearStatusSubtitle()
-            guard let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
+            guard let item = toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
                   let stackView = item.customView as? UIStackView
             else { return }
+            var filterLabelVisible = false
             if let filterLabel = stackView.subviews.first as? UILabel {
-                filterLabel.isHidden = filters.isEmpty
-
-                if !filterLabel.isHidden {
+                filterLabelVisible = !filters.isEmpty
+                filterLabel.isHidden = !filterLabelVisible
+                if filterLabelVisible {
                     filterLabel.text = L10n.Items.toolbarFilter(itemCount)
                     filterLabel.sizeToFit()
                 }
             }
 
+            var progressVisible = false
             if let progressView = stackView.subviews.last as? ItemsToolbarDownloadProgressView {
                 var isUserInteractionEnabled = false
                 let attributedText = NSMutableAttributedString()
@@ -462,8 +472,8 @@ final class ItemsToolbarController {
                     progress = Float(combinedDownloadBatchData.fraction)
                 }
                 progressView.isUserInteractionEnabled = isUserInteractionEnabled
-
-                if !filters.isEmpty || (attributedText.length == 0) {
+                progressVisible = filters.isEmpty && attributedText.length > 0
+                if !progressVisible {
                     progressView.isHidden = true
                 } else {
                     progressView.set(attributedText: attributedText, progress: progress)
@@ -473,8 +483,6 @@ final class ItemsToolbarController {
             }
 
             if #available(iOS 26.0, *) {
-                let filterLabelVisible = (stackView.subviews.first as? UILabel).map({ !$0.isHidden }) ?? false
-                let progressVisible = (stackView.subviews.last as? ItemsToolbarDownloadProgressView).map({ !$0.isHidden }) ?? false
                 item.hidesSharedBackground = !(filterLabelVisible || progressVisible)
             }
 
@@ -550,7 +558,7 @@ final class ItemsToolbarController {
 
         var subtitleAttributes = AttributeContainer()
         subtitleAttributes.font = .preferredFont(forTextStyle: .footnote)
-        subtitleAttributes.foregroundColor = UIColor.secondaryLabel
+        subtitleAttributes.foregroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
         configuration.attributedSubtitle = AttributedString(subtitle, attributes: subtitleAttributes)
 
         button.configuration = configuration
