@@ -54,6 +54,70 @@ final class ItemsToolbarController {
     private weak var delegate: ItemsToolbarControllerDelegate?
     private var lookupTitleButton: UIButton?
 
+    private struct ToolbarStatus {
+        let filterText: String?
+        let progressText: AttributedString?
+        let progress: Float?
+        let lookupIsInteractive: Bool
+
+        init(
+            filters: [ItemsFilter],
+            downloadBatchData: ItemsState.DownloadBatchData?,
+            remoteDownloadBatchData: ItemsState.DownloadBatchData?,
+            identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
+            itemCount: Int
+        ) {
+            let font = UIFont.preferredFont(forTextStyle: .footnote)
+            var defaultAttributes = AttributeContainer()
+            defaultAttributes.font = font
+            defaultAttributes.foregroundColor = UIColor.label
+            var lookupAttributes = defaultAttributes
+            lookupAttributes.foregroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            var failedAttributes = defaultAttributes
+            failedAttributes.foregroundColor = UIColor.systemRed
+
+            var progressText = AttributedString()
+            var lookupIsInteractive = false
+            let remoteDownloading = remoteDownloadBatchData != nil
+            if identifierLookupBatchData != .zero, !identifierLookupBatchData.isFinished || identifierLookupBatchData.failed > 0 || remoteDownloading {
+                // Keep lookup progress visible while it is active, while remote downloads are pending, or after hidden failures so the user can reopen lookup from the title.
+                lookupIsInteractive = true
+                let lookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
+                progressText.append(AttributedString(lookupText, attributes: lookupAttributes))
+                if identifierLookupBatchData.failed > 0 {
+                    progressText.append(AttributedString(" - ", attributes: defaultAttributes))
+                    let failedText = L10n.Items.toolbarFailed(identifierLookupBatchData.failed)
+                    progressText.append(AttributedString(failedText, attributes: failedAttributes))
+                }
+            }
+            var progress: Float?
+            if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
+                if !progressText.characters.isEmpty {
+                    progressText.append(AttributedString(" / ", attributes: defaultAttributes))
+                }
+                let downloadText = L10n.Items.toolbarDownloaded(combinedDownloadBatchData.downloaded, combinedDownloadBatchData.total)
+                progressText.append(AttributedString(downloadText, attributes: defaultAttributes))
+                progress = Float(combinedDownloadBatchData.fraction)
+            }
+
+            filterText = filters.isEmpty ? nil : L10n.Items.toolbarFilter(itemCount)
+            self.progressText = progressText.characters.isEmpty ? nil : progressText
+            self.progress = progress
+            self.lookupIsInteractive = lookupIsInteractive
+        }
+
+        var text: String? {
+            if let filterText {
+                return filterText
+            }
+            return progressText.map({ String($0.characters[...]) })
+        }
+
+        var isLookupInteractive: Bool {
+            filterText == nil && lookupIsInteractive && progressText != nil
+        }
+    }
+
     init(viewController: UIViewController, data: Data, collection: Collection, library: Library, delegate: ItemsToolbarControllerDelegate) {
         self.viewController = viewController
         self.delegate = delegate
@@ -404,18 +468,19 @@ final class ItemsToolbarController {
             configureFilterButton(item, filters: filters)
         }
 
+        let status = ToolbarStatus(
+            filters: filters,
+            downloadBatchData: downloadBatchData,
+            remoteDownloadBatchData: remoteDownloadBatchData,
+            identifierLookupBatchData: identifierLookupBatchData,
+            itemCount: itemCount
+        )
+
         if usesBottomToolbarSearch, #available(iOS 26.0, *) {
             // iPhone layout: the status is shown in the navigation bar (as a subtitle, or a tappable title while lookup is active) since the bottom toolbar hosts the search field.
-            let status = toolbarStatus(
-                for: filters,
-                downloadBatchData: downloadBatchData,
-                remoteDownloadBatchData: remoteDownloadBatchData,
-                identifierLookupBatchData: identifierLookupBatchData,
-                itemCount: itemCount
-            )
-            if status.isLookupInteractive, let text = status.text {
+            if status.isLookupInteractive, let progressText = status.progressText {
                 let button = lookupTitleButton ?? createLookupTitleButton()
-                configure(lookupTitleButton: button, title: viewController.title, subtitle: text)
+                configure(lookupTitleButton: button, title: viewController.title, subtitle: progressText)
                 lookupTitleButton = button
                 if viewController.navigationItem.titleView !== button {
                     viewController.navigationItem.titleView = button
@@ -433,53 +498,27 @@ final class ItemsToolbarController {
             else { return }
             var filterLabelVisible = false
             if let filterLabel = stackView.subviews.first as? UILabel {
-                filterLabelVisible = !filters.isEmpty
-                filterLabel.isHidden = !filterLabelVisible
-                if filterLabelVisible {
-                    filterLabel.text = L10n.Items.toolbarFilter(itemCount)
+                if let filterText = status.filterText {
+                    filterLabel.isHidden = false
+                    filterLabel.text = filterText
                     filterLabel.sizeToFit()
+                } else {
+                    filterLabel.isHidden = true
                 }
+                filterLabelVisible = !filterLabel.isHidden
             }
 
             var progressVisible = false
             if let progressView = stackView.subviews.last as? ItemsToolbarDownloadProgressView {
-                var isUserInteractionEnabled = false
-                let attributedText = NSMutableAttributedString()
-                var progress: Float?
-                let remoteDownloading = remoteDownloadBatchData != nil
-                let defaultAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.label, .font: UIFont.preferredFont(forTextStyle: .footnote)]
-                if identifierLookupBatchData != .zero,
-                   !identifierLookupBatchData.isFinished || identifierLookupBatchData.failed > 0 || remoteDownloading {
-                    // Keep lookup progress visible while it is active, while remote downloads are pending,
-                    // or after hidden failures so the user can reopen lookup from the toolbar.
-                    isUserInteractionEnabled = true
-                    let identifierLookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
-                    let identifierLookupAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: Asset.Colors.zoteroBlueWithDarkMode.color, .font: UIFont.preferredFont(forTextStyle: .footnote)]
-                    attributedText.append(.init(string: identifierLookupText, attributes: identifierLookupAttributes))
-                    if identifierLookupBatchData.failed > 0 {
-                        let failedText = L10n.Items.toolbarFailed(identifierLookupBatchData.failed)
-                        let failedAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.systemRed, .font: UIFont.preferredFont(forTextStyle: .footnote)]
-                        attributedText.append(.init(string: " - ", attributes: defaultAttributes))
-                        attributedText.append(.init(string: failedText, attributes: failedAttributes))
-                    }
-                }
-                if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
-                    if attributedText.length > 0 {
-                        attributedText.append(.init(string: " / ", attributes: defaultAttributes))
-                    }
-                    let downloadText = L10n.Items.toolbarDownloaded(combinedDownloadBatchData.downloaded, combinedDownloadBatchData.total)
-                    attributedText.append(.init(string: downloadText, attributes: defaultAttributes))
-                    progress = Float(combinedDownloadBatchData.fraction)
-                }
-                progressView.isUserInteractionEnabled = isUserInteractionEnabled
-                progressVisible = filters.isEmpty && attributedText.length > 0
-                if !progressVisible {
-                    progressView.isHidden = true
-                } else {
-                    progressView.set(attributedText: attributedText, progress: progress)
+                progressView.isUserInteractionEnabled = status.isLookupInteractive
+                if let progressText = status.progressText, status.filterText == nil {
+                    progressView.set(attributedText: NSMutableAttributedString(attributedString: NSAttributedString(progressText)), progress: status.progress)
                     progressView.isHidden = false
                     progressView.sizeToFit()
+                } else {
+                    progressView.isHidden = true
                 }
+                progressVisible = !progressView.isHidden
             }
 
             if #available(iOS 26.0, *) {
@@ -488,37 +527,6 @@ final class ItemsToolbarController {
 
             stackView.sizeToFit()
         }
-    }
-
-    @available(iOS 26.0, *)
-    private func toolbarStatus(
-        for filters: [ItemsFilter],
-        downloadBatchData: ItemsState.DownloadBatchData?,
-        remoteDownloadBatchData: ItemsState.DownloadBatchData?,
-        identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
-        itemCount: Int
-    ) -> (text: String?, isLookupInteractive: Bool) {
-        if !filters.isEmpty {
-            return (L10n.Items.toolbarFilter(itemCount), false)
-        }
-
-        var components: [String] = []
-        var isLookupInteractive = false
-        let remoteDownloading = remoteDownloadBatchData != nil
-        if identifierLookupBatchData != .zero, !identifierLookupBatchData.isFinished || identifierLookupBatchData.failed > 0 || remoteDownloading {
-            // Keep lookup progress visible while it is active, while remote downloads are pending, or after hidden failures so the user can reopen lookup from the title.
-            isLookupInteractive = true
-            var lookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
-            if identifierLookupBatchData.failed > 0 {
-                lookupText += " - " + L10n.Items.toolbarFailed(identifierLookupBatchData.failed)
-            }
-            components.append(lookupText)
-        }
-        if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
-            components.append(L10n.Items.toolbarDownloaded(combinedDownloadBatchData.downloaded, combinedDownloadBatchData.total))
-        }
-        let text = components.isEmpty ? nil : components.joined(separator: " / ")
-        return (text, isLookupInteractive && text != nil)
     }
 
     /// Removes the interactive lookup title view (if it is currently installed) and clears the status subtitle. Safe to call on any iOS version.
@@ -542,9 +550,9 @@ final class ItemsToolbarController {
         return button
     }
 
-    /// Fills the tappable title button with the collection title (label color) and the lookup/download status subtitle (tinted to signal it is actionable).
+    /// Fills the tappable title button with the collection title and actionable lookup/download status.
     @available(iOS 26.0, *)
-    private func configure(lookupTitleButton button: UIButton, title: String?, subtitle: String) {
+    private func configure(lookupTitleButton button: UIButton, title: String?, subtitle: AttributedString) {
         var configuration = button.configuration ?? UIButton.Configuration.plain()
 
         if let title, !title.isEmpty {
@@ -556,13 +564,10 @@ final class ItemsToolbarController {
             configuration.attributedTitle = nil
         }
 
-        var subtitleAttributes = AttributeContainer()
-        subtitleAttributes.font = .preferredFont(forTextStyle: .footnote)
-        subtitleAttributes.foregroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        configuration.attributedSubtitle = AttributedString(subtitle, attributes: subtitleAttributes)
+        configuration.attributedSubtitle = subtitle
 
         button.configuration = configuration
-        button.accessibilityLabel = [title, subtitle].compactMap({ $0 }).joined(separator: ", ")
+        button.accessibilityLabel = [title, String(subtitle.characters[...])].compactMap({ $0 }).joined(separator: ", ")
         button.sizeToFit()
     }
 }
