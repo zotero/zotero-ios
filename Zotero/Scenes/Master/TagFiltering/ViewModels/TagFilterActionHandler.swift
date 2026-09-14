@@ -170,14 +170,26 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
         do {
             var snapshot: [TagFilterState.FilterTag]?
             var sorted: [TagFilterState.FilterTag] = []
+            var insertedNames: Set<String> = []
             let comparator: (TagFilterState.FilterTag, TagFilterState.FilterTag) -> Bool = {
                 return $0.tag.name.localizedCaseInsensitiveCompare($1.tag.name) == .orderedAscending
+            }
+            func add(_ filterTag: TagFilterState.FilterTag, to tags: inout [TagFilterState.FilterTag], sortedByName: Bool) {
+                guard insertedNames.insert(filterTag.tag.name).inserted else { return }
+
+                if sortedByName {
+                    let index = tags.index(of: filterTag, sortedBy: comparator)
+                    tags.insert(filterTag, at: index)
+                } else {
+                    tags.append(filterTag)
+                }
             }
 
             try dbStorage.perform(on: backgroundQueue) { coordinator in
                 let filtered = try coordinator.perform(
                     request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: showAutomatic, filters: filters)
                 )
+                let filteredNames = Set(filtered.map(\.name))
                 let colored = try coordinator.perform(request: ReadColoredTagsDbRequest(libraryId: libraryId))
                 let emoji = try coordinator.perform(request: ReadEmojiTagsDbRequest(libraryId: libraryId))
 
@@ -185,9 +197,9 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 var sortedColored: [TagFilterState.FilterTag] = []
                 for rTag in colored.sorted(byKeyPath: "order") {
                     let tag = Tag(tag: rTag)
-                    let isActive = filtered.contains(tag)
+                    let isActive = filteredNames.contains(tag.name)
                     let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
-                    sortedColored.append(filterTag)
+                    add(filterTag, to: &sortedColored, sortedByName: false)
                 }
                 sorted.append(contentsOf: sortedColored)
 
@@ -195,10 +207,9 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 var sortedEmoji: [TagFilterState.FilterTag] = []
                 for rTag in emoji {
                     let tag = Tag(tag: rTag)
-                    let isActive = filtered.contains(tag)
+                    let isActive = filteredNames.contains(tag.name)
                     let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
-                    let index = sortedEmoji.index(of: filterTag, sortedBy: comparator)
-                    sortedEmoji.insert(filterTag, at: index)
+                    add(filterTag, to: &sortedEmoji, sortedByName: true)
                 }
                 sorted.append(contentsOf: sortedEmoji)
 
@@ -208,29 +219,24 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                     for tag in filtered {
                         guard tag.color.isEmpty && tag.emojiGroup == nil else { continue }
                         let filterTag = TagFilterState.FilterTag(tag: tag, isActive: true)
-                        let index = sortedOther.index(of: filterTag, sortedBy: comparator)
-                        sortedOther.insert(filterTag, at: index)
+                        add(filterTag, to: &sortedOther, sortedByName: true)
                     }
                     // Keep selected tags visible when other filters produce no matching items, so the user can still deselect them.
                     for tag in retainedSelectedTags {
                         guard tag.color.isEmpty,
-                              tag.emojiGroup == nil,
-                              !sorted.contains(where: { $0.tag.name == tag.name }),
-                              !sortedOther.contains(where: { $0.tag.name == tag.name })
+                              tag.emojiGroup == nil
                         else { continue }
                         let filterTag = TagFilterState.FilterTag(tag: tag, isActive: false)
-                        let index = sortedOther.index(of: filterTag, sortedBy: comparator)
-                        sortedOther.insert(filterTag, at: index)
+                        add(filterTag, to: &sortedOther, sortedByName: true)
                     }
                 } else {
                     // Add all remaining tags with proper isActive flag
                     let tags = try coordinator.perform(request: ReadFilteredTagsDbRequest(collectionId: .custom(.all), libraryId: libraryId, showAutomatic: showAutomatic, filters: []))
                     for tag in tags {
                         guard tag.color.isEmpty && tag.emojiGroup == nil else { continue }
-                        let isActive = filtered.contains(tag)
+                        let isActive = filteredNames.contains(tag.name)
                         let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
-                        let index = sortedOther.index(of: filterTag, sortedBy: comparator)
-                        sortedOther.insert(filterTag, at: index)
+                        add(filterTag, to: &sortedOther, sortedByName: true)
                     }
                 }
                 sorted.append(contentsOf: sortedOther)
