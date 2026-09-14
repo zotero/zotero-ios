@@ -233,7 +233,7 @@ class TagFilterViewController: UIViewController {
             viewModel.process(action: .setShowAutomatic(!viewModel.state.showAutomatic))
         }
         var options: [UIAction] = [showAutomatic]
-        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
+        if UIDevice.current.userInterfaceIdiom == .pad {
             let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off)) { [weak viewModel] _ in
                 guard let viewModel else { return }
                 viewModel.process(action: .setDisplayAll(!viewModel.state.displayAll))
