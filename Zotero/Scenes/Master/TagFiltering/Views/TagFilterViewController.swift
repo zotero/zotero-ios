@@ -159,6 +159,7 @@ class TagFilterViewController: UIViewController {
         }
 
         if state.changes.contains(.tags) {
+            optionsButton.menu = createOptionsMenu(with: state)
             collectionView.reloadData()
             fixSelectionIfNeeded(selected: state.selectedTags)
         }
@@ -310,7 +311,7 @@ extension TagFilterViewController: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        guard let tag = tag(for: indexPath), tag.isActive else { return }
+        guard let tag = tag(for: indexPath) else { return }
         viewModel.process(action: .deselect(tag.tag.name))
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
     }
