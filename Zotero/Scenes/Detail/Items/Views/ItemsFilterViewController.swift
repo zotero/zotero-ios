@@ -115,11 +115,15 @@ class ItemsFilterViewController: UIViewController {
         super.viewWillAppear(animated)
 
         preferredContentSize = CGSize(width: Self.width, height: Self.downloadsHeight)
+        if !tagFilterController.view.isHidden {
+            delegate?.tagOptionsDidChange()
+        }
     }
 
     // MARK: - Actions
     
     private func showHideTagFilter() {
+        let wasHidden = tagFilterController.view.isHidden
         let isCollapsed = (presentingViewController as? MainViewController)?.isCollapsed
         if UIDevice.current.userInterfaceIdiom == .phone || isCollapsed == true {
             tagFilterController.view.isHidden = false
@@ -129,6 +133,9 @@ class ItemsFilterViewController: UIViewController {
             tagFilterController.view.isHidden = true
             separator.isHidden = true
             containerTop.constant = 15
+        }
+        if wasHidden && !tagFilterController.view.isHidden {
+            delegate?.tagOptionsDidChange()
         }
     }
 }

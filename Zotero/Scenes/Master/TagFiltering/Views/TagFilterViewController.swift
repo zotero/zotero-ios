@@ -13,26 +13,33 @@ import RealmSwift
 import RxSwift
 
 class TagFilterViewController: UIViewController {
+    enum Context {
+        case masterBottomSheet
+        case filterScreen
+    }
+
     private(set) weak var searchBar: UISearchBar!
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
     weak var delegate: FiltersDelegate?
     private var searchBarScrollEnabled: Bool
-    private var didAppear: Bool
+    private var didSetInitialContentOffset: Bool
 
     private static let cellId = "TagFilterCell"
     private static let searchBarHeight: CGFloat = 56
     private static let searchBarTopOffset: CGFloat = -10
     private static let searchBarBottomOffset: CGFloat = -8
     private let viewModel: ViewModel<TagFilterActionHandler>
+    private let context: Context
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<TagFilterActionHandler>) {
+    init(viewModel: ViewModel<TagFilterActionHandler>, context: Context) {
         self.viewModel = viewModel
+        self.context = context
         searchBarScrollEnabled = true
+        didSetInitialContentOffset = false
         disposeBag = DisposeBag()
-        didAppear = false
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -102,7 +109,7 @@ class TagFilterViewController: UIViewController {
             view.insertSubview(collectionView, belowSubview: searchContainer)
 
             collectionView.dropDelegate = self
-            if traitCollection.horizontalSizeClass != .regular || UIDevice.current.userInterfaceIdiom != .pad {
+            if context == .filterScreen {
                 collectionView.keyboardDismissMode = .onDrag
             }
 
@@ -122,34 +129,14 @@ class TagFilterViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        if traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone {
-            // Trigger initial load on iPhone and compact iPad.
-            delegate?.tagOptionsDidChange()
-        }
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        didAppear = true
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        if UIDevice.current.userInterfaceIdiom == .pad, previousTraitCollection?.horizontalSizeClass != traitCollection.horizontalSizeClass {
-            delegate?.tagOptionsDidChange()
-        }
-    }
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        guard traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad && !didAppear else { return }
+        guard context == .masterBottomSheet && !didSetInitialContentOffset else { return }
 
         let height = Self.searchBarHeight + Self.searchBarTopOffset
         collectionView.setContentOffset(CGPoint(x: 0, y: height), animated: false)
+        didSetInitialContentOffset = true
     }
 
     private func update(to state: TagFilterState) {
