@@ -102,7 +102,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             }
 
             var menuActions = [highlightAction, underlineAction]
-            if FeatureGates.enabled.contains(.speech) {
+            if parentDelegate?.isReadAloudAvailable == true {
                 menuActions.append(UIAction(title: L10n.Speech.speak) { [weak self] _ in
                     guard let self else { return }
                     // The reader already reported the selection's source position with the selection popup; it's mapped

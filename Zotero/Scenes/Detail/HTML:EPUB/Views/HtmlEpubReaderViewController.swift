@@ -14,6 +14,7 @@ import RxSwift
 protocol HtmlEpubReaderContainerDelegate: AnyObject {
     var containerTopInset: CGFloat { get }
     var isSidebarVisible: Bool { get }
+    var isReadAloudAvailable: Bool { get }
 
     func show(url: URL)
     func toggleInterfaceVisibility()
@@ -816,6 +817,10 @@ extension HtmlEpubReaderViewController: UIPopoverPresentationControllerDelegate 
 }
 
 extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
+    var isReadAloudAvailable: Bool {
+        readAloudHandler != nil
+    }
+
     func show(url: URL) {
         coordinatorDelegate?.show(url: url)
     }
