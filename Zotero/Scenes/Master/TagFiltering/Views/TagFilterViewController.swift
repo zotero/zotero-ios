@@ -219,14 +219,11 @@ class TagFilterViewController: UIViewController {
             guard let viewModel else { return }
             viewModel.process(action: .setShowAutomatic(!viewModel.state.showAutomatic))
         }
-        var options: [UIAction] = [showAutomatic]
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off)) { [weak viewModel] _ in
-                guard let viewModel else { return }
-                viewModel.process(action: .setDisplayAll(!viewModel.state.displayAll))
-            }
-            options.append(displayAll)
+        let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off)) { [weak viewModel] _ in
+            guard let viewModel else { return }
+            viewModel.process(action: .setDisplayAll(!viewModel.state.displayAll))
         }
+        var options: [UIAction] = [showAutomatic, displayAll]
         let optionsMenu = UIMenu(options: .displayInline, children: options.orderedMenuChildrenBasedOnDevice())
 
         let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive) { [weak self] _ in
