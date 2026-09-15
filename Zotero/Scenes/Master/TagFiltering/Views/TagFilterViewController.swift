@@ -24,7 +24,6 @@ class TagFilterViewController: UIViewController {
     private weak var optionsButton: UIButton!
     weak var delegate: FiltersDelegate?
     private var searchBarScrollEnabled: Bool
-    private var didSetInitialContentOffset: Bool
 
     private static let cellId = "TagFilterCell"
     private static let searchBarHeight: CGFloat = 56
@@ -38,7 +37,6 @@ class TagFilterViewController: UIViewController {
         self.viewModel = viewModel
         self.context = context
         searchBarScrollEnabled = true
-        didSetInitialContentOffset = false
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -129,14 +127,10 @@ class TagFilterViewController: UIViewController {
         }
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        guard context == .masterBottomSheet && !didSetInitialContentOffset else { return }
-
+    override func viewIsAppearing(_ animated: Bool) {
+        guard context == .masterBottomSheet else { return }
         let height = Self.searchBarHeight + Self.searchBarTopOffset
         collectionView.setContentOffset(CGPoint(x: 0, y: height), animated: false)
-        didSetInitialContentOffset = true
     }
 
     private func update(to state: TagFilterState) {
