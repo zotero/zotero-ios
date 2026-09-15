@@ -54,7 +54,7 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
 
     func start(animated: Bool) {
         guard let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return }
-        let tagController = TagFilterViewController(viewModel: viewModel)
+        let tagController = TagFilterViewController(viewModel: viewModel, context: .filterScreen)
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
         tagController.delegate = filtersDelegate
         filtersDelegate?.tagFilterDelegate = tagController

@@ -311,9 +311,21 @@ final class MasterContainerViewController: UINavigationController {
 
         updateBottomPosition()
         if let splitViewController {
-            // Split view controller collapsed status when the app launches is correct here, so it's used to show/hide bottom sheet for the first appearance.
-            // The app may be launched in collapsed mode, if it was in such mode the last time it was moved to background.
-            setBottomSheet(hidden: splitViewController.isCollapsed)
+            var hideBottomSheet = splitViewController.isCollapsed
+            switch splitViewController.traitCollection.horizontalSizeClass {
+            case .unspecified:
+                break
+
+            case .compact:
+                hideBottomSheet = true
+
+            case .regular:
+                hideBottomSheet = false
+
+            @unknown default:
+                break
+            }
+            setBottomSheet(hidden: hideBottomSheet)
         }
     }
 
