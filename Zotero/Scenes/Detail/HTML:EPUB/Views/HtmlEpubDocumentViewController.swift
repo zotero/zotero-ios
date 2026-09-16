@@ -92,30 +92,31 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         func setupWebView() {
-            let highlightAction = UIAction(title: L10n.Pdf.highlight) { [weak self] _ in
-                self?.viewModel.process(action: .createAnnotationFromSelection(.highlight))
-                self?.deselectText()
-            }
-            let underlineAction = UIAction(title: L10n.Pdf.underline) { [weak self] _ in
-                self?.viewModel.process(action: .createAnnotationFromSelection(.underline))
-                self?.deselectText()
-            }
-
-            var menuActions = [highlightAction, underlineAction]
-            if parentDelegate?.isReadAloudAvailable == true {
-                menuActions.append(UIAction(title: L10n.Speech.speak) { [weak self] _ in
-                    guard let self else { return }
-                    // The reader already reported the selection's source position with the selection popup; it's mapped
-                    // to an SDT position later, once read aloud has handed the reader the SDT pack.
-                    let annotation = viewModel.state.selectedTextParams?["annotation"] as? [String: Any]
-                    parentDelegate?.startReadAloudFromSelection(sourcePosition: annotation?["position"] as? ReaderSourcePosition)
-                    deselectText()
-                })
-            }
-
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-            let webView = HtmlEpubWebView(customMenuActions: menuActions, configuration: configuration)
+            let webView = HtmlEpubWebView(configuration: configuration, customMenuActionBuilder: { [weak self] in
+                guard let self else { return [] }
+                let highlightAction = UIAction(title: L10n.Pdf.highlight) { [weak self] _ in
+                    self?.viewModel.process(action: .createAnnotationFromSelection(.highlight))
+                    self?.deselectText()
+                }
+                let underlineAction = UIAction(title: L10n.Pdf.underline) { [weak self] _ in
+                    self?.viewModel.process(action: .createAnnotationFromSelection(.underline))
+                    self?.deselectText()
+                }
+                var menuActions = [highlightAction, underlineAction]
+                if parentDelegate?.isReadAloudAvailable == true {
+                    menuActions.append(UIAction(title: L10n.Speech.speak) { [weak self] _ in
+                        guard let self else { return }
+                        // The reader already reported the selection's source position with the selection popup; it's mapped
+                        // to an SDT position later, once read aloud has handed the reader the SDT pack.
+                        let annotation = viewModel.state.selectedTextParams?["annotation"] as? [String: Any]
+                        parentDelegate?.startReadAloudFromSelection(sourcePosition: annotation?["position"] as? ReaderSourcePosition)
+                        deselectText()
+                    })
+                }
+                return menuActions
+            })
             webView.translatesAutoresizingMaskIntoConstraints = false
             webView.isOpaque = false
             webView.scrollView.contentInsetAdjustmentBehavior = .never
