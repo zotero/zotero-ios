@@ -424,6 +424,33 @@ enum SpeechDocumentParser {
         return mergeLineRects(rects)
     }
 
+    /// The page-text character offset whose glyph rect lies closest to `point` (PDF coordinate space) across `segments`.
+    /// Distance is measured to the rect itself (zero when `point` falls inside it), so a press in a margin, in a gap
+    /// between columns or between two lines resolves to the nearest character of the nearest line. Whitespace has no
+    /// geometry, so the result always points at a real glyph. Returns nil when no character on the page has geometry.
+    static func closestPageTextOffset(to point: CGPoint, in segments: [Segment]) -> Int? {
+        var closestOffset: Int?
+        var closestDistance = CGFloat.greatestFiniteMagnitude
+        for segment in segments {
+            for (index, rect) in segment.charRects.enumerated() {
+                guard let rect else { continue }
+                let distance = squaredDistance(from: point, to: rect)
+                guard distance < closestDistance else { continue }
+                closestDistance = distance
+                closestOffset = segment.pageOffset + index
+            }
+        }
+        return closestOffset
+    }
+
+    /// Squared distance from `point` to the nearest edge of `rect`, or 0 when `point` lies inside it. Squared, since it's
+    /// only ever compared against other distances.
+    private static func squaredDistance(from point: CGPoint, to rect: CGRect) -> CGFloat {
+        let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
+        let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
+        return (dx * dx) + (dy * dy)
+    }
+
     /// The reader `SDTPosition` endpoints spanning `range` (page-text character offsets) across `segments`: the `start`
     /// of the first `SDTSpan` the range touches and the `end` of the last. Used to create HTML/EPUB annotations for a
     /// selected text range. Returns nil when the range touches no positioned spans (e.g. PDF, which has none).
@@ -446,6 +473,35 @@ enum SpeechDocumentParser {
         }
         guard let start, let end else { return nil }
         return (start, end)
+    }
+
+    /// The page-text offset of the `SDTSpan` across `segments` covering `sdtStart` (the `start` path of a reader SDT
+    /// position) — the first span whose `end` lies past it, or the span following the position when it falls in a gap.
+    /// Based on the reader's `findSegmentIndexForSDTPosition`, with two deliberate differences:
+    ///
+    /// - The comparison is strict. Spans end exclusively — a span's `end` path *is* the next span's `start` path — so at
+    ///   a boundary the position belongs to the span starting there, not the one ending there. The reader's `>=` resolves
+    ///   a selection on a sentence's first character to the previous sentence.
+    /// - Nothing covering the position returns nil rather than falling back to the last span, so the caller picks its own
+    ///   fallback.
+    ///
+    /// The inverse of `sdtPositionRange(forRange:in:)`. Returns nil when the segments carry no positions (PDF).
+    static func pageTextOffset(forSDTPositionStart sdtStart: [Int], in segments: [Segment]) -> Int? {
+        for segment in segments {
+            for span in segment.sdtSpans where compareSDTPaths(span.end, sdtStart) > 0 {
+                return segment.pageOffset + span.range.location
+            }
+        }
+        return nil
+    }
+
+    /// Orders two SDT content paths (child-index paths ending in a character offset): element-wise, then by depth. Port
+    /// of the structured-document-text package's `compareRefs`.
+    private static func compareSDTPaths(_ lhs: [Int], _ rhs: [Int]) -> Int {
+        for (left, right) in zip(lhs, rhs) where left != right {
+            return left - right
+        }
+        return lhs.count - rhs.count
     }
 
     /// Merges consecutive same-line rects into one rect per visual line (rects arrive in reading order). Port of the

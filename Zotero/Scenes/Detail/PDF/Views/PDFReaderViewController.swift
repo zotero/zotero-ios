@@ -19,8 +19,13 @@ protocol PDFReaderContainerDelegate: AnyObject {
     var isToolbarVisible: Bool { get }
     var documentTopOffset: CGFloat { get }
 
+    /// Whether read aloud is available in this reader, so that read-aloud actions can be left out of menus when it isn't.
+    var isReadAloudAvailable: Bool { get }
+
     func showSearch(text: String?)
     func speak(glyphs: GlyphSequence, pageIndex: PageIndex)
+    /// Starts reading aloud at the beginning of the sentence closest to `point` (PDF coordinate space) on `pageIndex`.
+    func speakClosestSentence(to point: CGPoint, pageIndex: PageIndex)
     func pageDidAppear(_ pageIndex: PageIndex)
 }
 
@@ -615,6 +620,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         )
     }
 
+    func speakClosestSentence(to point: CGPoint, pageIndex: PageIndex) {
+        readAloudHandler?.speechManager.start(.closestSentence(point: point, page: pageIndex))
+    }
+
     func speak(glyphs: GlyphSequence, pageIndex: PageIndex) {
         let text = glyphs.text
         let approximateOffset = documentController?.textOffset(rect: glyphs.boundingBox, page: pageIndex)
@@ -622,7 +631,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         let getDocumentWorkerTextOffset: (String) -> Int = { page in
             return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
         }
-        readAloudHandler?.speechManager.start(.pageTextOffset(getDocumentWorkerTextOffset))
+        readAloudHandler?.speechManager.start(.pageTextOffset(page: pageIndex, map: getDocumentWorkerTextOffset))
 
         func textOffset(for selectedText: String?, approximateOffset: Int?, in pageText: String) -> Int? {
             guard let selectedText, let approximateOffset else { return nil }
@@ -780,6 +789,11 @@ extension PDFReaderViewController {
 extension PDFReaderViewController: PDFReaderContainerDelegate {
     var documentTopOffset: CGFloat {
         documentTop.constant
+    }
+
+    // The handler is only created when the speech feature gate is on.
+    var isReadAloudAvailable: Bool {
+        readAloudHandler != nil
     }
 
     func pageDidAppear(_ pageIndex: PageIndex) {

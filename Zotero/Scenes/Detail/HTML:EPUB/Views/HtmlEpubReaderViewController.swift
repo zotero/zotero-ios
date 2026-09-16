@@ -14,10 +14,14 @@ import RxSwift
 protocol HtmlEpubReaderContainerDelegate: AnyObject {
     var containerTopInset: CGFloat { get }
     var isSidebarVisible: Bool { get }
+    var isReadAloudAvailable: Bool { get }
 
     func show(url: URL)
     func toggleInterfaceVisibility()
     func setReaderBackground(color: UIColor)
+    /// Starts reading aloud at the text selection the action was invoked on, given as the source position the reader
+    /// reported for it. Nil when there is no selection, in which case reading starts where the reader is.
+    func startReadAloudFromSelection(sourcePosition: ReaderSourcePosition?)
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
@@ -813,8 +817,21 @@ extension HtmlEpubReaderViewController: UIPopoverPresentationControllerDelegate 
 }
 
 extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
+    var isReadAloudAvailable: Bool {
+        readAloudHandler != nil
+    }
+
     func show(url: URL) {
         coordinatorDelegate?.show(url: url)
+    }
+
+    func startReadAloudFromSelection(sourcePosition: ReaderSourcePosition?) {
+        guard let readAloudHandler else { return }
+        if let sourcePosition {
+            readAloudHandler.speechManager.start(.readerSelection(sourcePosition))
+        } else {
+            readAloudHandler.startOrResumeSpeech()
+        }
     }
 
     func setReaderBackground(color: UIColor) {
@@ -996,6 +1013,14 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
             return
         }
         documentController.getReadAloudStartBlockIndex(completion: completion)
+    }
+
+    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
+        guard let documentController else {
+            completion(nil)
+            return
+        }
+        documentController.mapSDTPosition(forSourcePosition: source, completion: completion)
     }
 
     func readAloudHighlightChanged(position: ReadAloudPosition, pageIndex: Int) {

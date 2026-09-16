@@ -48,6 +48,10 @@ protocol SpeechManagerDelegate: AnyObject {
     /// The structured-document-text block index currently in view, so playback starts where the reader is. Read fresh at
     /// each play (not cached), reflecting the current scroll position. Nil (the default) means "start at the beginning".
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void)
+    /// Maps a reader source position to a reader SDT position. Asked for once the document has loaded, because the reader
+    /// can only map after it's been handed the structured-document-text pack. Nil (the default) means the reader can't
+    /// map positions.
+    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void)
     /// Called when the highlighted text changes during text-to-speech playback.
     /// The highlight covers the current text unit (sentence or paragraph) being spoken, matching the voice's
     /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
@@ -79,7 +83,23 @@ extension SpeechManagerDelegate {
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
         completion(nil)
     }
+
+    /// Default: no position mapping (PDF resolves its text selection to a page-text offset instead).
+    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
+        completion(nil)
+    }
 }
+
+/// A reader structured-document-text position: `start`/`end` child-index paths into the content tree, each ending in a
+/// character offset. The same shape the reader uses for read-aloud segments and annotation creation.
+struct SDTPosition {
+    let start: [Int]
+    let end: [Int]
+}
+
+/// An opaque reader source position (an EPUB CFI `FragmentSelector`, a snapshot `CssSelector`) as the reader reports it
+/// for a text selection. Never interpreted here — it's handed back to the reader to be mapped to an `SDTPosition`.
+typealias ReaderSourcePosition = [String: Any]
 
 /// A read-aloud segment produced by the HTML/EPUB reader (`getReadAloudSegments`): the spoken `text`, its reader SDT
 /// position (`start`/`end` child-index paths into the content tree), and whether it begins a new paragraph. Used to
@@ -216,8 +236,19 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     enum StartTarget {
         /// The first readable paragraph at or after the delegate's current page.
         case currentPage
-        /// Start at a page-text offset resolved by the closure (used for a PSPDFKit text selection), then map to a paragraph.
-        case pageTextOffset((String) -> Int)
+        /// Start at a page-text offset resolved by the closure from the text of `page` (used for a PSPDFKit text
+        /// selection), then map to a paragraph. The selection carries its own page, because it can be made on any
+        /// visible page, not just the delegate's current one (two pages are visible in double-page mode).
+        case pageTextOffset(page: Delegate.Index, map: (String) -> Int)
+        /// Start at the beginning of the sentence lying closest to `point` (PDF coordinate space) on `page`. Used by the
+        /// PDF reader's long-press menu, where the press lands on empty space rather than on a text selection.
+        case closestSentence(point: CGPoint, page: Delegate.Index)
+        /// Start at the reader's text selection, given as the source position the reader reported for it. Mapped to an
+        /// SDT position once the document has loaded (see `SpeechManagerDelegate.mapSDTPosition(forSourcePosition:)`),
+        /// because only then does the reader have the structured-document-text pack it needs to map. Used by the
+        /// HTML/EPUB reader's selection menu; falls back to starting where the reader is when the position can't be
+        /// mapped or covers no read-aloud segment.
+        case readerSelection(ReaderSourcePosition)
         /// Resume at a previously reported paragraph anchor.
         case resume(ResumePosition)
     }
@@ -314,6 +345,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let rects = highlightRects(paragraph: paragraph, highlightRange: range)
         guard !rects.isEmpty else { return nil }
         return (rects, paragraph.page)
+
+        /// Merged PDF-space highlight rects for `highlightRange` (character offsets within `paragraph.text`), derived
+        /// from the paragraph's precomputed per-character geometry.
+        func highlightRects(paragraph: SpeechParagraph, highlightRange: NSRange) -> [CGRect] {
+            let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
+            return SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments(forPage: paragraph.page))
+        }
     }
 
     // MARK: - Paragraph model helpers
@@ -326,13 +364,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
-    /// Merged PDF-space highlight rects for `highlightRange` (character offsets within `paragraph.text`), derived from
-    /// the paragraph's precomputed per-character geometry.
-    private func highlightRects(paragraph: SpeechParagraph, highlightRange: NSRange) -> [CGRect] {
-        let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
-        return SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments(forPage: paragraph.page))
-    }
-
     /// Position of `highlightRange` (character offsets within `paragraph.text`) for the delegate: reader SDT positions
     /// when the paragraph model was built from reader segments (HTML/EPUB), PDF geometry otherwise.
     private func highlightPosition(paragraph: SpeechParagraph, highlightRange: NSRange) -> ReadAloudPosition {
@@ -342,12 +373,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             return .htmlEpub(sdtStart: sdt.start, sdtEnd: sdt.end)
         }
         return .pdf(rects: SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments))
-    }
-
-    /// The page's readable text (paragraphs joined by a blank line). Derived on demand; used by the local voice utterance
-    /// and the (page-text based) highlight session manager.
-    private func pageText(forPage page: Delegate.Index) -> String {
-        return (paragraphIndicesByPage[page] ?? []).map { paragraphs[$0].text }.joined(separator: SpeechDocumentParser.segmentSeparator)
     }
 
     /// Maps a page-text offset on `page` to a paragraph index and the offset within that paragraph.
@@ -427,6 +452,28 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 }
             })
             .disposed(by: disposeBag)
+
+        func setupNowPlayingManager() {
+            nowPlayingManager.playPauseHandler = { [weak self] in
+                guard let self else { return }
+                switch state.value {
+                case .paused, .outOfCredits:
+                    resume()
+
+                case .speaking:
+                    pause()
+
+                case .initializing, .loading, .stopped:
+                    break
+                }
+            }
+            nowPlayingManager.forwardHandler = { [weak self] in
+                self?.navigateForward()
+            }
+            nowPlayingManager.backwardHandler = { [weak self] in
+                self?.navigateBackward()
+            }
+        }
     }
 
     deinit {
@@ -434,28 +481,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             documentWorkerController.cleanupWorker(speechWorker)
         }
         DDLogInfo("SpeechManager deinitialized")
-    }
-
-    private func setupNowPlayingManager() {
-        nowPlayingManager.playPauseHandler = { [weak self] in
-            guard let self else { return }
-            switch state.value {
-            case .paused, .outOfCredits:
-                resume()
-
-            case .speaking:
-                pause()
-
-            case .initializing, .loading, .stopped:
-                break
-            }
-        }
-        nowPlayingManager.forwardHandler = { [weak self] in
-            self?.navigateForward()
-        }
-        nowPlayingManager.backwardHandler = { [weak self] in
-            self?.navigateBackward()
-        }
     }
 
     // MARK: - Actions
@@ -480,7 +505,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
             // Load (extract and cache) the whole document once, then detect the session language and start playback.
             // No further document data is requested afterwards.
-            loadDocumentIfNeeded { [weak self] success in
+            loadDocumentIfNeeded(manager: self) { [weak self] success in
                 guard let self, state.value == .initializing else { return }
                 guard success else {
                     state.accept(.stopped)
@@ -490,103 +515,239 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 nowPlayingManager.activate(title: delegate.documentTitle)
                 // Set the session language from the document metadata before playback starts, so that the voice stays
                 // constant for the whole session. No-op when the user has already picked a language or it was already set.
-                applySessionLanguageIfNeeded()
-                startPlayback(target: target)
+                applySessionLanguageIfNeeded(manager: self)
+                startPlayback(target: target, manager: self)
             }
         }
-    }
 
-    /// Extracts and caches structured document text for the whole document, keeping only readable (paragraph/list)
-    /// content. Calls `completion(true)` once the cache is ready (or already present), `completion(false)` on failure.
-    private func loadDocumentIfNeeded(completion: @escaping (Bool) -> Void) {
-        if documentLoaded {
-            completion(true)
-            return
+        // Everything below runs from inside the callbacks above (or from a callback of its own), so each function takes
+        // the manager rather than capturing it — a callback then holds only its own weak reference.
+
+        /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice
+        /// stays constant for the whole session. No-op when the user has chosen a language explicitly or it was already
+        /// set.
+        func applySessionLanguageIfNeeded(manager: SpeechManager<Delegate>) {
+            guard manager.processor.preferredLanguage == nil, manager.processor.detectedLanguage == nil else { return }
+            let language = manager.documentLanguage ?? "en"
+            manager.processor.detectedLanguage = language
+            DDLogInfo("SpeechManager: using session language \(language) (from document metadata: \(manager.documentLanguage != nil))")
         }
-        guard let delegate, let file = delegate.documentFile else {
-            DDLogError("SpeechManager: can't get document file")
-            completion(false)
-            return
-        }
-        let worker = speechWorker ?? DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high, password: delegate.documentPassword)
-        speechWorker = worker
-        let start = CFAbsoluteTimeGetCurrent()
-        documentWorkerController.queue(work: .structuredDocumentText, in: worker)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] update in
-                guard let self else { return }
-                switch update.kind {
-                case .failed, .cancelled:
-                    DDLogError("SpeechManager: structured document text extraction failed")
-                    extractionProgress.accept(nil)
-                    // Drop the finished one-off worker so a retry creates a fresh one.
-                    speechWorker = nil
-                    completion(false)
 
-                case .queued:
-                    // Extraction is queued but not started yet; progress is unknown (indeterminate).
-                    extractionProgress.accept(nil)
+        /// Extracts and caches structured document text for the whole document, keeping only readable (paragraph/list)
+        /// content. Calls `completion(true)` once the cache is ready (or already present), `completion(false)` on failure.
+        func loadDocumentIfNeeded(manager: SpeechManager<Delegate>, completion: @escaping (Bool) -> Void) {
+            if manager.documentLoaded {
+                completion(true)
+                return
+            }
+            guard let delegate = manager.delegate, let file = delegate.documentFile else {
+                DDLogError("SpeechManager: can't get document file")
+                completion(false)
+                return
+            }
+            let worker = manager.speechWorker ?? DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high, password: delegate.documentPassword)
+            manager.speechWorker = worker
+            let start = CFAbsoluteTimeGetCurrent()
+            manager.documentWorkerController.queue(work: .structuredDocumentText, in: worker)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak manager] update in
+                    guard let manager else { return }
+                    switch update.kind {
+                    case .failed, .cancelled:
+                        DDLogError("SpeechManager: structured document text extraction failed")
+                        manager.extractionProgress.accept(nil)
+                        // Drop the finished one-off worker so a retry creates a fresh one.
+                        manager.speechWorker = nil
+                        completion(false)
 
-                case .inProgress(let progress):
-                    extractionProgress.accept(progress.map { $0 / 100 })
+                    case .queued:
+                        // Extraction is queued but not started yet; progress is unknown (indeterminate).
+                        manager.extractionProgress.accept(nil)
 
-                case .extractedData(let result, _):
-                    extractionProgress.accept(nil)
-                    switch result {
-                    case .structuredDocumentText(let result):
-                        let pack: SDTPack
-                        do {
-                            pack = try result.pack()
-                        } catch {
-                            DDLogError("SpeechManager: could not open structured document text pack - \(error)")
-                            speechWorker = nil
-                            completion(false)
-                            return
-                        }
-                        // Deref the delegate weakly (don't capture it in this long-lived subscription — that would retain
-                        // the reader). Readers that provide their own segments (HTML/EPUB) are the source of truth — they
-                        // carry the SDT positions needed to create annotations. Others (PDF) return nil and use the parser.
-                        guard let delegate = self.delegate else {
-                            completion(false)
-                            return
-                        }
-                        delegate.readAloudReaderSegments(sdtPackData: pack.data, packVersion: pack.header.packVersion, schemaMajorVersion: pack.header.schemaMajorVersion) { [weak self] readerSegments in
-                            guard let self else { return }
-                            if let readerSegments {
-                                let language = (try? pack.metadataResult.get()).flatMap { SpeechDocumentParser.language(from: ["metadata": $0]) }
-                                store(readerSegments: readerSegments, language: language)
-                                documentLoaded = true
-                                DDLogInfo("SpeechManager: loaded \(paragraphs.count) reader paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
-                                completion(true)
+                    case .inProgress(let progress):
+                        manager.extractionProgress.accept(progress.map { $0 / 100 })
+
+                    case .extractedData(let result, _):
+                        manager.extractionProgress.accept(nil)
+                        switch result {
+                        case .structuredDocumentText(let result):
+                            let pack: SDTPack
+                            do {
+                                pack = try result.pack()
+                            } catch {
+                                DDLogError("SpeechManager: could not open structured document text pack - \(error)")
+                                manager.speechWorker = nil
+                                completion(false)
                                 return
                             }
-                            // Parsing the whole document can be heavy, so do it off the main thread.
-                            parsingQueue.async { [weak self] in
-                                let parsed: SpeechDocumentParser.ParsedDocument
-                                do {
-                                    parsed = SpeechDocumentParser.parse(materialized: try pack.materialize())
-                                } catch {
-                                    DDLogError("SpeechManager: could not parse structured document text - \(error)")
-                                    parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
-                                }
-                                DispatchQueue.main.async { [weak self] in
-                                    guard let self else { return }
-                                    store(parsed)
-                                    documentLoaded = true
-                                    DDLogInfo("SpeechManager: extracted \(paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
+                            // Deref the delegate weakly (don't capture it in this long-lived subscription — that would
+                            // retain the reader). Readers that provide their own segments (HTML/EPUB) are the source of
+                            // truth — they carry the SDT positions needed to create annotations. Others (PDF) return nil
+                            // and use the parser.
+                            guard let delegate = manager.delegate else {
+                                completion(false)
+                                return
+                            }
+                            delegate.readAloudReaderSegments(sdtPackData: pack.data, packVersion: pack.header.packVersion, schemaMajorVersion: pack.header.schemaMajorVersion) { [weak manager] readerSegments in
+                                guard let manager else { return }
+                                if let readerSegments {
+                                    let language = (try? pack.metadataResult.get()).flatMap { SpeechDocumentParser.language(from: ["metadata": $0]) }
+                                    manager.store(readerSegments: readerSegments, language: language)
+                                    manager.documentLoaded = true
+                                    DDLogInfo("SpeechManager: loaded \(manager.paragraphs.count) reader paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
                                     completion(true)
+                                    return
+                                }
+                                // Parsing the whole document can be heavy, so do it off the main thread.
+                                manager.parsingQueue.async { [weak manager] in
+                                    let parsed: SpeechDocumentParser.ParsedDocument
+                                    do {
+                                        parsed = SpeechDocumentParser.parse(materialized: try pack.materialize())
+                                    } catch {
+                                        DDLogError("SpeechManager: could not parse structured document text - \(error)")
+                                        parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
+                                    }
+                                    DispatchQueue.main.async { [weak manager] in
+                                        guard let manager else { return }
+                                        manager.store(parsed)
+                                        manager.documentLoaded = true
+                                        DDLogInfo("SpeechManager: extracted \(manager.paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
+                                        completion(true)
+                                    }
                                 }
                             }
-                        }
 
-                    case .fullText, .recognizerData:
-                        DDLogError("SpeechManager: SDT extraction result invalid")
-                        speechWorker = nil
-                        completion(false)
+                        case .fullText, .recognizerData:
+                            DDLogError("SpeechManager: SDT extraction result invalid")
+                            manager.speechWorker = nil
+                            completion(false)
+                        }
                     }
+                })
+                .disposed(by: manager.disposeBag)
+        }
+
+        func startPlayback(target: StartTarget, manager: SpeechManager<Delegate>) {
+            guard let delegate = manager.delegate else {
+                manager.state.accept(.stopped)
+                return
+            }
+
+            // Targets which resolve against a page of their own, without looking up the reader's current page. They
+            // fall through to the default behavior below when they can't be resolved.
+            switch target {
+            case .resume(let resumePosition) where resumePosition.paragraphIndex < manager.paragraphs.count:
+                // Resume targets a stored paragraph anchor directly, with no page-text round-trip.
+                let paragraph = manager.paragraphs[resumePosition.paragraphIndex]
+                let offset = min(max(0, resumePosition.offset), paragraph.text.count)
+                manager.startSpeaking(paragraphIndex: resumePosition.paragraphIndex, offset: offset, reportPageChange: false)
+                return
+
+            case .closestSentence(let point, let pressedPage):
+                // A long press in the document maps to a point on a specific page (not necessarily the delegate's
+                // current page), so it resolves against that page's geometry directly. The offset is missing when the
+                // page has no readable text with geometry.
+                guard let offset = closestSentenceStartOffset(to: point, onPage: pressedPage, manager: manager) else { break }
+                beginPlayback(page: pressedPage, startOffset: offset, manager: manager)
+                return
+
+            case .pageTextOffset(let selectedPage, let map) where manager.paragraphIndicesByPage[selectedPage]?.isEmpty == false:
+                // A PSPDFKit text selection maps to a page-text offset on the page the selection was made on, which is
+                // not necessarily the delegate's current page, so it resolves against that page's text directly.
+                beginPlayback(page: selectedPage, startOffset: map(pageText(forPage: selectedPage, manager: manager)), manager: manager)
+                return
+
+            case .currentPage, .pageTextOffset, .readerSelection, .resume:
+                break
+            }
+
+            let currentIndex = delegate.getCurrentPageIndex()
+            guard let page = firstReadablePage(atOrAfter: currentIndex, manager: manager) else {
+                DDLogWarn("SpeechManager: no readable content to play")
+                manager.state.accept(.stopped)
+                return
+            }
+
+            switch target {
+            case .readerSelection(let source):
+                // A text selection is mapped here, and not when the user picked the action, because the reader can only
+                // map a source position once it has the structured-document-text pack — which it was handed while the
+                // document loaded, just above.
+                delegate.mapSDTPosition(forSourcePosition: source) { [weak manager] position in
+                    guard let manager, manager.state.value == .initializing else { return }
+                    guard let position, let offset = pageTextOffset(forSDTPosition: position, onPage: page, manager: manager) else {
+                        // The selection couldn't be mapped, or covers no read-aloud segment (an image, say).
+                        beginPlaybackAtReaderPosition(page: page, manager: manager)
+                        return
+                    }
+                    beginPlayback(page: page, startOffset: offset, manager: manager)
                 }
-            })
-            .disposed(by: disposeBag)
+
+            case .currentPage, .pageTextOffset, .closestSentence, .resume:
+                beginPlaybackAtReaderPosition(page: page, manager: manager)
+            }
+
+            /// Returns the first readable page (one that has paragraphs) at or after `index`, or nil if there is none.
+            func firstReadablePage(atOrAfter index: Delegate.Index, manager: SpeechManager<Delegate>) -> Delegate.Index? {
+                if manager.paragraphIndicesByPage[index]?.isEmpty == false {
+                    return index
+                }
+                return manager.nextReadablePage(after: index)
+            }
+
+            /// The page's readable text (paragraphs joined by a blank line), derived on demand.
+            func pageText(forPage page: Delegate.Index, manager: SpeechManager<Delegate>) -> String {
+                return (manager.paragraphIndicesByPage[page] ?? []).map { manager.paragraphs[$0].text }.joined(separator: SpeechDocumentParser.segmentSeparator)
+            }
+
+            /// The page-text offset of the start of the sentence closest to `point` (PDF coordinate space) on `page`, so
+            /// that reading begins at the sentence's beginning rather than mid-sentence. Nil when the page has no
+            /// readable geometry.
+            func closestSentenceStartOffset(to point: CGPoint, onPage page: Delegate.Index, manager: SpeechManager<Delegate>) -> Int? {
+                let segments = manager.segments(forPage: page)
+                guard let offset = SpeechDocumentParser.closestPageTextOffset(to: point, in: segments) else { return nil }
+                return SpeechDocumentParser.unitRange(containing: offset, granularity: .sentence, in: segments)?.location ?? offset
+            }
+
+            /// The page-text offset of the read-aloud segment covering `position` on `page`. Segments are requested at
+            /// sentence granularity, so this offset is already a sentence start. Nil when no segment reaches the position.
+            func pageTextOffset(forSDTPosition position: SDTPosition, onPage page: Delegate.Index, manager: SpeechManager<Delegate>) -> Int? {
+                return SpeechDocumentParser.pageTextOffset(forSDTPositionStart: position.start, in: manager.segments(forPage: page))
+            }
+
+            /// Begins playback near where the reader currently is. The in-view block index is read fresh at play time
+            /// (async for HTML/EPUB; immediately nil for PDF, which starts at the top of the readable page).
+            func beginPlaybackAtReaderPosition(page: Delegate.Index, manager: SpeechManager<Delegate>) {
+                guard let delegate = manager.delegate else {
+                    manager.state.accept(.stopped)
+                    return
+                }
+                delegate.readAloudVisibleStartBlockIndex { [weak manager] blockIndex in
+                    guard let manager, manager.state.value == .initializing else { return }
+                    let offset = startOffset(forVisibleBlockIndex: blockIndex, page: page, manager: manager)
+                    beginPlayback(page: page, startOffset: offset, manager: manager)
+                }
+            }
+
+            /// The page-text offset of the first paragraph on `page` that reaches `blockIndex` — mirrors the reader's
+            /// `findSegmentIndexForSDTPosition` (first paragraph whose last SDT span ends at or past the target block).
+            /// Returns 0 when there is no in-view block or no paragraph reaches it (start at the beginning of the page).
+            func startOffset(forVisibleBlockIndex blockIndex: Int?, page: Delegate.Index, manager: SpeechManager<Delegate>) -> Int {
+                guard let blockIndex else { return 0 }
+                let indices = manager.paragraphIndicesByPage[page] ?? []
+                guard let index = indices.first(where: { (manager.paragraphs[$0].sdtSpans.last?.end.first ?? .min) >= blockIndex }) else { return 0 }
+                return manager.paragraphs[index].pageOffset
+            }
+
+            /// Resolves `startOffset` (page-text offset) to a paragraph on `page` and begins speaking there.
+            func beginPlayback(page: Delegate.Index, startOffset: Int, manager: SpeechManager<Delegate>) {
+                guard let (paragraphIndex, offset) = manager.resolveParagraph(atPageTextOffset: startOffset, page: page) else {
+                    manager.state.accept(.stopped)
+                    return
+                }
+                manager.startSpeaking(paragraphIndex: paragraphIndex, offset: offset, reportPageChange: false)
+            }
+        }
     }
 
     /// Stores parsed paragraphs, mapping structured-document-text page indices to the delegate's page index type and
@@ -650,68 +811,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         paragraphs = storedParagraphs
         paragraphIndicesByPage = [page: Array(storedParagraphs.indices)]
         documentLanguage = language
-    }
-
-    private func startPlayback(target: StartTarget) {
-        guard let delegate else {
-            state.accept(.stopped)
-            return
-        }
-
-        // Resume targets a stored paragraph anchor directly, with no page-text round-trip.
-        if case .resume(let resumePosition) = target, resumePosition.paragraphIndex < paragraphs.count {
-            let paragraph = paragraphs[resumePosition.paragraphIndex]
-            let offset = min(max(0, resumePosition.offset), paragraph.text.count)
-            startSpeaking(paragraphIndex: resumePosition.paragraphIndex, offset: offset, reportPageChange: false)
-            return
-        }
-
-        let currentIndex = delegate.getCurrentPageIndex()
-        guard let page = firstReadablePage(atOrAfter: currentIndex) else {
-            DDLogWarn("SpeechManager: no readable content to play")
-            state.accept(.stopped)
-            return
-        }
-        // A PSPDFKit text selection maps to a page-text offset, which we then resolve to a paragraph. Only honored when
-        // the readable page is the page the user is on.
-        if case .pageTextOffset(let map) = target, page == currentIndex {
-            beginPlayback(page: page, startOffset: map(pageText(forPage: page)))
-            return
-        }
-        // Default play: begin near where the reader currently is. The in-view block index is read fresh at play time
-        // (async for HTML/EPUB; immediately nil for PDF, which starts at the top of the readable page).
-        delegate.readAloudVisibleStartBlockIndex { [weak self] blockIndex in
-            guard let self, state.value == .initializing else { return }
-            beginPlayback(page: page, startOffset: startOffset(forVisibleBlockIndex: blockIndex, page: page))
-        }
-    }
-
-    /// Resolves `startOffset` (page-text offset) to a paragraph on `page` and begins speaking there.
-    private func beginPlayback(page: Delegate.Index, startOffset: Int) {
-        guard let (paragraphIndex, offset) = resolveParagraph(atPageTextOffset: startOffset, page: page) else {
-            state.accept(.stopped)
-            return
-        }
-        startSpeaking(paragraphIndex: paragraphIndex, offset: offset, reportPageChange: false)
-    }
-
-    /// The page-text offset of the first paragraph on `page` that reaches `blockIndex` — mirrors the reader's
-    /// `findSegmentIndexForSDTPosition` (first paragraph whose last SDT span ends at or past the target block). Returns
-    /// 0 when there is no in-view block or no paragraph reaches it (start at the beginning of the page).
-    private func startOffset(forVisibleBlockIndex blockIndex: Int?, page: Delegate.Index) -> Int {
-        guard let blockIndex else { return 0 }
-        let indices = paragraphIndicesByPage[page] ?? []
-        guard let index = indices.first(where: { (paragraphs[$0].sdtSpans.last?.end.first ?? .min) >= blockIndex }) else { return 0 }
-        return paragraphs[index].pageOffset
-    }
-
-    /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice stays
-    /// constant for the whole session. No-op when the user has chosen a language explicitly or it was already set.
-    private func applySessionLanguageIfNeeded() {
-        guard processor.preferredLanguage == nil, processor.detectedLanguage == nil else { return }
-        let language = documentLanguage ?? "en"
-        processor.detectedLanguage = language
-        DDLogInfo("SpeechManager: using session language \(language) (from document metadata: \(documentLanguage != nil))")
     }
 
     func pause() {
@@ -968,14 +1067,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
-    /// Returns the first readable page (one that has paragraphs) at or after `index`, or nil if there is none.
-    private func firstReadablePage(atOrAfter index: Delegate.Index) -> Delegate.Index? {
-        if paragraphIndicesByPage[index]?.isEmpty == false {
-            return index
-        }
-        return nextReadablePage(after: index)
-    }
-
     /// Returns the next readable page after `index`, skipping pages without readable content, or nil.
     private func nextReadablePage(after index: Delegate.Index) -> Delegate.Index? {
         guard let delegate else { return nil }
@@ -985,19 +1076,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 return next
             }
             current = next
-        }
-        return nil
-    }
-
-    /// Returns the previous readable page before `index`, skipping pages without readable content, or nil.
-    private func previousReadablePage(before index: Delegate.Index) -> Delegate.Index? {
-        guard let delegate else { return nil }
-        var current = index
-        while let previous = delegate.getPreviousPageIndex(from: current) {
-            if paragraphIndicesByPage[previous]?.isEmpty == false {
-                return previous
-            }
-            current = previous
         }
         return nil
     }
@@ -1021,27 +1099,29 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             pending.workItem.cancel()
             pendingNavigation = nil
             if pending.direction == direction {
-                navigate(direction, by: .paragraph)
+                navigate(direction, by: .paragraph, manager: self)
                 return
             }
-            navigate(pending.direction, by: .sentence)
+            navigate(pending.direction, by: .sentence, manager: self)
         }
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
             pendingNavigation = nil
-            navigate(direction, by: .sentence)
+            navigate(direction, by: .sentence, manager: self)
         }
         pendingNavigation = (direction, workItem)
         DispatchQueue.main.asyncAfter(deadline: .now() + navigationMultiTapInterval, execute: workItem)
-    }
 
-    private func navigate(_ direction: NavigationDirection, by unit: NLTokenUnit) {
-        switch direction {
-        case .forward:
-            forward(by: unit)
+        // The work item above holds the pending skip, so this takes the manager rather than capturing it — the manager
+        // stores the work item, and capturing would make that a cycle until the item fires.
+        func navigate(_ direction: NavigationDirection, by unit: NLTokenUnit, manager: SpeechManager<Delegate>) {
+            switch direction {
+            case .forward:
+                manager.forward(by: unit)
 
-        case .backward:
-            backward(by: unit)
+            case .backward:
+                manager.backward(by: unit)
+            }
         }
     }
 
@@ -1096,6 +1176,48 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             startSpeaking(paragraphIndex: index, offset: offset, reportPageChange: false)
         }
         delegate?.focusPage(paragraphs[index].page)
+
+        /// Updates the current position and highlight for a paragraph offset, without starting playback.
+        /// Used when navigating while paused, and to seed the highlight before playback resumes.
+        func moveTo(paragraphIndex index: Int, offset: Int) {
+            guard index < paragraphs.count else { return }
+            let paragraph = paragraphs[index]
+            guard let sentence = TextTokenizer.findSentence(startingAt: offset, in: paragraph.text) else { return }
+
+            let previousPage = currentPage(ofParagraph: position?.paragraphIndex)
+            let pageDidChange = previousPage != paragraph.page
+            let granularity = highlightGranularity
+
+            // Keep the existing highlight range if we're still inside it (same paragraph and granularity).
+            let isInCurrentHighlight: Bool
+            if let position, position.paragraphIndex == index, position.highlightRange.length > 0, position.highlightGranularity == granularity {
+                isInCurrentHighlight = NSLocationInRange(offset, position.highlightRange)
+            } else {
+                isInCurrentHighlight = false
+            }
+
+            let newHighlightRange: NSRange
+            let highlightText: String?
+            if isInCurrentHighlight, let position {
+                newHighlightRange = position.highlightRange
+                highlightText = nil
+            } else {
+                let unit = findHighlightUnit(at: offset, in: paragraph.text, granularity: granularity)
+                newHighlightRange = unit?.range ?? sentence.range
+                highlightText = unit?.text ?? sentence.text
+            }
+
+            position = Position(paragraphIndex: index, range: sentence.range, highlightRange: newHighlightRange, highlightGranularity: granularity)
+            processor.invalidateCurrentPlayback()
+
+            if highlightText != nil {
+                delegate?.readAloudHighlightChanged(position: highlightPosition(paragraph: paragraph, highlightRange: newHighlightRange), pageIndex: paragraph.page)
+            }
+
+            if pageDidChange, let previousPage {
+                delegate?.moved(to: paragraph.page, from: previousPage)
+            }
+        }
     }
 
     private func startSpeaking(paragraphIndex index: Int, offset: Int = 0, reportPageChange: Bool) {
@@ -1113,48 +1235,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
         currentSpeakingPage = paragraph.page
         processor.speak(segments: segments(forPage: paragraph.page), startPageTextOffset: paragraph.pageOffset + offset)
-    }
-
-    /// Updates the current position and highlight for a paragraph offset, without starting playback.
-    /// Used when navigating while paused, and to seed the highlight before playback resumes.
-    private func moveTo(paragraphIndex index: Int, offset: Int) {
-        guard index < paragraphs.count else { return }
-        let paragraph = paragraphs[index]
-        guard let sentence = TextTokenizer.findSentence(startingAt: offset, in: paragraph.text) else { return }
-
-        let previousPage = currentPage(ofParagraph: position?.paragraphIndex)
-        let pageDidChange = previousPage != paragraph.page
-        let granularity = highlightGranularity
-
-        // Keep the existing highlight range if we're still inside it (same paragraph and granularity).
-        let isInCurrentHighlight: Bool
-        if let position, position.paragraphIndex == index, position.highlightRange.length > 0, position.highlightGranularity == granularity {
-            isInCurrentHighlight = NSLocationInRange(offset, position.highlightRange)
-        } else {
-            isInCurrentHighlight = false
-        }
-
-        let newHighlightRange: NSRange
-        let highlightText: String?
-        if isInCurrentHighlight, let position {
-            newHighlightRange = position.highlightRange
-            highlightText = nil
-        } else {
-            let unit = findHighlightUnit(at: offset, in: paragraph.text, granularity: granularity)
-            newHighlightRange = unit?.range ?? sentence.range
-            highlightText = unit?.text ?? sentence.text
-        }
-
-        position = Position(paragraphIndex: index, range: sentence.range, highlightRange: newHighlightRange, highlightGranularity: granularity)
-        processor.invalidateCurrentPlayback()
-
-        if highlightText != nil {
-            delegate?.readAloudHighlightChanged(position: highlightPosition(paragraph: paragraph, highlightRange: newHighlightRange), pageIndex: paragraph.page)
-        }
-
-        if pageDidChange, let previousPage {
-            delegate?.moved(to: paragraph.page, from: previousPage)
-        }
     }
 
     private func currentPage(ofParagraph index: Int?) -> Delegate.Index? {
@@ -1324,14 +1404,19 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         let remainingText = String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.endIndex])
 
         // Language is detected once at session start, so the voice is resolved only the first time and then reused.
-        if voice == nil {
-            voice = voice(for: remainingText)
+        // `self` is explicit because the local `voice(for:)` below shadows the property name.
+        if self.voice == nil {
+            self.voice = voice(for: remainingText)
         }
 
         let utterance = AVSpeechUtterance(string: remainingText)
-        utterance.voice = voice
+        utterance.voice = self.voice
         utterance.rate = 0.5 * speechRateModifier
         synthesizer.speak(utterance)
+
+        func voice(for text: String) -> AVSpeechSynthesisVoice {
+            return VoiceUtility.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
+        }
     }
 
     func pause() {
@@ -1386,10 +1471,6 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
             synthesizer.pauseSpeaking(at: .immediate)
         }
         speak(pageText: text, startIndex: speechRange.location)
-    }
-
-    private func voice(for text: String) -> AVSpeechSynthesisVoice {
-        return VoiceUtility.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
     }
 
     private func finishSpeaking() {
@@ -1578,39 +1659,41 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
         // If the voice is not known yet, start loading immediately so that there is no unnecessary delay
         if voice == nil {
-            loadVoiceAndStartSpeaking(startIndex: startPageTextOffset)
+            loadVoiceAndStartSpeaking(startIndex: startPageTextOffset, processor: self)
             return
         }
 
         // Debounce segment download so rapid forward/backward taps don't trigger multiple network requests
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            self.loadVoiceAndStartSpeaking(startIndex: startPageTextOffset)
+            loadVoiceAndStartSpeaking(startIndex: startPageTextOffset, processor: self)
         }
         debouncedSpeakWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
-    }
 
-    private func loadVoiceAndStartSpeaking(startIndex: Int) {
-        // Language is detected once at session start, so the voice is resolved only the first time and then reused.
-        let getVoice: Single<RemoteVoice>
-        if let voice {
-            getVoice = Single.just(voice)
-        } else {
-            getVoice = loadVoice()
+        // The debounced work item above is stored by the processor, so this takes the processor rather than capturing
+        // it — capturing would keep the processor alive until the item fires.
+        func loadVoiceAndStartSpeaking(startIndex: Int, processor: RemoteVoiceProcessor) {
+            // Language is detected once at session start, so the voice is resolved only the first time and then reused.
+            let getVoice: Single<RemoteVoice>
+            if let voice = processor.voice {
+                getVoice = Single.just(voice)
+            } else {
+                getVoice = processor.loadVoice()
+            }
+
+            getVoice
+                .observe(on: MainScheduler.instance)
+                .subscribe(
+                    onSuccess: { [weak processor] voice in
+                        processor?.startSpeaking(startIndex: startIndex, voice: voice)
+                    },
+                    onFailure: { [weak processor] error in
+                        processor?.handleSpeechFailure(error: error)
+                    }
+                )
+                .disposed(by: processor.disposeBag)
         }
-
-        getVoice
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onSuccess: { [weak self] voice in
-                    self?.startSpeaking(startIndex: startIndex, voice: voice)
-                },
-                onFailure: { [weak self] error in
-                    self?.handleSpeechFailure(error: error)
-                }
-            )
-            .disposed(by: disposeBag)
     }
 
     func pause() {
@@ -1782,16 +1865,16 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             return .error(Error.endOfPage)
         }
         return remoteVoicesController.downloadSound(forText: segmentText, voiceId: voice.id)
-    }
 
-    private func text(forPageTextRange range: NSRange) -> String? {
-        for segment in segments where range.location >= segment.pageOffset && range.location < segment.pageOffset + segment.text.count {
-            // Page text ranges are `Character` offsets, so the segment text is sliced in the same index space (as
-            // opposed to `Range(_:in:)`, which would read `intra` as UTF-16 offsets).
-            let intra = NSRange(location: range.location - segment.pageOffset, length: range.length)
-            return segment.text.substring(atCharacterRange: intra)
+        func text(forPageTextRange range: NSRange) -> String? {
+            for segment in segments where range.location >= segment.pageOffset && range.location < segment.pageOffset + segment.text.count {
+                // Page text ranges are `Character` offsets, so the segment text is sliced in the same index space (as
+                // opposed to `Range(_:in:)`, which would read `intra` as UTF-16 offsets).
+                let intra = NSRange(location: range.location - segment.pageOffset, length: range.length)
+                return segment.text.substring(atCharacterRange: intra)
+            }
+            return nil
         }
-        return nil
     }
 
     private func ensureSegmentsPreloaded(after currentRange: NSRange, voice: RemoteVoice) {
@@ -2062,5 +2145,18 @@ extension SpeechManager: SpeechHighlightSessionManagerDelegate {
 
     func highlightSessionPreviousReadablePage(before pageIndex: Delegate.Index) -> Delegate.Index? {
         return previousReadablePage(before: pageIndex)
+
+        /// Returns the previous readable page before `index`, skipping pages without readable content, or nil.
+        func previousReadablePage(before index: Delegate.Index) -> Delegate.Index? {
+            guard let delegate else { return nil }
+            var current = index
+            while let previous = delegate.getPreviousPageIndex(from: current) {
+                if paragraphIndicesByPage[previous]?.isEmpty == false {
+                    return previous
+                }
+                current = previous
+            }
+            return nil
+        }
     }
 }
