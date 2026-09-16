@@ -93,14 +93,10 @@ final class CustomURLController {
                     presentation = .pdf(library: library, key: key, parentKey: parentKey, url: url, page: page, preselectedAnnotationKey: annotation, previewRects: nil)
 
                 case "text/html":
-                    if FeatureGates.enabled.contains(.htmlEpubReader) {
-                        presentation = .html(library: library, key: key, parentKey: parentKey, url: url)
-                    }
+                    presentation = .html(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: annotation)
 
                 case "application/epub+zip":
-                    if FeatureGates.enabled.contains(.htmlEpubReader) {
-                        presentation = .epub(library: library, key: key, parentKey: parentKey, url: url)
-                    }
+                    presentation = .epub(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: annotation)
 
                 default:
                     break
@@ -176,6 +172,9 @@ final class CustomURLController {
                 DDLogError("CustomURLController: incorrect library part - \(parts[1])")
                 return nil
             }
+
+            // zotero://open-pdf URLs use 1-based physical page numbers, while the reader uses 0-based page indices.
+            page = page.flatMap { $0 > 0 ? $0 - 1 : nil }
 
             return (key, libraryId, page, annotation)
         }

@@ -47,18 +47,24 @@ final class ItemCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        if #available(iOS 26.0.0, *) {
+            tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        }
+
         self.titleLabelsToContainerBottom.constant = 12 + ItemDetailLayout.separatorHeight // + bottom separator
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         self.tagCircles.borderColor = self.tagBorderColor
 
-        self.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
-        
         let highlightView = UIView()
         highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
         self.selectedBackgroundView = highlightView
 
         let selectionView = UIView()
-        selectionView.backgroundColor = Asset.Colors.cellSelected.color
+        if #available(iOS 26.0.0, *) {
+            selectionView.backgroundColor = .systemGray5
+        } else {
+            selectionView.backgroundColor = Asset.Colors.cellSelected.color
+        }
         self.multipleSelectionBackgroundView = selectionView
     }
 

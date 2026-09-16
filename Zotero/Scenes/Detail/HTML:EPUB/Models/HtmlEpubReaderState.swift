@@ -11,10 +11,24 @@ import UIKit
 import RealmSwift
 
 struct HtmlEpubReaderState: ViewModelState {
-    struct Changes: OptionSet {
-        typealias RawValue = UInt16
+    enum ZoomEvent {
+        case zoomIn
+        case zoomOut
+        case zoomReset
+    }
 
-        let rawValue: UInt16
+    struct ZoomState: Equatable {
+        let canZoomIn: Bool
+        let canZoomOut: Bool
+        let canZoomReset: Bool
+
+        static let unavailable = ZoomState(canZoomIn: false, canZoomOut: false, canZoomReset: false)
+    }
+
+    struct Changes: OptionSet {
+        typealias RawValue = UInt32
+
+        let rawValue: UInt32
 
         static let activeTool = Changes(rawValue: 1 << 0)
         static let annotations = Changes(rawValue: 1 << 1)
@@ -32,6 +46,10 @@ struct HtmlEpubReaderState: ViewModelState {
         static let outline = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
         static let searchResults = Changes(rawValue: 1 << 15)
+        static let currentOutline = Changes(rawValue: 1 << 16)
+        static let pages = Changes(rawValue: 1 << 17)
+        static let zoom = Changes(rawValue: 1 << 18)
+        static let zoomState = Changes(rawValue: 1 << 19)
     }
 
     struct DocumentData {
@@ -44,6 +62,8 @@ struct HtmlEpubReaderState: ViewModelState {
         let url: URL
         let annotationsJson: String
         let page: Page?
+        let scale: Double
+        let selectedAnnotationKey: String?
     }
 
     struct DocumentUpdate {
@@ -53,9 +73,15 @@ struct HtmlEpubReaderState: ViewModelState {
     }
 
     struct Outline {
+        let id: UUID
         let title: String
         let location: [String: Any]
         let children: [Outline]
+    }
+
+    struct PageInfo: Equatable {
+        let index: Int
+        let label: String
     }
 
     enum Error: ReaderError {
@@ -90,10 +116,15 @@ struct HtmlEpubReaderState: ViewModelState {
                 return L10n.Errors.unknown
             }
         }
+        
+        var documentShouldClose: Bool {
+            return false
+        }
     }
 
+    let readerURL: URL?
     let originalFile: File
-    let readerFile: File
+    let readerDirectory: File
     let documentFile: File
     let key: String
     let parentKey: String?
@@ -115,6 +146,13 @@ struct HtmlEpubReaderState: ViewModelState {
     var selectedAnnotationCommentActive: Bool
     /// Selected annotations when annotations are being edited in sidebar
     var selectedAnnotationsDuringEditing: Set<String>
+    /// Keys of annotations whose saves reported by the document are ignored. The document saves annotations with a delay,
+    /// so a save can arrive after the annotation was deleted (which would recreate it), or after a read aloud highlight
+    /// session which created it already ended (the annotation is stored, or discarded, when the session ends).
+    var ignoredAnnotationKeys: Set<String>
+    /// Indicates whether a read aloud highlight session is in progress. While it is, the document renders its annotation,
+    /// but the annotation is stored in the database only when the session ends.
+    var isReadAloudAnnotationSessionActive: Bool
     /// Temporary params of selected text, used to create highlight/underline with UIMenu buttons
     var selectedTextParams: [String: Any]?
     var annotationPopoverKey: String?
@@ -140,14 +178,36 @@ struct HtmlEpubReaderState: ViewModelState {
     var deletionEnabled: Bool
     var outlines: [Outline]
     var outlineSearch: String
+    var currentOutline: Outline?
+    var currentPage: PageInfo?
+    var pagesCount: Int?
     var interfaceStyle: UIUserInterfaceStyle
+    var zoomEvent: ZoomEvent?
+    var zoomState: ZoomState
+    var scale: Double?
 
-    init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
+    var readerFile: File {
+        readerDirectory.copy(withName: "view", ext: "html")
+    }
+
+    init(
+        readerURL: URL?,
+        url: URL,
+        key: String,
+        parentKey: String?,
+        title: String?,
+        preselectedAnnotationKey: String?,
+        settings: HtmlEpubSettings,
+        libraryId: LibraryIdentifier,
+        userId: Int,
+        username: String,
+        interfaceStyle: UIUserInterfaceStyle
+    ) {
+        self.readerURL = readerURL ?? Bundle.main.url(forResource: "reader", withExtension: nil, subdirectory: "Bundled")
         let originalFile = Files.file(from: url)
-        let temporaryDirectory = Files.tmpReaderDirectory
         self.originalFile = originalFile
-        readerFile = temporaryDirectory.copy(withName: "view", ext: "html")
-        documentFile = temporaryDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
+        readerDirectory = Files.temporaryDirectory
+        documentFile = readerDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
         self.key = key
         self.parentKey = parentKey
         self.title = title
@@ -155,6 +215,7 @@ struct HtmlEpubReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         self.interfaceStyle = interfaceStyle
+        selectedAnnotationKey = preselectedAnnotationKey
         sortedKeys = []
         annotations = [:]
         comments = [:]
@@ -169,9 +230,13 @@ struct HtmlEpubReaderState: ViewModelState {
         changes = []
         deletionEnabled = false
         selectedAnnotationsDuringEditing = []
+        ignoredAnnotationKeys = []
+        isReadAloudAnnotationSessionActive = false
         outlines = []
         outlineSearch = ""
         documentSearchResults = []
+        zoomState = .unavailable
+        scale = nil
 
         switch libraryId {
         case .custom:
@@ -190,6 +255,7 @@ struct HtmlEpubReaderState: ViewModelState {
         focusSidebarKey = nil
         focusDocumentKey = nil
         updatedAnnotationKeys = nil
+        zoomEvent = nil
     }
 }
 

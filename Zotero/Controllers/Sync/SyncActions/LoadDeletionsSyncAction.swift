@@ -11,7 +11,7 @@ import Foundation
 import RxSwift
 
 struct LoadDeletionsSyncAction: SyncAction {
-    typealias Result = (collections: [String], items: [String], searches: [String], tags: [String], version: Int)
+    typealias Result = (collections: [String], items: [String], searches: [String], tags: [String], settings: [String], version: Int)
 
     let currentVersion: Int?
     let sinceVersion: Int
@@ -22,7 +22,7 @@ struct LoadDeletionsSyncAction: SyncAction {
     let queue: DispatchQueue
     let scheduler: SchedulerType
 
-    var result: Single<(collections: [String], items: [String], searches: [String], tags: [String], version: Int)> {
+    var result: Single<(collections: [String], items: [String], searches: [String], tags: [String], settings: [String], version: Int)> {
         return self.apiClient.send(request: DeletionsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion), queue: self.queue)
                              .observe(on: self.scheduler)
                              .flatMap { (decoded: DeletionsResponse, response) in
@@ -32,7 +32,7 @@ struct LoadDeletionsSyncAction: SyncAction {
                                      return Single.error(SyncError.NonFatal.versionMismatch(self.libraryId))
                                  }
 
-                                 return Single.just((decoded.collections, decoded.items, decoded.searches, decoded.tags, newVersion))
+                                 return Single.just((decoded.collections, decoded.items, decoded.searches, decoded.tags, decoded.settings, newVersion))
                              }
     }
 }

@@ -114,6 +114,35 @@ final class UpdatableObjectSpec: QuickSpec {
                     expect(refinedBy["end"] as? Int).to(equal(1705))
                 }
             }
+
+            context("when applying My Library last-read deletions") {
+                it("throws and leaves the item's last-read value unchanged") {
+                    let key = "AAAAAAAA"
+                    let date = Date(timeIntervalSince1970: 1234)
+
+                    try! realm.write {
+                        let item = RItem()
+                        item.key = key
+                        item.rawType = ItemTypes.attachment
+                        item.customLibraryKey = .myLibrary
+                        item.dateAdded = Date()
+                        item.dateModified = item.dateAdded
+                        item.lastRead = date
+                        item.updateEffectiveLastRead()
+                        realm.add(item)
+                    }
+
+                    expect {
+                        try realm.write {
+                            try PerformLastReadDeletionsDbRequest(libraryId: .custom(.myLibrary), keys: [key]).process(in: realm)
+                        }
+                    }.to(throwError())
+
+                    let item = realm.objects(RItem.self).first!
+                    expect(item.lastRead).to(equal(date))
+                    expect(item.effectiveLastRead).to(equal(date))
+                }
+            }
         }
     }
 }

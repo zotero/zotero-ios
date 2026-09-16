@@ -69,6 +69,7 @@ struct LibrariesActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                                 state.changes.insert(.groupDeletion)
                             }
                         }
+
                     case .initial: break
                     case .error: break
                     }

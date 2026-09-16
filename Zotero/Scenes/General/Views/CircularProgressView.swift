@@ -15,8 +15,13 @@ final class CircularProgressView: UIView {
     private let size: CGFloat
     private let lineWidth: CGFloat
 
+    private static let indeterminateAnimationKey = "indeterminateRotation"
+    /// Fraction of the circle drawn by the spinning arc while indeterminate.
+    private static let indeterminateArcLength: CGFloat = 0.25
+
     private var circleLayer: CAShapeLayer!
     private var progressLayer: CAShapeLayer!
+    private(set) var isIndeterminate = false
 
     var progress: CGFloat {
         get {
@@ -69,6 +74,33 @@ final class CircularProgressView: UIView {
 
     override var intrinsicContentSize: CGSize {
         return CGSize(width: self.size, height: self.size)
+    }
+
+    // MARK: - Indeterminate animation
+
+    /// Switches the view to an indeterminate spinner: a fixed-length arc rotating continuously. Used while progress is
+    /// not yet known (e.g. before the first progress report arrives).
+    func startIndeterminateAnimation() {
+        guard !isIndeterminate else { return }
+        isIndeterminate = true
+        progressLayer.strokeStart = 0
+        progressLayer.strokeEnd = CircularProgressView.indeterminateArcLength
+        // Rotate the view's own layer (anchored at its center) so the arc spins around the circle center.
+        let rotation = CABasicAnimation(keyPath: "transform.rotation.z")
+        rotation.fromValue = 0
+        rotation.toValue = 2 * CGFloat.pi
+        rotation.duration = 1
+        rotation.repeatCount = .infinity
+        layer.add(rotation, forKey: CircularProgressView.indeterminateAnimationKey)
+    }
+
+    /// Stops the indeterminate spinner and resets the arc so a determinate `progress` value can be shown.
+    func stopIndeterminateAnimation() {
+        guard isIndeterminate else { return }
+        isIndeterminate = false
+        layer.removeAnimation(forKey: CircularProgressView.indeterminateAnimationKey)
+        progressLayer.strokeStart = 0
+        progressLayer.strokeEnd = 0
     }
 
     // MARK: - Setups

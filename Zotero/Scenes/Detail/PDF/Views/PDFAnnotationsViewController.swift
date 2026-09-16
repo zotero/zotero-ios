@@ -17,7 +17,8 @@ typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, 
 
 final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
-    private let viewModel: ViewModel<PDFReaderActionHandler>
+    private let viewModel: ViewModel<PDFAnnotationsActionHandler>
+    private let previewHandler: PDFAnnotationsPreviewHandler
     private let updateQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
@@ -29,8 +30,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private var tableViewToBottom: NSLayoutConstraint!
     private weak var deleteBarButton: UIBarButtonItem?
     private weak var mergeBarButton: UIBarButtonItem?
-    private var dataSource: TableViewDiffableDataSource<Int, PDFReaderState.AnnotationKey>!
-    private var searchController: UISearchController!
+    private var dataSource: TableViewDiffableDataSource<Int, PDFReaderAnnotationKey>!
     private var didAppear = false
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFSidebarDelegate & ReaderAnnotationsDelegate)?
@@ -39,8 +39,20 @@ final class PDFAnnotationsViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>) {
+    init(
+        viewModel: ViewModel<PDFAnnotationsActionHandler>,
+        annotationProvider: PDFReaderAnnotationProvider?,
+        annotationPreviewController: AnnotationPreviewController,
+        initialAppearance: Appearance
+    ) {
         self.viewModel = viewModel
+        previewHandler = PDFAnnotationsPreviewHandler(
+            annotationPreviewController: annotationPreviewController,
+            annotationProvider: annotationProvider,
+            attachmentKey: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            appearance: initialAppearance
+        )
         disposeBag = DisposeBag()
         updateQueue = DispatchQueue(label: "org.zotero.PDFAnnotationsViewController.UpdateQueue")
         super.init(nibName: nil, bundle: nil)
@@ -57,8 +69,10 @@ final class PDFAnnotationsViewController: UIViewController {
         setupViews()
         setupToolbar(to: viewModel.state)
         setupDataSource()
-        setupSearchController()
-        setupKeyboardObserving()
+        setupSearchController(text: viewModel.state.searchTerm)
+        previewHandler.previewsDidLoad = { [weak self] keys in
+            self?.updatePreviewsIfVisible(for: keys)
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -66,7 +80,7 @@ final class PDFAnnotationsViewController: UIViewController {
 
         tableView.setEditing(viewModel.state.sidebarEditingEnabled, animated: false)
         updateUI(state: viewModel.state, animatedDifferences: false) { [weak self] in
-            guard let self, let key = viewModel.state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) else { return }
+            guard let self, viewModel.state.focusOnSelectionIfNeeded, let key = viewModel.state.selectedAnnotationKey, let indexPath = dataSource.indexPath(for: key) else { return }
             tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
         }
 
@@ -80,7 +94,16 @@ final class PDFAnnotationsViewController: UIViewController {
                 self?.update(state: state)
             })
             .disposed(by: disposeBag)
-        viewModel.process(action: .startObservingAnnotationPreviewChanges)
+
+        NotificationCenter.default.rx
+            .notification(UIApplication.didBecomeActiveNotification)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                self?.refreshVisibleAndPrefetchPreviews()
+            })
+            .disposed(by: disposeBag)
+        previewHandler.startObserving()
+        refreshVisibleAndPrefetchPreviews()
     }
 
     deinit {
@@ -89,7 +112,7 @@ final class PDFAnnotationsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func perform(action: AnnotationView.Action, annotationKey: PDFReaderState.AnnotationKey) {
+    private func perform(action: AnnotationView.Action, annotationKey: PDFReaderAnnotationKey) {
         guard viewModel.state.library.metadataEditable, let annotation = viewModel.state.annotation(for: annotationKey) else { return }
 
         switch action {
@@ -101,7 +124,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 selected: selected,
                 userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
                 picked: { [weak self] tags in
-                    self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
+                    self?.viewModel.process(action: .send(.setTags(key: annotation.key, tags: tags)))
                 }
             )
 
@@ -116,7 +139,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 userInterfaceStyle: viewModel.state.interfaceStyle,
                 saveAction: { [weak viewModel] data, updateSubsequentLabels in
                     guard let viewModel else { return }
-                    viewModel.process(action: .updateAnnotationProperties(
+                    viewModel.process(action: .send(.updateAnnotationProperties(
                         key: annotation.key,
                         type: data.type,
                         color: data.color,
@@ -126,15 +149,15 @@ final class PDFAnnotationsViewController: UIViewController {
                         updateSubsequentLabels: updateSubsequentLabels,
                         highlightText: data.highlightText,
                         higlightFont: data.highlightFont
-                    ))
+                    )))
                 },
                 deleteAction: { [weak self] in
-                    self?.viewModel.process(action: .removeAnnotation(annotationKey))
+                    self?.viewModel.process(action: .send(.removeAnnotation(annotationKey)))
                 }
             )
 
         case .setComment(let comment):
-            viewModel.process(action: .setComment(key: annotation.key, comment: comment))
+            viewModel.process(action: .send(.setComment(key: annotation.key, comment: comment)))
 
         case .reloadHeight:
             reconfigureSelectedCellIfAny()
@@ -160,20 +183,38 @@ final class PDFAnnotationsViewController: UIViewController {
         }
     }
 
-    private func updateUI(state: PDFReaderState, animatedDifferences: Bool = true, completion: (() -> Void)? = nil) {
+    private func updateUI(state: PDFAnnotationsState, animatedDifferences: Bool = true, completion: (() -> Void)? = nil) {
         updateQueue.async { [weak self] in
             guard let self else { return }
-            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
-            snapshot.appendSections([0])
-            snapshot.appendItems(state.sortedKeys)
+            var snapshot = buildSnapshot(state: state)
             if let keys = state.updatedAnnotationKeys?.filter({ snapshot.itemIdentifiers.contains($0) }), !keys.isEmpty {
                 snapshot.reconfigureItems(keys)
             }
             dataSource.apply(snapshot, animatingDifferences: animatedDifferences, completion: completion)
         }
+
+        func buildSnapshot(state: PDFAnnotationsState) -> NSDiffableDataSourceSnapshot<Int, PDFReaderAnnotationKey> {
+            var itemsByPage: [Int: [PDFReaderAnnotationKey]] = [:]
+            for key in state.sortedKeys {
+                guard let annotation = state.annotation(for: key) else { continue }
+                itemsByPage[annotation.page, default: []].append(key)
+            }
+            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderAnnotationKey>()
+            for page in state.annotationPages {
+                if let items = itemsByPage[page], !items.isEmpty {
+                    snapshot.appendSections([page])
+                    snapshot.appendItems(items, toSection: page)
+                }
+            }
+            return snapshot
+        }
     }
 
-    private func update(state: PDFReaderState) {
+    private func update(state: PDFAnnotationsState) {
+        if state.changes.contains(.appearance) {
+            previewHandler.setAppearance(.from(appearanceMode: state.settings.appearanceMode, interfaceStyle: state.interfaceStyle))
+            refreshVisibleAndPrefetchPreviews()
+        }
         if state.changes.contains(.annotations) {
             tableView.isHidden = (state.snapshotKeys ?? state.sortedKeys).isEmpty
             toolbarContainer.isHidden = tableView.isHidden
@@ -184,11 +225,7 @@ final class PDFAnnotationsViewController: UIViewController {
         reloadIfNeeded(for: state, isVisible: isVisible) { [weak self] in
             guard let self else { return }
 
-            if let keys = state.loadedPreviewImageAnnotationKeys {
-                updatePreviewsIfVisible(state: state, tableView: tableView, for: keys)
-            }
-
-            if let key = state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
+            if state.focusOnSelectionIfNeeded, let key = state.selectedAnnotationKey, let indexPath = dataSource.indexPath(for: key) {
                 tableView.selectRow(at: indexPath, animated: isVisible, scrollPosition: .middle)
             }
             if state.changes.contains(.sidebarEditingSelection) {
@@ -203,7 +240,7 @@ final class PDFAnnotationsViewController: UIViewController {
         /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
         /// - parameter state: Current state.
         /// - parameter completion: Called after reload was performed or even if there was no reload.
-        func reloadIfNeeded(for state: PDFReaderState, isVisible: Bool, completion: @escaping () -> Void) {
+        func reloadIfNeeded(for state: PDFAnnotationsState, isVisible: Bool, completion: @escaping () -> Void) {
             if state.document.pageCount == 0 {
                 DDLogWarn("AnnotationsViewController: trying to reload empty document")
                 completion()
@@ -218,7 +255,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 updateQueue.async { [weak self] in
                     guard let self, !dataSource.snapshot().sectionIdentifiers.isEmpty else { return }
                     var snapshot = dataSource.snapshot()
-                    snapshot.reloadSections([0])
+                    snapshot.reloadSections(snapshot.sectionIdentifiers)
                     dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
                 }
                 return
@@ -263,38 +300,54 @@ final class PDFAnnotationsViewController: UIViewController {
 
             completion()
         }
+    }
 
-        /// Updates `UIImage` of `SquareAnnotation` preview if the cell is currently on screen.
-        /// - parameter state: Current state.
-        /// - parameter tableView: Table view
-        /// - parameter keys: Set of keys to update.
-        func updatePreviewsIfVisible(state: PDFReaderState, tableView: UITableView, for keys: Set<String>) {
-            let cells = tableView.visibleCells.compactMap({ $0 as? AnnotationCell }).filter({ keys.contains($0.key) })
-            for cell in cells {
-                let image = state.previewCache.object(forKey: (cell.key as NSString))
-                cell.updatePreview(image: image)
-            }
+    private func updatePreviewsIfVisible(for keys: Set<String>) {
+        let cells = tableView.visibleCells.compactMap({ $0 as? AnnotationCell }).filter({ keys.contains($0.key) })
+        for cell in cells {
+            cell.updatePreview(image: previewHandler.image(for: cell.key))
         }
+    }
+
+    private func refreshVisibleAndPrefetchPreviews() {
+        guard isViewLoaded, view.window != nil, !view.isHidden, parentDelegate?.isSidebarVisible ?? false else { return }
+        let visibleIndexPaths = tableView.indexPathsForVisibleRows ?? []
+        guard !visibleIndexPaths.isEmpty else { return }
+        requestPreviews(at: visibleIndexPaths, notify: true)
+    }
+
+    private func requestPreviews(at indexPaths: [IndexPath], notify: Bool) {
+        let keys = indexPaths.compactMap({ dataSource.itemIdentifier(for: $0) })
+            .filter({ key in
+                guard let annotation = viewModel.state.annotation(for: key) else { return false }
+                switch annotation.type {
+                case .image, .ink, .freeText:
+                    return true
+
+                case .note, .highlight, .underline:
+                    return false
+                }
+            })
+            .map({ $0.key })
+        previewHandler.requestPreviews(keys: keys, notify: notify)
     }
 
     /// Scrolls to selected cell if it's not visible.
     private func focusSelectedCell() {
         guard !viewModel.state.sidebarEditingEnabled, let indexPath = tableView.indexPathForSelectedRow else { return }
-
         let cellFrame = tableView.rectForRow(at: indexPath)
-        let cellBottom = cellFrame.maxY - tableView.contentOffset.y
-        let tableViewBottom = tableView.superview!.bounds.maxY - tableView.contentInset.bottom
-        let safeAreaTop = tableView.superview!.safeAreaInsets.top
-
-        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
-        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + tableView.contentOffset.y) {
+        let visibleBottom = tableView.contentOffset.y + tableView.bounds.height
+        let safeAreaTop = view.safeAreaInsets.top
+        let visibleTop = tableView.contentOffset.y + safeAreaTop
+        // Scroll when the selected cell falls outside the currently visible portion of the table view.
+        if cellFrame.maxY > visibleBottom || cellFrame.minY < visibleTop {
             // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
-            let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableView.bounds.height ? .top : .bottom
             tableView.scrollToRow(at: indexPath, at: position, animated: false)
         }
     }
 
-    private func setup(cell: AnnotationCell, with annotation: PDFAnnotation, state: PDFReaderState) {
+    private func setup(cell: AnnotationCell, with annotation: PDFAnnotation, state: PDFAnnotationsState) {
         let selected = annotation.key == state.selectedAnnotationKey?.key
         let preview: UIImage?
         let text: NSAttributedString?
@@ -320,7 +373,7 @@ final class PDFAnnotationsViewController: UIViewController {
         // Annotation preview
         switch annotation.type {
         case .image, .ink, .freeText:
-            preview = loadPreview(for: annotation, state: state)
+            preview = loadPreview(for: annotation)
 
         case .note, .highlight, .underline:
             preview = nil
@@ -335,14 +388,15 @@ final class PDFAnnotationsViewController: UIViewController {
             preview: preview,
             selected: selected,
             availableWidth: PDFReaderLayout.sidebarWidth,
+            document: state.document,
+            attachmentKey: state.key,
             library: state.library,
             isEditing: state.sidebarEditingEnabled,
             currentUserId: viewModel.state.userId,
             displayName: viewModel.state.displayName,
             username: viewModel.state.username,
             boundingBoxConverter: boundingBoxConverter,
-            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate,
-            state: state
+            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate
         )
         if !reconfiguringForSameAnnotation {
             let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
@@ -352,10 +406,10 @@ final class PDFAnnotationsViewController: UIViewController {
         }
         // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
 
-        func loadPreview(for annotation: PDFAnnotation, state: PDFReaderState) -> UIImage? {
-            let preview = state.previewCache.object(forKey: (annotation.key as NSString))
+        func loadPreview(for annotation: PDFAnnotation) -> UIImage? {
+            let preview = previewHandler.image(for: annotation.key)
             if preview == nil {
-                viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
+                previewHandler.requestPreviews(keys: [annotation.key], notify: true)
             }
             return preview
         }
@@ -364,21 +418,15 @@ final class PDFAnnotationsViewController: UIViewController {
     private func showFilterPopup(from barButton: UIBarButtonItem) {
         var colors: Set<String> = []
         var tags: Set<Tag> = []
-
-        let processAnnotation: (PDFAnnotation) -> Void = { annotation in
-            colors.insert(annotation.color)
-            for tag in annotation.tags {
-                tags.insert(tag)
+        if let databaseAnnotations = viewModel.state.databaseAnnotations {
+            for dbAnnotation in databaseAnnotations {
+                guard let annotation = PDFDatabaseAnnotation(item: dbAnnotation) else { continue }
+                colors.insert(annotation.color)
+                tags.formUnion(annotation.tags)
             }
         }
-
-        for dbAnnotation in viewModel.state.databaseAnnotations {
-            guard let annotation = PDFDatabaseAnnotation(item: dbAnnotation) else { continue }
-            processAnnotation(annotation)
-        }
-        for annotation in viewModel.state.documentAnnotations.values {
-            processAnnotation(annotation)
-        }
+        // We can safely ignore document annotation tags, as they are empty, so we just use their unique base colors.
+        let documentAnnotationColors = Set(viewModel.state.documentAnnotationUniqueBaseColors)
 
         let sortedTags = tags.sorted(by: { lTag, rTag -> Bool in
             if lTag.color.isEmpty == rTag.color.isEmpty {
@@ -391,10 +439,13 @@ final class PDFAnnotationsViewController: UIViewController {
         })
         var sortedColors: [String] = []
         AnnotationsConfig.allColors.forEach { color in
-            if colors.contains(color) {
+            if colors.contains(color) || documentAnnotationColors.contains(color) {
                 sortedColors.append(color)
             }
         }
+        let defaultColors = Set(AnnotationsConfig.allColors)
+        let extraColors = documentAnnotationColors.subtracting(defaultColors).sorted()
+        sortedColors.append(contentsOf: extraColors)
 
         coordinatorDelegate?.showFilterPopup(
             from: barButton,
@@ -403,7 +454,7 @@ final class PDFAnnotationsViewController: UIViewController {
             availableTags: sortedTags,
             userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
             completed: { [weak self] filter in
-                self?.viewModel.process(action: .changeFilter(filter))
+                self?.viewModel.process(action: .setFilter(filter))
             }
         )
     }
@@ -428,6 +479,9 @@ final class PDFAnnotationsViewController: UIViewController {
         tableView.delegate = self
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
+        tableView.sectionHeaderHeight = 0
+        tableView.sectionFooterHeight = 0
+        tableView.sectionHeaderTopPadding = 0
         tableView.backgroundColor = .systemGray6
         tableView.backgroundView?.backgroundColor = .systemGray6
         tableView.register(AnnotationCell.self, forCellReuseIdentifier: Self.cellId)
@@ -459,7 +513,7 @@ final class PDFAnnotationsViewController: UIViewController {
             toolbar.topAnchor.constraint(equalTo: toolbarContainer.topAnchor),
             toolbar.leadingAnchor.constraint(equalTo: toolbarContainer.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: toolbarContainer.trailingAnchor),
-            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
             label.topAnchor.constraint(equalTo: view.topAnchor),
             label.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             label.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -505,11 +559,11 @@ final class PDFAnnotationsViewController: UIViewController {
 
         dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
             guard let self, !viewModel.state.sidebarEditingEnabled && editingStyle == .delete, let key = dataSource.itemIdentifier(for: indexPath), key.type == .database else { return }
-            viewModel.process(action: .removeAnnotation(key))
+            viewModel.process(action: .send(.removeAnnotation(key)))
         }
     }
 
-    private func setupSearchController() {
+    private func setupSearchController(text: String?) {
         let insets = UIEdgeInsets(
             top: PDFReaderLayout.searchBarVerticalInset,
             left: PDFReaderLayout.annotationLayout.horizontalInset,
@@ -521,45 +575,19 @@ final class PDFAnnotationsViewController: UIViewController {
         frame.size.height = 65
 
         let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
+        searchBar.set(text: text)
         searchBar.text
             .observe(on: MainScheduler.instance)
+            .skip(1)
             .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
             .subscribe(onNext: { [weak self] text in
-                self?.viewModel.process(action: .searchAnnotations(text))
+                self?.viewModel.process(action: .setSearchTerm(text))
             })
             .disposed(by: disposeBag)
         tableView.tableHeaderView = searchBar
     }
 
-    private func setupTableView(with keyboardData: KeyboardData) {
-        var insets = tableView.contentInset
-        insets.bottom = keyboardData.visibleHeight
-        tableView.contentInset = insets
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-            .keyboardWillShow
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupTableView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
-
-        NotificationCenter.default
-            .keyboardWillHide
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupTableView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
-    }
-
-    private func setupToolbar(to state: PDFReaderState) {
+    private func setupToolbar(to state: PDFAnnotationsState) {
         setupToolbar(
             filterEnabled: (state.databaseAnnotations?.count ?? 0) > 1,
             filterOn: (state.filter != nil),
@@ -572,29 +600,24 @@ final class PDFAnnotationsViewController: UIViewController {
     private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
         guard !toolbarContainer.isHidden else { return }
 
-        var items: [UIBarButtonItem] = []
-        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+        var items: [UIBarButtonItem] = [.flexibleSpace()]
 
         if editingEnabled {
-            let merge = UIBarButtonItem(title: L10n.Pdf.AnnotationsSidebar.merge, style: .plain, target: nil, action: nil)
+            let mergePrimaryAction = UIAction(title: L10n.Pdf.AnnotationsSidebar.merge) { [weak viewModel] _ in
+                guard let viewModel, viewModel.state.sidebarEditingEnabled else { return }
+                viewModel.process(action: .mergeSelectedAnnotations)
+            }
+            let merge = UIBarButtonItem(primaryAction: mergePrimaryAction)
             merge.isEnabled = mergingEnabled
-            merge.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                     guard let self, viewModel.state.sidebarEditingEnabled else { return }
-                     viewModel.process(action: .mergeSelectedAnnotations)
-                 })
-                 .disposed(by: disposeBag)
             items.append(merge)
             mergeBarButton = merge
 
-            let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
+            let deletePrimaryAction = UIAction(title: L10n.delete) { [weak viewModel] _ in
+                guard let viewModel, viewModel.state.sidebarEditingEnabled else { return }
+                viewModel.process(action: .removeSelectedAnnotations)
+            }
+            let delete = UIBarButtonItem(primaryAction: deletePrimaryAction)
             delete.isEnabled = deletionEnabled
-            delete.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self, viewModel.state.sidebarEditingEnabled else { return }
-                    viewModel.process(action: .removeSelectedAnnotations)
-                })
-                .disposed(by: disposeBag)
             items.append(delete)
             deleteBarButton = delete
         } else if filterEnabled {
@@ -602,43 +625,32 @@ final class PDFAnnotationsViewController: UIViewController {
             mergeBarButton = nil
 
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
-            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
-            filter.rx.tap
-                .subscribe(onNext: { [weak self, weak filter]  _ in
-                    guard let self, let filter else { return }
-                    showFilterPopup(from: filter)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(image: UIImage(systemName: filterImageName)) { [weak self] action in
+                guard let self, let filter = action.sender as? UIBarButtonItem else { return }
+                showFilterPopup(from: filter)
+            }
+            let filter = UIBarButtonItem(primaryAction: primaryAction)
             items.insert(filter, at: 0)
         }
 
-        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
-        select.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
-            })
-            .disposed(by: disposeBag)
+        let primaryAction = UIAction(title: (editingEnabled ? L10n.done : L10n.select)) { [weak viewModel] _ in
+            viewModel?.process(action: .setSidebarEditingEnabled(!editingEnabled))
+        }
+        let select: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            select = editingEnabled ? UIBarButtonItem(systemItem: .done, primaryAction: primaryAction) : UIBarButtonItem(primaryAction: primaryAction)
+        } else {
+            select = UIBarButtonItem(primaryAction: primaryAction)
+        }
         items.append(select)
-        
-        self.toolbar.items = items
+
+        toolbar.items = items
     }
 }
 
 extension PDFAnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        let keys = indexPaths.compactMap({ dataSource.itemIdentifier(for: $0) })
-            .filter({ key in
-                guard let annotation = viewModel.state.annotation(for: key) else { return false }
-                switch annotation.type {
-                case .image, .ink, .freeText:
-                    return true
-
-                case .note, .highlight, .underline:
-                    return false
-                }
-            })
-            .map({ $0.key })
-        viewModel.process(action: .requestPreviews(keys: keys, notify: false))
+        requestPreviews(at: indexPaths, notify: false)
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -646,7 +658,7 @@ extension PDFAnnotationsViewController: UITableViewDelegate, UITableViewDataSour
         if viewModel.state.sidebarEditingEnabled {
             viewModel.process(action: .selectAnnotationDuringEditing(key))
         } else {
-            viewModel.process(action: .selectAnnotation(key))
+            viewModel.process(action: .setSelection(selectedAnnotationKey: key, selectionFromDocument: false))
         }
     }
 

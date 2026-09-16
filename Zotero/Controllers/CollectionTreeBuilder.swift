@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct CollectionTreeBuilder {
@@ -29,8 +30,75 @@ struct CollectionTreeBuilder {
         return CollectionTree(nodes: nodes, collections: collections, collapsed: collapsed)
     }
 
-    private static func collections(for parent: CollectionIdentifier?, from rCollections: Results<RCollection>, libraryId: LibraryIdentifier, includeItemCounts: Bool,
-                                    allCollections: inout [CollectionIdentifier: Collection], collapsedState: inout [CollectionIdentifier: Bool]) -> [CollectionTree.Node] {
+    static func collections(from rItem: RItem, allCollections allRCollections: Results<RCollection>) -> CollectionTree {
+        guard let libraryId = rItem.libraryId else {
+            DDLogError("CollectionTreeBuilder: tried creating tree from item with no library \(rItem.key)")
+            return CollectionTree(nodes: [], collections: [:], collapsed: [:])
+        }
+
+        var collections: [CollectionIdentifier: Collection] = [:]
+        var rootIds: Set<CollectionIdentifier> = []
+        var allChildren: [CollectionIdentifier: [CollectionIdentifier]] = [:]
+        var stack = Array(rItem.collections.filter(.notTrashedOrDeleted).map({ Collection(object: $0, isAvailable: true) }))
+        while let collection = stack.popLast() {
+            guard let key = collection.id.key else {
+                DDLogInfo("CollectionTreeBuilder: creating tree from non-collection - \(collection.id)")
+                continue
+            }
+            if let existingCollection = collections[collection.id] {
+                // Only process collections which were not processed yet, but if a collection has been processed and the `isAvailable` flag isn't set properly, update collection
+                if !existingCollection.isAvailable && collection.isAvailable {
+                    collections[collection.id] = collection
+                }
+                continue
+            }
+            guard let rCollection = allRCollections.filter(.key(key, in: libraryId)).first else {
+                DDLogInfo("CollectionTreeBuilder: item contained collection not in all collections results - \(collection.id)")
+                continue
+            }
+            collections[collection.id] = collection
+            if let parentKey = rCollection.parentKey {
+                guard let rParent = allRCollections.filter(.key(parentKey, in: libraryId)).first else {
+                    DDLogError("CollectionTreeBuilder: parent missing in all collections - \(parentKey), \(libraryId)")
+                    continue
+                }
+                allChildren[.collection(parentKey), default: []].append(collection.id)
+                stack.append(Collection(object: rParent, isAvailable: false))
+            } else {
+                rootIds.insert(.collection(key))
+            }
+        }
+
+        var nodes: [CollectionTree.Node] = []
+        for id in rootIds {
+            let node = buildNode(identifier: id, parentId: nil)
+            let index = insertionIndex(for: node, in: nodes, collections: collections)
+            nodes.insert(node, at: index)
+        }
+
+        return CollectionTree(nodes: nodes, collections: collections, collapsed: [:])
+        
+        func buildNode(identifier: CollectionIdentifier, parentId: CollectionIdentifier?) -> CollectionTree.Node {
+            var childNodes: [CollectionTree.Node] = []
+            if let children = allChildren[identifier] {
+                for childId in children {
+                    let node = buildNode(identifier: childId, parentId: identifier)
+                    let index = insertionIndex(for: node, in: childNodes, collections: collections)
+                    childNodes.insert(node, at: index)
+                }
+            }
+            return CollectionTree.Node(identifier: identifier, parent: parentId, children: childNodes)
+        }
+    }
+
+    private static func collections(
+        for parent: CollectionIdentifier?,
+        from rCollections: Results<RCollection>,
+        libraryId: LibraryIdentifier,
+        includeItemCounts: Bool,
+        allCollections: inout [CollectionIdentifier: Collection],
+        collapsedState: inout [CollectionIdentifier: Bool]
+    ) -> [CollectionTree.Node] {
         var nodes: [CollectionTree.Node] = []
         for rCollection in rCollections.filter(parent?.key.flatMap({ .parentKey($0) }) ?? .parentKeyNil) {
             let collection = self.collection(from: rCollection, libraryId: libraryId, includeItemCounts: includeItemCounts)

@@ -144,4 +144,38 @@ extension String {
         }
         return str
     }
+
+    var replacingAppName: String {
+        return self.replacingOccurrences(of: "{ -app-name }", with: "Zotero")
+    }
+
+    var replacingSubscriptionName: String {
+        return self.replacingOccurrences(of: "{ -subscription-name }", with: "Zotero Storage")
+    }
+
+    /// Converts an `NSRange` in UTF-16 code units (the index space of NSString-based APIs) into a range of `Character`
+    /// offsets. Returns `nil` when the range doesn't fit the string. Bounds that fall inside a grapheme cluster are
+    /// rounded down to the cluster's start.
+    func characterRange(fromUTF16Range range: NSRange) -> NSRange? {
+        guard range.location != NSNotFound, range.location >= 0, range.length >= 0 else { return nil }
+        // Both index spaces match unless the string contains graphemes spanning multiple UTF-16 code units.
+        if utf16.count == count {
+            guard range.location + range.length <= count else { return nil }
+            return range
+        }
+        guard let start = utf16.index(utf16.startIndex, offsetBy: range.location, limitedBy: utf16.endIndex),
+              let end = utf16.index(start, offsetBy: range.length, limitedBy: utf16.endIndex)
+        else { return nil }
+        return NSRange(location: distance(from: startIndex, to: start), length: distance(from: start, to: end))
+    }
+
+    /// Substring for a range of `Character` offsets, or `nil` when the range doesn't fit the string. The `Character`
+    /// counterpart of `Range(_:in:)`, which works in UTF-16 offsets.
+    func substring(atCharacterRange range: NSRange) -> String? {
+        guard range.location >= 0, range.length >= 0,
+              let start = index(startIndex, offsetBy: range.location, limitedBy: endIndex),
+              let end = index(start, offsetBy: range.length, limitedBy: endIndex)
+        else { return nil }
+        return String(self[start..<end])
+    }
 }

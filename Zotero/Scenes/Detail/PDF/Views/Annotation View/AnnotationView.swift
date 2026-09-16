@@ -8,6 +8,7 @@
 
 import UIKit
 
+import PSPDFKit
 import RxSwift
 
 final class AnnotationView: UIView {
@@ -150,13 +151,14 @@ final class AnnotationView: UIView {
         preview: UIImage?,
         selected: Bool,
         availableWidth: CGFloat,
+        document: PSPDFKit.Document,
+        attachmentKey: String,
         library: Library,
         currentUserId: Int,
         displayName: String,
         username: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter,
-        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate,
-        state: PDFReaderState
+        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate
     ) {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
@@ -169,7 +171,13 @@ final class AnnotationView: UIView {
             pageLabel: annotation.pageLabel,
             colorHex: annotation.color,
             shareMenuProvider: { button in
-                pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
+                pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(
+                    document: document,
+                    attachmentKey: attachmentKey,
+                    libraryId: library.identifier,
+                    annotation: annotation,
+                    sender: button
+                )
             },
             isEditable: (editability != .notEditable && selected),
             showsLock: editability != .editable,

@@ -22,6 +22,7 @@ final class TranslationWebViewHandler: WebViewHandler {
         case loadedItems(data: [[String: Any]], cookies: String?, userAgent: String?, referrer: String?)
         case selectItem([(key: String, value: String)])
         case reportProgress(String)
+        case challengeDetected(URL?)
     }
 
     /// Handlers for communication with JS in `webView`
@@ -50,17 +51,18 @@ final class TranslationWebViewHandler: WebViewHandler {
     }
 
     private let translatorsController: TranslatorsAndStylesController
-    private let disposeBag: DisposeBag
+    private var translationDisposeBag: DisposeBag?
     let observable: PublishSubject<Action>
 
     private var itemSelectionMessageId: Int?
+    private var isChallengePending: Bool
 
     // MARK: - Lifecycle
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
-        disposeBag = DisposeBag()
         self.translatorsController = translatorsController
         observable = PublishSubject()
+        isChallengePending = false
 
         super.init(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
 
@@ -117,6 +119,10 @@ final class TranslationWebViewHandler: WebViewHandler {
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
     /// - parameter frames: HTML content of frames contained in initial HTML document.
     func translate(url: URL, title: String, html: String, cookies: String, frames: [String], userAgent: String, referrer: String) {
+        isChallengePending = false
+        let disposeBag = DisposeBag()
+        translationDisposeBag = disposeBag
+
         DDLogInfo("TranslationWebViewHandler: translate")
         return performAfterInitialization().flatMap { _ -> Single<()> in
             self.set(cookies: cookies, userAgent: userAgent, referrer: referrer)
@@ -194,6 +200,33 @@ final class TranslationWebViewHandler: WebViewHandler {
         itemSelectionMessageId = nil
     }
 
+    override func sendHttpResponse(responseText: String, statusCode: Int, url: URL?, isSuccess: Bool, headers: [AnyHashable: Any], for messageId: Int) {
+        if !isSuccess, !isChallengePending, isCloudflareChallenge(statusCode: statusCode, headers: headers, responseText: responseText) {
+            isChallengePending = true
+            translationDisposeBag = nil
+            observable.on(.next(.challengeDetected(url)))
+            return
+        }
+        super.sendHttpResponse(responseText: responseText, statusCode: statusCode, url: url, isSuccess: isSuccess, headers: headers, for: messageId)
+
+        func isCloudflareChallenge(statusCode: Int, headers: [AnyHashable: Any], responseText: String) -> Bool {
+            guard statusCode == 403 else { return false }
+            var normalizedHeaders: [String: String] = [:]
+            for (key, value) in headers {
+                guard let key = key as? String, let value = value as? String else { continue }
+                normalizedHeaders[key.lowercased()] = value.lowercased()
+            }
+            if normalizedHeaders["cf-mitigated"]?.lowercased().contains("challenge") == true {
+                return true
+            } else if normalizedHeaders["server"]?.lowercased().contains("cloudflare") == true, normalizedHeaders["cf-ray"] != nil {
+                return true
+            } else if responseText.range(of: "_cf_chl_opt|Just a moment", options: [.regularExpression, .caseInsensitive]) != nil {
+                return true
+            }
+            return false
+        }
+    }
+
     // MARK: - Messaging
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
@@ -221,6 +254,7 @@ final class TranslationWebViewHandler: WebViewHandler {
             }
 
         case .itemSelection:
+            if isChallengePending { return }
             guard let body = body as? [String: Any], let messageId = body["messageId"] as? Int else {
                 DDLogError("TranslationWebViewHandler: item selection missing body - \(body)")
                 return
@@ -242,6 +276,7 @@ final class TranslationWebViewHandler: WebViewHandler {
             }
 
         case .item:
+            if isChallengePending { return }
             if let info = body as? [[String: Any]] {
                 observable.on(.next(.loadedItems(data: info, cookies: cookies, userAgent: userAgent, referrer: referer)))
             } else {
@@ -250,6 +285,7 @@ final class TranslationWebViewHandler: WebViewHandler {
             }
 
         case .progress:
+            if isChallengePending { return }
             if let progress = body as? String {
                 if progress == "item_selection" {
                     observable.on(.next(.reportProgress(L10n.Shareext.Translation.itemSelection)))
@@ -262,6 +298,7 @@ final class TranslationWebViewHandler: WebViewHandler {
             }
 
         case .saveAsWeb:
+            if isChallengePending { return }
             observable.on(.error(Error.noSuccessfulTranslators))
 
         case .log:

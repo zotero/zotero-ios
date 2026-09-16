@@ -8,6 +8,8 @@
 
 import Foundation
 
+import OrderedCollections
+
 struct TagPickerState: ViewModelState {
     enum Error: Swift.Error {
         case loadingFailed
@@ -24,8 +26,8 @@ struct TagPickerState: ViewModelState {
 
     let libraryId: LibraryIdentifier
 
-    var tags: [Tag]
-    var snapshot: [Tag]?
+    var tags: OrderedSet<Tag>
+    var snapshot: OrderedSet<Tag>?
     var selectedTags: Set<String>
     var searchTerm: String
     var showAddTagButton: Bool
@@ -35,7 +37,7 @@ struct TagPickerState: ViewModelState {
 
     init(libraryId: LibraryIdentifier, selectedTags: Set<String>, tags: [Tag] = []) {
         self.libraryId = libraryId
-        self.tags = tags
+        self.tags = OrderedSet(tags)
         self.searchTerm = ""
         self.selectedTags = selectedTags
         self.showAddTagButton = false

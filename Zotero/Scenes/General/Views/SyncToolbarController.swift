@@ -8,9 +8,35 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 final class SyncToolbarController {
+    private enum WarningLevel {
+        case medium
+        case critical
+
+        init?(errorCount: Int) {
+            if errorCount >= 10 {
+                self = .critical
+            } else if errorCount >= 5 {
+                self = .medium
+            } else {
+                return nil
+            }
+        }
+
+        var color: UIColor {
+            switch self {
+            case .medium:
+                return .systemYellow
+
+            case .critical:
+                return .systemRed
+            }
+        }
+    }
+
     private static let finishVisibilityTime: RxTimeInterval = .seconds(4)
     private unowned let viewController: UIViewController
     private unowned let dbStorage: DbStorage
@@ -20,6 +46,7 @@ final class SyncToolbarController {
     private var toolbarBottom: NSLayoutConstraint!
     private var pendingErrors: [Error]?
     private var timerDisposeBag: DisposeBag
+    private var consecutiveErrorCount = 0
     private var toolbarIsHidden: Bool {
         return toolbarBottom.constant != 0
     }
@@ -53,7 +80,7 @@ final class SyncToolbarController {
             toolbarBottom = bottom
 
             NSLayoutConstraint.activate([
-                toolbar.heightAnchor.constraint(equalToConstant: 45),
+                toolbar.heightAnchor.constraint(equalToConstant: 50),
                 toolbar.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
                 toolbar.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
                 bottom
@@ -79,6 +106,7 @@ final class SyncToolbarController {
                 }
 
             default:
+                consecutiveErrorCount += 1
                 pendingErrors = [error]
                 if toolbarIsHidden {
                     setToolbar(hidden: false, animated: true)
@@ -88,6 +116,7 @@ final class SyncToolbarController {
 
         case .finished(let errors):
             if errors.isEmpty {
+                consecutiveErrorCount = 0
                 pendingErrors = nil
                 timerDisposeBag = DisposeBag()
                 if !toolbarIsHidden {
@@ -96,6 +125,7 @@ final class SyncToolbarController {
                 return
             }
 
+            consecutiveErrorCount += 1
             pendingErrors = errors
             if toolbarIsHidden {
                 setToolbar(hidden: false, animated: true)
@@ -115,19 +145,44 @@ final class SyncToolbarController {
 
         guard let error = errors.first else { return }
         
-        let (message, data) = alertMessage(from: error)
+        var (message, data) = alertMessage(from: error)
+        var showItemsData: (keys: [String], libraryId: LibraryIdentifier, collectionCustomType: CollectionIdentifier.CustomType)?
+
+        if let data, let keys = data.itemKeys, !keys.isEmpty {
+            if let collectionCustomType = getItemsCollectionCustomType(for: keys, libraryId: data.libraryId, dbStorage: dbStorage) {
+                showItemsData = (keys, data.libraryId, collectionCustomType)
+            } else {
+                message += "\n\n\(L10n.notFound)"
+            }
+        }
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
             self?.pendingErrors = nil
         }))
-        if let data = data, let keys = data.itemKeys, !keys.isEmpty {
-            let title = keys.count == 1 ? L10n.Errors.SyncToolbar.showItem : L10n.Errors.SyncToolbar.showItems
+        if let showItemsData {
+            let title = showItemsData.keys.count == 1 ? L10n.Errors.SyncToolbar.showItem : L10n.Errors.SyncToolbar.showItems
             controller.addAction(UIAlertAction(title: title, style: .default, handler: { [weak self] _ in
-                self?.coordinatorDelegate?.showItems(with: keys, in: data.libraryId)
+                self?.coordinatorDelegate?.showItems(with: showItemsData.keys, in: showItemsData.libraryId, collectionType: showItemsData.collectionCustomType)
             }))
         }
         viewController.present(controller, animated: true, completion: nil)
+
+        func getItemsCollectionCustomType(for keys: [String], libraryId: LibraryIdentifier, dbStorage: DbStorage) -> CollectionIdentifier.CustomType? {
+            do {
+                let all = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId, searchTextComponents: keys), on: .main)
+                if !all.isEmpty {
+                    return .all
+                }
+                let trash = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId, searchTextComponents: keys), on: .main)
+                if !trash.isEmpty {
+                    return .trash
+                }
+            } catch let error {
+                DDLogError("SyncToolbarController: can't resolve items collection custom type - \(error)")
+            }
+            return nil
+        }
     }
 
     private func alertMessage(from error: Error) -> (message: String, additionalData: SyncError.ErrorData?) {
@@ -240,6 +295,9 @@ final class SyncToolbarController {
 
             case .preconditionFailed(let libraryId):
                 return (L10n.Errors.SyncToolbar.conflictRetryLimit, SyncError.ErrorData(itemKeys: nil, libraryId: libraryId))
+
+            case .unexpectedMyLibraryLastReadDeletions(let keys):
+                return (L10n.Errors.SyncToolbar.unexpectedMyLibraryLastReadDeletions, SyncError.ErrorData(itemKeys: keys, libraryId: .custom(.myLibrary)))
             }
         }
 
@@ -270,20 +328,48 @@ final class SyncToolbarController {
     }
 
     private func set(progress: SyncProgress) {
-        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress)))
+        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningLevel: .init(errorCount: consecutiveErrorCount)))
         toolbar.setItems([item], animated: false)
     }
 
-    private func toolbarView(with text: String) -> UIView {
+    private func toolbarView(with text: String, warningLevel: WarningLevel? = nil) -> UIView {
         let textColor: UIColor = viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
-        let button = UIButton(frame: UIScreen.main.bounds)
-        button.titleLabel?.font = .preferredFont(forTextStyle: .footnote)
+
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = text
+        configuration.titleLineBreakMode = .byWordWrapping
+        configuration.baseForegroundColor = textColor
+
+        let titleFont: UIFont
+        if let warningLevel {
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+            configuration.image = UIImage(systemName: "exclamationmark.triangle", withConfiguration: symbolConfig)
+            configuration.imagePlacement = .leading
+            configuration.imagePadding = 6
+            configuration.imageColorTransformer = UIConfigurationColorTransformer { _ in warningLevel.color }
+
+            switch warningLevel {
+            case .critical:
+                let footnoteDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .footnote)
+                titleFont = .systemFont(ofSize: footnoteDescriptor.pointSize, weight: .medium)
+
+            case .medium:
+                titleFont = .preferredFont(forTextStyle: .footnote)
+            }
+        } else {
+            titleFont = .preferredFont(forTextStyle: .footnote)
+        }
+
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { container in
+            var container = container
+            container.font = titleFont
+            return container
+        }
+
+        let button = UIButton(configuration: configuration)
+        button.frame = UIScreen.main.bounds
         button.titleLabel?.adjustsFontSizeToFitWidth = true
         button.titleLabel?.numberOfLines = 2
-        button.setTitleColor(textColor, for: .normal)
-        button.contentHorizontalAlignment = .center
-        button.contentVerticalAlignment = .center
-        button.setTitle(text, for: .normal)
 
         button
             .rx

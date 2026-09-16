@@ -30,6 +30,7 @@ struct FullSyncDebuggingView: View {
                 }
             }
         }
+        .background(Color(UIColor.systemGroupedBackground))
         .navigationBarTitle(L10n.Settings.fullSyncDebug)
     }
 }

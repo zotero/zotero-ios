@@ -6,6 +6,8 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVFAudio
+import SafariServices
 import UIKit
 import SwiftUI
 
@@ -14,14 +16,14 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
-    func showSearch(document: Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle)
+protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate, ReadAloudCoordinatorDelegate {
+    func showSearch(document: PSPDFKit.Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
-    func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
-    func showCitation(for itemId: String, libraryId: LibraryIdentifier)
+    func showReader(document: PSPDFKit.Document, userInterfaceStyle: UIUserInterfaceStyle)
+    func showCitation(for itemId: String, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
@@ -29,7 +31,13 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
-    func createShareAnnotationMenu(state: PDFReaderState, annotation: PDFAnnotation, sender: UIButton) -> UIMenu?
+    func createShareAnnotationMenu(
+        document: PSPDFKit.Document,
+        attachmentKey: String,
+        libraryId: LibraryIdentifier,
+        annotation: PDFAnnotation,
+        sender: UIButton
+    ) -> UIMenu?
 }
 
 final class PDFCoordinator: ReaderCoordinator {
@@ -45,7 +53,8 @@ final class PDFCoordinator: ReaderCoordinator {
     private let page: Int?
     private let preselectedAnnotationKey: String?
     private let previewRects: [CGRect]?
-    internal unowned let controllers: Controllers
+    unowned let controllers: Controllers
+    let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
 
     init(
@@ -68,8 +77,9 @@ final class PDFCoordinator: ReaderCoordinator {
         self.previewRects = previewRects
         self.navigationController = navigationController
         self.controllers = controllers
-        self.childCoordinators = []
-        self.disposeBag = DisposeBag()
+        childCoordinators = []
+        disposeBag = DisposeBag()
+        remoteVoicesController = RemoteVoicesController(apiClient: controllers.apiClient)
 
         navigationController.dismissHandler = { [weak self] in
             guard let self else { return }
@@ -83,10 +93,10 @@ final class PDFCoordinator: ReaderCoordinator {
 
     func start(animated: Bool) {
         let username = Defaults.shared.username
-        guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let userId = self.controllers.sessionController.sessionData?.userId,
+        guard let userControllers = controllers.userControllers,
+              let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
-              let parentNavigationController = self.parentCoordinator?.navigationController
+              let parentNavigationController = parentCoordinator?.navigationController
         else { return }
 
         let settings = Defaults.shared.pdfSettings
@@ -98,19 +108,20 @@ final class PDFCoordinator: ReaderCoordinator {
             DDLogWarn("PDFCoordinator: displayName is empty")
         }
         let handler = PDFReaderActionHandler(
-            dbStorage: dbStorage,
-            annotationPreviewController: self.controllers.annotationPreviewController,
-            pdfThumbnailController: self.controllers.pdfThumbnailController,
-            htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
-            schemaController: self.controllers.schemaController,
-            fileStorage: self.controllers.fileStorage,
-            idleTimerController: self.controllers.idleTimerController,
-            dateParser: self.controllers.dateParser
+            dbStorage: userControllers.dbStorage,
+            annotationPreviewController: controllers.annotationPreviewController,
+            pdfThumbnailController: controllers.pdfThumbnailController,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
+            schemaController: controllers.schemaController,
+            fileStorage: controllers.fileStorage,
+            idleTimerController: controllers.idleTimerController,
+            dateParser: controllers.dateParser,
+            lastReadWatcher: userControllers.lastReadWatcher
         )
         let state = PDFReaderState(
-            url: self.url,
-            key: self.key,
-            parentKey: self.parentKey,
+            url: url,
+            key: key,
+            parentKey: parentKey,
             title: try? controllers.userControllers?.dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
             libraryId: libraryId,
             initialPage: page,
@@ -123,17 +134,19 @@ final class PDFCoordinator: ReaderCoordinator {
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
+            documentWorkerController: userControllers.documentWorkerController,
+            remoteVoicesController: remoteVoicesController,
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
         handler.delegate = controller
 
-        self.navigationController?.setViewControllers([controller], animated: false)
+        navigationController?.setViewControllers([controller], animated: false)
     }
 }
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
-    func showSearch(document: Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle) {
+    func showSearch(document: PSPDFKit.Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle) {
         DDLogInfo("PDFCoordinator: show search")
 
         if let existing = self.searchController {
@@ -195,7 +208,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         case .fileError:
             // TODO: - show storage error or unknown error
             message = "Could not create PDF file."
-            
+
         case .pdfError:
             message = "Could not export PDF file."
         }
@@ -227,7 +240,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle) {
+    func showReader(document: PSPDFKit.Document, userInterfaceStyle: UIUserInterfaceStyle) {
         DDLogInfo("PDFCoordinator: show plain text reader")
         let controller = PDFPlainReaderViewController(document: document)
         let navigationController = UINavigationController(rootViewController: controller)
@@ -236,8 +249,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
-    func showCitation(for itemId: String, libraryId: LibraryIdentifier) {
-        (parentCoordinator as? DetailCoordinator)?.showCitation(using: navigationController, for: Set([itemId]), libraryId: libraryId, delegate: self)
+    func showCitation(for itemId: String, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?) {
+        (parentCoordinator as? DetailCoordinator)?.showCitation(using: navigationController, for: Set([itemId]), libraryId: libraryId, delegate: self, sourceItem: sourceItem)
     }
 
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier) {
@@ -272,16 +285,15 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     private func deferredShareImageMenuElement(
-        state: PDFReaderState,
+        document: PSPDFKit.Document,
+        attachmentKey: String,
+        libraryId: LibraryIdentifier,
         annotation: PDFAnnotation,
         sender: UIButton,
         boundingBoxConverter: AnnotationBoundingBoxConverter,
         scale: CGFloat,
         title: String
     ) -> UIDeferredMenuElement {
-        let document = state.document
-        let key = state.key
-        let library = state.library
         return UIDeferredMenuElement { [weak self, weak boundingBoxConverter, weak document] elementProvider in
             guard let self, let boundingBoxConverter, let document else {
                 elementProvider([])
@@ -300,8 +312,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 imageSize: size,
                 imageScale: 1.0,
                 key: annotation.key,
-                parentKey: key,
-                libraryId: library.id
+                parentKey: attachmentKey,
+                libraryId: libraryId
             )
             .observe(on: MainScheduler.instance)
             .subscribe { [weak self] image in
@@ -312,8 +324,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                     let completion = { (activityType: UIActivity.ActivityType?, completed: Bool, _: [Any]?, error: Error?) in
                         DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
                     }
-                    
-                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as? Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
+                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
                 action.isAccessibilityElement = true
@@ -327,19 +338,44 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     }
 
     func createShareAnnotationMenuForSelectedAnnotation(sender: UIButton) -> UIMenu? {
-        guard let pdfController = self.navigationController?.viewControllers.first as? PDFReaderViewController, let annotation = pdfController.state.selectedAnnotation else { return nil }
-        return createShareAnnotationMenu(state: pdfController.state, annotation: annotation, sender: sender)
+        guard let pdfController = navigationController?.viewControllers.first as? PDFReaderViewController,
+              let annotation = pdfController.state.selectedAnnotation
+        else { return nil }
+        let state = pdfController.state
+        return createShareAnnotationMenu(
+            document: state.document,
+            attachmentKey: state.key,
+            libraryId: state.library.identifier,
+            annotation: annotation,
+            sender: sender
+        )
     }
 
-    func createShareAnnotationMenu(state: PDFReaderState, annotation: PDFAnnotation, sender: UIButton) -> UIMenu? {
-        guard annotation.type == .image, let boundingBoxConverter = self.navigationController?.viewControllers.last as? AnnotationBoundingBoxConverter else { return nil }
+    func createShareAnnotationMenu(
+        document: PSPDFKit.Document,
+        attachmentKey: String,
+        libraryId: LibraryIdentifier,
+        annotation: PDFAnnotation,
+        sender: UIButton
+    ) -> UIMenu? {
+        guard annotation.type == .image else { return nil }
+        let boundingBoxConverter = document
         var children: [UIMenuElement] = []
         var shareImageMenuChildren: [UIMenuElement] = []
         for (scale, title) in [
             (300.0 / 72.0, L10n.Pdf.AnnotationShare.Image.medium),
             (600.0 / 72.0, L10n.Pdf.AnnotationShare.Image.large)
         ] {
-            let menuElement = deferredShareImageMenuElement(state: state, annotation: annotation, sender: sender, boundingBoxConverter: boundingBoxConverter, scale: scale, title: title)
+            let menuElement = deferredShareImageMenuElement(
+                document: document,
+                attachmentKey: attachmentKey,
+                libraryId: libraryId,
+                annotation: annotation,
+                sender: sender,
+                boundingBoxConverter: boundingBoxConverter,
+                scale: scale,
+                title: title
+            )
             shareImageMenuChildren.append(menuElement)
         }
         let shareImageMenu = UIMenu(title: L10n.Pdf.AnnotationShare.Image.share, options: [.displayInline], children: shareImageMenuChildren)
@@ -353,7 +389,7 @@ extension PDFCoordinator: DetailCitationCoordinatorDelegate {
         guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
         coordinator.showCitationPreviewError(using: presenter, errorMessage: errorMessage)
     }
-    
+
     func showMissingStyleError(using presenter: UINavigationController?) {
         guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
         coordinator.showMissingStyleError(using: navigationController)

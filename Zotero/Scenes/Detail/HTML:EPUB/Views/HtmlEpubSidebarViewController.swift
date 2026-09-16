@@ -115,9 +115,27 @@ class HtmlEpubSidebarViewController: UIViewController {
 
         func createToCController() -> TableOfContentsViewController<HtmlEpubOutline> {
             let outlines = viewModel.state.outlines.map(HtmlEpubOutline.init)
-            let tocState = TableOfContentsState<HtmlEpubOutline>(outlines: outlines)
-            return TableOfContentsViewController<HtmlEpubOutline>(viewModel: ViewModel(initialState: tocState, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] outline in
-                self?.parentDelegate?.tableOfContentsSelected(location: outline.location)
+            let tocState = TableOfContentsState<HtmlEpubOutline>(outlines: outlines, currentOutlineId: viewModel.state.currentOutline?.id)
+            let tocViewModel = ViewModel(initialState: tocState, handler: TableOfContentsActionHandler<HtmlEpubOutline>())
+
+            let bag = DisposeBag()
+            viewModel.stateObservable
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak tocViewModel] state in
+                    if state.changes.contains(.outline) {
+                        tocViewModel?.process(action: .setOutlines(state.outlines.map(HtmlEpubOutline.init)))
+                    }
+                    if state.changes.contains(.currentOutline) {
+                        tocViewModel?.process(action: .setCurrentOutline(state.currentOutline?.id))
+                    }
+                })
+                .disposed(by: bag)
+            controllerDisposeBag = bag
+
+            return TableOfContentsViewController<HtmlEpubOutline>(viewModel: tocViewModel, selectionAction: { [weak self] outline in
+                guard let self else { return }
+                viewModel.process(action: .setCurrentOutline(id: outline.id))
+                parentDelegate?.tableOfContentsSelected(location: outline.location)
             })
         }
     }
