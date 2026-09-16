@@ -631,7 +631,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         let getDocumentWorkerTextOffset: (String) -> Int = { page in
             return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
         }
-        readAloudHandler?.speechManager.start(.pageTextOffset(getDocumentWorkerTextOffset))
+        readAloudHandler?.speechManager.start(.pageTextOffset(page: pageIndex, map: getDocumentWorkerTextOffset))
 
         func textOffset(for selectedText: String?, approximateOffset: Int?, in pageText: String) -> Int? {
             guard let selectedText, let approximateOffset else { return nil }

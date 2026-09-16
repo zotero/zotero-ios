@@ -236,8 +236,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     enum StartTarget {
         /// The first readable paragraph at or after the delegate's current page.
         case currentPage
-        /// Start at a page-text offset resolved by the closure (used for a PSPDFKit text selection), then map to a paragraph.
-        case pageTextOffset((String) -> Int)
+        /// Start at a page-text offset resolved by the closure from the text of `page` (used for a PSPDFKit text
+        /// selection), then map to a paragraph. The selection carries its own page, because it can be made on any
+        /// visible page, not just the delegate's current one (two pages are visible in double-page mode).
+        case pageTextOffset(page: Delegate.Index, map: (String) -> Int)
         /// Start at the beginning of the sentence lying closest to `point` (PDF coordinate space) on `page`. Used by the
         /// PDF reader's long-press menu, where the press lands on empty space rather than on a text selection.
         case closestSentence(point: CGPoint, page: Delegate.Index)
@@ -631,7 +633,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 return
             }
 
-            // Targets which resolve against a page of their own, without looking up the reader's current page. Both
+            // Targets which resolve against a page of their own, without looking up the reader's current page. They
             // fall through to the default behavior below when they can't be resolved.
             switch target {
             case .resume(let resumePosition) where resumePosition.paragraphIndex < manager.paragraphs.count:
@@ -649,6 +651,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 beginPlayback(page: pressedPage, startOffset: offset, manager: manager)
                 return
 
+            case .pageTextOffset(let selectedPage, let map) where manager.paragraphIndicesByPage[selectedPage]?.isEmpty == false:
+                // A PSPDFKit text selection maps to a page-text offset on the page the selection was made on, which is
+                // not necessarily the delegate's current page, so it resolves against that page's text directly.
+                beginPlayback(page: selectedPage, startOffset: map(pageText(forPage: selectedPage, manager: manager)), manager: manager)
+                return
+
             case .currentPage, .pageTextOffset, .readerSelection, .resume:
                 break
             }
@@ -661,11 +669,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
 
             switch target {
-            case .pageTextOffset(let map) where page == currentIndex:
-                // A PSPDFKit text selection maps to a page-text offset, which we then resolve to a paragraph. Only
-                // honored when the readable page is the page the user is on.
-                beginPlayback(page: page, startOffset: map(pageText(forPage: page, manager: manager)), manager: manager)
-
             case .readerSelection(let source):
                 // A text selection is mapped here, and not when the user picked the action, because the reader can only
                 // map a source position once it has the structured-document-text pack — which it was handed while the
