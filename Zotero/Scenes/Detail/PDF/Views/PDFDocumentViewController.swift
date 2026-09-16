@@ -871,7 +871,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
             })
         ]
         if parentDelegate?.isReadAloudAvailable == true {
-            children.append(UIAction(title: L10n.Speech.title, handler: { [weak self] _ in
+            children.append(UIAction(title: L10n.Speech.speak, handler: { [weak self] _ in
                 self?.parentDelegate?.speakClosestSentence(to: origin, pageIndex: pageView.pageIndex)
             }))
         }
