@@ -714,8 +714,6 @@
 		B34DF1B025768ADF0019CCD1 /* AnnotationPageLabelAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1AF25768ADF0019CCD1 /* AnnotationPageLabelAction.swift */; };
 		B34DF1B525768BB70019CCD1 /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */; };
 		B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */; };
-		B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */; };
-		B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */; };
 		B34F3566275A46BC008B9C76 /* RedirectWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F3565275A46BC008B9C76 /* RedirectWebViewHandler.swift */; };
 		B3501F5425139B40007961DB /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
 		B35104102F2A327C008C8187 /* RemoteVoicesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B351040F2F2A3278008C8187 /* RemoteVoicesController.swift */; };
@@ -1958,8 +1956,6 @@
 		B34DF1AF25768ADF0019CCD1 /* AnnotationPageLabelAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPageLabelAction.swift; sourceTree = "<group>"; };
 		B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldCell.swift; sourceTree = "<group>"; };
 		B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TextFieldCell.xib; sourceTree = "<group>"; };
-		B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchCell.swift; sourceTree = "<group>"; };
-		B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SwitchCell.xib; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B34F3565275A46BC008B9C76 /* RedirectWebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedirectWebViewHandler.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
@@ -3755,8 +3751,6 @@
 				B34A4B7126E65FC200B3E993 /* LineWidthCell.swift */,
 				B34A4B6F26E63C9900B3E993 /* LineWidthView.swift */,
 				B3A297B62D366B23008AD19D /* SegmentedControlCell.swift */,
-				B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */,
-				B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */,
 				B398142C257A649D002C755C /* TextContentEditCell.swift */,
 				B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */,
 				B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */,
@@ -5348,7 +5342,6 @@
 				B3593F23241A61C700760E20 /* ItemDetailSectionView.xib in Resources */,
 				B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */,
 				B3593F27241A61C700760E20 /* ItemDetailFieldContentView.xib in Resources */,
-				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
 				61F0A1A22F9C0A1B00ABCDEF /* document_worker_shim.js in Resources */,
 				61A86CB32FAA10F2003E4421 /* document_worker.html in Resources */,
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
@@ -6520,7 +6513,6 @@
 				B3B3984F2E4CCACD009C59F5 /* HtmlEpubSearchHandler.swift in Sources */,
 				B305667923FC051F003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B30548F62B331B1A00853966 /* CreateEditDownloadDbRequest.swift in Sources */,
-				B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */,
 				B3A14DF825A7666C00DF5334 /* StorePageForItemDbRequest.swift in Sources */,
 				B3863FCE2AD830FE005082F0 /* ReorderCreatorsItemDetailDbRequest.swift in Sources */,
 				B391E4192C3FFA8A00F1BEFC /* ParentWithSidebarController.swift in Sources */,

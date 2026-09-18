@@ -260,6 +260,10 @@ struct HtmlEpubReaderState: ViewModelState {
 }
 
 extension HtmlEpubReaderState: ReaderState {
+    var allowsPageLabelEditing: Bool {
+        return false
+    }
+
     var selectedReaderAnnotation: ReaderAnnotation? {
         return annotationPopoverKey.flatMap({ annotations[$0] })
     }

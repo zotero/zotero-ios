@@ -242,6 +242,10 @@ struct PDFReaderState: ViewModelState {
 }
 
 extension PDFReaderState: ReaderState {
+    var allowsPageLabelEditing: Bool {
+        return true
+    }
+
     var selectedReaderAnnotation: (any ReaderAnnotation)? {
         return selectedAnnotation
     }

@@ -510,16 +510,15 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                 if state.changes.contains(.tags) {
                     viewModel.process(action: .setTags(key: key, tags: state.tags))
                 }
-                if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) || state.changes.contains(.type) {
+                if state.changes.contains(.highlight) || state.changes.contains(.type) {
                     viewModel.process(action:
                         .updateAnnotationProperties(
                             key: key,
                             type: state.type,
                             color: state.color,
                             lineWidth: state.lineWidth,
-                            pageLabel: state.pageLabel,
-                            updateSubsequentLabels: state.updateSubsequentLabels,
-                            highlightText: state.highlightText
+                            highlightText: state.highlightText,
+                            highlightFont: state.highlightFont
                         )
                     )
                 }

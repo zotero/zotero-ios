@@ -12,7 +12,7 @@ import OrderedCollections
 import PSPDFKit
 import RealmSwift
 
-struct PDFAnnotationsState: ViewModelState, ReaderState {
+struct PDFAnnotationsState: ViewModelState {
     struct Changes: OptionSet {
         typealias RawValue = UInt16
 
@@ -114,11 +114,6 @@ struct PDFAnnotationsState: ViewModelState, ReaderState {
         outgoingAction = nil
     }
 
-    var selectedReaderAnnotation: ReaderAnnotation? {
-        guard let selectedAnnotationKey else { return nil }
-        return annotation(for: selectedAnnotationKey)
-    }
-
     func annotation(for key: PDFReaderAnnotationKey) -> PDFAnnotation? {
         switch key.type {
         case .database:
@@ -127,5 +122,16 @@ struct PDFAnnotationsState: ViewModelState, ReaderState {
         case .document:
             return documentAnnotations?.filter(.key(key.key)).first.flatMap({ PDFDocumentAnnotation(annotation: $0, displayName: displayName, username: username) })
         }
+    }
+}
+
+extension PDFAnnotationsState: ReaderState {
+    var allowsPageLabelEditing: Bool {
+        return true
+    }
+
+    var selectedReaderAnnotation: ReaderAnnotation? {
+        guard let selectedAnnotationKey else { return nil }
+        return annotation(for: selectedAnnotationKey)
     }
 }

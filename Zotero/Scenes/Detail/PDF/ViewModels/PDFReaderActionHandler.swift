@@ -192,14 +192,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setTags(let key, let tags):
             set(tags: tags, key: key, viewModel: viewModel)
 
-        case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let fontSize, let pageLabel, let updateSubsequentLabels, let highlightText, let highlightFont):
+        case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let fontSize, let pageLabel, let highlightText, let highlightFont):
             set(
                 type: type,
                 color: color,
                 lineWidth: lineWidth,
                 fontSize: fontSize,
                 pageLabel: pageLabel,
-                updateSubsequentLabels: updateSubsequentLabels,
                 highlightText: highlightText,
                 highlightFont: highlightFont,
                 key: key,
@@ -893,7 +892,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         lineWidth: CGFloat,
         fontSize: CGFloat,
         pageLabel: String,
-        updateSubsequentLabels: Bool,
         highlightText: NSAttributedString,
         highlightFont: UIFont,
         key: String,
