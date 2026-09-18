@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-typealias AnnotationEditSaveAction = (_ data: AnnotationEditState.Data, _ updateSubsequentLabels: Bool) -> Void
+typealias AnnotationEditSaveAction = (_ data: AnnotationEditState.Data) -> Void
 typealias AnnotationEditDeleteAction = () -> Void
 
 final class AnnotationEditViewController: UIViewController {
@@ -142,7 +142,7 @@ final class AnnotationEditViewController: UIViewController {
                 .subscribe(onNext: { [weak self] in
                     guard let self else { return }
                     let state = viewModel.state
-                    saveAction(state.data, state.updateSubsequentLabels)
+                    saveAction(state.data)
                     self.cancel()
                 })
                 .disposed(by: disposeBag)
@@ -343,9 +343,8 @@ extension AnnotationEditViewController: UITableViewDelegate {
             guard viewModel.state.isEditable else { return }
             coordinatorDelegate?.showPageLabelEditor(
                 label: viewModel.state.pageLabel,
-                updateSubsequentPages: viewModel.state.updateSubsequentLabels,
-                saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
-                    self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
+                saveAction: { [weak self] newLabel in
+                    self?.viewModel.process(action: .setPageLabel(newLabel))
                 }
             )
         }

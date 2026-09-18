@@ -138,7 +138,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 allowsPageLabelEditing: viewModel.state.allowsPageLabelEditing,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.interfaceStyle,
-                saveAction: { [weak viewModel] data, updateSubsequentLabels in
+                saveAction: { [weak viewModel] data in
                     guard let viewModel else { return }
                     viewModel.process(action: .send(.updateAnnotationProperties(
                         key: annotation.key,
@@ -147,7 +147,6 @@ final class PDFAnnotationsViewController: UIViewController {
                         lineWidth: data.lineWidth,
                         fontSize: data.fontSize ?? 0,
                         pageLabel: data.pageLabel,
-                        updateSubsequentLabels: updateSubsequentLabels,
                         highlightText: data.highlightText,
                         higlightFont: data.highlightFont
                     )))

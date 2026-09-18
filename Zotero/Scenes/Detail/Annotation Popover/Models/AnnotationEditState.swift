@@ -41,7 +41,6 @@ struct AnnotationEditState: ViewModelState {
     var fontSize: CGFloat
     var highlightText: NSAttributedString
     var highlightFont: UIFont
-    var updateSubsequentLabels: Bool
     var changes: Changes
 
     var data: Data {
@@ -68,7 +67,6 @@ struct AnnotationEditState: ViewModelState {
         highlightText = data.highlightText
         highlightFont = data.highlightFont
         fontSize = data.fontSize ?? 0
-        updateSubsequentLabels = false
         changes = []
     }
 

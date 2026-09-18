@@ -205,7 +205,7 @@ class PDFSidebarViewController: UIViewController {
                     case .setTags(let key, let tags):
                         viewModel.process(action: .setTags(key: key, tags: tags))
 
-                    case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let fontSize, let pageLabel, let updateSubsequentLabels, let highlightText, let higlightFont):
+                    case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let fontSize, let pageLabel, let highlightText, let higlightFont):
                         viewModel.process(action: .updateAnnotationProperties(
                             key: key,
                             type: type,
@@ -213,7 +213,6 @@ class PDFSidebarViewController: UIViewController {
                             lineWidth: lineWidth,
                             fontSize: fontSize,
                             pageLabel: pageLabel,
-                            updateSubsequentLabels: updateSubsequentLabels,
                             highlightText: highlightText,
                             higlightFont: higlightFont
                         ))

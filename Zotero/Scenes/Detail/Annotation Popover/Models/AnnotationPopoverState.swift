@@ -53,7 +53,6 @@ struct AnnotationPopoverState: ViewModelState {
     var pageLabel: String
     var highlightText: NSAttributedString
     var highlightFont: UIFont
-    var updateSubsequentLabels: Bool
     var tags: [Tag]
     var changes: Changes
 
@@ -71,7 +70,6 @@ struct AnnotationPopoverState: ViewModelState {
         self.highlightFont = data.highlightFont
         self.tags = data.tags
         self.showsDeleteButton = data.showsDeleteButton
-        self.updateSubsequentLabels = false
         self.changes = []
     }
 

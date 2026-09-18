@@ -21,7 +21,7 @@ protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
 }
 
 protocol AnnotationEditCoordinatorDelegate: AnyObject {
-    func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction)
+    func showPageLabelEditor(label: String, saveAction: @escaping AnnotationPageLabelSaveAction)
     func showFontSizePicker(picked: @escaping (CGFloat) -> Void)
 }
 
@@ -120,8 +120,8 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
 }
 
 extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
-    func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction) {
-        let state = AnnotationPageLabelState(label: label, updateSubsequentPages: updateSubsequentPages)
+    func showPageLabelEditor(label: String, saveAction: @escaping AnnotationPageLabelSaveAction) {
+        let state = AnnotationPageLabelState(label: label)
         let handler = AnnotationPageLabelActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationPageLabelViewController(viewModel: viewModel, saveAction: saveAction)
