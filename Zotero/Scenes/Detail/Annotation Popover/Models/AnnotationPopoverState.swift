@@ -13,6 +13,7 @@ struct AnnotationPopoverState: ViewModelState {
         let libraryId: LibraryIdentifier
         let type: AnnotationType
         let isEditable: Bool
+        let allowsPageLabelEditing: Bool
         let author: String
         let comment: NSAttributedString
         let color: String
@@ -41,6 +42,7 @@ struct AnnotationPopoverState: ViewModelState {
 
     let libraryId: LibraryIdentifier
     let isEditable: Bool
+    let allowsPageLabelEditing: Bool
     let author: String
     let showsDeleteButton: Bool
 
@@ -59,6 +61,7 @@ struct AnnotationPopoverState: ViewModelState {
         self.libraryId = data.libraryId
         self.type = data.type
         self.isEditable = data.isEditable
+        self.allowsPageLabelEditing = data.allowsPageLabelEditing
         self.author = data.author
         self.comment = data.comment
         self.color = data.color

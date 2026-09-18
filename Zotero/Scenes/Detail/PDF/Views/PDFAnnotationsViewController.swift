@@ -135,6 +135,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
                 highlightFont: viewModel.state.textEditorFont,
+                allowsPageLabelEditing: viewModel.state.allowsPageLabelEditing,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.interfaceStyle,
                 saveAction: { [weak viewModel] data, updateSubsequentLabels in

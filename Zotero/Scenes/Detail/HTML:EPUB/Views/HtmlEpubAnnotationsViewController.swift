@@ -291,6 +291,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
                 highlightFont: viewModel.state.textFont,
+                allowsPageLabelEditing: viewModel.state.allowsPageLabelEditing,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
                 saveAction: { [weak self] data, updateSubsequentLabels in

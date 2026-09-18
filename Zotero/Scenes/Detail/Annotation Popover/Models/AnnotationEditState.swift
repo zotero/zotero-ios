@@ -12,6 +12,7 @@ struct AnnotationEditState: ViewModelState {
     struct Data {
         let type: AnnotationType
         let isEditable: Bool
+        let allowsPageLabelEditing: Bool
         let color: String
         let lineWidth: CGFloat
         let pageLabel: String
@@ -31,6 +32,7 @@ struct AnnotationEditState: ViewModelState {
     }
 
     let isEditable: Bool
+    let allowsPageLabelEditing: Bool
 
     var type: AnnotationType
     var color: String
@@ -43,12 +45,23 @@ struct AnnotationEditState: ViewModelState {
     var changes: Changes
 
     var data: Data {
-        .init(type: type, isEditable: isEditable, color: color, lineWidth: lineWidth, pageLabel: pageLabel, highlightText: highlightText, highlightFont: highlightFont, fontSize: fontSize)
+        .init(
+            type: type,
+            isEditable: isEditable,
+            allowsPageLabelEditing: allowsPageLabelEditing,
+            color: color,
+            lineWidth: lineWidth,
+            pageLabel: pageLabel,
+            highlightText: highlightText,
+            highlightFont: highlightFont,
+            fontSize: fontSize
+        )
     }
 
     init(data: Data) {
         type = data.type
         isEditable = data.isEditable
+        allowsPageLabelEditing = data.allowsPageLabelEditing
         color = data.color
         lineWidth = data.lineWidth
         pageLabel = data.pageLabel

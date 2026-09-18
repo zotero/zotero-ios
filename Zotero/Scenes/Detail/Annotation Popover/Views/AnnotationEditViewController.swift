@@ -84,7 +84,10 @@ final class AnnotationEditViewController: UIViewController {
         saveAction: @escaping AnnotationEditSaveAction,
         deleteAction: @escaping AnnotationEditDeleteAction
     ) {
-        var sections: [Section] = [.pageLabel, .actions]
+        var sections: [Section] = [.actions]
+        if viewModel.state.allowsPageLabelEditing {
+            sections.insert(.pageLabel, at: 0)
+        }
         if viewModel.state.isEditable {
             if !properties.isEmpty {
                 sections.insert(.properties, at: 0)

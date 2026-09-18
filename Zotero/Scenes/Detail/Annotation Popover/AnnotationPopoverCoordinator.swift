@@ -79,6 +79,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let data = AnnotationEditState.Data(
             type: state.type,
             isEditable: state.isEditable,
+            allowsPageLabelEditing: state.allowsPageLabelEditing,
             color: state.color,
             lineWidth: state.lineWidth,
             pageLabel: state.pageLabel,
