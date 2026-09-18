@@ -301,7 +301,8 @@ class HtmlEpubAnnotationsViewController: UIViewController {
                             type: data.type,
                             color: data.color,
                             lineWidth: data.lineWidth,
-                            highlightText: data.highlightText
+                            highlightText: data.highlightText,
+                            highlightFont: data.highlightFont
                         )
                     )
                 },

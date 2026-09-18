@@ -119,8 +119,16 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .parseAndCacheText(let key, let text, let font):
             updateTextCache(key: key, text: text, font: font, viewModel: viewModel)
 
-        case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let highlightText):
-            set(type: type, color: color, lineWidth: lineWidth, highlightText: highlightText, key: key, viewModel: viewModel)
+        case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let highlightText, let highlightFont):
+            set(
+                type: type,
+                color: color,
+                lineWidth: lineWidth,
+                highlightText: highlightText,
+                highlightFont: highlightFont,
+                key: key,
+                viewModel: viewModel
+            )
 
         case .setColor(key: let key, color: let color):
             set(color: color, key: key, viewModel: viewModel)
@@ -505,6 +513,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         color: String,
         lineWidth: CGFloat,
         highlightText: NSAttributedString,
+        highlightFont: UIFont,
         key: String,
         viewModel: ViewModel<HtmlEpubReaderActionHandler>
     ) {
@@ -517,13 +526,16 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         ]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         perform(request: request) { [weak self, weak viewModel] error in
-            guard let error, let self, let viewModel else { return }
+            guard let self, let viewModel else { return }
+            if let error {
+                DDLogError("HtmlEpubReaderActionHandler: can't update annotation \(key) - \(error)")
 
-            DDLogError("HtmlEpubReaderActionHandler: can't update annotation \(key) - \(error)")
-
-            update(viewModel: viewModel) { state in
-                state.error = .cantUpdateAnnotation
+                update(viewModel: viewModel) { state in
+                    state.error = .cantUpdateAnnotation
+                }
+                return
             }
+            updateTextCache(key: key, text: text, font: highlightFont, viewModel: viewModel)
         }
     }
 

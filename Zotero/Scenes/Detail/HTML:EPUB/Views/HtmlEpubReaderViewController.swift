@@ -517,7 +517,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                             type: state.type,
                             color: state.color,
                             lineWidth: state.lineWidth,
-                            highlightText: state.highlightText
+                            highlightText: state.highlightText,
+                            highlightFont: state.highlightFont
                         )
                     )
                 }
