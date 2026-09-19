@@ -847,8 +847,6 @@
 		B36181FF24C9A7C000B30D56 /* LoginState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181F324C9A7C000B30D56 /* LoginState.swift */; };
 		B361820024C9A7C000B30D56 /* LoginAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181F424C9A7C000B30D56 /* LoginAction.swift */; };
 		B361820124C9A7C000B30D56 /* OnboardingPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181F624C9A7C000B30D56 /* OnboardingPageView.swift */; };
-		B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36181F824C9A7C000B30D56 /* OnboardingViewController.xib */; };
-		B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */; };
 		B361820524C9A7C000B30D56 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */; };
 		B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */; };
 		B361820F24C9B9E800B30D56 /* SelectableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820E24C9B9E800B30D56 /* SelectableTextField.swift */; };
@@ -2061,8 +2059,6 @@
 		B36181F324C9A7C000B30D56 /* LoginState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginState.swift; sourceTree = "<group>"; };
 		B36181F424C9A7C000B30D56 /* LoginAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginAction.swift; sourceTree = "<group>"; };
 		B36181F624C9A7C000B30D56 /* OnboardingPageView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingPageView.swift; sourceTree = "<group>"; };
-		B36181F824C9A7C000B30D56 /* OnboardingViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = OnboardingViewController.xib; sourceTree = "<group>"; };
-		B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = OnboardingPageView.xib; sourceTree = "<group>"; };
 		B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
 		B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoRotationHostingController.swift; sourceTree = "<group>"; };
 		B361820E24C9B9E800B30D56 /* SelectableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextField.swift; sourceTree = "<group>"; };
@@ -4163,9 +4159,7 @@
 			isa = PBXGroup;
 			children = (
 				B36181F624C9A7C000B30D56 /* OnboardingPageView.swift */,
-				B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */,
 				B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */,
-				B36181F824C9A7C000B30D56 /* OnboardingViewController.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -5323,8 +5317,6 @@
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentContentView.xib in Resources */,
 				B3ADAE3F28339F2700D46271 /* translation in Resources */,
 				613F32792C1086960088EF70 /* InfoPlist.strings in Resources */,
-				B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */,
-				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
 				61933F242E7218B500F4547F /* AppIcon.icon in Resources */,
 				B3E8FE1D2714297200F51458 /* CiteSearchViewController.xib in Resources */,
 				B3B398532E4CCB20009C59F5 /* DocumentSearchCell.xib in Resources */,
