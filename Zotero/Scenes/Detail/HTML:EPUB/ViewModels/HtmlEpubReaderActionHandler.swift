@@ -751,7 +751,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             params["dateModified"] = DateFormatter.iso8601WithFractionalSeconds.string(from: date)
             params["dateCreated"] = DateFormatter.iso8601WithFractionalSeconds.string(from: date)
             params["tags"] = []
-            params["pageLabel"] = ""
+            params["pageLabel"] = textParams["pageLabel"] ?? ""
             params["comment"] = ""
             return params
         }
