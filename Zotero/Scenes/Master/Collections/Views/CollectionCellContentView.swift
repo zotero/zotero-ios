@@ -175,11 +175,11 @@ final class CollectionCellContentView: UIView {
         if #available(iOS 26.0.0, *) {
             switch traitCollection.splitViewControllerLayoutEnvironment {
             case .expanded:
-                chevronButtonHeightConstraint.constant = 52
+                chevronButtonHeightConstraint.constant = 44
                 separatorView.isHidden = true
 
             case .collapsed:
-                chevronButtonHeightConstraint.constant = 44
+                chevronButtonHeightConstraint.constant = 52
                 separatorView.isHidden = false
 
             case .none:
