@@ -22,14 +22,29 @@ final class ItemCell: UITableViewCell {
     private weak var accessoryContainerRight: NSLayoutConstraint!
 
     private static let noAccessoryTrailingInset: CGFloat = 16
-    private static let accessoryContainerSize: CGFloat = 60
+    private static let accessoryContainerHeight: CGFloat = 60
+    private let accessoryContainerWidth: CGFloat
 
     var key: String = ""
-    private var tagBorderColor: CGColor {
-        return traitCollection.userInterfaceStyle == .dark ? UIColor.black.cgColor : UIColor.white.cgColor
-    }
     private var highlightColor: UIColor? {
-        return isEditing ? multipleSelectionBackgroundView?.backgroundColor : selectedBackgroundView?.backgroundColor
+        if #available(iOS 26.0, *) {
+            return makeBackgroundConfiguration(for: configurationState)
+                .resolvedBackgroundColor(for: tintColor)
+        } else {
+            return isEditing ? multipleSelectionBackgroundView?.backgroundColor : selectedBackgroundView?.backgroundColor
+        }
+    }
+    private var tagBorderColor: CGColor {
+        var color: UIColor?
+        if #available(iOS 26.0, *) {
+            color = highlightColor
+        } else if isEditing {
+            color = multipleSelectionBackgroundView?.backgroundColor
+        }
+        guard let color else {
+            return traitCollection.userInterfaceStyle == .dark ? UIColor.black.cgColor : UIColor.white.cgColor
+        }
+        return color.cgColor
     }
 
     private var subtitleAnimator: UIViewPropertyAnimator?
@@ -44,30 +59,37 @@ final class ItemCell: UITableViewCell {
     }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        if #available(iOS 26.0.0, *) {
+            accessoryContainerWidth = 56
+        } else {
+            accessoryContainerWidth = 60
+        }
         super.init(style: style, reuseIdentifier: reuseIdentifier)
 
         setupViews()
 
         if #available(iOS 26.0.0, *) {
             tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        }
-
-        fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        tagCircles.borderColor = tagBorderColor
-
-        let highlightView = UIView()
-        highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
-        selectedBackgroundView = highlightView
-
-        let selectionView = UIView()
-        if #available(iOS 26.0.0, *) {
-            selectionView.backgroundColor = .systemGray5
         } else {
+            let highlightView = UIView()
+            highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
+            selectedBackgroundView = highlightView
+            let selectionView = UIView()
             selectionView.backgroundColor = Asset.Colors.cellSelected.color
+            multipleSelectionBackgroundView = selectionView
         }
-        multipleSelectionBackgroundView = selectionView
 
         func setupViews() {
+            let subtitleTextStyle: UIFont.TextStyle
+            let horizontalSpacing: CGFloat
+            if #available(iOS 26.0.0, *) {
+                subtitleTextStyle = .subheadline
+                horizontalSpacing = 12
+            } else {
+                subtitleTextStyle = .body
+                horizontalSpacing = 16
+            }
+
             clipsToBounds = true
             preservesSuperviewLayoutMargins = true
             indentationWidth = 10
@@ -98,7 +120,7 @@ final class ItemCell: UITableViewCell {
 
             let subtitleLabel = InsetLabel()
             subtitleLabel.text = " "
-            subtitleLabel.font = .preferredFont(forTextStyle: .body)
+            subtitleLabel.font = .preferredFont(forTextStyle: subtitleTextStyle)
             subtitleLabel.textColor = .systemGray
             subtitleLabel.adjustsFontForContentSizeCategory = true
             subtitleLabel.lineBreakMode = .byTruncatingTail
@@ -111,7 +133,7 @@ final class ItemCell: UITableViewCell {
 
             let tagCircles = TagEmojiCirclesView()
             tagCircles.isHidden = true
-            tagCircles.backgroundColor = .systemBackground
+            tagCircles.borderColor = tagBorderColor
             tagCircles.setContentHuggingPriority(.required, for: .horizontal)
             tagCircles.setContentCompressionResistancePriority(.required, for: .vertical)
             self.tagCircles = tagCircles
@@ -158,6 +180,7 @@ final class ItemCell: UITableViewCell {
 
             let fileView = FileAttachmentView()
             fileView.isHidden = true
+            fileView.contentInsets = UIEdgeInsets(top: 16, left: horizontalSpacing, bottom: 16, right: 16)
             fileView.translatesAutoresizingMaskIntoConstraints = false
             accessoryContainer.addSubview(fileView)
             self.fileView = fileView
@@ -172,7 +195,7 @@ final class ItemCell: UITableViewCell {
                 typeImageView.heightAnchor.constraint(equalToConstant: 28),
 
                 labelsContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-                labelsContainer.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: 16),
+                labelsContainer.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: horizontalSpacing),
                 contentView.bottomAnchor.constraint(equalTo: labelsContainer.bottomAnchor, constant: 12 + ItemDetailLayout.separatorHeight),
                 accessoryContainer.leadingAnchor.constraint(equalTo: labelsContainer.trailingAnchor),
 
@@ -187,8 +210,8 @@ final class ItemCell: UITableViewCell {
 
                 accessoryContainerRight,
                 accessoryContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-                accessoryContainer.widthAnchor.constraint(equalToConstant: ItemCell.accessoryContainerSize),
-                accessoryContainer.heightAnchor.constraint(equalToConstant: ItemCell.accessoryContainerSize),
+                accessoryContainer.widthAnchor.constraint(equalToConstant: accessoryContainerWidth),
+                accessoryContainer.heightAnchor.constraint(equalToConstant: Self.accessoryContainerHeight),
 
                 accessoryImageView.centerXAnchor.constraint(equalTo: accessoryContainer.centerXAnchor),
                 accessoryImageView.centerYAnchor.constraint(equalTo: accessoryContainer.centerYAnchor),
@@ -196,14 +219,21 @@ final class ItemCell: UITableViewCell {
                 fileView.topAnchor.constraint(equalTo: accessoryContainer.topAnchor),
                 fileView.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
                 accessoryContainer.trailingAnchor.constraint(equalTo: fileView.trailingAnchor),
-                accessoryContainer.bottomAnchor.constraint(equalTo: fileView.bottomAnchor),
-                fileView.widthAnchor.constraint(equalToConstant: ItemCell.accessoryContainerSize)
+                accessoryContainer.bottomAnchor.constraint(equalTo: fileView.bottomAnchor)
             ])
         }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        super.updateConfiguration(using: state)
+
+        if #available(iOS 26.0, *) {
+            backgroundConfiguration = makeBackgroundConfiguration(for: state)
+        }
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -239,6 +269,16 @@ final class ItemCell: UITableViewCell {
             fileView.set(backgroundColor: backgroundColor)
             tagCircles.borderColor = tagBorderColor
         }
+    }
+
+    @available(iOS 26.0, *)
+    private func makeBackgroundConfiguration(for state: UICellConfigurationState) -> UIBackgroundConfiguration {
+        var configuration = defaultBackgroundConfiguration().updated(for: state)
+        if state.isSelected {
+            configuration.backgroundColor = .systemGray5
+            configuration.backgroundColorTransformer = nil
+        }
+        return configuration
     }
 
     func set(item: ItemCellModel) {
@@ -279,7 +319,7 @@ final class ItemCell: UITableViewCell {
     func set(accessory: ItemCellModel.Accessory?) {
         guard let accessory else {
             accessoryContainer.isHidden = true
-            accessoryContainerRight.constant = ItemCell.noAccessoryTrailingInset - ItemCell.accessoryContainerSize
+            accessoryContainerRight.constant = Self.noAccessoryTrailingInset - accessoryContainerWidth
             return
         }
 
