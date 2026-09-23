@@ -11,18 +11,18 @@ import UIKit
 import CocoaLumberjackSwift
 
 final class ItemCell: UITableViewCell {
-    @IBOutlet private weak var typeImageView: UIImageView!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleLabelsToContainerBottom: NSLayoutConstraint!
-    @IBOutlet private weak var subtitleLabel: InsetLabel!
-    @IBOutlet private weak var tagCircles: TagEmojiCirclesView!
-    @IBOutlet private weak var noteIcon: UIImageView!
-    @IBOutlet private weak var accessoryContainer: UIView!
-    @IBOutlet private weak var fileView: FileAttachmentView!
-    @IBOutlet private weak var accessoryImageView: UIImageView!
-    @IBOutlet private weak var accessoryContainerRight: NSLayoutConstraint!
+    private weak var typeImageView: UIImageView!
+    private weak var titleLabel: UILabel!
+    private weak var subtitleLabel: InsetLabel!
+    private weak var tagCircles: TagEmojiCirclesView!
+    private weak var noteIcon: UIImageView!
+    private weak var accessoryContainer: UIView!
+    private weak var fileView: FileAttachmentView!
+    private weak var accessoryImageView: UIImageView!
+    private weak var accessoryContainerRight: NSLayoutConstraint!
 
     private static let noAccessoryTrailingInset: CGFloat = 16
+    private static let accessoryContainerSize: CGFloat = 60
 
     var key: String = ""
     private var tagBorderColor: CGColor {
@@ -44,14 +44,15 @@ final class ItemCell: UITableViewCell {
         stopAnimatingSubtitle()
     }
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+
+        setupViews()
 
         if #available(iOS 26.0.0, *) {
             tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         }
 
-        self.titleLabelsToContainerBottom.constant = 12 + ItemDetailLayout.separatorHeight // + bottom separator
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         self.tagCircles.borderColor = self.tagBorderColor
 
@@ -66,6 +67,144 @@ final class ItemCell: UITableViewCell {
             selectionView.backgroundColor = Asset.Colors.cellSelected.color
         }
         self.multipleSelectionBackgroundView = selectionView
+
+        func setupViews() {
+            clipsToBounds = true
+            preservesSuperviewLayoutMargins = true
+            indentationWidth = 10
+            contentView.clipsToBounds = true
+            contentView.contentMode = .center
+            contentView.isMultipleTouchEnabled = true
+            contentView.preservesSuperviewLayoutMargins = true
+            contentView.insetsLayoutMarginsFromSafeArea = false
+
+            let typeImageView = UIImageView()
+            typeImageView.clipsToBounds = true
+            typeImageView.contentMode = .scaleAspectFit
+            typeImageView.adjustsImageSizeForAccessibilityContentSizeCategory = true
+            typeImageView.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(typeImageView)
+            self.typeImageView = typeImageView
+
+            let titleLabel = CapHeightLabel()
+            titleLabel.text = " "
+            titleLabel.font = .preferredFont(forTextStyle: .headline)
+            titleLabel.adjustsFontForContentSizeCategory = true
+            titleLabel.lineBreakMode = .byTruncatingTail
+            titleLabel.setContentHuggingPriority(.init(750), for: .horizontal)
+            titleLabel.setContentHuggingPriority(.required, for: .vertical)
+            titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            self.titleLabel = titleLabel
+
+            let subtitleLabel = InsetLabel()
+            subtitleLabel.text = " "
+            subtitleLabel.font = .preferredFont(forTextStyle: .body)
+            subtitleLabel.textColor = .systemGray
+            subtitleLabel.adjustsFontForContentSizeCategory = true
+            subtitleLabel.lineBreakMode = .byTruncatingTail
+            subtitleLabel.setContentHuggingPriority(.required, for: .horizontal)
+            subtitleLabel.setContentHuggingPriority(.required, for: .vertical)
+            subtitleLabel.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+            subtitleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+            subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+            self.subtitleLabel = subtitleLabel
+
+            let tagCircles = TagEmojiCirclesView()
+            tagCircles.isHidden = true
+            tagCircles.backgroundColor = .systemBackground
+            tagCircles.setContentHuggingPriority(.required, for: .horizontal)
+            tagCircles.setContentCompressionResistancePriority(.required, for: .vertical)
+            self.tagCircles = tagCircles
+
+            let noteIcon = UIImageView(image: Asset.Images.Cells.note.image)
+            noteIcon.isHidden = true
+            noteIcon.clipsToBounds = true
+            noteIcon.contentMode = .scaleAspectFit
+            noteIcon.setContentHuggingPriority(.required, for: .horizontal)
+            noteIcon.setContentHuggingPriority(.required, for: .vertical)
+            noteIcon.setContentCompressionResistancePriority(.required, for: .horizontal)
+            noteIcon.setContentCompressionResistancePriority(.required, for: .vertical)
+            noteIcon.translatesAutoresizingMaskIntoConstraints = false
+            self.noteIcon = noteIcon
+
+            let subtitleStackView = UIStackView(arrangedSubviews: [subtitleLabel, tagCircles, noteIcon])
+            subtitleStackView.alignment = .center
+            subtitleStackView.spacing = 5
+            subtitleStackView.setContentHuggingPriority(.init(750), for: .horizontal)
+            subtitleStackView.setContentHuggingPriority(.required, for: .vertical)
+            subtitleStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
+            subtitleStackView.setContentCompressionResistancePriority(.required, for: .vertical)
+            subtitleStackView.translatesAutoresizingMaskIntoConstraints = false
+
+            let labelsContainer = UIView()
+            labelsContainer.setContentHuggingPriority(.required, for: .vertical)
+            labelsContainer.translatesAutoresizingMaskIntoConstraints = false
+            labelsContainer.addSubview(titleLabel)
+            labelsContainer.addSubview(subtitleStackView)
+            contentView.addSubview(labelsContainer)
+
+            let accessoryContainer = UIView()
+            accessoryContainer.backgroundColor = .clear
+            accessoryContainer.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(accessoryContainer)
+            self.accessoryContainer = accessoryContainer
+
+            let accessoryImageView = UIImageView(image: Asset.Images.Attachments.listWebPageSnapshot.image)
+            accessoryImageView.clipsToBounds = true
+            accessoryImageView.contentMode = .scaleAspectFit
+            accessoryImageView.translatesAutoresizingMaskIntoConstraints = false
+            accessoryContainer.addSubview(accessoryImageView)
+            self.accessoryImageView = accessoryImageView
+
+            let fileView = FileAttachmentView()
+            fileView.isHidden = true
+            fileView.translatesAutoresizingMaskIntoConstraints = false
+            accessoryContainer.addSubview(fileView)
+            self.fileView = fileView
+
+            let accessoryContainerRight = contentView.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor)
+            self.accessoryContainerRight = accessoryContainerRight
+
+            NSLayoutConstraint.activate([
+                typeImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+                typeImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                typeImageView.widthAnchor.constraint(equalToConstant: 28),
+                typeImageView.heightAnchor.constraint(equalToConstant: 28),
+
+                labelsContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+                labelsContainer.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: 16),
+                contentView.bottomAnchor.constraint(equalTo: labelsContainer.bottomAnchor, constant: 12 + ItemDetailLayout.separatorHeight),
+                accessoryContainer.leadingAnchor.constraint(equalTo: labelsContainer.trailingAnchor),
+
+                titleLabel.topAnchor.constraint(equalTo: labelsContainer.topAnchor),
+                titleLabel.leadingAnchor.constraint(equalTo: labelsContainer.leadingAnchor),
+                labelsContainer.trailingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor),
+                subtitleStackView.topAnchor.constraint(greaterThanOrEqualTo: titleLabel.bottomAnchor),
+                subtitleStackView.leadingAnchor.constraint(equalTo: labelsContainer.leadingAnchor),
+                labelsContainer.trailingAnchor.constraint(greaterThanOrEqualTo: subtitleStackView.trailingAnchor),
+                subtitleLabel.firstBaselineAnchor.constraint(equalTo: titleLabel.firstBaselineAnchor, constant: 24),
+                labelsContainer.bottomAnchor.constraint(equalTo: subtitleLabel.lastBaselineAnchor),
+
+                accessoryContainerRight,
+                accessoryContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                accessoryContainer.widthAnchor.constraint(equalToConstant: ItemCell.accessoryContainerSize),
+                accessoryContainer.heightAnchor.constraint(equalToConstant: ItemCell.accessoryContainerSize),
+
+                accessoryImageView.centerXAnchor.constraint(equalTo: accessoryContainer.centerXAnchor),
+                accessoryImageView.centerYAnchor.constraint(equalTo: accessoryContainer.centerYAnchor),
+
+                fileView.topAnchor.constraint(equalTo: accessoryContainer.topAnchor),
+                fileView.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
+                accessoryContainer.trailingAnchor.constraint(equalTo: fileView.trailingAnchor),
+                accessoryContainer.bottomAnchor.constraint(equalTo: fileView.bottomAnchor),
+                fileView.widthAnchor.constraint(equalToConstant: ItemCell.accessoryContainerSize)
+            ])
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -136,7 +275,7 @@ final class ItemCell: UITableViewCell {
     func set(accessory: ItemCellModel.Accessory?) {
         guard let accessory = accessory else {
             self.accessoryContainer.isHidden = true
-            self.accessoryContainerRight.constant = ItemCell.noAccessoryTrailingInset - self.accessoryContainer.frame.width
+            self.accessoryContainerRight.constant = ItemCell.noAccessoryTrailingInset - ItemCell.accessoryContainerSize
             return
         }
 
