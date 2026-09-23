@@ -26,11 +26,10 @@ final class ItemCell: UITableViewCell {
 
     var key: String = ""
     private var tagBorderColor: CGColor {
-        return self.traitCollection.userInterfaceStyle == .dark ? UIColor.black.cgColor : UIColor.white.cgColor
+        return traitCollection.userInterfaceStyle == .dark ? UIColor.black.cgColor : UIColor.white.cgColor
     }
     private var highlightColor: UIColor? {
-        return self.isEditing ? self.multipleSelectionBackgroundView?.backgroundColor :
-                                self.selectedBackgroundView?.backgroundColor
+        return isEditing ? multipleSelectionBackgroundView?.backgroundColor : selectedBackgroundView?.backgroundColor
     }
 
     private var subtitleAnimator: UIViewPropertyAnimator?
@@ -39,7 +38,7 @@ final class ItemCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        self.key = ""
+        key = ""
         subtitlePrefix = ""
         stopAnimatingSubtitle()
     }
@@ -53,12 +52,12 @@ final class ItemCell: UITableViewCell {
             tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         }
 
-        self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        self.tagCircles.borderColor = self.tagBorderColor
+        fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        tagCircles.borderColor = tagBorderColor
 
         let highlightView = UIView()
         highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
-        self.selectedBackgroundView = highlightView
+        selectedBackgroundView = highlightView
 
         let selectionView = UIView()
         if #available(iOS 26.0.0, *) {
@@ -66,7 +65,7 @@ final class ItemCell: UITableViewCell {
         } else {
             selectionView.backgroundColor = Asset.Colors.cellSelected.color
         }
-        self.multipleSelectionBackgroundView = selectionView
+        multipleSelectionBackgroundView = selectionView
 
         func setupViews() {
             clipsToBounds = true
@@ -210,22 +209,22 @@ final class ItemCell: UITableViewCell {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
-        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
 
-        self.tagCircles.borderColor = self.tagBorderColor
-        self.fileView.set(backgroundColor: self.backgroundColor)
+        tagCircles.borderColor = tagBorderColor
+        fileView.set(backgroundColor: backgroundColor)
     }
 
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
         super.setHighlighted(highlighted, animated: animated)
 
         if highlighted {
-            guard let highlightColor = self.highlightColor else { return }
-            self.fileView.set(backgroundColor: highlightColor)
-            self.tagCircles.borderColor = highlightColor.cgColor
+            guard let highlightColor else { return }
+            fileView.set(backgroundColor: highlightColor)
+            tagCircles.borderColor = highlightColor.cgColor
         } else {
-            self.fileView.set(backgroundColor: self.backgroundColor)
-            self.tagCircles.borderColor = self.tagBorderColor
+            fileView.set(backgroundColor: backgroundColor)
+            tagCircles.borderColor = tagBorderColor
         }
     }
 
@@ -233,71 +232,71 @@ final class ItemCell: UITableViewCell {
         super.setSelected(selected, animated: animated)
 
         if selected {
-            guard let highlightColor = self.highlightColor else { return }
-            self.fileView.set(backgroundColor: highlightColor)
-            self.tagCircles.borderColor = highlightColor.cgColor
+            guard let highlightColor else { return }
+            fileView.set(backgroundColor: highlightColor)
+            tagCircles.borderColor = highlightColor.cgColor
         } else {
-            self.fileView.set(backgroundColor: self.backgroundColor)
-            self.tagCircles.borderColor = self.tagBorderColor
+            fileView.set(backgroundColor: backgroundColor)
+            tagCircles.borderColor = tagBorderColor
         }
     }
 
     func set(item: ItemCellModel) {
-        self.key = item.key
+        key = item.key
 
-        self.accessoryType = item.hasDetailButton ? .detailButton : .none
-        self.typeImageView.image = UIImage(named: item.typeIconName)?.withRenderingMode(item.iconRenderingMode)
-        self.typeImageView.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        accessoryType = item.hasDetailButton ? .detailButton : .none
+        typeImageView.image = UIImage(named: item.typeIconName)?.withRenderingMode(item.iconRenderingMode)
+        typeImageView.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         if item.title.string.isEmpty {
-            self.titleLabel.text = " "
+            titleLabel.text = " "
         } else {
-            self.titleLabel.attributedText = item.title
+            titleLabel.attributedText = item.title
         }
-        self.titleLabel.accessibilityLabel = self.titleAccessibilityLabel(for: item)
+        titleLabel.accessibilityLabel = titleAccessibilityLabel(for: item)
         set(subtitle: item.subtitle)
         // The label adds extra horizontal spacing so there is a negative right inset so that the label ends where the text ends exactly.
         // The note icon is rectangular and has 1px white space on each side, so it needs an extra negative pixel when there are no tags.
-        self.subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
-        self.noteIcon.isHidden = !item.hasNote
-        self.noteIcon.isAccessibilityElement = false
+        subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
+        noteIcon.isHidden = !item.hasNote
+        noteIcon.isAccessibilityElement = false
 
-        self.tagCircles.isHidden = item.tagColors.isEmpty && item.tagEmojis.isEmpty
-        self.tagCircles.isAccessibilityElement = false
-        if !self.tagCircles.isHidden {
-            self.tagCircles.set(emojis: item.tagEmojis, colors: item.tagColors)
+        tagCircles.isHidden = item.tagColors.isEmpty && item.tagEmojis.isEmpty
+        tagCircles.isAccessibilityElement = false
+        if !tagCircles.isHidden {
+            tagCircles.set(emojis: item.tagEmojis, colors: item.tagColors)
         }
 
-        self.set(accessory: item.accessory)
+        set(accessory: item.accessory)
 
-        self.layoutIfNeeded()
+        layoutIfNeeded()
+
+        func titleAccessibilityLabel(for item: ItemCellModel) -> String {
+            let title = item.title.string.isEmpty ? L10n.Accessibility.untitled : item.title.string
+            return item.typeName + ", " + title
+        }
     }
 
     func set(accessory: ItemCellModel.Accessory?) {
-        guard let accessory = accessory else {
-            self.accessoryContainer.isHidden = true
-            self.accessoryContainerRight.constant = ItemCell.noAccessoryTrailingInset - ItemCell.accessoryContainerSize
+        guard let accessory else {
+            accessoryContainer.isHidden = true
+            accessoryContainerRight.constant = ItemCell.noAccessoryTrailingInset - ItemCell.accessoryContainerSize
             return
         }
 
-        self.accessoryContainer.isHidden = false
-        self.accessoryContainerRight.constant = 0
+        accessoryContainer.isHidden = false
+        accessoryContainerRight.constant = 0
 
         switch accessory {
         case .attachment(let state):
-            self.fileView.set(state: state, style: .list)
-            self.fileView.isHidden = false
-            self.accessoryImageView.isHidden = true
+            fileView.set(state: state, style: .list)
+            fileView.isHidden = false
+            accessoryImageView.isHidden = true
 
         case .doi, .url:
-            self.fileView.isHidden = true
-            self.accessoryImageView.isHidden = false
-            self.accessoryImageView.image = Asset.Images.Attachments.listLink.image
+            fileView.isHidden = true
+            accessoryImageView.isHidden = false
+            accessoryImageView.image = Asset.Images.Attachments.listLink.image
         }
-    }
-
-    private func titleAccessibilityLabel(for item: ItemCellModel) -> String {
-        let title = item.title.string.isEmpty ? L10n.Accessibility.untitled : item.title.string
-        return item.typeName + ", " + title
     }
 
     func set(subtitle: ItemCellModel.Subtitle?) {
