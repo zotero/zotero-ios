@@ -263,7 +263,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             items.append(UIAction(title: L10n.Speech.addTime, image: nil) { [weak controller] _ in
                 controller?.delegate?.presentReadAloudAddMoreTime()
             })
-            if let title = continueWithDowngradeTitleIfNeeded(remainingTime: remainingTime, voice: controller.speechManager.voice) {
+            if let title = controller.continueWithDowngradeTitleIfNeeded(remainingTime: remainingTime, voice: controller.speechManager.voice) {
                 items.append(UIAction(title: title, image: nil) { [weak controller] _ in
                     controller?.speechManager.downgradeVoiceTierAndContinue()
                 })
