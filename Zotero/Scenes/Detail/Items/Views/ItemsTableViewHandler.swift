@@ -254,7 +254,7 @@ final class ItemsTableViewHandler: NSObject {
         tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
         tableView.shouldGroupAccessibilityChildren = true
 
-        tableView.register(UINib(nibName: "ItemCell", bundle: nil), forCellReuseIdentifier: Self.cellId)
+        tableView.register(ItemCell.self, forCellReuseIdentifier: Self.cellId)
         tableView.tableFooterView = UIView()
     }
 }
