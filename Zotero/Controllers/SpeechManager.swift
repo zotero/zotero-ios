@@ -654,7 +654,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             case .pageTextOffset(let selectedPage, let map) where manager.paragraphIndicesByPage[selectedPage]?.isEmpty == false:
                 // A PSPDFKit text selection maps to a page-text offset on the page the selection was made on, which is
                 // not necessarily the delegate's current page, so it resolves against that page's text directly.
-                beginPlayback(page: selectedPage, startOffset: map(pageText(forPage: selectedPage, manager: manager)), manager: manager)
+                let selectedSegments = manager.segments(forPage: selectedPage)
+                let selectionOffset = map(pageText(forPage: selectedPage, manager: manager))
+                beginPlayback(page: selectedPage, startOffset: sentenceStartOffset(for: selectionOffset, in: selectedSegments), manager: manager)
                 return
 
             case .currentPage, .pageTextOffset, .readerSelection, .resume:
@@ -680,7 +682,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                         beginPlaybackAtReaderPosition(page: page, manager: manager)
                         return
                     }
-                    beginPlayback(page: page, startOffset: offset, manager: manager)
+                    beginPlayback(page: page, startOffset: sentenceStartOffset(for: offset, in: manager.segments(forPage: page)), manager: manager)
                 }
 
             case .currentPage, .pageTextOffset, .closestSentence, .resume:
@@ -700,17 +702,25 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 return (manager.paragraphIndicesByPage[page] ?? []).map { manager.paragraphs[$0].text }.joined(separator: SpeechDocumentParser.segmentSeparator)
             }
 
+            /// Snaps a page-text offset back to the start of the sentence containing it, so that a target derived from a
+            /// user's pick (a text selection, a long press) begins at the sentence's beginning rather than mid-sentence.
+            /// Falls back to the offset itself when no sentence covers it.
+            func sentenceStartOffset(for offset: Int, in segments: [SpeechDocumentParser.Segment]) -> Int {
+                return SpeechDocumentParser.unitRange(containing: offset, granularity: .sentence, in: segments)?.location ?? offset
+            }
+
             /// The page-text offset of the start of the sentence closest to `point` (PDF coordinate space) on `page`, so
             /// that reading begins at the sentence's beginning rather than mid-sentence. Nil when the page has no
             /// readable geometry.
             func closestSentenceStartOffset(to point: CGPoint, onPage page: Delegate.Index, manager: SpeechManager<Delegate>) -> Int? {
                 let segments = manager.segments(forPage: page)
                 guard let offset = SpeechDocumentParser.closestPageTextOffset(to: point, in: segments) else { return nil }
-                return SpeechDocumentParser.unitRange(containing: offset, granularity: .sentence, in: segments)?.location ?? offset
+                return sentenceStartOffset(for: offset, in: segments)
             }
 
-            /// The page-text offset of the read-aloud segment covering `position` on `page`. Segments are requested at
-            /// sentence granularity, so this offset is already a sentence start. Nil when no segment reaches the position.
+            /// The page-text offset of the read-aloud segment covering `position` on `page`. Nil when no segment reaches
+            /// the position. The caller snaps it to a sentence start, because the reader's segmentation doesn't have to
+            /// line up with `TextTokenizer`'s and a selection can start mid-segment.
             func pageTextOffset(forSDTPosition position: SDTPosition, onPage page: Delegate.Index, manager: SpeechManager<Delegate>) -> Int? {
                 return SpeechDocumentParser.pageTextOffset(forSDTPositionStart: position.start, in: manager.segments(forPage: page))
             }
