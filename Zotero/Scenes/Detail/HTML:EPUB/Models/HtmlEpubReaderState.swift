@@ -259,6 +259,7 @@ struct HtmlEpubReaderState: ViewModelState {
         focusDocumentKey = nil
         updatedAnnotationKeys = nil
         zoomEvent = nil
+        lastReadAloudPosition = nil
     }
 }
 

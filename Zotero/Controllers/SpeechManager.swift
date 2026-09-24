@@ -173,6 +173,17 @@ enum SpeechState: Equatable {
         }
     }
 
+    /// Whether no reading session is in progress — a session that ran out of credits has ended just like a stopped one.
+    var isStoppedOrOutOfCredits: Bool {
+        switch self {
+        case .speaking, .initializing, .loading, .paused:
+            return false
+
+        case .stopped, .outOfCredits:
+            return true
+        }
+    }
+
     var isOutOfCredits: Bool {
         switch self {
         case .speaking, .initializing, .loading, .paused, .stopped:
@@ -375,21 +386,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             return .htmlEpub(sdtStart: sdt.start, sdtEnd: sdt.end)
         }
         return .pdf(rects: SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments))
-    }
-
-    /// Whether `position` points at the page the reader is on, so that playback can resume there instead of starting
-    /// where the reader currently is.
-    func canResume(from position: ReadAloudResumePosition) -> Bool {
-        guard let delegate else { return false }
-        switch position {
-        case .pdf(let pageIndex, _):
-            guard let page = delegate.pageIndex(forStructuredDocumentTextPage: pageIndex) else { return false }
-            return page == delegate.getCurrentPageIndex()
-
-        case .reader:
-            // HTML/EPUB is a single structured-document-text page, so a stored reader position is always on it.
-            return true
-        }
     }
 
     /// Reports the sentence being read as a resume anchor — the representation that is stored and synced. PDF resolves
@@ -686,6 +682,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 guard let rect = rects.first, let page = delegate.pageIndex(forStructuredDocumentTextPage: storedPage),
                       let offset = closestSentenceStartOffset(to: CGPoint(x: rect.minX, y: rect.midY), onPage: page, manager: manager)
                 else { break }
+                // The sentence can be on a page the reader isn't showing (it was stored in an earlier session, or by
+                // another device), so bring that page into view and read there instead of where the reader is.
+                if page != delegate.getCurrentPageIndex() {
+                    delegate.focusPage(page)
+                }
                 beginPlayback(page: page, startOffset: offset, manager: manager)
                 return
 

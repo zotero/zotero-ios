@@ -432,8 +432,8 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     func startOrResumeSpeech() {
         if speechManager.state.value.isPaused {
             speechManager.resume()
-        } else if let lastSpeakingPosition, speechManager.canResume(from: lastSpeakingPosition) {
-            // Resume from where reading left off, but only if the user is still on the same page.
+        } else if let lastSpeakingPosition {
+            // Resume from where reading left off, scrolling to that page if the user has moved elsewhere since.
             speechManager.start(.resume(lastSpeakingPosition))
         } else {
             speechManager.start(.currentPage)
@@ -444,7 +444,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     /// pick up where it left off the last time the document was open. Ignored once reading has started, so that a
     /// late-arriving load doesn't move the current session.
     func set(storedPosition: ReadAloudResumePosition?) {
-        guard let storedPosition, lastSpeakingPosition == nil, speechManager.state.value == .stopped else { return }
+        guard let storedPosition, lastSpeakingPosition == nil, speechManager.state.value.isStoppedOrOutOfCredits else { return }
         lastSpeakingPosition = storedPosition
     }
 
@@ -481,7 +481,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
                 guard let self else { return }
                 switch changes {
                 case .update(let results, _, let insertions, let modifications):
-                    guard !insertions.isEmpty || !modifications.isEmpty, speechManager.state.value == .stopped else { return }
+                    guard !insertions.isEmpty || !modifications.isEmpty, speechManager.state.value.isStoppedOrOutOfCredits else { return }
                     guard let position = results.first.flatMap({ $0.deleted ? nil : $0.position }) else { return }
                     lastSpeakingPosition = position
 

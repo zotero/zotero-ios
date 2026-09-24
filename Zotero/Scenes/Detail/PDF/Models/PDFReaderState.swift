@@ -241,6 +241,7 @@ struct PDFReaderState: ViewModelState {
         self.pdfNotification = nil
         self.changedColorForTool = nil
         self.unlockSuccessful = nil
+        lastReadAloudPosition = nil
     }
 }
 

@@ -229,7 +229,8 @@ class HtmlEpubDocumentViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("HtmlEpubDocumentViewController: mapping SDT position to source position failed - \(error)")
-                self?.sdtSourcePositionRequests.removeValue(forKey: requestID)?(nil)
+                self?.sdtSourcePositionRequests.removeValue(forKey: requestID)
+                completion(nil)
             })
             .disposed(by: disposeBag)
     }
