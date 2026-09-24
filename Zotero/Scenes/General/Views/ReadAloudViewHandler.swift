@@ -11,6 +11,7 @@ import UIKit
 
 import CocoaLumberjackSwift
 import RealmSwift
+import RxCocoa
 import RxSwift
 
 struct ReadAloudVoiceChange {
@@ -132,6 +133,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         }
 
         observeStoredPosition()
+        observeApplicationState()
 
         speechManager.state
             .observe(on: MainScheduler.instance)
@@ -171,6 +173,9 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     }
 
     deinit {
+        // Closing the reader deallocates the handler with the debounce timer, so a position waiting it out would be
+        // dropped — and that is exactly the position reading should pick up from next time. Write it now.
+        storePendingPosition()
         DDLogInfo("ReadAloudViewHandler deinitialized")
     }
 
@@ -469,6 +474,21 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         } catch let error {
             DDLogError("ReadAloudViewHandler: can't store read aloud position - \(error)")
         }
+    }
+
+    /// Writes a position that is still waiting out the debounce when the app stops being active. It can be terminated
+    /// while in the background, where `deinit` never runs. Mirrors how `LastReadWatcher` flushes its pending update.
+    private func observeApplicationState() {
+        Observable.merge(
+            NotificationCenter.default.rx.notification(UIApplication.willResignActiveNotification),
+            NotificationCenter.default.rx.notification(UIScene.didEnterBackgroundNotification),
+            NotificationCenter.default.rx.notification(UIApplication.willTerminateNotification)
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe(onNext: { [weak self] _ in
+            self?.storePendingPosition()
+        })
+        .disposed(by: disposeBag)
     }
 
     /// Picks up a position stored for this document while it is open — a sync from another device, say. Reading is
