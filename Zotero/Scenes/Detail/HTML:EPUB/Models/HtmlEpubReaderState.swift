@@ -50,6 +50,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let pages = Changes(rawValue: 1 << 17)
         static let zoom = Changes(rawValue: 1 << 18)
         static let zoomState = Changes(rawValue: 1 << 19)
+        static let lastReadAloudPosition = Changes(rawValue: 1 << 20)
     }
 
     struct DocumentData {
@@ -134,6 +135,8 @@ struct HtmlEpubReaderState: ViewModelState {
 
     var library: Library
     var documentData: DocumentData?
+    /// Sentence where read-aloud playback of this document left off, as it was stored when the document was opened.
+    var lastReadAloudPosition: ReadAloudResumePosition?
     var settings: HtmlEpubSettings
     var activeTool: AnnotationTool?
     var toolColors: [AnnotationTool: UIColor]

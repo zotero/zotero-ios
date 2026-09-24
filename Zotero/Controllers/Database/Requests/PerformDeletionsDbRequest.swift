@@ -142,6 +142,26 @@ struct PerformTagDeletionsDbRequest: DbRequest {
     }
 }
 
+struct PerformLastReadAloudPositionDeletionsDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let keys: [String]
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        let objects = database.objects(RLastReadAloudPosition.self).filter(.keys(keys, in: libraryId))
+        for object in objects {
+            guard !object.isInvalidated else { continue }
+            if object.isChanged {
+                // If a remotely deleted position was changed locally, keep it and let sync reinsert it.
+                object.markAsChanged(in: database)
+            } else {
+                database.delete(deletable: object)
+            }
+        }
+    }
+}
+
 struct PerformPageIndexDeletionsDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let keys: [String]

@@ -14,6 +14,7 @@ struct SettingsResponse {
     let tagColors: TagColorsResponse?
     let pageIndices: PageIndicesResponse
     let lastReadValues: LastReadValuesResponse
+    let lastReadAloudPositions: LastReadAloudPositionsResponse
 
     init(response: Any) throws {
         guard let json = response as? [String: Any] else {
@@ -22,15 +23,19 @@ struct SettingsResponse {
         }
         var indices: [PageIndexResponse] = []
         var lastReadsValues: [LastReadResponse] = []
+        var readAloudPositions: [LastReadAloudPositionResponse] = []
         for (key, value) in json {
             if let pageIndex = try PageIndexResponse(key: key, data: value) {
                 indices.append(pageIndex)
             } else if let lastRead = try LastReadResponse(key: key, data: value) {
                 lastReadsValues.append(lastRead)
+            } else if let readAloudPosition = try LastReadAloudPositionResponse(key: key, data: value) {
+                readAloudPositions.append(readAloudPosition)
             }
         }
         pageIndices = PageIndicesResponse(indices: indices)
         lastReadValues = LastReadValuesResponse(values: lastReadsValues)
+        lastReadAloudPositions = LastReadAloudPositionsResponse(positions: readAloudPositions)
         tagColors = try (json["tagColors"] as? [String: Any]).flatMap({ $0.isEmpty ? nil : $0 }).flatMap({ try TagColorsResponse(response: $0) })
     }
 }
@@ -56,6 +61,39 @@ struct LastReadResponse {
 
         self.key = key
         value = try dictionary.apiGet(key: "value", caller: Self.self)
+        version = try dictionary.apiGet(key: "version", caller: Self.self)
+        self.libraryId = libraryId
+    }
+}
+
+struct LastReadAloudPositionsResponse {
+    let positions: [LastReadAloudPositionResponse]
+}
+
+/// Sentence where read-aloud playback of an attachment left off. PDF documents report the sentence's page and rects,
+/// HTML/EPUB documents the reader's own source position (a WADM selector).
+struct LastReadAloudPositionResponse {
+    let key: String
+    let value: ReadAloudResumePosition
+    let version: Int
+    let libraryId: LibraryIdentifier
+
+    init?(key: String, data: Any) throws {
+        guard key.hasPrefix("lastReadAloudPosition_") else { return nil }
+        guard let dictionary = data as? [String: Any] else {
+            DDLogError("LastReadAloudPositionResponse: response not dictionary for key \(key) - \(data)")
+            throw Parsing.Error.notDictionary
+        }
+
+        let (key, libraryId) = try SettingKeyParser.parse(key: key)
+        let rawValue: [String: Any] = try dictionary.apiGet(key: "value", caller: Self.self)
+        guard let value = ReadAloudResumePosition(json: rawValue) else {
+            DDLogError("LastReadAloudPositionResponse: unknown value for key \(key) - \(rawValue)")
+            throw Parsing.Error.incompatibleValue("value=\(rawValue)")
+        }
+
+        self.key = key
+        self.value = value
         version = try dictionary.apiGet(key: "version", caller: Self.self)
         self.libraryId = libraryId
     }

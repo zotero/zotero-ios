@@ -33,6 +33,28 @@ struct StoreSettingsDbRequest: DbRequest {
 
         syncPages(pages: response.pageIndices.indices, in: database)
         syncLastReadValues(values: response.lastReadValues.values, in: database)
+        syncLastReadAloudPositions(positions: response.lastReadAloudPositions.positions, in: database)
+    }
+
+    private func syncLastReadAloudPositions(positions: [LastReadAloudPositionResponse], in database: Realm) {
+        for position in positions {
+            let rPosition: RLastReadAloudPosition
+            if let existing = database.objects(RLastReadAloudPosition.self).uniqueObject(key: position.key, libraryId: position.libraryId) {
+                rPosition = existing
+            } else {
+                rPosition = RLastReadAloudPosition()
+                database.add(rPosition)
+                rPosition.key = position.key
+                rPosition.libraryId = position.libraryId
+            }
+            rPosition.position = position.value
+            rPosition.version = position.version
+            rPosition.deleted = false
+            rPosition.changeType = .sync
+
+            // No CR for settings, if it was changed locally, just reset it
+            rPosition.deleteAllChanges(database: database)
+        }
     }
 
     private func syncLastReadValues(values: [LastReadResponse], in database: Realm) {

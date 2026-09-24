@@ -55,6 +55,9 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
                 object = lastRead
             } else if setting.uid.starts(with: "lastPageIndex_"), let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
                 object = pageIndex
+            } else if setting.uid.starts(with: "lastReadAloudPosition_"),
+                      let position = database.objects(RLastReadAloudPosition.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
+                object = position
             } else {
                 DDLogError("MarkSettingsAsSyncedDbRequest: could not find setting for \(setting.uid)")
                 continue

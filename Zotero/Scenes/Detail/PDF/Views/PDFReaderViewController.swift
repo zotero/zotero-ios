@@ -488,6 +488,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             }
         }
 
+        if state.changes.contains(.lastReadAloudPosition) {
+            readAloudHandler?.set(storedPosition: state.lastReadAloudPosition)
+        }
+
         if state.changes.contains(.library) {
             let hidden = !state.library.metadataEditable || !toolbarState.visible
             if !state.library.metadataEditable {
@@ -1173,6 +1177,11 @@ extension PDFReaderViewController: SpeechManagerDelegate {
     func pageIndex(forStructuredDocumentTextPage page: Int) -> UInt? {
         guard page >= 0, page < Int(viewModel.state.document.pageCount) else { return nil }
         return UInt(page)
+    }
+
+    func structuredDocumentTextPage(forPageIndex pageIndex: UInt) -> Int? {
+        guard pageIndex < viewModel.state.document.pageCount else { return nil }
+        return Int(pageIndex)
     }
 
     func moved(to pageIndex: UInt, from previousPageIndex: UInt) {

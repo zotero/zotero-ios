@@ -36,6 +36,8 @@ struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
             update(parameters: &parameters, uuids: &uuids, forUpdatedObjects: changedIndices)
             let changedDates = database.objects(RLastReadDate.self).filter(.changesWithoutDeletions)
             update(parameters: &parameters, uuids: &uuids, forUpdatedObjects: changedDates)
+            let changedReadAloudPositions = database.objects(RLastReadAloudPosition.self).filter(.changesWithoutDeletions)
+            update(parameters: &parameters, uuids: &uuids, forUpdatedObjects: changedReadAloudPositions)
             return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)
         }
 

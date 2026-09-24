@@ -110,6 +110,7 @@ extension RItem: Deletable {
         switch self.rawType {
         case ItemTypes.attachment:
             self.deletePageIndex(in: database)
+            self.deleteLastReadAloudPosition(in: database)
             self.cleanupAttachmentFiles()
 
         case ItemTypes.annotation:
@@ -122,6 +123,11 @@ extension RItem: Deletable {
     private func deletePageIndex(in database: Realm) {
         guard let libraryId = self.libraryId, let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: key, libraryId: libraryId) else { return }
         database.delete(pageIndex)
+    }
+
+    private func deleteLastReadAloudPosition(in database: Realm) {
+        guard let libraryId = self.libraryId, let position = database.objects(RLastReadAloudPosition.self).uniqueObject(key: key, libraryId: libraryId) else { return }
+        database.delete(position)
     }
 
     private func cleanupAnnotationFiles() {
@@ -185,6 +191,17 @@ extension RPageIndex: Deletable {
     func willRemove(in database: Realm, context: DeletionContext) {
         if !changes.isInvalidated {
             database.delete(changes)
+        }
+    }
+}
+
+extension RLastReadAloudPosition: Deletable {
+    func willRemove(in database: Realm, context: DeletionContext) {
+        if !changes.isInvalidated {
+            database.delete(changes)
+        }
+        if !rects.isInvalidated {
+            database.delete(rects)
         }
     }
 }

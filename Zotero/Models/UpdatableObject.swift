@@ -365,6 +365,20 @@ extension RPageIndex: Updatable {
     }
 }
 
+extension RLastReadAloudPosition: Updatable {
+    var updateParameters: [String: Any]? {
+        guard let libraryId, let position else { return nil }
+        return [SettingKeyParser.uid(fromKey: key, libraryId: libraryId, prefix: "lastReadAloudPosition"): ["value": position.json]]
+    }
+
+    func markAsChanged(in database: Realm) {
+        changes.append(RObjectChange.create(changes: RLastReadAloudPositionChanges.position))
+        changeType = .user
+        deleted = false
+        version = 0
+    }
+}
+
 extension RLastReadDate: Updatable {
     var updateParameters: [String: Any]? {
         guard let groupKey else { return nil }

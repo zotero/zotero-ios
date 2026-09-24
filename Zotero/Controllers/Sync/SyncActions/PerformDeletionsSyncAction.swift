@@ -58,6 +58,21 @@ struct PerformDeletionsSyncAction: SyncAction {
                     }
                 }
 
+                let readAloudPositions = settings.filter({ $0.hasPrefix("lastReadAloudPosition_") })
+                let hasReadAloudPositions = try dbStorage.perform(request: CountObjectsDbRequest<RLastReadAloudPosition>(), on: queue) > 0
+                if hasReadAloudPositions {
+                    try batch(values: readAloudPositions, batchSize: Self.batchSize) { uids in
+                        var groupedPositions: [LibraryIdentifier: [String]] = [:]
+                        for uid in uids {
+                            let (key, libraryId) = try SettingKeyParser.parse(key: uid)
+                            groupedPositions[libraryId, default: []].append(key)
+                        }
+                        for (libraryId, keys) in groupedPositions {
+                            try dbStorage.perform(request: PerformLastReadAloudPositionDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                        }
+                    }
+                }
+
                 let pageIndices = settings.filter({ $0.hasPrefix("lastPageIndex_") })
                 let hasPageIndices = try dbStorage.perform(request: CountObjectsDbRequest<RPageIndex>(), on: queue) > 0
                 if hasPageIndices {

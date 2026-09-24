@@ -1480,7 +1480,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let startTime = CFAbsoluteTimeGetCurrent()
 
             let key = viewModel.state.key
-            let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
+            let (item, liveAnnotations, storedPage, lastReadAloudPosition) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
@@ -1516,10 +1516,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.documentAnnotations = documentAnnotations
                 state.annotationPages = annotationPages
                 state.visiblePage = page
+                state.lastReadAloudPosition = lastReadAloudPosition
                 state.token = token
                 state.itemToken = itemToken
                 // Since no sidebar annotations view controller has been initialized yet, the annotations changes will result in a no-op.
-                state.changes = [.visiblePage, .annotations, .initialDataLoaded]
+                state.changes = [.visiblePage, .annotations, .initialDataLoaded, .lastReadAloudPosition]
                 state.initialPage = nil
 
                 if let (key, location) = selectedData {
@@ -1619,22 +1620,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        func loadItemAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) throws -> (RItem, Results<RItem>, Int) {
+        func loadItemAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) throws -> (RItem, Results<RItem>, Int, ReadAloudResumePosition?) {
             var results: Results<RItem>!
-            var pageStr = "0"
+            var documentData: ReadDocumentDataDbRequest.Response!
             var item: RItem!
 
             try dbStorage.perform(on: .main, with: { coordinator in
                 item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: "0"))
+                documentData = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: "0"))
                 results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, page: nil))
             })
 
-            guard let page = Int(pageStr) else {
+            guard let page = Int(documentData.page) else {
                 throw PDFReaderState.Error.pageNotInt
             }
 
-            return (item, results, page)
+            return (item, results, page, documentData.lastReadAloudPosition)
         }
     }
 
