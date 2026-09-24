@@ -180,6 +180,10 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     func set(editing: Bool, animated: Bool) {
+        if editing && tableView.isEditing {
+            // End active swipe editing before entering multiple selection mode.
+            tableView.setEditing(false, animated: false)
+        }
         self.tableView.setEditing(editing, animated: animated)
     }
 
