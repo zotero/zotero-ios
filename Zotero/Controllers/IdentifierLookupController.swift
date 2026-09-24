@@ -112,7 +112,7 @@ final class IdentifierLookupController {
     private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
     private unowned let dateParser: DateParser
-    private unowned let remoteFileDownloader: RemoteAttachmentDownloader
+    private let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
     
     private var lookupDataByIdentifier: OrderedDictionary<String, LookupData> = [:]
@@ -220,7 +220,7 @@ final class IdentifierLookupController {
         lookupWebViewHandler.lookup(identifier: identifier, saveAttachments: true)
     }
     
-    func cancelAllLookups() {
+    func cancelAllLookups(trashItems: Bool) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
             DDLogInfo("IdentifierLookupController: cancel all lookups")
@@ -232,6 +232,7 @@ final class IdentifierLookupController {
             cleanupLookupIfNeeded(force: true, failuresAcknowledged: false) { [weak self] _ in
                 self?.observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
             }
+            guard trashItems else { return }
             let storedItemResponses: [(ItemResponse, LibraryIdentifier)] = lookupDataByIdentifier.values.compactMap {
                 switch $0.state {
                 case .translated(let translatedLookupData):

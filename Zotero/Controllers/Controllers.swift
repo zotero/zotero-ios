@@ -269,8 +269,8 @@ final class Controllers {
         userControllers?.disableSync(apiKey: apiKey)
         // Cancel all downloads
         userControllers?.fileDownloader.cancelAll(invalidateSession: true)
-        // Cancel all identifier lookups
-        userControllers?.identifierLookupController.cancelAllLookups()
+        // Cancels all identifier lookups. Items are not trashed as the database will be cleared.
+        userControllers?.identifierLookupController.cancelAllLookups(trashItems: false)
         // Cancel all remote downloads
         userControllers?.remoteFileDownloader.stop()
         // Cancel all background uploads

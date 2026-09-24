@@ -34,7 +34,7 @@ final class LookupActionHandler: ViewModelActionHandler {
             self.lookUp(identifier: identifier, in: viewModel)
 
         case .cancelAllLookups:
-            identifierLookupController.cancelAllLookups()
+            identifierLookupController.cancelAllLookups(trashItems: true)
             self.update(viewModel: viewModel) { state in
                 state.lookupState = .waitingInput
             }
