@@ -13,7 +13,7 @@ import RxSwift
 final class TrashViewController: BaseItemsViewController {
     private let viewModel: ViewModel<TrashActionHandler>
 
-    private var dataSource: TrashTableViewDataSource!
+    private var dataSource: TrashCollectionViewDataSource!
     override var library: Library {
         return viewModel.state.library
     }
@@ -37,9 +37,9 @@ final class TrashViewController: BaseItemsViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        dataSource = TrashTableViewDataSource(viewModel: viewModel, schemaController: controllers.schemaController, fileDownloader: controllers.userControllers?.fileDownloader)
-        handler = ItemsTableViewHandler(
-            tableView: tableView,
+        dataSource = TrashCollectionViewDataSource(viewModel: viewModel, schemaController: controllers.schemaController, fileDownloader: controllers.userControllers?.fileDownloader)
+        handler = ItemsCollectionViewHandler(
+            collectionView: collectionView,
             delegate: self,
             dataSource: dataSource,
             dragDropController: controllers.userControllers?.dragDropController
@@ -266,7 +266,7 @@ final class TrashViewController: BaseItemsViewController {
     }
 }
 
-extension TrashViewController: ItemsTableViewHandlerDelegate {
+extension TrashViewController: ItemsCollectionViewHandlerDelegate {
     var isInViewHierarchy: Bool {
         return view.window != nil
     }
@@ -287,14 +287,14 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
             }
             return
         }
-        guard let key = dataSource.key(at: indexPath.row) else {
+        guard let key = dataSource.key(at: indexPath.item) else {
             contextualActionCompletion?(false)
             return
         }
         process(action: action, for: [key], button: nil, contextualActionCompletion: contextualActionCompletion)
     }
 
-    func process(tapAction action: ItemsTableViewHandler.TapAction) {
+    func process(tapAction action: ItemsCollectionViewHandler.TapAction) {
         resetActiveSearch()
 
         switch action {
@@ -329,7 +329,7 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
+    func process(dragAndDropAction action: ItemsCollectionViewHandler.DragAndDropAction) {
         switch action {
         case .moveItems:
             // Action not supported in trash

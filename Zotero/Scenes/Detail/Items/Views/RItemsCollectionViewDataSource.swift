@@ -1,5 +1,5 @@
 //
-//  RItemsTableViewDataSource.swift
+//  RItemsCollectionViewDataSource.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.09.2024.
@@ -11,7 +11,7 @@ import UIKit
 import CocoaLumberjackSwift
 import RealmSwift
 
-extension RItem: ItemsTableViewObject {
+extension RItem: ItemsCollectionViewObject {
     var libraryIdentifier: LibraryIdentifier {
         return libraryId ?? .custom(.myLibrary)
     }
@@ -37,14 +37,14 @@ extension RItem: ItemsTableViewObject {
     }
 }
 
-final class RItemsTableViewDataSource: NSObject {
+final class RItemsCollectionViewDataSource: NSObject {
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let schemaController: SchemaController
     private weak var fileDownloader: AttachmentDownloader?
     private weak var recognizerController: RecognizerController?
 
     private var snapshot: Results<RItem>?
-    weak var handler: ItemsTableViewHandler?
+    weak var handler: ItemsCollectionViewHandler?
 
     init(viewModel: ViewModel<ItemsActionHandler>, fileDownloader: AttachmentDownloader?, recognizerController: RecognizerController?, schemaController: SchemaController) {
         self.viewModel = viewModel
@@ -61,9 +61,9 @@ final class RItemsTableViewDataSource: NSObject {
     func apply(snapshot: Results<RItem>, modifications: [Int], insertions: [Int], deletions: [Int], completion: (() -> Void)? = nil) {
         guard let handler else { return }
         handler.reload(
-            modifications: modifications.map({ IndexPath(row: $0, section: 0) }),
-            insertions: insertions.map({ IndexPath(row: $0, section: 0) }),
-            deletions: deletions.map({ IndexPath(row: $0, section: 0) }),
+            modifications: modifications.map({ IndexPath(item: $0, section: 0) }),
+            insertions: insertions.map({ IndexPath(item: $0, section: 0) }),
+            deletions: deletions.map({ IndexPath(item: $0, section: 0) }),
             updateSnapshot: {
                 self.snapshot = snapshot
             },
@@ -76,7 +76,7 @@ final class RItemsTableViewDataSource: NSObject {
     }
 }
 
-extension RItemsTableViewDataSource: ItemsTableViewDataSource {
+extension RItemsCollectionViewDataSource: ItemsCollectionViewDataSource {
     var count: Int {
         return snapshot?.count ?? 0
     }
@@ -85,7 +85,7 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
         return viewModel.state.selectedItems
     }
 
-    func object(at index: Int) -> ItemsTableViewObject? {
+    func object(at index: Int) -> ItemsCollectionViewObject? {
         return item(at: index)
     }
 
@@ -94,8 +94,8 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
         return snapshot?[index]
     }
 
-    func tapAction(for indexPath: IndexPath) -> ItemsTableViewHandler.TapAction? {
-        guard let item = item(at: indexPath.row) else { return nil }
+    func tapAction(for indexPath: IndexPath) -> ItemsCollectionViewHandler.TapAction? {
+        guard let item = item(at: indexPath.item) else { return nil }
 
         if viewModel.state.isEditing {
             return .selectItem(item)
@@ -211,32 +211,26 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
     }
 }
 
-extension RItemsTableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
+extension RItemsCollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return count
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: ItemsTableViewHandler.cellId, for: indexPath)
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ItemsCollectionViewHandler.cellId, for: indexPath)
 
-        guard let item = item(at: indexPath.row) else {
-            DDLogError("RItemsTableViewDataSource: indexPath.row (\(indexPath.row)) out of bounds (\(count))")
+        guard let item = item(at: indexPath.item) else {
+            DDLogError("RItemsCollectionViewDataSource: indexPath.item (\(indexPath.item)) out of bounds (\(count))")
             return cell
         }
 
         if let model = model(for: item), let cell = cell as? ItemCell {
+            cell.actionDelegate = handler
             cell.set(item: model)
-
-            let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self] _ in
-                guard let self else { return false }
-                handler?.performTapAction(forIndexPath: indexPath)
-                return true
-            })
-            cell.accessibilityCustomActions = [openInfoAction]
         }
 
         return cell
