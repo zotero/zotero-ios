@@ -1,5 +1,5 @@
 //
-//  TrashTableViewDataSource.swift
+//  TrashCollectionViewDataSource.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.09.2024.
@@ -11,12 +11,12 @@ import OrderedCollections
 
 import CocoaLumberjackSwift
 
-final class TrashTableViewDataSource: NSObject, ItemsTableViewDataSource {
+final class TrashCollectionViewDataSource: NSObject, ItemsCollectionViewDataSource {
     private let viewModel: ViewModel<TrashActionHandler>
     private unowned let schemaController: SchemaController
     private unowned let fileDownloader: AttachmentDownloader?
 
-    weak var handler: ItemsTableViewHandler?
+    weak var handler: ItemsCollectionViewHandler?
     private var snapshot: TrashState.Snapshot?
 
     init(viewModel: ViewModel<TrashActionHandler>, schemaController: SchemaController, fileDownloader: AttachmentDownloader?) {
@@ -40,7 +40,7 @@ final class TrashTableViewDataSource: NSObject, ItemsTableViewDataSource {
     }
 }
 
-extension TrashTableViewDataSource {
+extension TrashCollectionViewDataSource {
     var count: Int {
         return snapshot?.count ?? 0
     }
@@ -53,7 +53,7 @@ extension TrashTableViewDataSource {
         return snapshot?.key(for: index)
     }
 
-    func object(at index: Int) -> ItemsTableViewObject? {
+    func object(at index: Int) -> ItemsCollectionViewObject? {
         return trashObject(at: index)
     }
 
@@ -61,8 +61,8 @@ extension TrashTableViewDataSource {
         return snapshot?.key(for: index).flatMap({ snapshot?.object(for: $0) })
     }
 
-    func tapAction(for indexPath: IndexPath) -> ItemsTableViewHandler.TapAction? {
-        guard let object = trashObject(at: indexPath.row) else { return nil }
+    func tapAction(for indexPath: IndexPath) -> ItemsCollectionViewHandler.TapAction? {
+        guard let object = trashObject(at: indexPath.item) else { return nil }
 
         if viewModel.state.isEditing {
             return .selectItem(object)
@@ -129,32 +129,26 @@ extension TrashTableViewDataSource {
     }
 }
 
-extension TrashTableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
+extension TrashCollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return count
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: ItemsTableViewHandler.cellId, for: indexPath)
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ItemsCollectionViewHandler.cellId, for: indexPath)
 
-        guard let key = key(at: indexPath.row), let object = trashObject(at: indexPath.row) else {
-            DDLogError("TrashTableViewDataSource: indexPath.row (\(indexPath.row)) out of bounds (\(count))")
+        guard let key = key(at: indexPath.item), let object = trashObject(at: indexPath.item) else {
+            DDLogError("TrashCollectionViewDataSource: indexPath.item (\(indexPath.item)) out of bounds (\(count))")
             return cell
         }
 
         if let cell = cell as? ItemCell, let model = model(for: object, key: key) {
+            cell.actionDelegate = handler
             cell.set(item: model)
-
-            let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self] _ in
-                guard let self else { return false }
-                handler?.performTapAction(forIndexPath: indexPath)
-                return true
-            })
-            cell.accessibilityCustomActions = [openInfoAction]
         }
 
         return cell
@@ -172,7 +166,7 @@ extension TrashTableViewDataSource {
     }
 }
 
-extension RCollection: ItemsTableViewObject {
+extension RCollection: ItemsCollectionViewObject {
     var isNote: Bool {
         return false
     }

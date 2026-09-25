@@ -10,7 +10,12 @@ import UIKit
 
 import CocoaLumberjackSwift
 
-final class ItemCell: UITableViewCell {
+protocol ItemCellActionDelegate: AnyObject {
+    func itemCellDidTapDetail(_ cell: ItemCell)
+    func itemCellDidRequestOpen(_ cell: ItemCell) -> Bool
+}
+
+final class ItemCell: UICollectionViewListCell {
     private weak var typeImageView: UIImageView!
     private weak var titleLabel: UILabel!
     private weak var subtitleLabel: InsetLabel!
@@ -25,58 +30,34 @@ final class ItemCell: UITableViewCell {
     private static let accessoryContainerHeight: CGFloat = 60
     private let accessoryContainerWidth: CGFloat
 
+    weak var actionDelegate: ItemCellActionDelegate?
     var key: String = ""
-    private var highlightColor: UIColor? {
-        if #available(iOS 26.0, *) {
-            return makeBackgroundConfiguration(for: configurationState)
-                .resolvedBackgroundColor(for: tintColor)
-        } else {
-            return isEditing ? multipleSelectionBackgroundView?.backgroundColor : selectedBackgroundView?.backgroundColor
-        }
-    }
-    private var tagBorderColor: CGColor {
-        var color: UIColor?
-        if #available(iOS 26.0, *) {
-            color = highlightColor
-        } else if isEditing {
-            color = multipleSelectionBackgroundView?.backgroundColor
-        }
-        guard let color else {
-            return traitCollection.userInterfaceStyle == .dark ? UIColor.black.cgColor : UIColor.white.cgColor
-        }
-        return color.cgColor
-    }
-
     private var subtitleAnimator: UIViewPropertyAnimator?
     private var subtitlePrefix: String = ""
     private var subtitleAnimationSuffixDotCount = 0
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        actionDelegate = nil
         key = ""
+        accessories = []
         subtitlePrefix = ""
         stopAnimatingSubtitle()
     }
 
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+    override init(frame: CGRect) {
         if #available(iOS 26.0.0, *) {
             accessoryContainerWidth = 56
         } else {
             accessoryContainerWidth = 60
         }
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        super.init(frame: frame)
 
         setupViews()
+        setupAccessibilityActions()
 
         if #available(iOS 26.0.0, *) {
             tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        } else {
-            let highlightView = UIView()
-            highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
-            selectedBackgroundView = highlightView
-            let selectionView = UIView()
-            selectionView.backgroundColor = Asset.Colors.cellSelected.color
-            multipleSelectionBackgroundView = selectionView
         }
 
         func setupViews() {
@@ -133,7 +114,7 @@ final class ItemCell: UITableViewCell {
 
             let tagCircles = TagEmojiCirclesView()
             tagCircles.isHidden = true
-            tagCircles.borderColor = tagBorderColor
+            tagCircles.borderColor = tagBorderColor(for: configurationState)
             tagCircles.setContentHuggingPriority(.required, for: .horizontal)
             tagCircles.setContentCompressionResistancePriority(.required, for: .vertical)
             self.tagCircles = tagCircles
@@ -188,7 +169,7 @@ final class ItemCell: UITableViewCell {
             let accessoryContainerRight = contentView.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor)
             self.accessoryContainerRight = accessoryContainerRight
 
-            NSLayoutConstraint.activate([
+            var constraints = [
                 typeImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
                 typeImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
                 typeImageView.widthAnchor.constraint(equalToConstant: 28),
@@ -220,7 +201,19 @@ final class ItemCell: UITableViewCell {
                 fileView.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
                 accessoryContainer.trailingAnchor.constraint(equalTo: fileView.trailingAnchor),
                 accessoryContainer.bottomAnchor.constraint(equalTo: fileView.bottomAnchor)
-            ])
+            ]
+            if #available(iOS 26.0.0, *) {
+                constraints.append(contentView.heightAnchor.constraint(equalToConstant: 68))
+            }
+            NSLayoutConstraint.activate(constraints)
+        }
+
+        func setupAccessibilityActions() {
+            let openItemAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self] _ in
+                guard let self else { return false }
+                return actionDelegate?.itemCellDidRequestOpen(self) ?? false
+            })
+            accessibilityCustomActions = [openItemAction]
         }
     }
 
@@ -231,9 +224,12 @@ final class ItemCell: UITableViewCell {
     override func updateConfiguration(using state: UICellConfigurationState) {
         super.updateConfiguration(using: state)
 
-        if #available(iOS 26.0, *) {
-            backgroundConfiguration = makeBackgroundConfiguration(for: state)
-        }
+        let configuration = makeBackgroundConfiguration(for: state)
+        backgroundConfiguration = configuration
+
+        guard let fileView, let tagCircles else { return }
+        fileView.set(backgroundColor: configuration.resolvedBackgroundColor(for: tintColor))
+        tagCircles.borderColor = tagBorderColor(for: state)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -241,50 +237,48 @@ final class ItemCell: UITableViewCell {
 
         guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
 
-        tagCircles.borderColor = tagBorderColor
-        fileView.set(backgroundColor: backgroundColor)
+        setNeedsUpdateConfiguration()
     }
 
-    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
-        super.setHighlighted(highlighted, animated: animated)
-
-        if highlighted {
-            guard let highlightColor else { return }
-            fileView.set(backgroundColor: highlightColor)
-            tagCircles.borderColor = highlightColor.cgColor
-        } else {
-            fileView.set(backgroundColor: backgroundColor)
-            tagCircles.borderColor = tagBorderColor
-        }
-    }
-
-    override func setSelected(_ selected: Bool, animated: Bool) {
-        super.setSelected(selected, animated: animated)
-
-        if selected {
-            guard let highlightColor else { return }
-            fileView.set(backgroundColor: highlightColor)
-            tagCircles.borderColor = highlightColor.cgColor
-        } else {
-            fileView.set(backgroundColor: backgroundColor)
-            tagCircles.borderColor = tagBorderColor
-        }
-    }
-
-    @available(iOS 26.0, *)
     private func makeBackgroundConfiguration(for state: UICellConfigurationState) -> UIBackgroundConfiguration {
         var configuration = defaultBackgroundConfiguration().updated(for: state)
         if state.isSelected {
-            configuration.backgroundColor = .systemGray5
+            if #available(iOS 26.0, *) {
+                configuration.backgroundColor = .systemGray5
+            } else {
+                configuration.backgroundColor = state.isEditing ? Asset.Colors.cellSelected.color : Asset.Colors.cellHighlighted.color
+            }
+            configuration.backgroundColorTransformer = nil
+        } else if state.isHighlighted, #unavailable(iOS 26.0) {
+            configuration.backgroundColor = Asset.Colors.cellHighlighted.color
             configuration.backgroundColorTransformer = nil
         }
         return configuration
     }
 
+    private func tagBorderColor(for state: UICellConfigurationState) -> CGColor {
+        let color: UIColor
+        if #available(iOS 26.0, *) {
+            color = makeBackgroundConfiguration(for: state).resolvedBackgroundColor(for: tintColor)
+        } else if state.isEditing {
+            color = Asset.Colors.cellSelected.color
+        } else {
+            color = traitCollection.userInterfaceStyle == .dark ? UIColor.black : UIColor.white
+        }
+        return color.cgColor
+    }
+
     func set(item: ItemCellModel) {
         key = item.key
 
-        accessoryType = item.hasDetailButton ? .detailButton : .none
+        var accessories: [UICellAccessory] = [.multiselect(displayed: .whenEditing)]
+        if item.hasDetailButton {
+            accessories.append(.detail(displayed: .whenNotEditing, actionHandler: { [weak self] in
+                guard let self else { return }
+                actionDelegate?.itemCellDidTapDetail(self)
+            }))
+        }
+        self.accessories = accessories
         typeImageView.image = UIImage(named: item.typeIconName)?.withRenderingMode(item.iconRenderingMode)
         typeImageView.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         if item.title.string.isEmpty {
