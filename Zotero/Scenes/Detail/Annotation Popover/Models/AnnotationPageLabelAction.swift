@@ -10,5 +10,4 @@ import Foundation
 
 enum AnnotationPageLabelAction {
     case setLabel(String)
-    case setUpdateSubsequentLabels(Bool)
 }

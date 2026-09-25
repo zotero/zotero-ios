@@ -47,7 +47,14 @@ enum HtmlEpubReaderAction {
     /// Starts a read aloud highlight session. Saves of the annotation created by the reader for the session are ignored until the session ends.
     case startReadAloudAnnotationSession
     case toggleTool(AnnotationTool)
-    case updateAnnotationProperties(key: String, type: AnnotationType, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
+    case updateAnnotationProperties(
+        key: String,
+        type: AnnotationType,
+        color: String,
+        lineWidth: CGFloat,
+        highlightText: NSAttributedString,
+        highlightFont: UIFont
+    )
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case zoom(HtmlEpubReaderState.ZoomEvent)
 }

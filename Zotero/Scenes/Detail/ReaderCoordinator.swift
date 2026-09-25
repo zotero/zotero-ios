@@ -26,6 +26,8 @@ protocol ReaderState {
 
     var selectedReaderAnnotation: ReaderAnnotation? { get }
 
+    var allowsPageLabelEditing: Bool { get }
+
     var textFont: UIFont { get }
     var textEditorFont: UIFont { get }
     var commentFont: UIFont { get }
@@ -68,6 +70,7 @@ protocol ReaderSidebarCoordinatorDelegate: AnyObject {
         userId: Int,
         library: Library,
         highlightFont: UIFont,
+        allowsPageLabelEditing: Bool,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
         saveAction: @escaping AnnotationEditSaveAction,
@@ -152,6 +155,7 @@ extension ReaderCoordinator {
         userId: Int,
         library: Library,
         highlightFont: UIFont,
+        allowsPageLabelEditing: Bool,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
         saveAction: @escaping AnnotationEditSaveAction,
@@ -166,6 +170,7 @@ extension ReaderCoordinator {
             data: AnnotationEditState.Data(
                 type: annotation.type,
                 isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
+                allowsPageLabelEditing: allowsPageLabelEditing,
                 color: annotation.color,
                 lineWidth: annotation.lineWidth ?? 0,
                 pageLabel: annotation.pageLabel,
@@ -217,6 +222,7 @@ extension ReaderCoordinator {
             libraryId: state.library.identifier,
             type: annotation.type,
             isEditable: editability == .editable,
+            allowsPageLabelEditing: state.allowsPageLabelEditing,
             author: author,
             comment: comment,
             color: annotation.color,

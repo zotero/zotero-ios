@@ -46,7 +46,6 @@ enum PDFAnnotationsOutputAction {
         lineWidth: CGFloat,
         fontSize: CGFloat,
         pageLabel: String,
-        updateSubsequentLabels: Bool,
         highlightText: NSAttributedString,
         higlightFont: UIFont
     )

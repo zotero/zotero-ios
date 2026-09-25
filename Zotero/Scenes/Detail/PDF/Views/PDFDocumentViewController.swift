@@ -527,7 +527,6 @@ final class PDFDocumentViewController: UIViewController {
                     lineWidth: state.lineWidth,
                     fontSize: fontSize,
                     pageLabel: state.pageLabel,
-                    updateSubsequentLabels: state.updateSubsequentLabels,
                     highlightText: state.highlightText,
                     higlightFont: state.highlightFont
                 ))
