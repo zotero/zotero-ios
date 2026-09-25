@@ -56,8 +56,14 @@ class HtmlEpubDocumentViewController: UIViewController {
     private var readAloudStartBlockIndexRequests: [Int: (Int?) -> Void] = [:]
     private var sourceSDTPositionRequests: [Int: (SDTPosition?) -> Void] = [:]
     private var sdtSourcePositionRequests: [Int: (ReaderSourcePosition?) -> Void] = [:]
-    private var nextReadAloudRequestID = 0
+    /// Pending reading mode toggle requests, resolved on the matching `onReadingModeEnabled` response event.
+    private var readingModeRequests: [Int: (Bool) -> Void] = [:]
+    private var nextReaderRequestID = 0
     private var readAloudAnnotationSession: ReadAloudAnnotationSession?
+    /// Indicates whether the structured-document-text pack was already handed to the reader for the loaded document.
+    /// The reader resets its SDT session on every `setSDTPack`, discarding the materialized document, so the pack is
+    /// pushed only once and shared by all its consumers (read aloud, reading mode).
+    private var didSetSDTPack: Bool = false
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -158,24 +164,70 @@ class HtmlEpubDocumentViewController: UIViewController {
         webViewHandler.call(javascript: "window._view.selectAnnotations([]);").subscribe().disposed(by: disposeBag)
     }
 
-    // MARK: - Read Aloud
+    // MARK: - Structured document text
 
-    /// Hands the structured-document-text pack to the reader so it can serve `getReadAloudSegments` and create
-    /// annotations from SDT positions. Fire-and-forget.
-    func setSDTPack(bytes: Data, packVersion: Int, schemaMajorVersion: Int) {
+    /// Indicates whether the reader was already handed the structured-document-text pack for the loaded document, so a
+    /// consumer can skip extracting it again.
+    var hasSDTPack: Bool {
+        return didSetSDTPack
+    }
+
+    /// Hands the structured-document-text pack to the reader so it can serve `getReadAloudSegments`, create annotations
+    /// from SDT positions and render reading mode.
+    ///
+    /// The reader resets its SDT session on every `setSDTPack`, discarding the document it already materialized, so the
+    /// pack is pushed only for the first consumer which asks for it and reused by the rest. `completion` reports whether
+    /// the reader has the pack, so a consumer can wait for it before making a call which needs it.
+    func setSDTPack(bytes: Data, packVersion: Int, schemaMajorVersion: Int, completion: ((Bool) -> Void)? = nil) {
+        guard !didSetSDTPack else {
+            completion?(true)
+            return
+        }
+        didSetSDTPack = true
         webViewHandler.call(javascript: "setSDTPack({ bytes: \(WebViewEncoder.encodeForJavascript(bytes)), packVersion: \(packVersion), schemaMajorVersion: \(schemaMajorVersion) });")
             .observe(on: MainScheduler.instance)
-            .subscribe(onFailure: { error in
-                DDLogError("HtmlEpubDocumentViewController: setting SDT pack failed - \(error)")
+            .subscribe(
+                onSuccess: { _ in
+                    completion?(true)
+                },
+                onFailure: { [weak self] error in
+                    DDLogError("HtmlEpubDocumentViewController: setting SDT pack failed - \(error)")
+                    // Allow a retry, the reader has no pack.
+                    self?.didSetSDTPack = false
+                    completion?(false)
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+
+    // MARK: - Reading Mode
+
+    /// Enables or disables reading mode, which renders the document's structured text as reflowable HTML over the
+    /// (hidden) base view inside the same web view. Enabling needs the SDT pack, so `setSDTPack` has to have run first.
+    ///
+    /// Resolved asynchronously via the `onReadingModeEnabled` event, keyed by `requestID`. The reader reports whether
+    /// reading mode is enabled *after* the attempt, so `completion` can report `false` for an enable request which
+    /// failed, for example when the structured text is unavailable.
+    func setReadingModeEnabled(_ enabled: Bool, completion: @escaping (Bool) -> Void) {
+        let requestID = nextReaderRequestID
+        nextReaderRequestID += 1
+        readingModeRequests[requestID] = completion
+        webViewHandler.call(javascript: "setReadingModeEnabled({ enabled: \(enabled), requestID: \(requestID) });")
+            .observe(on: MainScheduler.instance)
+            .subscribe(onFailure: { [weak self] error in
+                DDLogError("HtmlEpubDocumentViewController: setting reading mode enabled failed - \(error)")
+                self?.readingModeRequests.removeValue(forKey: requestID)?(false)
             })
             .disposed(by: disposeBag)
     }
 
+    // MARK: - Read Aloud
+
     /// Fetches the reader's read-aloud segments (text + reader SDT position + paragraph-start flag) at the given
     /// granularity. Resolved asynchronously via the `onReadAloudSegments` event, keyed by `requestID`.
     func getReadAloudSegments(granularity: String, completion: @escaping ([SpeechReaderSegment]?) -> Void) {
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
+        let requestID = nextReaderRequestID
+        nextReaderRequestID += 1
         readAloudSegmentRequests[requestID] = completion
         webViewHandler.call(javascript: "getReadAloudSegments({ granularity: '\(granularity)', requestID: \(requestID) });")
             .observe(on: MainScheduler.instance)
@@ -189,8 +241,8 @@ class HtmlEpubDocumentViewController: UIViewController {
     /// Fetches the structured-document-text block index currently in view (read fresh, so read-aloud can start where the
     /// reader is). Resolved asynchronously via the `onReadAloudStartBlockIndex` event, keyed by `requestID`.
     func getReadAloudStartBlockIndex(completion: @escaping (Int?) -> Void) {
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
+        let requestID = nextReaderRequestID
+        nextReaderRequestID += 1
         readAloudStartBlockIndexRequests[requestID] = completion
         webViewHandler.call(javascript: "getReadAloudStartBlockIndex({ requestID: \(requestID) });")
             .observe(on: MainScheduler.instance)
@@ -205,8 +257,8 @@ class HtmlEpubDocumentViewController: UIViewController {
     /// selected sentence. Needs the SDT pack, so it's only called once `setSDTPack` has run. Resolved asynchronously via
     /// the `onSourceSDTPosition` event, keyed by `requestID`.
     func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
+        let requestID = nextReaderRequestID
+        nextReaderRequestID += 1
         sourceSDTPositionRequests[requestID] = completion
         webViewHandler.call(javascript: "sourceToSDTPosition({ position: \(WebViewEncoder.encodeAsJSONForJavascript(source)), requestID: \(requestID) });")
             .observe(on: MainScheduler.instance)
@@ -221,8 +273,8 @@ class HtmlEpubDocumentViewController: UIViewController {
     /// `CssSelector`) — the inverse of `mapSDTPosition(forSourcePosition:)`. Used to store the sentence read aloud in the
     /// format the reader and sync speak. Resolved asynchronously via the `onSDTPosition` event, keyed by `requestID`.
     func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
+        let requestID = nextReaderRequestID
+        nextReaderRequestID += 1
         sdtSourcePositionRequests[requestID] = completion
         let anchor: [String: Any] = ["start": position.start, "end": position.end]
         webViewHandler.call(javascript: "sdtAnchorToPosition({ anchor: \(WebViewEncoder.encodeAsJSONForJavascript(anchor)), requestID: \(requestID) });")
@@ -286,8 +338,8 @@ class HtmlEpubDocumentViewController: UIViewController {
         if let key = session.key {
             params["id"] = key
         }
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
+        let requestID = nextReaderRequestID
+        nextReaderRequestID += 1
         session.requestID = requestID
         readAloudAnnotationSession = session
         webViewHandler.call(javascript: "setReadAloudAnnotation({ params: \(WebViewEncoder.encodeAsJSONForJavascript(params)), requestID: \(requestID) });")
@@ -484,6 +536,8 @@ class HtmlEpubDocumentViewController: UIViewController {
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
             DDLogInfo("URL: \(data.url.absoluteString)")
+            // A new view starts with a fresh SDT session, so the pack has to be handed over again.
+            didSetSDTPack = false
             let appearance = Appearance.from(appearanceMode: state.settings.appearance, interfaceStyle: state.interfaceStyle)
             setWebViewInterfaceStyle(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
             var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson), colorScheme: '\(appearance.htmlEpubValue)', \(appearance.htmlEpubThemeOption)"
@@ -696,6 +750,16 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 let completion = readAloudStartBlockIndexRequests.removeValue(forKey: requestID)
                 completion?((params["blockIndex"] as? NSNumber)?.intValue)
+
+            case "onReadingModeEnabled":
+                // Reader responded to a `setReadingModeEnabled` request with the state it ended up in; resolve the
+                // matching pending completion.
+                guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing requestID - \(message)")
+                    return
+                }
+                let readingModeCompletion = readingModeRequests.removeValue(forKey: requestID)
+                readingModeCompletion?((params["enabled"] as? Bool) ?? false)
 
             case "onSDTPosition":
                 // Reader responded to a `sdtAnchorToPosition` request; resolve the matching pending completion.

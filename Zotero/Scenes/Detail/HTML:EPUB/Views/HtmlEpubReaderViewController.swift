@@ -37,6 +37,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private unowned let documentWorkerController: DocumentWorkerController
     private unowned let remoteVoicesController: RemoteVoicesController
     private var readAloudHandler: ReadAloudViewHandler<HtmlEpubReaderViewController>?
+    private var readingModeHandler: ReadingModeHandler?
     private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     let disposeBag: DisposeBag
 
@@ -208,9 +209,26 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         observeViewModel()
         setupNavigationBar()
         setupViews()
+        setupReadingModeIfNeeded()
         setupReadAloudIfNeeded()
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
+
+        /// Reading mode renders the structured text of the document, which the reader supports for snapshots only. EPUBs
+        /// are reflowable already, so they don't need it and the reader refuses to enable it for them.
+        func setupReadingModeIfNeeded() {
+            guard FeatureGates.enabled.contains(.readingMode),
+                  let documentController,
+                  let file = viewModel.state.documentFile as? FileData,
+                  ["html", "htm"].contains(file.ext.lowercased())
+            else { return }
+            let handler = ReadingModeHandler(file: file, documentController: documentController, documentWorkerController: documentWorkerController)
+            handler.onEnableFailed = { [weak self] in
+                self?.coordinatorDelegate?.show(error: HtmlEpubReaderState.Error.cantEnableReadingMode)
+            }
+            readingModeHandler = handler
+            navigationBarLeadingItems.append(handler.createReadingModeButton())
+        }
 
         func setupReadAloudIfNeeded() {
             guard FeatureGates.enabled.contains(.speech), let documentController else { return }

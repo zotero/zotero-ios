@@ -90,11 +90,12 @@ struct HtmlEpubReaderState: ViewModelState {
         case cantAddAnnotations
         case cantUpdateAnnotation
         case incompatibleDocument
+        case cantEnableReadingMode
         case unknown
 
         var title: String {
             switch self {
-            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .incompatibleDocument, .unknown:
+            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .incompatibleDocument, .cantEnableReadingMode, .unknown:
                 return L10n.error
             }
         }
@@ -112,6 +113,9 @@ struct HtmlEpubReaderState: ViewModelState {
 
             case .incompatibleDocument:
                 return L10n.Errors.Pdf.incompatibleDocument
+
+            case .cantEnableReadingMode:
+                return L10n.Errors.Reader.cantEnableReadingMode
 
             case .unknown:
                 return L10n.Errors.unknown
