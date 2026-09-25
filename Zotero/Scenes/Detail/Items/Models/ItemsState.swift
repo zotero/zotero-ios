@@ -105,7 +105,7 @@ struct ItemsState: ViewModelState {
     var filters: [ItemsFilter]
     // Keys for all results are stored so that when a deletion comes in it can be determined which keys were deleted and we can remove them from `selectedItems`
     var keys: [String]
-    // Cache of item accessories (attachment, doi, url) so that they don't need to be re-fetched in tableView. The key is key of parent item, or item if it's a standalone attachment.
+    // Cache of item accessories (attachment, doi, url) so that they don't need to be re-fetched in collection view. The key is key of parent item, or item if it's a standalone attachment.
     var itemAccessories: [String: ItemAccessory]
     // Cache of attributed item titles
     var itemTitles: [String: NSAttributedString]
@@ -114,7 +114,7 @@ struct ItemsState: ViewModelState {
     var changes: Changes
     var error: ItemsError?
     var itemKeyToDuplicate: String?
-    // Used to indicate which row should update directly a cell element (e.g. attachment view). The update is done directly to cell instead of tableView reload.
+    // Used to indicate which row should update directly a cell element (e.g. attachment view). The update is done directly to cell instead of collection view reload.
     var updateItem: ItemUpdate?
     var attachmentToOpen: String?
     var downloadBatchData: DownloadBatchData?

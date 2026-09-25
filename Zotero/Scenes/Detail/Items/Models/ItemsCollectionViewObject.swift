@@ -1,5 +1,5 @@
 //
-//  ItemsTableViewObject.swift
+//  ItemsCollectionViewObject.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.09.2024.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol ItemsTableViewObject: AnyObject {
+protocol ItemsCollectionViewObject: AnyObject {
     var key: String { get }
     var isNote: Bool { get }
     var isAttachment: Bool { get }

@@ -18,7 +18,7 @@ import WebKit
 final class ItemsViewController: BaseItemsViewController {
     private let viewModel: ViewModel<ItemsActionHandler>
 
-    private var dataSource: RItemsTableViewDataSource!
+    private var dataSource: RItemsCollectionViewDataSource!
     private var resultsToken: NotificationToken?
     private var libraryToken: NotificationToken?
     override var library: Library {
@@ -44,14 +44,14 @@ final class ItemsViewController: BaseItemsViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        dataSource = RItemsTableViewDataSource(
+        dataSource = RItemsCollectionViewDataSource(
             viewModel: viewModel,
             fileDownloader: controllers.userControllers?.fileDownloader,
             recognizerController: controllers.userControllers?.recognizerController,
             schemaController: controllers.schemaController
         )
-        handler = ItemsTableViewHandler(
-            tableView: tableView,
+        handler = ItemsCollectionViewHandler(
+            collectionView: collectionView,
             delegate: self,
             dataSource: dataSource,
             dragDropController: controllers.userControllers?.dragDropController
@@ -485,7 +485,7 @@ final class ItemsViewController: BaseItemsViewController {
     }
 }
 
-extension ItemsViewController: ItemsTableViewHandlerDelegate {
+extension ItemsViewController: ItemsCollectionViewHandlerDelegate {
     var collectionKey: String? {
         return collection.identifier.key
     }
@@ -494,7 +494,7 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         return view.window != nil
     }
 
-    func process(tapAction: ItemsTableViewHandler.TapAction) {
+    func process(tapAction: ItemsCollectionViewHandler.TapAction) {
         resetActiveSearch()
 
         switch tapAction {
@@ -547,7 +547,7 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         process(action: action, for: [object.key], button: nil, contextualActionCompletion: contextualActionCompletion)
     }
 
-    func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
+    func process(dragAndDropAction action: ItemsCollectionViewHandler.DragAndDropAction) {
         switch action {
         case .moveItems(let keys, let toKey):
             viewModel.process(action: .moveItems(keys: keys, toItemKey: toKey))

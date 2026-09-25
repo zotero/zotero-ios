@@ -29,10 +29,10 @@ class BaseItemsViewController: UIViewController {
     unowned let controllers: Controllers
     let disposeBag: DisposeBag
 
-    weak var tableView: UITableView!
+    weak var collectionView: UICollectionView!
     var toolbarController: ItemsToolbarController?
     var refreshController: SyncRefreshController?
-    var handler: ItemsTableViewHandler?
+    var handler: ItemsCollectionViewHandler?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
     private let debugReaderQueue: DispatchQueue?
@@ -57,7 +57,7 @@ class BaseItemsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        createTableView()
+        createCollectionView()
         if #unavailable(iOS 26.0.0) {
             navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
                 return traitCollection.userInterfaceStyle == .dark ? .black : .white
@@ -66,33 +66,47 @@ class BaseItemsViewController: UIViewController {
         setupTitle()
         setupSearchBar()
         if let scheduler = controllers.userControllers?.syncScheduler {
-            refreshController = SyncRefreshController(libraryId: library.identifier, view: tableView, syncScheduler: scheduler)
+            refreshController = SyncRefreshController(libraryId: library.identifier, view: collectionView, syncScheduler: scheduler)
         }
         startObservingSyncProgress()
 
-        func createTableView() {
-            let tableView = UITableView()
-            tableView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(tableView)
+        func createCollectionView() {
+            var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
+            configuration.showsSeparators = true
+            var separatorConfiguration = configuration.separatorConfiguration
+            if #available(iOS 26.0.0, *) {
+                separatorConfiguration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: 60, bottom: 0, trailing: 16)
+            } else {
+                separatorConfiguration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: 64, bottom: 0, trailing: 0)
+            }
+            separatorConfiguration.multipleSelectionColor = .separator
+            configuration.separatorConfiguration = separatorConfiguration
+            configuration.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
+                return self?.handler?.trailingSwipeActionsConfiguration(at: indexPath)
+            }
+            let layout = UICollectionViewCompositionalLayout.list(using: configuration)
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(collectionView)
 
             if #available(iOS 26.0.0, *) {
                 view.keyboardLayoutGuide.usesBottomSafeArea = false
                 NSLayoutConstraint.activate([
-                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                    tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-                    tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                    collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+                    collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                    collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                    collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
                 ])
             } else {
                 NSLayoutConstraint.activate([
-                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                    tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                    tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                    collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+                    collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                    collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
                 ])
             }
 
-            self.tableView = tableView
+            self.collectionView = collectionView
         }
     }
 
@@ -176,7 +190,7 @@ class BaseItemsViewController: UIViewController {
                 case .object(let object, let progress, _, let libraryId):
                     if library.identifier == libraryId && object == .item {
                         if let progress = progress, progress.total >= BaseItemsViewController.itemBatchingLimit {
-                            // Disable batched reloads when there are a lot of upcoming updates. Batched updates kill tableView performance when many are performed in short period of time.
+                            // Disable batched reloads when there are a lot of upcoming updates. Batched updates kill collection view performance when many are performed in short period of time.
                             handler?.disableReloadAnimations()
                         }
                     } else {
@@ -226,7 +240,7 @@ class BaseItemsViewController: UIViewController {
         }
     }
 
-    func processDebugReaderAction(tapAction: ItemsTableViewHandler.TapAction, completion: @escaping (() -> Void)) {
+    func processDebugReaderAction(tapAction: ItemsCollectionViewHandler.TapAction, completion: @escaping (() -> Void)) {
         guard case .attachment = tapAction else { return }
         let alertController = UIAlertController(title: "Debug Reader", message: "Enter <reader commit hash> or <build zip URL>", preferredStyle: .alert)
         alertController.addTextField { textField in
