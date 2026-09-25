@@ -920,7 +920,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
     private func load(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         do {
-            guard let (item, annotationItems, rawPage) = loadItemAnnotationsAndPage(in: viewModel) else { return }
+            guard let (item, annotationItems, rawPage, lastReadAloudPosition) = loadItemAnnotationsAndPage(in: viewModel) else { return }
 
             if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
                 return
@@ -949,26 +949,27 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.annotations = annotations
                 state.library = library
                 state.documentData = documentData
+                state.lastReadAloudPosition = lastReadAloudPosition
                 state.scale = item.readerScale
                 state.itemToken = itemToken
                 state.annotationsToken = annotationsToken
                 state.libraryToken = libraryToken
-                state.changes = .annotations
+                state.changes = [.annotations, .lastReadAloudPosition]
             }
         } catch let error {
             DDLogError("HtmlEpubReaderActionHandler: could not load document - \(error)")
         }
 
-        func loadItemAnnotationsAndPage(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> (RItem, Results<RItem>, String)? {
+        func loadItemAnnotationsAndPage(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> (RItem, Results<RItem>, String, ReadAloudResumePosition?)? {
             do {
                 let defaultPageValue = defaultPageValue(forExt: viewModel.state.documentFile.ext.lowercased())
                 let itemRequest = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
                 let item = try dbStorage.perform(request: itemRequest, on: .main)
-                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, defaultPageValue: defaultPageValue)
-                let pageIndex = try dbStorage.perform(request: pageIndexRequest, on: .main)
+                let documentDataRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, defaultPageValue: defaultPageValue)
+                let documentData = try dbStorage.perform(request: documentDataRequest, on: .main)
                 let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: nil)
                 let items = try dbStorage.perform(request: annotationsRequest, on: .main)
-                return (item, items, pageIndex)
+                return (item, items, documentData.page, documentData.lastReadAloudPosition)
             } catch let error {
                 DDLogError("HtmlEpubReaderActionHandler: can't load annotations - \(error)")
                 return nil

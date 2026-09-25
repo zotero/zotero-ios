@@ -55,6 +55,7 @@ class HtmlEpubDocumentViewController: UIViewController {
     private var readAloudSegmentRequests: [Int: ([SpeechReaderSegment]?) -> Void] = [:]
     private var readAloudStartBlockIndexRequests: [Int: (Int?) -> Void] = [:]
     private var sourceSDTPositionRequests: [Int: (SDTPosition?) -> Void] = [:]
+    private var sdtSourcePositionRequests: [Int: (ReaderSourcePosition?) -> Void] = [:]
     private var nextReadAloudRequestID = 0
     private var readAloudAnnotationSession: ReadAloudAnnotationSession?
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
@@ -212,6 +213,24 @@ class HtmlEpubDocumentViewController: UIViewController {
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("HtmlEpubDocumentViewController: mapping source position to SDT position failed - \(error)")
                 self?.sourceSDTPositionRequests.removeValue(forKey: requestID)?(nil)
+            })
+            .disposed(by: disposeBag)
+    }
+
+    /// Maps a reader SDT position back to the reader's own source position (an EPUB CFI `FragmentSelector`, a snapshot
+    /// `CssSelector`) — the inverse of `mapSDTPosition(forSourcePosition:)`. Used to store the sentence read aloud in the
+    /// format the reader and sync speak. Resolved asynchronously via the `onSDTPosition` event, keyed by `requestID`.
+    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
+        let requestID = nextReadAloudRequestID
+        nextReadAloudRequestID += 1
+        sdtSourcePositionRequests[requestID] = completion
+        let anchor: [String: Any] = ["start": position.start, "end": position.end]
+        webViewHandler.call(javascript: "sdtAnchorToPosition({ anchor: \(WebViewEncoder.encodeAsJSONForJavascript(anchor)), requestID: \(requestID) });")
+            .observe(on: MainScheduler.instance)
+            .subscribe(onFailure: { [weak self] error in
+                DDLogError("HtmlEpubDocumentViewController: mapping SDT position to source position failed - \(error)")
+                self?.sdtSourcePositionRequests.removeValue(forKey: requestID)
+                completion(nil)
             })
             .disposed(by: disposeBag)
     }
@@ -677,6 +696,15 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 let completion = readAloudStartBlockIndexRequests.removeValue(forKey: requestID)
                 completion?((params["blockIndex"] as? NSNumber)?.intValue)
+
+            case "onSDTPosition":
+                // Reader responded to a `sdtAnchorToPosition` request; resolve the matching pending completion.
+                guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing requestID - \(message)")
+                    return
+                }
+                let sdtSourceCompletion = sdtSourcePositionRequests.removeValue(forKey: requestID)
+                sdtSourceCompletion?(params["position"] as? ReaderSourcePosition)
 
             case "onSourceSDTPosition":
                 // Reader responded to a `sourceToSDTPosition` request; resolve the matching pending completion.

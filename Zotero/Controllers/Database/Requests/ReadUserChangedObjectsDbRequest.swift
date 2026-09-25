@@ -18,7 +18,7 @@ struct ReadUserChangedObjectsDbRequest<Obj: UpdatableObject>: DbResponseRequest 
     func process(in database: Realm) throws -> Results<Obj> {
         if Obj.self == RItem.self {
             return database.objects(Obj.self).filter(.itemUserChanges)
-        } else if Obj.self == RPageIndex.self || Obj.self == RLastReadDate.self {
+        } else if Obj.self == RPageIndex.self || Obj.self == RLastReadDate.self || Obj.self == RLastReadAloudPosition.self {
             return database.objects(Obj.self).filter(.settingsChanges)
         } else {
             return database.objects(Obj.self).filter(.userChanges)

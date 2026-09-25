@@ -52,6 +52,14 @@ protocol SpeechManagerDelegate: AnyObject {
     /// can only map after it's been handed the structured-document-text pack. Nil (the default) means the reader can't
     /// map positions.
     func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void)
+    /// Maps a reader SDT position back to the reader's own source position — the inverse of
+    /// `mapSDTPosition(forSourcePosition:)`. Used to store the sentence being read in the format the reader and sync
+    /// speak. Nil (the default) means the reader has no source positions (PDF stores page rects instead).
+    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void)
+    /// The 0-based structured-document-text page index for one of the delegate's page indices — the inverse of
+    /// `pageIndex(forStructuredDocumentTextPage:)`. Used to store a resume position, whose page index is in
+    /// structured-document-text space. Returns nil if the page has no structured-document-text counterpart.
+    func structuredDocumentTextPage(forPageIndex pageIndex: Index) -> Int?
     /// Called when the highlighted text changes during text-to-speech playback.
     /// The highlight covers the current text unit (sentence or paragraph) being spoken, matching the voice's
     /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
@@ -88,6 +96,11 @@ extension SpeechManagerDelegate {
     func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
         completion(nil)
     }
+
+    /// Default: no source positions (PDF stores the sentence's page rects instead).
+    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
+        completion(nil)
+    }
 }
 
 /// A reader structured-document-text position: `start`/`end` child-index paths into the content tree, each ending in a
@@ -96,10 +109,6 @@ struct SDTPosition {
     let start: [Int]
     let end: [Int]
 }
-
-/// An opaque reader source position (an EPUB CFI `FragmentSelector`, a snapshot `CssSelector`) as the reader reports it
-/// for a text selection. Never interpreted here — it's handed back to the reader to be mapped to an `SDTPosition`.
-typealias ReaderSourcePosition = [String: Any]
 
 /// A read-aloud segment produced by the HTML/EPUB reader (`getReadAloudSegments`): the spoken `text`, its reader SDT
 /// position (`start`/`end` child-index paths into the content tree), and whether it begins a new paragraph. Used to
@@ -164,6 +173,17 @@ enum SpeechState: Equatable {
         }
     }
 
+    /// Whether no reading session is in progress — a session that ran out of credits has ended just like a stopped one.
+    var isStoppedOrOutOfCredits: Bool {
+        switch self {
+        case .speaking, .initializing, .loading, .paused:
+            return false
+
+        case .stopped, .outOfCredits:
+            return true
+        }
+    }
+
     var isOutOfCredits: Bool {
         switch self {
         case .speaking, .initializing, .loading, .paused, .stopped:
@@ -218,15 +238,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         var highlightGranularity: NLTokenUnit
     }
 
-    /// A resumable playback position, anchored to a paragraph. Reported as playback progresses and passed back to
-    /// `start(resuming:)` to resume where reading left off.
-    struct ResumePosition {
-        let page: Delegate.Index
-        let paragraphIndex: Int
-        /// Character offset within the paragraph's text.
-        let offset: Int
-    }
-
     private enum NavigationDirection {
         case forward
         case backward
@@ -249,8 +260,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         /// HTML/EPUB reader's selection menu; falls back to starting where the reader is when the position can't be
         /// mapped or covers no read-aloud segment.
         case readerSelection(ReaderSourcePosition)
-        /// Resume at a previously reported paragraph anchor.
-        case resume(ResumePosition)
+        /// Resume at a previously reported sentence anchor (see `ReadAloudResumePosition`), looking that sentence up
+        /// again in the current document. Falls back to starting where the reader is when it can't be found.
+        case resume(ReadAloudResumePosition)
     }
 
     /// Time window within which a second forward/backward call upgrades the pending sentence skip to a paragraph skip.
@@ -269,11 +281,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var processor: VoiceProcessor!
     private var position: Position? {
         didSet {
-            guard let position, position.paragraphIndex < paragraphs.count else { return }
-            let paragraph = paragraphs[position.paragraphIndex]
-            onSpeakingPositionChanged?(ResumePosition(page: paragraph.page, paragraphIndex: position.paragraphIndex, offset: position.range.location))
+            reportSpeakingPosition()
         }
     }
+    /// Sentence last handed to `onSpeakingPositionChanged`, so that word-level progress within one sentence doesn't
+    /// report it again (and, for HTML/EPUB, doesn't ask the reader to map it again).
+    private var lastReportedSentence: (paragraphIndex: Int, range: NSRange)?
     /// The page currently handed to the voice processor. Used to map processor-reported page-text offsets back to a paragraph.
     private var currentSpeakingPage: Delegate.Index?
     /// Readable paragraphs for the whole document, in reading order.
@@ -291,7 +304,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var pendingNavigation: (direction: NavigationDirection, workItem: DispatchWorkItem)?
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     var onHighlightSessionTimedOut: (() -> Void)?
-    var onSpeakingPositionChanged: ((ResumePosition) -> Void)?
+    var onSpeakingPositionChanged: ((ReadAloudResumePosition) -> Void)?
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -375,6 +388,31 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return .pdf(rects: SpeechDocumentParser.pdfLineRects(forRange: pageTextRange, in: segments))
     }
 
+    /// Reports the sentence being read as a resume anchor — the representation that is stored and synced. PDF resolves
+    /// it from the sentence's geometry; HTML/EPUB asks the reader to map the sentence back to its own source position,
+    /// so that one arrives asynchronously.
+    private func reportSpeakingPosition() {
+        guard let onSpeakingPositionChanged, let position, position.paragraphIndex < paragraphs.count else { return }
+        let paragraph = paragraphs[position.paragraphIndex]
+        guard let sentence = findHighlightUnit(at: position.range.location, in: paragraph.text, granularity: .sentence) else { return }
+        if let lastReportedSentence, lastReportedSentence.paragraphIndex == position.paragraphIndex, lastReportedSentence.range == sentence.range {
+            return
+        }
+        lastReportedSentence = (position.paragraphIndex, sentence.range)
+
+        switch highlightPosition(paragraph: paragraph, highlightRange: sentence.range) {
+        case .pdf(let rects):
+            guard !rects.isEmpty, let pageIndex = delegate?.structuredDocumentTextPage(forPageIndex: paragraph.page) else { return }
+            onSpeakingPositionChanged(.pdf(pageIndex: pageIndex, rects: rects))
+
+        case .htmlEpub(let sdtStart, let sdtEnd):
+            delegate?.mapSourcePosition(forSDTPosition: SDTPosition(start: sdtStart, end: sdtEnd)) { source in
+                guard let source else { return }
+                onSpeakingPositionChanged(.reader(source: source))
+            }
+        }
+    }
+
     /// Maps a page-text offset on `page` to a paragraph index and the offset within that paragraph.
     private func resolveParagraph(atPageTextOffset offset: Int, page: Delegate.Index) -> (index: Int, offset: Int)? {
         let indices = paragraphIndicesByPage[page] ?? []
@@ -444,6 +482,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 case .stopped:
                     // The extracted paragraphs are kept across stops so playback can restart without re-loading them.
                     position = nil
+                    lastReportedSentence = nil
                     currentSpeakingPage = nil
                     processor.detectedLanguage = nil
                     pendingNavigation?.workItem.cancel()
@@ -636,11 +675,19 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             // Targets which resolve against a page of their own, without looking up the reader's current page. They
             // fall through to the default behavior below when they can't be resolved.
             switch target {
-            case .resume(let resumePosition) where resumePosition.paragraphIndex < manager.paragraphs.count:
-                // Resume targets a stored paragraph anchor directly, with no page-text round-trip.
-                let paragraph = manager.paragraphs[resumePosition.paragraphIndex]
-                let offset = min(max(0, resumePosition.offset), paragraph.text.count)
-                manager.startSpeaking(paragraphIndex: resumePosition.paragraphIndex, offset: offset, reportPageChange: false)
+            case .resume(.pdf(let storedPage, let rects)):
+                // A stored PDF position is the geometry of the sentence that was being read, so it resolves against
+                // that page like a long press does — reading restarts at the beginning of that sentence. The rects
+                // don't resolve when the page has no readable text with geometry any more.
+                guard let rect = rects.first, let page = delegate.pageIndex(forStructuredDocumentTextPage: storedPage),
+                      let offset = closestSentenceStartOffset(to: CGPoint(x: rect.minX, y: rect.midY), onPage: page, manager: manager)
+                else { break }
+                // The sentence can be on a page the reader isn't showing (it was stored in an earlier session, or by
+                // another device), so bring that page into view and read there instead of where the reader is.
+                if page != delegate.getCurrentPageIndex() {
+                    delegate.focusPage(page)
+                }
+                beginPlayback(page: page, startOffset: offset, manager: manager)
                 return
 
             case .closestSentence(let point, let pressedPage):
@@ -671,10 +718,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
 
             switch target {
-            case .readerSelection(let source):
-                // A text selection is mapped here, and not when the user picked the action, because the reader can only
-                // map a source position once it has the structured-document-text pack — which it was handed while the
-                // document loaded, just above.
+            case .readerSelection(let source), .resume(.reader(let source)):
+                // A text selection (or a stored reader position, which is the same kind of source position) is mapped
+                // here, and not when the user picked the action, because the reader can only map a source position once
+                // it has the structured-document-text pack — which it was handed while the document loaded, just above.
                 delegate.mapSDTPosition(forSourcePosition: source) { [weak manager] position in
                     guard let manager, manager.state.value == .initializing else { return }
                     guard let position, let offset = pageTextOffset(forSDTPosition: position, onPage: page, manager: manager) else {

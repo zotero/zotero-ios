@@ -35,6 +35,7 @@ struct PDFReaderState: ViewModelState {
         static let library = Changes(rawValue: 1 << 12)
         static let md5 = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
+        static let lastReadAloudPosition = Changes(rawValue: 1 << 15)
     }
 
     enum Error: ReaderError {
@@ -113,6 +114,8 @@ struct PDFReaderState: ViewModelState {
     var searchTerm: String?
     var filter: AnnotationsFilter?
     var visiblePage: Int
+    /// Sentence where read-aloud playback of this document left off, as it was stored when the document was opened.
+    var lastReadAloudPosition: ReadAloudResumePosition?
     var exportState: PDFExportState?
     var settings: PDFSettings
     var changes: Changes
@@ -238,6 +241,7 @@ struct PDFReaderState: ViewModelState {
         self.pdfNotification = nil
         self.changedColorForTool = nil
         self.unlockSuccessful = nil
+        lastReadAloudPosition = nil
     }
 }
 

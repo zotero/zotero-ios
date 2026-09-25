@@ -10,6 +10,8 @@ import AVFAudio
 import UIKit
 
 import CocoaLumberjackSwift
+import RealmSwift
+import RxCocoa
 import RxSwift
 
 struct ReadAloudVoiceChange {
@@ -62,9 +64,19 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     private let libraryId: LibraryIdentifier
     private let disposeBag: DisposeBag
 
-    /// Stores the last speaking position (a paragraph anchor) so that speech can resume from where it left off when the
-    /// user returns to the same page. In-memory only, not persisted to disk.
-    private var lastSpeakingPosition: SpeechManager<Delegate>.ResumePosition?
+    /// Debounce before the last speaking position is written to the database, so that a stored position is submitted
+    /// once per pause in reading rather than on every sentence. Matches the reader's page-index debounce.
+    private let positionStoreDebounce: RxTimeInterval = .seconds(3)
+
+    /// The sentence where reading left off, so that speech can resume from there when the user returns to the same
+    /// page. Kept in the database as well (see `storePendingPosition()`), so it also survives closing the document and
+    /// is synced to the user's other devices.
+    private var lastSpeakingPosition: ReadAloudResumePosition?
+    /// Position waiting for the debounce to elapse before it is written to the database, with the timer holding it.
+    private var pendingPositionStore: (position: ReadAloudResumePosition, disposeBag: DisposeBag)?
+    /// Live database results for the stored position, so a position synced from another device is picked up while the
+    /// document is open.
+    private var storedPositionToken: NotificationToken?
     /// This flag is used to resume playing read-aloud after a voice has been changed in voice picker.
     private var wasPlayingBeforeVoiceChange: Bool
     private weak var activeOverlay: ReadAloudControlsView<Delegate>?
@@ -115,8 +127,13 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         )
 
         speechManager.onSpeakingPositionChanged = { [weak self] position in
-            self?.lastSpeakingPosition = position
+            guard let self else { return }
+            lastSpeakingPosition = position
+            scheduleStore(position: position)
         }
+
+        observeStoredPosition()
+        observeApplicationState()
 
         speechManager.state
             .observe(on: MainScheduler.instance)
@@ -124,6 +141,9 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
                 guard let self else { return }
                 switch state {
                 case .stopped, .outOfCredits:
+                    // Reading ended, so the position it stopped at is written right away instead of waiting out the
+                    // debounce — the document is often closed right after.
+                    storePendingPosition()
                     dismissHighlighterOverlay(confirm: true)
                     self.delegate?.clearSpeechHighlight()
                     hideOverlay()
@@ -153,6 +173,9 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     }
 
     deinit {
+        // Closing the reader deallocates the handler with the debounce timer, so a position waiting it out would be
+        // dropped — and that is exactly the position reading should pick up from next time. Write it now.
+        storePendingPosition()
         DDLogInfo("ReadAloudViewHandler deinitialized")
     }
 
@@ -414,11 +437,83 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     func startOrResumeSpeech() {
         if speechManager.state.value.isPaused {
             speechManager.resume()
-        } else if let lastSpeakingPosition, lastSpeakingPosition.page == speechManager.currentPageIndex {
-            // Resume from where reading left off, but only if the user is still on the same page.
+        } else if let lastSpeakingPosition {
+            // Resume from where reading left off, scrolling to that page if the user has moved elsewhere since.
             speechManager.start(.resume(lastSpeakingPosition))
         } else {
             speechManager.start(.currentPage)
+        }
+    }
+
+    /// Hands over the position stored for this document (read with the rest of the document data), so that reading can
+    /// pick up where it left off the last time the document was open. Ignored once reading has started, so that a
+    /// late-arriving load doesn't move the current session.
+    func set(storedPosition: ReadAloudResumePosition?) {
+        guard let storedPosition, lastSpeakingPosition == nil, speechManager.state.value.isStoppedOrOutOfCredits else { return }
+        lastSpeakingPosition = storedPosition
+    }
+
+    /// Schedules the debounced write of `position` to the database. The position is submitted to the backend from
+    /// there, the same way the reader's page index is.
+    private func scheduleStore(position: ReadAloudResumePosition) {
+        let disposeBag = DisposeBag()
+        pendingPositionStore = (position, disposeBag)
+
+        Single<Int>.timer(positionStoreDebounce, scheduler: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.storePendingPosition()
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func storePendingPosition() {
+        guard let (position, _) = pendingPositionStore else { return }
+        pendingPositionStore = nil
+        do {
+            try dbStorage.perform(request: StoreLastReadAloudPositionDbRequest(key: key, libraryId: libraryId, position: position), on: .main)
+        } catch let error {
+            DDLogError("ReadAloudViewHandler: can't store read aloud position - \(error)")
+        }
+    }
+
+    /// Writes a position that is still waiting out the debounce when the app stops being active. It can be terminated
+    /// while in the background, where `deinit` never runs. Mirrors how `LastReadWatcher` flushes its pending update.
+    private func observeApplicationState() {
+        Observable.merge(
+            NotificationCenter.default.rx.notification(UIApplication.willResignActiveNotification),
+            NotificationCenter.default.rx.notification(UIScene.didEnterBackgroundNotification),
+            NotificationCenter.default.rx.notification(UIApplication.willTerminateNotification)
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe(onNext: { [weak self] _ in
+            self?.storePendingPosition()
+        })
+        .disposed(by: disposeBag)
+    }
+
+    /// Picks up a position stored for this document while it is open — a sync from another device, say. Reading is
+    /// never interrupted by it: the new position only replaces the one playback would resume from, and while read aloud
+    /// is running it is ignored altogether (the running session keeps reporting its own position anyway).
+    private func observeStoredPosition() {
+        do {
+            let results = try dbStorage.perform(request: ReadLastReadAloudPositionDbRequest(attachmentKey: key, libraryId: libraryId), on: .main)
+            storedPositionToken = results.observe({ [weak self] changes in
+                guard let self else { return }
+                switch changes {
+                case .update(let results, _, let insertions, let modifications):
+                    guard !insertions.isEmpty || !modifications.isEmpty, speechManager.state.value.isStoppedOrOutOfCredits else { return }
+                    guard let position = results.first.flatMap({ $0.deleted ? nil : $0.position }) else { return }
+                    lastSpeakingPosition = position
+
+                case .initial:
+                    break
+
+                case .error(let error):
+                    DDLogError("ReadAloudViewHandler: read aloud position observing error - \(error)")
+                }
+            })
+        } catch let error {
+            DDLogError("ReadAloudViewHandler: can't observe read aloud position - \(error)")
         }
     }
 

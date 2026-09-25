@@ -67,6 +67,7 @@ extension RCollection: Syncable {}
 extension RItem: Syncable {}
 extension RSearch: Syncable {}
 extension RPageIndex: Syncable {}
+extension RLastReadAloudPosition: Syncable {}
 // swiftlint:disable unused_setter_value
 extension RLastReadDate: Syncable {
     var customLibraryKey: RCustomLibraryType? {

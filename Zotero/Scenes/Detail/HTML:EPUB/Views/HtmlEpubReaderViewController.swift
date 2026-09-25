@@ -432,6 +432,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             updateInterface(to: state.settings)
         }
 
+        if state.changes.contains(.lastReadAloudPosition) {
+            readAloudHandler?.set(storedPosition: state.lastReadAloudPosition)
+        }
+
         if state.changes.contains(.md5) {
             coordinatorDelegate?.showDocumentChangedAlert { [weak self] in
                 self?.close()
@@ -986,6 +990,10 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
         return page == 0 ? 0 : nil
     }
 
+    func structuredDocumentTextPage(forPageIndex pageIndex: Int) -> Int? {
+        return pageIndex == 0 ? 0 : nil
+    }
+
     func moved(to pageIndex: Int, from previousPageIndex: Int) {
         // Visual page-follow during playback is not yet supported for HTML/EPUB (there is no structured-document-text
         // page → reader-location mapping). No-op for now; audio playback still advances through the whole document.
@@ -1021,6 +1029,14 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
             return
         }
         documentController.mapSDTPosition(forSourcePosition: source, completion: completion)
+    }
+
+    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
+        guard let documentController else {
+            completion(nil)
+            return
+        }
+        documentController.mapSourcePosition(forSDTPosition: position, completion: completion)
     }
 
     func readAloudHighlightChanged(position: ReadAloudPosition, pageIndex: Int) {

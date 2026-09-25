@@ -25,6 +25,7 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
     private var searchesToken: NotificationToken?
     private var pagesToken: NotificationToken?
     private var lastReadToken: NotificationToken?
+    private var lastReadAloudPositionsToken: NotificationToken?
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
@@ -40,6 +41,7 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
                 self.searchesToken = try self.registerObserver(for: RSearch.self, coordinator: coordinator)
                 self.pagesToken = try self.registerSettingsObserver(for: RPageIndex.self, coordinator: coordinator)
                 self.lastReadToken = try self.registerSettingsObserver(for: RLastReadDate.self, coordinator: coordinator)
+                self.lastReadAloudPositionsToken = try self.registerSettingsObserver(for: RLastReadAloudPosition.self, coordinator: coordinator)
             })
         } catch let error {
             DDLogError("RealmObjectChangeObserver: can't load objects to observe - \(error)")
