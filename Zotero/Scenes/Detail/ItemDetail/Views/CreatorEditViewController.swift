@@ -213,22 +213,31 @@ final class CreatorEditViewController: UIViewController {
     }
 
     private func setupNavigationItems() {
-        let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        cancel.rx.tap
-              .subscribe(onNext: { [weak self] in
-                  self?.presentingViewController?.dismiss(animated: true, completion: nil)
-              })
-              .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancel
+        let cancelPrimaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
+            self?.presentingViewController?.dismiss(animated: true)
+        }
+        let cancel: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
+        } else {
+            cancel = UIBarButtonItem(primaryAction: cancelPrimaryAction)
+        }
+        navigationItem.leftBarButtonItem = cancel
 
-        let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
-        save.isEnabled = self.viewModel.state.isValid
-        save.rx.tap
-              .subscribe(onNext: { [weak self] in
-                  self?.save()
-              })
-              .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = save
+        let savePrimaryAction = UIAction(title: L10n.save) { [weak self] _ in
+            self?.save()
+        }
+        let save: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            save = UIBarButtonItem(systemItem: .save, primaryAction: savePrimaryAction)
+            save.tintColor = Asset.Colors.zoteroBlue.color
+            save.style = .prominent
+        } else {
+            save = UIBarButtonItem(primaryAction: savePrimaryAction)
+            save.style = .done
+        }
+        save.isEnabled = viewModel.state.isValid
+        navigationItem.rightBarButtonItem = save
     }
 
     private func setupSeparatorHeight() {

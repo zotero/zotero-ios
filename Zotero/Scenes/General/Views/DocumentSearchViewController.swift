@@ -121,7 +121,7 @@ final class DocumentSearchViewController: UIViewController {
                 .text
                 .observe(on: MainScheduler.instance)
                 .skip(1)
-                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                .debounce(.milliseconds(250), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] text in
                     self?.text = text
                 })

@@ -13,7 +13,7 @@ import RxSwift
 final class TrashViewController: BaseItemsViewController {
     private let viewModel: ViewModel<TrashActionHandler>
 
-    private var dataSource: TrashTableViewDataSource!
+    private var dataSource: TrashCollectionViewDataSource!
     override var library: Library {
         return viewModel.state.library
     }
@@ -37,9 +37,9 @@ final class TrashViewController: BaseItemsViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        dataSource = TrashTableViewDataSource(viewModel: viewModel, schemaController: controllers.schemaController, fileDownloader: controllers.userControllers?.fileDownloader)
-        handler = ItemsTableViewHandler(
-            tableView: tableView,
+        dataSource = TrashCollectionViewDataSource(viewModel: viewModel, schemaController: controllers.schemaController, fileDownloader: controllers.userControllers?.fileDownloader)
+        handler = ItemsCollectionViewHandler(
+            collectionView: collectionView,
             delegate: self,
             dataSource: dataSource,
             dragDropController: controllers.userControllers?.dragDropController
@@ -122,7 +122,7 @@ final class TrashViewController: BaseItemsViewController {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
-        if state.changes.contains(.filters) || state.changes.contains(.batchData) {
+        if state.changes.contains(.filters) || state.changes.contains(.batchData) || state.changes.contains(.objects) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
@@ -136,7 +136,7 @@ final class TrashViewController: BaseItemsViewController {
             case .itemMove, .deletion, .deletionFromCollection:
                 dataSource.apply(snapshot: state.snapshot)
 
-            case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading:
+            case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading, .deletionFromRecentlyRead:
                 break
             }
 
@@ -149,48 +149,48 @@ final class TrashViewController: BaseItemsViewController {
         viewModel.process(action: .search(term))
     }
 
-    private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, contextualActionCompletion: ItemContextualActionCompletion?) {
+        var completed: Bool? = false
+        defer {
+            if let contextualActionCompletion, let completed {
+                contextualActionCompletion(completed)
+            }
+        }
+
         switch action {
-        case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection:
+        case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection, .removeFromRecentlyRead,
+             .filter, .sort, .debugReader, .getStructuredText:
             // These actions are not available in trash collection
             break
 
         case .delete:
-            guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showDeletionQuestion(
+            guard !selectedKeys.isEmpty, let coordinatorDelegate else { return }
+            completed = nil
+            coordinatorDelegate.showDeletionQuestion(
                 count: selectedKeys.count,
                 confirmAction: { [weak self] in
                     self?.viewModel.process(action: .deleteObjects(selectedKeys))
+                    contextualActionCompletion?(true)
                 },
                 cancelAction: {
-                    completionAction?(false)
+                    contextualActionCompletion?(false)
                 }
             )
 
         case .restore:
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .restoreItems(selectedKeys))
-            completionAction?(true)
-
-        case .filter:
-            guard let button else { return }
-            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
-
-        case .sort:
-            guard let button else { return }
-            coordinatorDelegate?.showSortActions(
-                sortType: viewModel.state.sortType,
-                button: button,
-                changed: { [weak self] newValue in
-                    self?.viewModel.process(action: .setSortType(newValue))
-                }
-            )
+            completed = true
 
         case .download:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .download(selectedKeys))
+            completed = true
 
         case .removeDownload:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .removeDownloads(selectedKeys))
+            completed = true
         }
     }
 
@@ -220,9 +220,12 @@ final class TrashViewController: BaseItemsViewController {
             isEditing: state.isEditing,
             selectedItems: state.selectedItems,
             filters: state.filters,
+            sortType: state.sortType,
+            allowsManualSort: true,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
-            identifierLookupBatchData: .init(saved: 0, total: 0),
+            identifierLookupBatchData: .zero,
+            showsDocumentWorkerRecorder: controllers.userControllers?.documentWorkerController.recorder != nil,
             itemCount: state.snapshot.count
         )
     }
@@ -263,7 +266,7 @@ final class TrashViewController: BaseItemsViewController {
     }
 }
 
-extension TrashViewController: ItemsTableViewHandlerDelegate {
+extension TrashViewController: ItemsCollectionViewHandlerDelegate {
     var isInViewHierarchy: Bool {
         return view.window != nil
     }
@@ -272,12 +275,26 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
         return nil
     }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let key = dataSource.key(at: index) else { return }
-        process(action: action, for: [key], button: nil, completionAction: completionAction)
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, contextualActionCompletion: ItemContextualActionCompletion?) {
+        if action == .debugReader {
+            guard let tapAction = dataSource.tapAction(for: indexPath) else {
+                contextualActionCompletion?(false)
+                return
+            }
+            processDebugReaderAction(tapAction: tapAction) { [weak self] in
+                self?.process(tapAction: tapAction)
+                contextualActionCompletion?(true)
+            }
+            return
+        }
+        guard let key = dataSource.key(at: indexPath.item) else {
+            contextualActionCompletion?(false)
+            return
+        }
+        process(action: action, for: [key], button: nil, contextualActionCompletion: contextualActionCompletion)
     }
 
-    func process(tapAction action: ItemsTableViewHandler.TapAction) {
+    func process(tapAction action: ItemsCollectionViewHandler.TapAction) {
         resetActiveSearch()
 
         switch action {
@@ -312,7 +329,7 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
+    func process(dragAndDropAction action: ItemsCollectionViewHandler.DragAndDropAction) {
         switch action {
         case .moveItems:
             // Action not supported in trash
@@ -326,11 +343,27 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
 
 extension TrashViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
-        process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
+        process(action: action, for: viewModel.state.selectedItems, button: button, contextualActionCompletion: nil)
     }
 
     func showLookup() {
         coordinatorDelegate?.showLookup()
+    }
+
+    func showFilters(button: UIBarButtonItem) {
+        coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
+    }
+
+    func sortTypeChanged(_ sortType: ItemsSortType) {
+        viewModel.process(action: .setSortType(sortType))
+    }
+
+    func downloadsFilterChanged(enabled: Bool) {
+        if enabled {
+            viewModel.process(action: .enableFilter(.downloadedFiles))
+        } else {
+            viewModel.process(action: .disableFilter(.downloadedFiles))
+        }
     }
 }
 

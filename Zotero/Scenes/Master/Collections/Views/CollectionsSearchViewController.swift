@@ -41,7 +41,6 @@ final class CollectionsSearchViewController: UIViewController {
         searchBarSeparatorHeight.constant = 1 / UIScreen.main.scale
         setupSearchBar()
         setupCollectionView()
-        setupKeyboardObserving()
         setupDataSource()
 
         viewModel.stateObservable
@@ -105,6 +104,7 @@ final class CollectionsSearchViewController: UIViewController {
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }
+        collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
     }
 
     private func setupDataSource() {
@@ -120,34 +120,6 @@ final class CollectionsSearchViewController: UIViewController {
             snapshot.appendSections([0])
             self?.dataSource.apply(snapshot, animatingDifferences: false)
         }
-    }
-
-    private func setupCollectionView(with keyboardData: KeyboardData) {
-        var insets = collectionView.contentInset
-        insets.bottom = keyboardData.visibleHeight
-        collectionView.contentInset = insets
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-            .keyboardWillShow
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupCollectionView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
-
-        NotificationCenter.default
-            .keyboardWillHide
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupCollectionView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
     }
 }
 

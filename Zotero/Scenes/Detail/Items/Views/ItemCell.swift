@@ -10,149 +10,327 @@ import UIKit
 
 import CocoaLumberjackSwift
 
-final class ItemCell: UITableViewCell {
-    @IBOutlet private weak var typeImageView: UIImageView!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleLabelsToContainerBottom: NSLayoutConstraint!
-    @IBOutlet private weak var subtitleLabel: InsetLabel!
-    @IBOutlet private weak var tagCircles: TagEmojiCirclesView!
-    @IBOutlet private weak var noteIcon: UIImageView!
-    @IBOutlet private weak var accessoryContainer: UIView!
-    @IBOutlet private weak var fileView: FileAttachmentView!
-    @IBOutlet private weak var accessoryImageView: UIImageView!
-    @IBOutlet private weak var accessoryContainerRight: NSLayoutConstraint!
+protocol ItemCellActionDelegate: AnyObject {
+    func itemCellDidTapDetail(_ cell: ItemCell)
+    func itemCellDidRequestOpen(_ cell: ItemCell) -> Bool
+}
+
+final class ItemCell: UICollectionViewListCell {
+    private weak var typeImageView: UIImageView!
+    private weak var titleLabel: UILabel!
+    private weak var subtitleLabel: InsetLabel!
+    private weak var tagCircles: TagEmojiCirclesView!
+    private weak var noteIcon: UIImageView!
+    private weak var accessoryContainer: UIView!
+    private weak var fileView: FileAttachmentView!
+    private weak var accessoryImageView: UIImageView!
+    private weak var accessoryContainerRight: NSLayoutConstraint!
 
     private static let noAccessoryTrailingInset: CGFloat = 16
+    private static let accessoryContainerHeight: CGFloat = 60
+    private let accessoryContainerWidth: CGFloat
 
+    weak var actionDelegate: ItemCellActionDelegate?
     var key: String = ""
-    private var tagBorderColor: CGColor {
-        return self.traitCollection.userInterfaceStyle == .dark ? UIColor.black.cgColor : UIColor.white.cgColor
-    }
-    private var highlightColor: UIColor? {
-        return self.isEditing ? self.multipleSelectionBackgroundView?.backgroundColor :
-                                self.selectedBackgroundView?.backgroundColor
-    }
-
     private var subtitleAnimator: UIViewPropertyAnimator?
     private var subtitlePrefix: String = ""
     private var subtitleAnimationSuffixDotCount = 0
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        self.key = ""
+        actionDelegate = nil
+        key = ""
+        accessories = []
         subtitlePrefix = ""
         stopAnimatingSubtitle()
     }
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    override init(frame: CGRect) {
+        if #available(iOS 26.0.0, *) {
+            accessoryContainerWidth = 56
+        } else {
+            accessoryContainerWidth = 60
+        }
+        super.init(frame: frame)
 
-        self.titleLabelsToContainerBottom.constant = 12 + ItemDetailLayout.separatorHeight // + bottom separator
-        self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        self.tagCircles.borderColor = self.tagBorderColor
+        setupViews()
+        setupAccessibilityActions()
 
-        self.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
-        
-        let highlightView = UIView()
-        highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
-        self.selectedBackgroundView = highlightView
+        if #available(iOS 26.0.0, *) {
+            tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        }
 
-        let selectionView = UIView()
-        selectionView.backgroundColor = Asset.Colors.cellSelected.color
-        self.multipleSelectionBackgroundView = selectionView
+        func setupViews() {
+            let subtitleTextStyle: UIFont.TextStyle
+            let horizontalSpacing: CGFloat
+            if #available(iOS 26.0.0, *) {
+                subtitleTextStyle = .subheadline
+                horizontalSpacing = 12
+            } else {
+                subtitleTextStyle = .body
+                horizontalSpacing = 16
+            }
+
+            clipsToBounds = true
+            preservesSuperviewLayoutMargins = true
+            indentationWidth = 10
+            contentView.clipsToBounds = true
+            contentView.contentMode = .center
+            contentView.isMultipleTouchEnabled = true
+            contentView.preservesSuperviewLayoutMargins = true
+            contentView.insetsLayoutMarginsFromSafeArea = false
+
+            let typeImageView = UIImageView()
+            typeImageView.clipsToBounds = true
+            typeImageView.contentMode = .scaleAspectFit
+            typeImageView.adjustsImageSizeForAccessibilityContentSizeCategory = true
+            typeImageView.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(typeImageView)
+            self.typeImageView = typeImageView
+
+            let titleLabel = CapHeightLabel()
+            titleLabel.text = " "
+            titleLabel.font = .preferredFont(forTextStyle: .headline)
+            titleLabel.adjustsFontForContentSizeCategory = true
+            titleLabel.lineBreakMode = .byTruncatingTail
+            titleLabel.setContentHuggingPriority(.init(750), for: .horizontal)
+            titleLabel.setContentHuggingPriority(.required, for: .vertical)
+            titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            self.titleLabel = titleLabel
+
+            let subtitleLabel = InsetLabel()
+            subtitleLabel.text = " "
+            subtitleLabel.font = .preferredFont(forTextStyle: subtitleTextStyle)
+            subtitleLabel.textColor = .systemGray
+            subtitleLabel.adjustsFontForContentSizeCategory = true
+            subtitleLabel.lineBreakMode = .byTruncatingTail
+            subtitleLabel.setContentHuggingPriority(.required, for: .horizontal)
+            subtitleLabel.setContentHuggingPriority(.required, for: .vertical)
+            subtitleLabel.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+            subtitleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+            subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+            self.subtitleLabel = subtitleLabel
+
+            let tagCircles = TagEmojiCirclesView()
+            tagCircles.isHidden = true
+            tagCircles.borderColor = tagBorderColor(for: configurationState)
+            tagCircles.setContentHuggingPriority(.required, for: .horizontal)
+            tagCircles.setContentCompressionResistancePriority(.required, for: .vertical)
+            self.tagCircles = tagCircles
+
+            let noteIcon = UIImageView(image: Asset.Images.Cells.note.image)
+            noteIcon.isHidden = true
+            noteIcon.clipsToBounds = true
+            noteIcon.contentMode = .scaleAspectFit
+            noteIcon.setContentHuggingPriority(.required, for: .horizontal)
+            noteIcon.setContentHuggingPriority(.required, for: .vertical)
+            noteIcon.setContentCompressionResistancePriority(.required, for: .horizontal)
+            noteIcon.setContentCompressionResistancePriority(.required, for: .vertical)
+            noteIcon.translatesAutoresizingMaskIntoConstraints = false
+            self.noteIcon = noteIcon
+
+            let subtitleStackView = UIStackView(arrangedSubviews: [subtitleLabel, tagCircles, noteIcon])
+            subtitleStackView.alignment = .center
+            subtitleStackView.spacing = 5
+            subtitleStackView.setContentHuggingPriority(.init(750), for: .horizontal)
+            subtitleStackView.setContentHuggingPriority(.required, for: .vertical)
+            subtitleStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
+            subtitleStackView.setContentCompressionResistancePriority(.required, for: .vertical)
+            subtitleStackView.translatesAutoresizingMaskIntoConstraints = false
+
+            let labelsContainer = UIView()
+            labelsContainer.setContentHuggingPriority(.required, for: .vertical)
+            labelsContainer.translatesAutoresizingMaskIntoConstraints = false
+            labelsContainer.addSubview(titleLabel)
+            labelsContainer.addSubview(subtitleStackView)
+            contentView.addSubview(labelsContainer)
+
+            let accessoryContainer = UIView()
+            accessoryContainer.backgroundColor = .clear
+            accessoryContainer.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(accessoryContainer)
+            self.accessoryContainer = accessoryContainer
+
+            let accessoryImageView = UIImageView(image: Asset.Images.Attachments.listWebPageSnapshot.image)
+            accessoryImageView.clipsToBounds = true
+            accessoryImageView.contentMode = .scaleAspectFit
+            accessoryImageView.translatesAutoresizingMaskIntoConstraints = false
+            accessoryContainer.addSubview(accessoryImageView)
+            self.accessoryImageView = accessoryImageView
+
+            let fileView = FileAttachmentView()
+            fileView.isHidden = true
+            fileView.contentInsets = UIEdgeInsets(top: 16, left: horizontalSpacing, bottom: 16, right: 16)
+            fileView.translatesAutoresizingMaskIntoConstraints = false
+            accessoryContainer.addSubview(fileView)
+            self.fileView = fileView
+
+            let accessoryContainerRight = contentView.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor)
+            self.accessoryContainerRight = accessoryContainerRight
+
+            var constraints = [
+                typeImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+                typeImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                typeImageView.widthAnchor.constraint(equalToConstant: 28),
+                typeImageView.heightAnchor.constraint(equalToConstant: 28),
+
+                labelsContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+                labelsContainer.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: horizontalSpacing),
+                contentView.bottomAnchor.constraint(equalTo: labelsContainer.bottomAnchor, constant: 12 + ItemDetailLayout.separatorHeight),
+                accessoryContainer.leadingAnchor.constraint(equalTo: labelsContainer.trailingAnchor),
+
+                titleLabel.topAnchor.constraint(equalTo: labelsContainer.topAnchor),
+                titleLabel.leadingAnchor.constraint(equalTo: labelsContainer.leadingAnchor),
+                labelsContainer.trailingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor),
+                subtitleStackView.topAnchor.constraint(greaterThanOrEqualTo: titleLabel.bottomAnchor),
+                subtitleStackView.leadingAnchor.constraint(equalTo: labelsContainer.leadingAnchor),
+                labelsContainer.trailingAnchor.constraint(greaterThanOrEqualTo: subtitleStackView.trailingAnchor),
+                subtitleLabel.firstBaselineAnchor.constraint(equalTo: titleLabel.firstBaselineAnchor, constant: 24),
+                labelsContainer.bottomAnchor.constraint(equalTo: subtitleLabel.lastBaselineAnchor),
+
+                accessoryContainerRight,
+                accessoryContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                accessoryContainer.widthAnchor.constraint(equalToConstant: accessoryContainerWidth),
+                accessoryContainer.heightAnchor.constraint(equalToConstant: Self.accessoryContainerHeight),
+
+                accessoryImageView.centerXAnchor.constraint(equalTo: accessoryContainer.centerXAnchor),
+                accessoryImageView.centerYAnchor.constraint(equalTo: accessoryContainer.centerYAnchor),
+
+                fileView.topAnchor.constraint(equalTo: accessoryContainer.topAnchor),
+                fileView.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
+                accessoryContainer.trailingAnchor.constraint(equalTo: fileView.trailingAnchor),
+                accessoryContainer.bottomAnchor.constraint(equalTo: fileView.bottomAnchor)
+            ]
+            if #available(iOS 26.0.0, *) {
+                constraints.append(contentView.heightAnchor.constraint(equalToConstant: 68))
+            }
+            NSLayoutConstraint.activate(constraints)
+        }
+
+        func setupAccessibilityActions() {
+            let openItemAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self] _ in
+                guard let self else { return false }
+                return actionDelegate?.itemCellDidRequestOpen(self) ?? false
+            })
+            accessibilityCustomActions = [openItemAction]
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        super.updateConfiguration(using: state)
+
+        let configuration = makeBackgroundConfiguration(for: state)
+        backgroundConfiguration = configuration
+
+        guard let fileView, let tagCircles else { return }
+        fileView.set(backgroundColor: configuration.resolvedBackgroundColor(for: tintColor))
+        tagCircles.borderColor = tagBorderColor(for: state)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
-        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
 
-        self.tagCircles.borderColor = self.tagBorderColor
-        self.fileView.set(backgroundColor: self.backgroundColor)
+        setNeedsUpdateConfiguration()
     }
 
-    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
-        super.setHighlighted(highlighted, animated: animated)
-
-        if highlighted {
-            guard let highlightColor = self.highlightColor else { return }
-            self.fileView.set(backgroundColor: highlightColor)
-            self.tagCircles.borderColor = highlightColor.cgColor
-        } else {
-            self.fileView.set(backgroundColor: self.backgroundColor)
-            self.tagCircles.borderColor = self.tagBorderColor
+    private func makeBackgroundConfiguration(for state: UICellConfigurationState) -> UIBackgroundConfiguration {
+        var configuration = defaultBackgroundConfiguration().updated(for: state)
+        if state.isSelected {
+            if #available(iOS 26.0, *) {
+                configuration.backgroundColor = .systemGray5
+            } else {
+                configuration.backgroundColor = state.isEditing ? Asset.Colors.cellSelected.color : Asset.Colors.cellHighlighted.color
+            }
+            configuration.backgroundColorTransformer = nil
+        } else if state.isHighlighted, #unavailable(iOS 26.0) {
+            configuration.backgroundColor = Asset.Colors.cellHighlighted.color
+            configuration.backgroundColorTransformer = nil
         }
+        return configuration
     }
 
-    override func setSelected(_ selected: Bool, animated: Bool) {
-        super.setSelected(selected, animated: animated)
-
-        if selected {
-            guard let highlightColor = self.highlightColor else { return }
-            self.fileView.set(backgroundColor: highlightColor)
-            self.tagCircles.borderColor = highlightColor.cgColor
+    private func tagBorderColor(for state: UICellConfigurationState) -> CGColor {
+        let color: UIColor
+        if #available(iOS 26.0, *) {
+            color = makeBackgroundConfiguration(for: state).resolvedBackgroundColor(for: tintColor)
+        } else if state.isEditing {
+            color = Asset.Colors.cellSelected.color
         } else {
-            self.fileView.set(backgroundColor: self.backgroundColor)
-            self.tagCircles.borderColor = self.tagBorderColor
+            color = traitCollection.userInterfaceStyle == .dark ? UIColor.black : UIColor.white
         }
+        return color.cgColor
     }
 
     func set(item: ItemCellModel) {
-        self.key = item.key
+        key = item.key
 
-        self.accessoryType = item.hasDetailButton ? .detailButton : .none
-        self.typeImageView.image = UIImage(named: item.typeIconName)?.withRenderingMode(item.iconRenderingMode)
-        self.typeImageView.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        if item.title.string.isEmpty {
-            self.titleLabel.text = " "
-        } else {
-            self.titleLabel.attributedText = item.title
+        var accessories: [UICellAccessory] = [.multiselect(displayed: .whenEditing)]
+        if item.hasDetailButton {
+            accessories.append(.detail(displayed: .whenNotEditing, actionHandler: { [weak self] in
+                guard let self else { return }
+                actionDelegate?.itemCellDidTapDetail(self)
+            }))
         }
-        self.titleLabel.accessibilityLabel = self.titleAccessibilityLabel(for: item)
+        self.accessories = accessories
+        typeImageView.image = UIImage(named: item.typeIconName)?.withRenderingMode(item.iconRenderingMode)
+        typeImageView.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        if item.title.string.isEmpty {
+            titleLabel.text = " "
+        } else {
+            titleLabel.attributedText = item.title
+        }
+        titleLabel.accessibilityLabel = titleAccessibilityLabel(for: item)
         set(subtitle: item.subtitle)
         // The label adds extra horizontal spacing so there is a negative right inset so that the label ends where the text ends exactly.
         // The note icon is rectangular and has 1px white space on each side, so it needs an extra negative pixel when there are no tags.
-        self.subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
-        self.noteIcon.isHidden = !item.hasNote
-        self.noteIcon.isAccessibilityElement = false
+        subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
+        noteIcon.isHidden = !item.hasNote
+        noteIcon.isAccessibilityElement = false
 
-        self.tagCircles.isHidden = item.tagColors.isEmpty && item.tagEmojis.isEmpty
-        self.tagCircles.isAccessibilityElement = false
-        if !self.tagCircles.isHidden {
-            self.tagCircles.set(emojis: item.tagEmojis, colors: item.tagColors)
+        tagCircles.isHidden = item.tagColors.isEmpty && item.tagEmojis.isEmpty
+        tagCircles.isAccessibilityElement = false
+        if !tagCircles.isHidden {
+            tagCircles.set(emojis: item.tagEmojis, colors: item.tagColors)
         }
 
-        self.set(accessory: item.accessory)
+        set(accessory: item.accessory)
 
-        self.layoutIfNeeded()
+        layoutIfNeeded()
+
+        func titleAccessibilityLabel(for item: ItemCellModel) -> String {
+            let title = item.title.string.isEmpty ? L10n.Accessibility.untitled : item.title.string
+            return item.typeName + ", " + title
+        }
     }
 
     func set(accessory: ItemCellModel.Accessory?) {
-        guard let accessory = accessory else {
-            self.accessoryContainer.isHidden = true
-            self.accessoryContainerRight.constant = ItemCell.noAccessoryTrailingInset - self.accessoryContainer.frame.width
+        guard let accessory else {
+            accessoryContainer.isHidden = true
+            accessoryContainerRight.constant = Self.noAccessoryTrailingInset - accessoryContainerWidth
             return
         }
 
-        self.accessoryContainer.isHidden = false
-        self.accessoryContainerRight.constant = 0
+        accessoryContainer.isHidden = false
+        accessoryContainerRight.constant = 0
 
         switch accessory {
         case .attachment(let state):
-            self.fileView.set(state: state, style: .list)
-            self.fileView.isHidden = false
-            self.accessoryImageView.isHidden = true
+            fileView.set(state: state, style: .list)
+            fileView.isHidden = false
+            accessoryImageView.isHidden = true
 
         case .doi, .url:
-            self.fileView.isHidden = true
-            self.accessoryImageView.isHidden = false
-            self.accessoryImageView.image = Asset.Images.Attachments.listLink.image
+            fileView.isHidden = true
+            accessoryImageView.isHidden = false
+            accessoryImageView.image = Asset.Images.Attachments.listLink.image
         }
-    }
-
-    private func titleAccessibilityLabel(for item: ItemCellModel) -> String {
-        let title = item.title.string.isEmpty ? L10n.Accessibility.untitled : item.title.string
-        return item.typeName + ", " + title
     }
 
     func set(subtitle: ItemCellModel.Subtitle?) {

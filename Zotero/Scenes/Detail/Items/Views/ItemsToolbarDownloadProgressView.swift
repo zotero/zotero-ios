@@ -60,7 +60,7 @@ final class ItemsToolbarDownloadProgressView: UIView {
 
         let stackView = UIStackView(arrangedSubviews: [label, progressView])
         stackView.axis = .vertical
-        stackView.spacing = 8
+        stackView.spacing = 2
         stackView.alignment = .center
         stackView.translatesAutoresizingMaskIntoConstraints = false
         self.addSubview(stackView)

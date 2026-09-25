@@ -21,28 +21,17 @@
                     <color key="textColor" systemColor="systemGrayColor"/>
                     <nil key="highlightedColor"/>
                 </label>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" text="Label" textAlignment="justified" lineBreakMode="headTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qM5-H4-Q0E" customClass="CollapsibleLabel" customModule="Zotero" customModuleProvider="target">
-                    <rect key="frame" x="20" y="72.5" width="374" height="208"/>
-                    <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                    <nil key="highlightedColor"/>
-                </label>
             </subviews>
             <viewLayoutGuide key="safeArea" id="WKD-QX-doe"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
-                <constraint firstAttribute="bottomMargin" secondItem="qM5-H4-Q0E" secondAttribute="baseline" id="GcX-AP-kbF"/>
-                <constraint firstItem="qM5-H4-Q0E" firstAttribute="leading" secondItem="IfK-Tg-e6T" secondAttribute="leadingMargin" id="M2N-MS-XBY"/>
-                <constraint firstAttribute="trailingMargin" secondItem="qM5-H4-Q0E" secondAttribute="trailing" id="MOx-Kw-qCz"/>
                 <constraint firstAttribute="trailingMargin" secondItem="e8C-KX-K49" secondAttribute="trailing" id="S1Z-ll-Sto"/>
                 <constraint firstItem="e8C-KX-K49" firstAttribute="leading" secondItem="IfK-Tg-e6T" secondAttribute="leadingMargin" id="Sl4-HZ-lQj"/>
-                <constraint firstItem="qM5-H4-Q0E" firstAttribute="top" secondItem="e8C-KX-K49" secondAttribute="baseline" constant="15" id="phs-r3-gI4"/>
                 <constraint firstItem="e8C-KX-K49" firstAttribute="top" secondItem="IfK-Tg-e6T" secondAttribute="topMargin" id="qen-2B-QYG"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>
-                <outlet property="contentLabel" destination="qM5-H4-Q0E" id="YCf-E6-Zw9"/>
                 <outlet property="titleLabel" destination="e8C-KX-K49" id="NIj-SQ-Qu7"/>
-                <outlet property="titleToContent" destination="phs-r3-gI4" id="RBb-mC-NAX"/>
                 <outlet property="titleTop" destination="qen-2B-QYG" id="loJ-0G-R05"/>
             </connections>
             <point key="canvasLocation" x="-528" y="135"/>

@@ -205,11 +205,15 @@ final class SingleCitationViewController: UIViewController {
         }
 
         func setupNavigationBar() {
-            let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-            cancel.rx.tap.subscribe(onNext: { [weak self] in
-                self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-            })
-            .disposed(by: disposeBag)
+            let primaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
+                self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            }
+            let cancel: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: primaryAction)
+            } else {
+                cancel = UIBarButtonItem(primaryAction: primaryAction)
+            }
             navigationItem.leftBarButtonItem = cancel
 
             setupRightButtonItem(isLoading: false)
@@ -263,12 +267,16 @@ final class SingleCitationViewController: UIViewController {
             indicator.startAnimating()
             navigationItem.rightBarButtonItem = UIBarButtonItem(customView: indicator)
         } else {
-            let copy = UIBarButtonItem(title: L10n.copy, style: .done, target: nil, action: nil)
-            copy.rx.tap.subscribe(onNext: { [weak self] in
-                guard let self else { return }
-                viewModel.process(action: .copy)
-            })
-            .disposed(by: disposeBag)
+            let primaryAction = UIAction(title: L10n.copy) { [weak viewModel] _ in
+                viewModel?.process(action: .copy)
+            }
+            let copy = UIBarButtonItem(primaryAction: primaryAction)
+            if #available(iOS 26.0.0, *) {
+                copy.tintColor = Asset.Colors.zoteroBlue.color
+                copy.style = .prominent
+            } else {
+                copy.style = .done
+            }
             navigationItem.rightBarButtonItem = copy
         }
     }

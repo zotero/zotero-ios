@@ -46,7 +46,7 @@ final class AnnotationPopoverViewController: UIViewController {
         super.viewDidLoad()
 
         setupViews()
-        view.layoutSubviews()
+        view.layoutIfNeeded()
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -78,6 +78,7 @@ final class AnnotationPopoverViewController: UIViewController {
     private func updatePreferredContentSize() {
         guard var size = containerStackView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude)) else { return }
         size.width = AnnotationPopoverLayout.width
+        guard preferredContentSize != size else { return }
         preferredContentSize = size
         navigationController?.preferredContentSize = size
     }
@@ -121,11 +122,11 @@ final class AnnotationPopoverViewController: UIViewController {
     }
 
     private func showSettings() {
-        // key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText
+        // key, color, lineWidth, fontSize, pageLabel, highlightText
         coordinatorDelegate?.showEdit(
             state: viewModel.state,
-            saveAction: { [weak self] data, updateSubsequentLabels in
-                self?.viewModel.process(action: .setProperties(type: data.type, pageLabel: data.pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: data.highlightText))
+            saveAction: { [weak self] data in
+                self?.viewModel.process(action: .setProperties(type: data.type, pageLabel: data.pageLabel, highlightText: data.highlightText))
             },
             deleteAction: { [weak self] in
                self?.viewModel.process(action: .delete)
@@ -208,7 +209,7 @@ final class AnnotationPopoverViewController: UIViewController {
             colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
 
-            let hexColors = AnnotationsConfig.colors(for: viewModel.state.type)
+            let hexColors = viewModel.state.type.colors
             let colorPicker = ColorPickerStackView(
                 hexColors: hexColors,
                 columnsDistribution: .fixed(numberOfColumns: hexColors.count),
@@ -240,7 +241,7 @@ final class AnnotationPopoverViewController: UIViewController {
 
             if viewModel.state.type == .ink {
                 // Setup line width slider
-                let lineView = LineWidthView(title: L10n.Pdf.AnnotationPopover.lineWidth, settings: .lineWidth, contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+                let lineView = LineWidthView(title: L10n.Pdf.AnnotationPopover.lineWidth, settings: .lineWidth, contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16), layout: .inline)
                 lineView.value = Float(viewModel.state.lineWidth)
                 lineView.valueObservable
                         .subscribe(with: self, onNext: { `self`, value in

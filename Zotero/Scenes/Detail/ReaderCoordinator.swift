@@ -13,6 +13,8 @@ import RxSwift
 protocol ReaderError: Error {
     var title: String { get }
     var message: String { get }
+    
+    var documentShouldClose: Bool { get }
 }
 
 protocol ReaderState {
@@ -23,6 +25,8 @@ protocol ReaderState {
     var library: Library { get }
 
     var selectedReaderAnnotation: ReaderAnnotation? { get }
+
+    var allowsPageLabelEditing: Bool { get }
 
     var textFont: UIFont { get }
     var textEditorFont: UIFont { get }
@@ -66,6 +70,7 @@ protocol ReaderSidebarCoordinatorDelegate: AnyObject {
         userId: Int,
         library: Library,
         highlightFont: UIFont,
+        allowsPageLabelEditing: Bool,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
         saveAction: @escaping AnnotationEditSaveAction,
@@ -100,7 +105,13 @@ protocol ReaderCoordinator: Coordinator, ReaderCoordinatorDelegate, ReaderSideba
 extension ReaderCoordinator {
     func show(error: ReaderError) {
         let controller = UIAlertController(title: error.title, message: error.message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        if error.documentShouldClose {
+            controller.addAction(UIAlertAction(title: L10n.close, style: .default, handler: { [weak self] _ in
+                self?.navigationController?.dismiss(animated: true)
+            }))
+        } else {
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        }
         navigationController?.present(controller, animated: true)
     }
 
@@ -144,6 +155,7 @@ extension ReaderCoordinator {
         userId: Int,
         library: Library,
         highlightFont: UIFont,
+        allowsPageLabelEditing: Bool,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
         saveAction: @escaping AnnotationEditSaveAction,
@@ -158,6 +170,7 @@ extension ReaderCoordinator {
             data: AnnotationEditState.Data(
                 type: annotation.type,
                 isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
+                allowsPageLabelEditing: allowsPageLabelEditing,
                 color: annotation.color,
                 lineWidth: annotation.lineWidth ?? 0,
                 pageLabel: annotation.pageLabel,
@@ -209,6 +222,7 @@ extension ReaderCoordinator {
             libraryId: state.library.identifier,
             type: annotation.type,
             isEditable: editability == .editable,
+            allowsPageLabelEditing: state.allowsPageLabelEditing,
             author: author,
             comment: comment,
             color: annotation.color,
@@ -287,7 +301,7 @@ extension ReaderCoordinator {
 
         let state = ReaderSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(rows: settings.rows, viewModel: viewModel)
+        let baseController = ReaderSettingsViewController(rows: settings.rows, minimumPreferredContentSize: settings.minimumPreferredContentSize, viewModel: viewModel)
         let controller: UIViewController
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller = baseController
@@ -296,7 +310,6 @@ extension ReaderCoordinator {
         }
         controller.modalPresentationStyle = .popover
         controller.popoverPresentationController?.sourceItem = sender
-        controller.preferredContentSize = settings.preferredContentSize
         controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
         navigationController?.present(controller, animated: true, completion: nil)
 

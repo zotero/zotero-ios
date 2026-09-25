@@ -13,26 +13,31 @@ import RealmSwift
 import RxSwift
 
 class TagFilterViewController: UIViewController {
+    enum Context {
+        case masterBottomSheet
+        case filterScreen
+    }
+
     private(set) weak var searchBar: UISearchBar!
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
     weak var delegate: FiltersDelegate?
     private var searchBarScrollEnabled: Bool
-    private var didAppear: Bool
 
     private static let cellId = "TagFilterCell"
     private static let searchBarHeight: CGFloat = 56
     private static let searchBarTopOffset: CGFloat = -10
     private static let searchBarBottomOffset: CGFloat = -8
     private let viewModel: ViewModel<TagFilterActionHandler>
+    private let context: Context
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<TagFilterActionHandler>) {
+    init(viewModel: ViewModel<TagFilterActionHandler>, context: Context) {
         self.viewModel = viewModel
+        self.context = context
         searchBarScrollEnabled = true
         disposeBag = DisposeBag()
-        didAppear = false
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -102,7 +107,7 @@ class TagFilterViewController: UIViewController {
             view.insertSubview(collectionView, belowSubview: searchContainer)
 
             collectionView.dropDelegate = self
-            if traitCollection.horizontalSizeClass != .regular || UIDevice.current.userInterfaceIdiom != .pad {
+            if context == .filterScreen {
                 collectionView.keyboardDismissMode = .onDrag
             }
 
@@ -122,32 +127,8 @@ class TagFilterViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        if traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone {
-            // Trigger initial load on iPhone and compact iPad.
-            delegate?.tagOptionsDidChange()
-        }
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        didAppear = true
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        if UIDevice.current.userInterfaceIdiom == .pad, previousTraitCollection?.horizontalSizeClass != traitCollection.horizontalSizeClass {
-            delegate?.tagOptionsDidChange()
-        }
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        guard traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad && !didAppear else { return }
-
+    override func viewIsAppearing(_ animated: Bool) {
+        guard context == .masterBottomSheet else { return }
         let height = Self.searchBarHeight + Self.searchBarTopOffset
         collectionView.setContentOffset(CGPoint(x: 0, y: height), animated: false)
     }
@@ -159,6 +140,7 @@ class TagFilterViewController: UIViewController {
         }
 
         if state.changes.contains(.tags) {
+            optionsButton.menu = createOptionsMenu(with: state)
             collectionView.reloadData()
             fixSelectionIfNeeded(selected: state.selectedTags)
         }
@@ -231,14 +213,11 @@ class TagFilterViewController: UIViewController {
             guard let viewModel else { return }
             viewModel.process(action: .setShowAutomatic(!viewModel.state.showAutomatic))
         }
-        var options: [UIAction] = [showAutomatic]
-        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
-            let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off)) { [weak viewModel] _ in
-                guard let viewModel else { return }
-                viewModel.process(action: .setDisplayAll(!viewModel.state.displayAll))
-            }
-            options.append(displayAll)
+        let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off)) { [weak viewModel] _ in
+            guard let viewModel else { return }
+            viewModel.process(action: .setDisplayAll(!viewModel.state.displayAll))
         }
+        var options: [UIAction] = [showAutomatic, displayAll]
         let optionsMenu = UIMenu(options: .displayInline, children: options.orderedMenuChildrenBasedOnDevice())
 
         let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive) { [weak self] _ in
@@ -310,7 +289,7 @@ extension TagFilterViewController: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        guard let tag = tag(for: indexPath), tag.isActive else { return }
+        guard let tag = tag(for: indexPath) else { return }
         viewModel.process(action: .deselect(tag.tag.name))
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
     }

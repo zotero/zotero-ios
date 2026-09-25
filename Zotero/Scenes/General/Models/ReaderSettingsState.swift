@@ -17,7 +17,7 @@ protocol ReaderSettings {
     var pageFitting: PSPDFKitUI.PDFConfiguration.SpreadFitting { get }
     var appearance: ReaderSettingsState.Appearance { get }
     var isFirstPageAlwaysSingle: Bool { get }
-    var preferredContentSize: CGSize { get }
+    var minimumPreferredContentSize: CGSize { get }
 
     var rows: [ReaderSettingsViewController.Row] { get }
 }

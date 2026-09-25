@@ -10,12 +10,10 @@ import AVFoundation
 import UIKit
 
 import CocoaLumberjackSwift
-import RxSwift
 
 final class ScannerViewController: UIViewController {
     private let viewModel: ViewModel<ScannerActionHandler>
     private let sessionQueue: DispatchQueue
-    private let disposeBag: DisposeBag
 
     @IBOutlet private weak var barcodeContainer: UIView!
     @IBOutlet private weak var barcodeStackContainer: UIStackView!
@@ -29,7 +27,6 @@ final class ScannerViewController: UIViewController {
     init(viewModel: ViewModel<ScannerActionHandler>) {
         self.viewModel = viewModel
         self.sessionQueue = DispatchQueue(label: "org.zotero.ScannerViewController.sessionQueue", qos: .userInitiated)
-        self.disposeBag = DisposeBag()
         super.init(nibName: "ScannerViewController", bundle: nil)
     }
 
@@ -105,6 +102,7 @@ final class ScannerViewController: UIViewController {
 
         case .landscapeRight:
             self.previewLayer?.connection?.videoOrientation = .landscapeRight
+
         case .unknown: break
         @unknown default: break
         }
@@ -125,11 +123,18 @@ final class ScannerViewController: UIViewController {
     }
 
     private func setupNavigationItems() {
-        let cancelItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
-        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true)
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelItem
+        let primaryAction = UIAction(title: L10n.close) { [weak self] _ in
+            guard let self else { return }
+            coordinatorDelegate?.acknowledgeFailures = true
+            navigationController?.presentingViewController?.dismiss(animated: true)
+        }
+        let cancelItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            cancelItem = UIBarButtonItem(systemItem: .close, primaryAction: primaryAction)
+        } else {
+            cancelItem = UIBarButtonItem(primaryAction: primaryAction)
+        }
+        navigationItem.leftBarButtonItem = cancelItem
     }
 
     private func setupSession() {
