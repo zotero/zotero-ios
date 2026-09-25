@@ -18,6 +18,7 @@ struct FeatureGates: OptionSet {
     static let downloadFilesAtSync = FeatureGates(rawValue: 1 << 2)
     static let speech = FeatureGates(rawValue: 1 << 3)
     static let documentWorkerDebugging = FeatureGates(rawValue: 1 << 4)
+    static let readingMode = FeatureGates(rawValue: 1 << 5)
 
     static var enabled: FeatureGates {
         var gates: FeatureGates = []
@@ -28,6 +29,7 @@ struct FeatureGates: OptionSet {
         gates.insert(.downloadFilesAtSync)
         gates.insert(.speech)
         gates.insert(.documentWorkerDebugging)
+        gates.insert(.readingMode)
 #else
 #if FEATURE_GATE_DOCUMENT_WORKER
         gates.insert(.documentWorker)
@@ -48,6 +50,12 @@ struct FeatureGates: OptionSet {
 
 #if FEATURE_GATE_DOCUMENT_WORKER_DEBUGGING
         gates.insert(.documentWorkerDebugging)
+        gates.insert(.documentWorker)
+#endif
+
+#if FEATURE_GATE_READING_MODE
+        gates.insert(.readingMode)
+        // Reading mode renders the structured document text, which the document worker extracts.
         gates.insert(.documentWorker)
 #endif
 #endif
