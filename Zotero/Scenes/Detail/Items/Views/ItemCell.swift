@@ -169,7 +169,7 @@ final class ItemCell: UICollectionViewListCell {
             let accessoryContainerRight = contentView.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor)
             self.accessoryContainerRight = accessoryContainerRight
 
-            var constraints = [
+            let constraints = [
                 typeImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
                 typeImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
                 typeImageView.widthAnchor.constraint(equalToConstant: 28),
@@ -202,9 +202,6 @@ final class ItemCell: UICollectionViewListCell {
                 accessoryContainer.trailingAnchor.constraint(equalTo: fileView.trailingAnchor),
                 accessoryContainer.bottomAnchor.constraint(equalTo: fileView.bottomAnchor)
             ]
-            if #available(iOS 26.0.0, *) {
-                constraints.append(contentView.heightAnchor.constraint(equalToConstant: 68))
-            }
             NSLayoutConstraint.activate(constraints)
         }
 
@@ -219,6 +216,14 @@ final class ItemCell: UICollectionViewListCell {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+        if #available(iOS 26.0, *) {
+            layoutAttributes.size.height = 68
+            return layoutAttributes
+        }
+        return super.preferredLayoutAttributesFitting(layoutAttributes)
     }
 
     override func updateConfiguration(using state: UICellConfigurationState) {
