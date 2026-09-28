@@ -12,6 +12,8 @@ import RealmSwift
 import RxSwift
 
 protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
+    var isCompact: Bool { get }
+
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
     func showFilters(button: UIBarButtonItem)
@@ -41,6 +43,7 @@ final class ItemsToolbarController {
         case title
         case sort
         case documentWorkerRecorder
+        case more
 
         var tag: Int {
             rawValue
@@ -150,7 +153,7 @@ final class ItemsToolbarController {
     }
 
     private var isCompact: Bool {
-        delegate?.traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
+        delegate?.isCompact ?? false
     }
 
     private var usesBottomToolbarSearch: Bool {
@@ -168,6 +171,7 @@ final class ItemsToolbarController {
         if #available(iOS 26.0, *) {
             viewController.navigationItem.searchBarPlacementAllowsToolbarIntegration = usesBottomToolbarSearch
         }
+        let fixedSpaceWidth: CGFloat = 16
         if data.isEditing {
             let toolbarItems = createEditingToolbarItems(from: editingActions)
             updateEditingToolbarItems(toolbarItems, for: data.selectedItems)
@@ -191,23 +195,63 @@ final class ItemsToolbarController {
         }
 
         func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
-            let items = actions.map({ action -> UIBarButtonItem in
-                let type = action.type
-                let primaryAction = UIAction(image: action.image) { [weak self] action in
-                    guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
-                    delegate.process(action: type, button: button)
-                }
-                let item = UIBarButtonItem(image: action.image, primaryAction: primaryAction)
-                item.tintColor = Asset.Colors.zoteroBlue.color
+            if #available(iOS 26.0, *), isCompact {
+                return createCompactEditingToolbarItems(from: actions)
+            }
 
-                switch type {
+            let items = actions.map({ action in
+                return createBarButtonItem(for: action)
+            })
+            return [.flexibleSpace()] + items.enumerated().flatMap({ index, item in
+                [item, index < items.count - 1 ? createInnerFlexibleSpace() : .flexibleSpace()]
+            })
+
+            func createCompactEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
+                var items: [UIBarButtonItem] = usesBottomToolbarSearch ? [] : [.fixedSpace(fixedSpaceWidth)]
+                if let shareAction = actions.first(where: { $0.type == .share }) {
+                    items.append(createBarButtonItem(for: shareAction))
+                }
+                if #available(iOS 26.0, *), usesBottomToolbarSearch {
+                    items.append(contentsOf: [.fixedSpace(0), viewController.navigationItem.searchBarPlacementBarButtonItem, .fixedSpace(0)])
+                }
+
+                let remainingActions = actions
+                    .filter({ $0.type != .share })
+                    .sorted(by: { $0.type.menuOrder > $1.type.menuOrder })
+                guard !remainingActions.isEmpty else {
+                    if !usesBottomToolbarSearch {
+                        items.append(.fixedSpace(fixedSpaceWidth))
+                    }
+                    return items
+                }
+
+                let moreButton = UIBarButtonItem(image: UIImage(systemName: "ellipsis"))
+                moreButton.tag = ToolbarItem.more.tag
+                moreButton.accessibilityLabel = L10n.Shareext.collectionOther
+                moreButton.menu = UIMenu(children: remainingActions.map({ action in createAction(for: action) }))
+                if usesBottomToolbarSearch {
+                    items.append(moreButton)
+                } else {
+                    items.append(contentsOf: [.flexibleSpace(), moreButton, .fixedSpace(fixedSpaceWidth)])
+                }
+                return items
+            }
+
+            func createBarButtonItem(for action: ItemAction) -> UIBarButtonItem {
+                let primaryAction = createAction(for: action)
+                let item = UIBarButtonItem(primaryAction: primaryAction)
+                if #unavailable(iOS 26.0) {
+                    item.tintColor = Asset.Colors.zoteroBlue.color
+                }
+
+                switch action.type {
                 case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload, .removeFromRecentlyRead:
                     item.tag = ToolbarItem.empty.tag
 
                 case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate, .debugReader, .getStructuredText:
                     break
                 }
-                switch type {
+                switch action.type {
                 case .addToCollection:
                     item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
 
@@ -239,10 +283,19 @@ final class ItemsToolbarController {
                     break
                 }
                 return item
-            })
-            return [.flexibleSpace()] + items.enumerated().flatMap({ index, item in
-                [item, index < items.count - 1 ? createInnerFlexibleSpace() : .flexibleSpace()]
-            })
+            }
+
+            func createAction(for action: ItemAction) -> UIAction {
+                let type = action.type
+                var attributes: UIMenuElement.Attributes = []
+                if action.isDestructive {
+                    attributes.insert(.destructive)
+                }
+                return UIAction(title: action.title, image: action.image, attributes: attributes) { [weak self] action in
+                    guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
+                    delegate.process(action: type, button: button)
+                }
+            }
 
             func createInnerFlexibleSpace() -> UIBarButtonItem {
                 let flexibleSpace: UIBarButtonItem = .flexibleSpace()
@@ -254,10 +307,10 @@ final class ItemsToolbarController {
         }
 
         func createNormalToolbarItems() -> [UIBarButtonItem] {
-            let fixedSpaceWidth: CGFloat = 16
-
             let filterButton = UIBarButtonItem()
-            filterButton.tintColor = Asset.Colors.zoteroBlue.color
+            if #unavailable(iOS 26.0) {
+                filterButton.tintColor = Asset.Colors.zoteroBlue.color
+            }
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
 
@@ -292,7 +345,9 @@ final class ItemsToolbarController {
             if data.allowsManualSort {
                 let action = ItemAction(type: .sort)
                 let sortButton = UIBarButtonItem(image: action.image)
-                sortButton.tintColor = Asset.Colors.zoteroBlue.color
+                if #unavailable(iOS 26.0) {
+                    sortButton.tintColor = Asset.Colors.zoteroBlue.color
+                }
                 sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
                 if usesBottomToolbarSearch {
@@ -383,6 +438,7 @@ final class ItemsToolbarController {
         if #available(iOS 26.0, *) {
             imageName = "line.horizontal.3.decrease"
             item.isSelected = hasActiveFilters
+            item.tintColor = hasActiveFilters ? Asset.Colors.zoteroBlue.color : nil
         } else {
             imageName = hasActiveFilters ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
         }
@@ -439,7 +495,7 @@ final class ItemsToolbarController {
     private func updateEditingToolbarItems(_ toolbarItems: [UIBarButtonItem]?, for selectedItems: Set<AnyHashable>) {
         toolbarItems?.forEach({ item in
             switch ToolbarItem(rawValue: item.tag) {
-            case .empty:
+            case .empty, .more:
                 item.isEnabled = !selectedItems.isEmpty
 
             case .single:

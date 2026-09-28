@@ -37,6 +37,7 @@ class BaseItemsViewController: UIViewController {
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
     private let debugReaderQueue: DispatchQueue?
     private var readerURL: URL?
+    private weak var selectionLeftBarButtonItem: UIBarButtonItem?
 
     init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
         self.controllers = controllers
@@ -152,6 +153,15 @@ class BaseItemsViewController: UIViewController {
             return
         }
         navigationItem.searchController?.searchBar.becomeFirstResponder()
+    }
+
+    var isCompact: Bool {
+        return traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
+    }
+
+    var usesCompactSelectionLayout: Bool {
+        guard #available(iOS 26.0, *) else { return false }
+        return isCompact
     }
 
     // MARK: - Actions
@@ -398,60 +408,76 @@ class BaseItemsViewController: UIViewController {
         let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
         guard currentItems != expectedItems else { return }
         self.navigationItem.rightBarButtonItems = expectedItems.compactMap({ createRightBarButtonItem($0) }).reversed()
+    }
 
-        func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem? {
-            var image: UIImage?
-            let title: String
-            let accessibilityLabel: String
+    func setupLeftBarButtonItem(expectedItem: RightBarButtonItem?) {
+        let currentItem = selectionLeftBarButtonItem.flatMap({ RightBarButtonItem(rawValue: $0.tag) })
+        guard currentItem != expectedItem || navigationItem.leftBarButtonItem !== selectionLeftBarButtonItem else { return }
 
+        if let expectedItem {
+            let item = createRightBarButtonItem(expectedItem)
+            selectionLeftBarButtonItem = item
+            navigationItem.leftBarButtonItem = item
+        } else {
+            if navigationItem.leftBarButtonItem === selectionLeftBarButtonItem {
+                navigationItem.leftBarButtonItem = nil
+            }
+            selectionLeftBarButtonItem = nil
+        }
+    }
+
+    private func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem? {
+        var image: UIImage?
+        let title: String
+        let accessibilityLabel: String
+
+        switch type {
+        case .deselectAll:
+            title = L10n.Items.deselectAll
+            accessibilityLabel = L10n.Accessibility.Items.deselectAllItems
+
+        case .selectAll:
+            title = L10n.Items.selectAll
+            accessibilityLabel = L10n.Accessibility.Items.selectAllItems
+
+        case .done:
+            title = L10n.done
+            accessibilityLabel = L10n.done
+
+        case .select:
+            title = L10n.select
+            accessibilityLabel = L10n.Accessibility.Items.selectItems
+
+        case .add:
+            image = UIImage(systemName: "plus")
+            accessibilityLabel = L10n.Items.new
+            title = L10n.Items.new
+
+        case .emptyTrash:
+            title = L10n.Collections.emptyTrash
+            accessibilityLabel = L10n.Collections.emptyTrash
+        }
+
+        let primaryAction = UIAction(title: title, image: image) { [weak self] action in
+            guard let self, let sender = action.sender as? UIBarButtonItem else { return }
+            process(barButtonItemAction: type, sender: sender)
+        }
+        let item: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
             switch type {
-            case .deselectAll:
-                title = L10n.Items.deselectAll
-                accessibilityLabel = L10n.Accessibility.Items.deselectAllItems
-
-            case .selectAll:
-                title = L10n.Items.selectAll
-                accessibilityLabel = L10n.Accessibility.Items.selectAllItems
+            case .select, .selectAll, .deselectAll, .add, .emptyTrash:
+                item = UIBarButtonItem(primaryAction: primaryAction)
 
             case .done:
-                title = L10n.done
-                accessibilityLabel = L10n.done
-
-            case .select:
-                title = L10n.select
-                accessibilityLabel = L10n.Accessibility.Items.selectItems
-
-            case .add:
-                image = UIImage(systemName: "plus")
-                accessibilityLabel = L10n.Items.new
-                title = L10n.Items.new
-
-            case .emptyTrash:
-                title = L10n.Collections.emptyTrash
-                accessibilityLabel = L10n.Collections.emptyTrash
+                item = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                item.tintColor = Asset.Colors.zoteroBlue.color
             }
-
-            let primaryAction = UIAction(title: title, image: image) { [weak self] action in
-                guard let self, let sender = action.sender as? UIBarButtonItem else { return }
-                process(barButtonItemAction: type, sender: sender)
-            }
-            let item: UIBarButtonItem
-            if #available(iOS 26.0.0, *) {
-                switch type {
-                case .select, .selectAll, .deselectAll, .add, .emptyTrash:
-                    item = UIBarButtonItem(primaryAction: primaryAction)
-
-                case .done:
-                    item = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
-                    item.tintColor = Asset.Colors.zoteroBlue.color
-                }
-            } else {
-                item = UIBarButtonItem(primaryAction: primaryAction)
-            }
-            item.tag = type.rawValue
-            item.accessibilityLabel = accessibilityLabel
-            return item
+        } else {
+            item = UIBarButtonItem(primaryAction: primaryAction)
         }
+        item.tag = type.rawValue
+        item.accessibilityLabel = accessibilityLabel
+        return item
     }
 }
 

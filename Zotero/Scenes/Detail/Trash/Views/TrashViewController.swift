@@ -34,6 +34,17 @@ final class TrashViewController: BaseItemsViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        guard #available(iOS 26.0, *),
+              traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass,
+              viewModel.state.isEditing
+        else { return }
+        setupBarButtonItems(for: viewModel.state)
+        toolbarController?.createToolbarItems(data: toolbarData)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -45,7 +56,7 @@ final class TrashViewController: BaseItemsViewController {
             dragDropController: controllers.userControllers?.dragDropController
         )
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
-        setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
+        setupBarButtonItems(for: viewModel.state)
         setupDownloadObserver()
         dataSource.apply(snapshot: viewModel.state.snapshot)
         updateTagFilter(filters: viewModel.state.filters, collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier)
@@ -105,7 +116,7 @@ final class TrashViewController: BaseItemsViewController {
 
         if state.changes.contains(.editing) {
             handler?.set(editing: state.isEditing, animated: true)
-            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
+            setupBarButtonItems(for: state)
             toolbarController?.createToolbarItems(data: toolbarData(from: state))
         }
 
@@ -118,7 +129,7 @@ final class TrashViewController: BaseItemsViewController {
         }
 
         if state.changes.contains(.selection) || state.changes.contains(.library) {
-            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
+            setupBarButtonItems(for: state)
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
@@ -230,18 +241,29 @@ final class TrashViewController: BaseItemsViewController {
         )
     }
 
-    private func rightBarButtonItemTypes(for state: TrashState) -> [RightBarButtonItem] {
-        let selectItems = rightBarButtonSelectItemTypes(for: state)
-        return selectItems + [.emptyTrash]
+    private func setupBarButtonItems(for state: TrashState) {
+        if state.isEditing && usesCompactSelectionLayout {
+            let selectionItem: RightBarButtonItem = state.selectedItems.count == state.snapshot.count ? .deselectAll : .selectAll
+            setupLeftBarButtonItem(expectedItem: selectionItem)
+            setupRightBarButtonItems(expectedItems: [.done])
+        } else {
+            setupLeftBarButtonItem(expectedItem: nil)
+            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
+        }
 
-        func rightBarButtonSelectItemTypes(for state: TrashState) -> [RightBarButtonItem] {
-            if !state.isEditing {
-                return [.select]
+        func rightBarButtonItemTypes(for state: TrashState) -> [RightBarButtonItem] {
+            let selectItems = rightBarButtonSelectItemTypes(for: state)
+            return selectItems + [.emptyTrash]
+
+            func rightBarButtonSelectItemTypes(for state: TrashState) -> [RightBarButtonItem] {
+                if !state.isEditing {
+                    return [.select]
+                }
+                if state.selectedItems.count == state.snapshot.count {
+                    return [.deselectAll, .done]
+                }
+                return [.selectAll, .done]
             }
-            if state.selectedItems.count == state.snapshot.count {
-                return [.deselectAll, .done]
-            }
-            return [.selectAll, .done]
         }
     }
 

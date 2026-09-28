@@ -28,6 +28,28 @@ struct ItemAction {
         case debugReader
         case removeFromRecentlyRead
         case getStructuredText
+
+        var menuOrder: Int {
+            switch self {
+            case .addToCollection, .restore:
+                return 0
+
+            case .removeFromCollection:
+                return 1
+
+            case .download:
+                return 2
+
+            case .removeDownload:
+                return 3
+
+            case .trash, .delete, .removeFromRecentlyRead:
+                return 4
+
+            case .duplicate, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .debugReader, .getStructuredText:
+                return 5
+            }
+        }
     }
 
     private enum Image {
