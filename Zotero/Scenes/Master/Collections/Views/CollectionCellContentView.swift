@@ -10,7 +10,6 @@ import UIKit
 
 final class CollectionCellContentView: UIView {
     private weak var chevronButton: UIButton!
-    private weak var chevronButtonHeightConstraint: NSLayoutConstraint!
     private weak var iconImageView: UIImageView!
     private weak var iconImageViewLeadingConstraint: NSLayoutConstraint!
     private weak var titleLabel: UILabel!
@@ -102,11 +101,9 @@ final class CollectionCellContentView: UIView {
             addSubview(separatorView)
             self.separatorView = separatorView
 
-            let chevronButtonHeightConstraint = chevronButton.heightAnchor.constraint(equalToConstant: 52)
             let iconImageViewLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 32)
             let titleLabelTrailingConstraint = safeAreaLayoutGuide.trailingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 16)
             let badgeContainerLeadingConstraint = badgeContainer.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 16)
-            self.chevronButtonHeightConstraint = chevronButtonHeightConstraint
             self.iconImageViewLeadingConstraint = iconImageViewLeadingConstraint
             self.titleLabelTrailingConstraint = titleLabelTrailingConstraint
             self.badgeContainerLeadingConstraint = badgeContainerLeadingConstraint
@@ -116,7 +113,6 @@ final class CollectionCellContentView: UIView {
                     chevronButton.topAnchor.constraint(equalTo: topAnchor),
                     bottomAnchor.constraint(equalTo: chevronButton.bottomAnchor),
                     chevronButton.widthAnchor.constraint(equalToConstant: 48),
-                    chevronButtonHeightConstraint,
                     iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
                     iconImageViewLeadingConstraint,
                     iconImageView.leadingAnchor.constraint(equalTo: chevronButton.trailingAnchor, constant: -4),
@@ -137,12 +133,10 @@ final class CollectionCellContentView: UIView {
                     separatorView.heightAnchor.constraint(equalToConstant: 1)
                 ])
             } else {
-                chevronButtonHeightConstraint.constant = 44
                 NSLayoutConstraint.activate([
                     chevronButton.topAnchor.constraint(equalTo: topAnchor),
                     bottomAnchor.constraint(equalTo: chevronButton.bottomAnchor),
                     chevronButton.widthAnchor.constraint(equalToConstant: 48),
-                    chevronButtonHeightConstraint,
                     iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
                     iconImageViewLeadingConstraint,
                     iconImageView.leadingAnchor.constraint(equalTo: chevronButton.trailingAnchor, constant: -4),
@@ -200,11 +194,9 @@ final class CollectionCellContentView: UIView {
         if #available(iOS 26.0.0, *) {
             switch traitCollection.splitViewControllerLayoutEnvironment {
             case .expanded:
-                chevronButtonHeightConstraint.constant = 44
                 separatorView.isHidden = true
 
             case .collapsed:
-                chevronButtonHeightConstraint.constant = 52
                 separatorView.isHidden = false
 
             case .none:

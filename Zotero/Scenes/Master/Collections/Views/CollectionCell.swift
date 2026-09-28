@@ -81,6 +81,15 @@ final class CollectionCell: UICollectionViewListCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+        if #available(iOS 26.0, *) {
+            layoutAttributes.size.height = traitCollection.splitViewControllerLayoutEnvironment == .expanded ? 44 : 52
+        } else {
+            layoutAttributes.size.height = 44
+        }
+        return layoutAttributes
+    }
+
     override func updateConfiguration(using state: UICellConfigurationState) {
         var backgroundConfiguration = UIBackgroundConfiguration.listPlainCell().updated(for: state)
 
