@@ -364,7 +364,12 @@ class BaseItemsViewController: UIViewController {
     // MARK: - Setups
 
     func setupTitle() {
-        title = traitCollection.horizontalSizeClass == .compact ? collection.name : nil
+        if #available(iOS 26.0, *) {
+            navigationItem.style = .browser
+            title = collection.name
+        } else {
+            title = traitCollection.horizontalSizeClass == .compact ? collection.name : nil
+        }
     }
 
     private func setupSearchBar() {
