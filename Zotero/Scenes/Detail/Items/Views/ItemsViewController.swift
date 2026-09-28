@@ -57,7 +57,7 @@ final class ItemsViewController: BaseItemsViewController {
             dragDropController: controllers.userControllers?.dragDropController
         )
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
-        setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
+        setupBarButtonItems(for: viewModel.state)
         setupFileObservers()
         setupRecognizerObserver()
         setupAppStateObserver()
@@ -171,6 +171,17 @@ final class ItemsViewController: BaseItemsViewController {
         DDLogInfo("ItemsViewController deinitialized")
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        guard #available(iOS 26.0, *),
+              traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass,
+              viewModel.state.isEditing
+        else { return }
+        setupBarButtonItems(for: viewModel.state)
+        toolbarController?.createToolbarItems(data: toolbarData)
+    }
+
     // MARK: - UI state
 
     private func update(state: ItemsState) {
@@ -191,7 +202,7 @@ final class ItemsViewController: BaseItemsViewController {
 
         if state.changes.contains(.editing) {
             handler?.set(editing: state.isEditing, animated: true)
-            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
+            setupBarButtonItems(for: state)
             toolbarController?.createToolbarItems(data: toolbarData(from: state))
         }
 
@@ -204,7 +215,7 @@ final class ItemsViewController: BaseItemsViewController {
         }
 
         if state.changes.contains(.selection) || state.changes.contains(.library) {
-            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
+            setupBarButtonItems(for: state)
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
@@ -466,21 +477,38 @@ final class ItemsViewController: BaseItemsViewController {
         )
     }
 
-    private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        var selectItems = rightBarButtonSelectItemTypes(for: state)
-        if state.library.metadataEditable, state.collection.identifier != .custom(.publications) {
-            selectItems.insert(.add, at: 0)
+    private func setupBarButtonItems(for state: ItemsState) {
+        if state.isEditing && usesCompactSelectionLayout {
+            let selectionItem: RightBarButtonItem = state.selectedItems.count == (state.results?.count ?? 0) ? .deselectAll : .selectAll
+            setupLeftBarButtonItem(expectedItem: selectionItem)
+            setupRightBarButtonItems(expectedItems: [.done])
+        } else {
+            setupLeftBarButtonItem(expectedItem: nil)
+            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
         }
-        return selectItems
 
-        func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-            if !state.isEditing {
-                return [.select]
+        func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
+            var selectItems = rightBarButtonSelectItemTypes(for: state)
+            if state.library.metadataEditable, state.collection.identifier != .custom(.publications) {
+                if #available(iOS 26.0, *) {
+                    if !state.isEditing {
+                        selectItems.insert(.add, at: 0)
+                    }
+                } else {
+                    selectItems.insert(.add, at: 0)
+                }
             }
-            if state.selectedItems.count == (state.results?.count ?? 0) {
-                return [.deselectAll, .done]
+            return selectItems
+
+            func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
+                if !state.isEditing {
+                    return [.select]
+                }
+                if state.selectedItems.count == (state.results?.count ?? 0) {
+                    return [.deselectAll, .done]
+                }
+                return [.selectAll, .done]
             }
-            return [.selectAll, .done]
         }
     }
 }
