@@ -662,6 +662,10 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             state.searchTerm = text
             state.results = results
             state.changes = .results
+            if state.isEditing, !state.selectedItems.isEmpty {
+                state.selectedItems.removeAll()
+                state.changes.insert(.selection)
+            }
         }
     }
 
