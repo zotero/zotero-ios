@@ -21,6 +21,10 @@ class ItemsFilterViewController: UIViewController {
     private var downloadsFilterEnabled: Bool
     weak var delegate: FiltersDelegate?
 
+    private var isCompact: Bool {
+        return UIDevice.current.userInterfaceIdiom == .phone || (presentingViewController as? MainViewController)?.isCollapsed == true
+    }
+
     init(downloadsFilterEnabled: Bool, tagFilterController: TagFilterViewController) {
         self.downloadsFilterEnabled = downloadsFilterEnabled
         self.tagFilterController = tagFilterController
@@ -137,9 +141,20 @@ class ItemsFilterViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        if #available(iOS 26.0, *) {
+            updateToolbar()
+        }
         preferredContentSize = CGSize(width: Self.width, height: Self.downloadsHeight)
         if !tagFilterController.view.isHidden {
             delegate?.tagOptionsDidChange()
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if #available(iOS 26.0, *) {
+            navigationController?.setToolbarHidden(true, animated: false)
         }
     }
 
@@ -147,8 +162,7 @@ class ItemsFilterViewController: UIViewController {
     
     private func showHideTagFilter() {
         let wasHidden = tagFilterController.view.isHidden
-        let isCollapsed = (presentingViewController as? MainViewController)?.isCollapsed
-        if UIDevice.current.userInterfaceIdiom == .phone || isCollapsed == true {
+        if isCompact {
             tagFilterController.view.isHidden = false
             separator.isHidden = false
             if #unavailable(iOS 26.0.0) {
@@ -164,6 +178,17 @@ class ItemsFilterViewController: UIViewController {
         if wasHidden && !tagFilterController.view.isHidden {
             delegate?.tagOptionsDidChange()
         }
+        if #available(iOS 26.0, *) {
+            updateToolbar()
+        }
+    }
+
+    @available(iOS 26.0, *)
+    private func updateToolbar() {
+        if isCompact {
+            tagFilterController.setupBottomToolbar(in: self)
+        }
+        navigationController?.setToolbarHidden(!isCompact, animated: false)
     }
 }
 
