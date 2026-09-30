@@ -134,7 +134,14 @@ final class MasterContainerViewController: UINavigationController {
             // bottom container contains from top to bottom:
             // --- handle background (drag icon) - bottom controller view
             //  \- separator
-            let visibleAreaBottomConstraint = visibleArea.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+            let keyboardLayoutGuide = view.keyboardLayoutGuide
+            if #available(iOS 17.0, *) {
+                keyboardLayoutGuide.usesBottomSafeArea = false
+            }
+            let visibleAreaBottomConstraint = visibleArea.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor)
+            if #unavailable(iOS 17.0) {
+                visibleAreaBottomConstraint.constant = view.safeAreaInsets.bottom
+            }
             NSLayoutConstraint.activate([
                 visibleArea.topAnchor.constraint(equalTo: view.topAnchor),
                 visibleArea.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -294,7 +301,9 @@ final class MasterContainerViewController: UINavigationController {
 
     override func viewSafeAreaInsetsDidChange() {
         super.viewSafeAreaInsetsDidChange()
-        visibleAreaBottomConstraint?.constant = view.safeAreaInsets.bottom
+        if #unavailable(iOS 17.0) {
+            visibleAreaBottomConstraint?.constant = view.safeAreaInsets.bottom
+        }
     }
 
     override func viewDidLayoutSubviews() {
