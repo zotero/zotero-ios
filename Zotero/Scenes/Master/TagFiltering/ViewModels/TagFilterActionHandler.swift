@@ -257,6 +257,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 update(viewModel: viewModel) { state in
                     state.tags = sorted
                     state.snapshot = snapshot
+                    state.searchTerm = searchTerm
                     state.changes = .tags
                     state.selectedTags = selectedTags
                 }
