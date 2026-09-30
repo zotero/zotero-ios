@@ -138,7 +138,7 @@
 "items.action.remove_download" = "Remove Download";
 "items.action.retrieve_metadata" = "Retrieve Metadata";
 "items.filters.title" = "Filters";
-"items.filters.downloads" = "Downloaded Files";
+"items.filters.downloads" = "Only Items with Downloaded Files";
 "items.filters.tags" = "Tags";
 "items.toolbar_saved" = "Saved %d / %d";
 "items.toolbar_downloaded" = "Downloaded %d / %d";
