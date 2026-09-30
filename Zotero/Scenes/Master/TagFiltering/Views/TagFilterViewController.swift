@@ -27,6 +27,7 @@ class TagFilterViewController: UIViewController {
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         searchBar.heightAnchor.constraint(equalToConstant: searchBarHeight).isActive = true
         searchBar.placeholder = L10n.TagPicker.searchPlaceholder
+        searchBar.text = viewModel.state.searchTerm
         searchBar.delegate = self
         searchBar.rx.text.observe(on: MainScheduler.instance)
             .skip(1)
@@ -179,6 +180,10 @@ class TagFilterViewController: UIViewController {
     }
 
     private func update(to state: TagFilterState) {
+        if searchBar.text != state.searchTerm {
+            searchBar.text = state.searchTerm
+        }
+
         if state.changes.contains(.selection) {
             updateOptionsMenu(with: state)
             delegate?.tagSelectionDidChange(selected: state.selectedTags)

@@ -110,18 +110,20 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func search(with term: String, in viewModel: ViewModel<TagFilterActionHandler>) {
+        let state = viewModel.state
+        let snapshot = state.snapshot ?? state.tags
         if !term.isEmpty {
-            let filtered = viewModel.state.tags.filter({ $0.tag.name.localizedCaseInsensitiveContains(term) })
+            let isNarrowingSearch = !state.searchTerm.isEmpty && term.localizedCaseInsensitiveContains(state.searchTerm)
+            let source = isNarrowingSearch ? state.tags : snapshot
+            let filtered = source.filter({ $0.tag.name.localizedCaseInsensitiveContains(term) })
             update(viewModel: viewModel) { state in
-                if state.snapshot == nil {
-                    state.snapshot = state.tags
-                }
+                state.snapshot = snapshot
                 state.tags = filtered
                 state.searchTerm = term
                 state.changes = .tags
             }
         } else {
-            guard let snapshot = viewModel.state.snapshot else { return }
+            guard viewModel.state.snapshot != nil || !viewModel.state.searchTerm.isEmpty else { return }
             update(viewModel: viewModel) { state in
                 state.tags = snapshot
                 state.snapshot = nil
