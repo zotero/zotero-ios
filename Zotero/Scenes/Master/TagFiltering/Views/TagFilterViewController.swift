@@ -18,13 +18,29 @@ class TagFilterViewController: UIViewController {
         case filterScreen
     }
 
-    private(set) weak var searchBar: UISearchBar!
+    lazy private(set) var searchBar: UISearchBar = {
+        let searchBar = UISearchBar()
+        if #unavailable(iOS 26.0) {
+            searchBar.backgroundColor = .systemBackground
+        }
+        searchBar.backgroundImage = UIImage()
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        searchBar.heightAnchor.constraint(equalToConstant: searchBarHeight).isActive = true
+        searchBar.placeholder = L10n.TagPicker.searchPlaceholder
+        searchBar.delegate = self
+        searchBar.rx.text.observe(on: MainScheduler.instance)
+            .skip(1)
+            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+            .subscribe(onNext: { [weak viewModel] text in
+                viewModel?.process(action: .search(text ?? ""))
+            })
+            .disposed(by: disposeBag)
+        return searchBar
+    }()
     private weak var collectionView: UICollectionView!
-    private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton?
     private weak var moreButton: UIBarButtonItem?
     weak var delegate: FiltersDelegate?
-    private var searchBarScrollEnabled: Bool
 
     private static let cellId = "TagFilterCell"
     private let searchBarHeight: CGFloat
@@ -37,7 +53,6 @@ class TagFilterViewController: UIViewController {
     init(viewModel: ViewModel<TagFilterActionHandler>, context: Context) {
         self.viewModel = viewModel
         self.context = context
-        searchBarScrollEnabled = true
         disposeBag = DisposeBag()
         if #available(iOS 26.0, *) {
             searchBarHeight = 48
@@ -68,12 +83,6 @@ class TagFilterViewController: UIViewController {
             var searchContainer: UIStackView?
             var bottomToolbar: UIToolbar?
             if #unavailable(iOS 26.0) {
-                let searchBar = UISearchBar()
-                searchBar.backgroundColor = .systemBackground
-                searchBar.backgroundImage = UIImage()
-                setup(searchBar: searchBar)
-                self.searchBar = searchBar
-
                 var optionsConfiguration = UIButton.Configuration.plain()
                 optionsConfiguration.image = UIImage(systemName: "ellipsis")
                 optionsConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8)
@@ -97,22 +106,11 @@ class TagFilterViewController: UIViewController {
                 bottomToolbar = toolbar
             }
 
-            let sectionInsetTop: CGFloat
-            if #available(iOS 26.0, *) {
-                sectionInsetTop = 8
-            } else {
-                sectionInsetTop = searchBarHeight + Self.searchBarTopOffset + Self.searchBarBottomOffset
-            }
             let layout = TagsFlowLayout(
                 maxWidth: view.frame.width,
                 minimumInteritemSpacing: 8,
                 minimumLineSpacing: 8,
-                sectionInset: UIEdgeInsets(
-                    top: sectionInsetTop,
-                    left: 10,
-                    bottom: 8,
-                    right: 10
-                )
+                sectionInset: UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
             )
             let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: layout)
             collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -135,18 +133,18 @@ class TagFilterViewController: UIViewController {
             }
 
             var constraints = [
-                collectionView.topAnchor.constraint(equalTo: view.topAnchor),
                 collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 view.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor)
             ]
             if let searchContainer {
-                let searchBarTop = searchContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: Self.searchBarTopOffset)
                 constraints.append(contentsOf: [
+                    searchContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: Self.searchBarTopOffset),
                     searchContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
                     view.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor, constant: 10),
-                    searchBarTop
+                    collectionView.topAnchor.constraint(equalTo: searchContainer.bottomAnchor, constant: Self.searchBarBottomOffset)
                 ])
-                searchBarTopConstraint = searchBarTop
+            } else {
+                constraints.append(collectionView.topAnchor.constraint(equalTo: view.topAnchor))
             }
             if let bottomToolbar {
                 constraints.append(contentsOf: [
@@ -170,13 +168,6 @@ class TagFilterViewController: UIViewController {
 
     @available(iOS 26.0, *)
     private func createBottomToolbarItems() -> [UIBarButtonItem] {
-        let searchBar = UISearchBar()
-        searchBar.backgroundImage = UIImage()
-        searchBar.translatesAutoresizingMaskIntoConstraints = false
-        searchBar.heightAnchor.constraint(equalToConstant: searchBarHeight).isActive = true
-        setup(searchBar: searchBar)
-        self.searchBar = searchBar
-
         let moreButton = UIBarButtonItem(image: UIImage(systemName: "ellipsis"))
         moreButton.menu = createOptionsMenu(with: viewModel.state)
         self.moreButton = moreButton
@@ -185,24 +176,6 @@ class TagFilterViewController: UIViewController {
             .flexibleSpace(),
             moreButton
         ]
-    }
-
-    private func setup(searchBar: UISearchBar) {
-        searchBar.placeholder = L10n.TagPicker.searchPlaceholder
-        searchBar.delegate = self
-        searchBar.rx.text.observe(on: MainScheduler.instance)
-            .skip(1)
-            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-            .subscribe(onNext: { [weak viewModel] text in
-                viewModel?.process(action: .search(text ?? ""))
-            })
-            .disposed(by: disposeBag)
-    }
-
-    override func viewIsAppearing(_ animated: Bool) {
-        guard #unavailable(iOS 26.0), context == .masterBottomSheet else { return }
-        let height = searchBarHeight + Self.searchBarTopOffset
-        collectionView.setContentOffset(CGPoint(x: 0, y: height), animated: false)
     }
 
     private func update(to state: TagFilterState) {
@@ -270,14 +243,6 @@ class TagFilterViewController: UIViewController {
         let menu = createOptionsMenu(with: state)
         optionsButton?.menu = menu
         moreButton?.menu = menu
-    }
-
-    private func snapSearchBarToAppropriatePosition(scrollView: UIScrollView) {
-        guard #unavailable(iOS 26.0) else { return }
-        let height = searchBarHeight + Self.searchBarTopOffset
-        guard scrollView.contentOffset.y > 0 && scrollView.contentOffset.y < height else { return }
-        let offset = scrollView.contentOffset.y > (height / 2) ? CGPoint(x: 0, y: height) : CGPoint()
-        collectionView.setContentOffset(offset, animated: true)
     }
 
     private func createOptionsMenu(with state: TagFilterState) -> UIMenu {
@@ -372,20 +337,6 @@ extension TagFilterViewController: UICollectionViewDelegate {
         viewModel.process(action: .deselect(tag.tag.name))
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
     }
-
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard #unavailable(iOS 26.0), searchBarScrollEnabled else { return }
-        searchBarTopConstraint.constant = Self.searchBarTopOffset - scrollView.contentOffset.y
-    }
-
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        guard !decelerate else { return }
-        snapSearchBarToAppropriatePosition(scrollView: scrollView)
-    }
-
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        snapSearchBarToAppropriatePosition(scrollView: scrollView)
-    }
 }
 
 extension TagFilterViewController: DraggableViewController {
@@ -399,29 +350,8 @@ extension TagFilterViewController: DraggableViewController {
 }
 
 extension TagFilterViewController: UISearchBarDelegate {
-    func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
-        guard #unavailable(iOS 26.0) else { return true }
-        searchBarScrollEnabled = false
-        searchBarTopConstraint.constant = Self.searchBarTopOffset
-
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut, animations: { [weak self] in
-            guard let self else { return }
-            collectionView.setContentOffset(CGPoint(), animated: false)
-            view.layoutIfNeeded()
-        })
-
-        return true
-    }
-
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
-    }
-
-    func searchBarShouldEndEditing(_ searchBar: UISearchBar) -> Bool {
-        if #unavailable(iOS 26.0) {
-            searchBarScrollEnabled = true
-        }
-        return true
     }
 }
 
