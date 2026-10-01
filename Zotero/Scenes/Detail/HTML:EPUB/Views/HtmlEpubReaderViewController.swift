@@ -17,11 +17,32 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
     var isReadAloudAvailable: Bool { get }
 
     func show(url: URL)
+    /// Reports that the reader created its view content, or failed to. In standalone reading mode a failure means the
+    /// structured document text couldn't be displayed.
+    func documentContentInitialized(didSucceed: Bool)
     func toggleInterfaceVisibility()
     func setReaderBackground(color: UIColor)
     /// Starts reading aloud at the text selection the action was invoked on, given as the source position the reader
     /// reported for it. Nil when there is no selection, in which case reading starts where the reader is.
     func startReadAloudFromSelection(sourcePosition: ReaderSourcePosition?)
+}
+
+/// Carried over from the reader which opened standalone reading mode, so that reading mode continues where that reader
+/// left off instead of starting from its own defaults, and closing it returns all the way out of both.
+struct ReadingModeSourceContext {
+    let isSidebarVisible: Bool
+    let toolbarState: AnnotationToolbarHandler.State
+    /// Closes the reader which opened reading mode, and reading mode with it.
+    let close: () -> Void
+    /// Report changes made in reading mode, so that the reader which opened it is in the same state when it's shown
+    /// again.
+    let sidebarVisibilityChanged: (Bool) -> Void
+    let toolbarStateChanged: (AnnotationToolbarHandler.State) -> Void
+    /// Sentence read aloud was speaking when reading mode was opened, `nil` when it wasn't playing. Reading mode takes
+    /// the session over, so that it both reads and highlights.
+    let readAloudPosition: ReadAloudResumePosition?
+    /// Hands the session back when reading mode is turned off, so that the reader which opened it keeps reading.
+    let readAloudHandedBack: (ReadAloudResumePosition?) -> Void
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
@@ -38,6 +59,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private unowned let remoteVoicesController: RemoteVoicesController
     private var readAloudHandler: ReadAloudViewHandler<HtmlEpubReaderViewController>?
     private var readingModeHandler: ReadingModeHandler?
+    /// Renders regions of the source document in standalone reading mode, `nil` for other documents.
+    private let pageRegionRenderer: PDFPageRegionRenderer?
+    /// Called when the user turns reading mode off in standalone reading mode, where there is nothing to switch back
+    /// to - the reader of the source document shows the document itself.
+    var onCloseStandaloneReadingMode: (() -> Void)?
+    /// Set when reading mode continues another reader, see `ReadingModeSourceContext`.
+    private let sourceContext: ReadingModeSourceContext?
+    private var didApplySourceSidebarState = false
+    /// Segment read aloud is currently speaking, `nil` when it isn't playing. Kept so that the spotlight can be drawn
+    /// again on the view which replaces the current one when reading mode is switched.
+    private var readAloudSpotlight: (sdtStart: [Int], sdtEnd: [Int])?
     private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     let disposeBag: DisposeBag
 
@@ -46,9 +78,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     weak var documentControllerLeft: NSLayoutConstraint?
     private weak var pageIndicator: UIView?
     private weak var pageIndicatorLabel: UILabel?
-    private var documentBottomToSafeArea: NSLayoutConstraint?
-    private var documentBottomToIndicator: NSLayoutConstraint?
-    private var documentBottomToView: NSLayoutConstraint?
+    /// Document fills to the bottom of the screen; its constant lifts it above the read aloud toolbar when shown.
+    private var documentBottom: NSLayoutConstraint?
     private var pageIndicatorBottom: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
     var annotationToolbarHandler: AnnotationToolbarHandler?
@@ -78,7 +109,24 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         encoder: Defaults.jsonEncoder,
         decoder: Defaults.jsonDecoder
     )
-    var toolbarState: AnnotationToolbarHandler.State
+    private var storedToolbarState: AnnotationToolbarHandler.State
+    /// Toolbar state while reading mode continues another reader. Kept separately so that it starts as that reader
+    /// left it, and so that changes here don't overwrite the state remembered for HTML/EPUB documents.
+    private var sourceToolbarState: AnnotationToolbarHandler.State?
+    var toolbarState: AnnotationToolbarHandler.State {
+        get {
+            return sourceToolbarState ?? storedToolbarState
+        }
+
+        set {
+            guard sourceToolbarState != nil else {
+                storedToolbarState = newValue
+                return
+            }
+            sourceToolbarState = newValue
+            sourceContext?.toolbarStateChanged(newValue)
+        }
+    }
     @UserDefault(key: "HtmlEpubReaderStatusBarVisible", defaultValue: true)
     var statusBarVisible: Bool {
         didSet {
@@ -148,7 +196,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private lazy var searchButton: UIBarButtonItem = {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
         search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
-        search.title = viewModel.state.originalFile.ext.lowercased() == "epub" ? L10n.Accessibility.Htmlepub.searchEpub : L10n.Accessibility.Htmlepub.searchHtml
+        switch viewModel.state.originalFile.ext.lowercased() {
+        case "epub":
+            search.title = L10n.Accessibility.Htmlepub.searchEpub
+
+        case "pdf":
+            // Standalone reading mode, where the reader shows the structured text of a PDF.
+            search.title = L10n.Accessibility.Pdf.searchPdf
+
+        default:
+            search.title = L10n.Accessibility.Htmlepub.searchHtml
+        }
         search.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let documentController else { return }
@@ -171,12 +229,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         compactSize: Bool,
         dbStorage: DbStorage,
         documentWorkerController: DocumentWorkerController,
-        remoteVoicesController: RemoteVoicesController
+        remoteVoicesController: RemoteVoicesController,
+        pageRegionRenderer: PDFPageRegionRenderer? = nil,
+        sourceContext: ReadingModeSourceContext? = nil
     ) {
         self.viewModel = viewModel
         self.dbStorage = dbStorage
         self.documentWorkerController = documentWorkerController
         self.remoteVoicesController = remoteVoicesController
+        self.pageRegionRenderer = pageRegionRenderer
+        self.sourceContext = sourceContext
+        sourceToolbarState = sourceContext?.toolbarState
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         isChangingInterfaceVisibility = false
@@ -214,20 +277,49 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
 
-        /// Reading mode renders the structured text of the document, which the reader supports for snapshots only. EPUBs
-        /// are reflowable already, so they don't need it and the reader refuses to enable it for them.
+        /// Reading mode renders the structured text of the document. It's an overlay on top of snapshots - EPUBs are
+        /// reflowable already, so they don't need it and the reader refuses to enable it for them - and the whole
+        /// content of the reader in standalone reading mode.
         func setupReadingModeIfNeeded() {
-            guard FeatureGates.enabled.contains(.readingMode),
-                  let documentController,
-                  let file = viewModel.state.documentFile as? FileData,
-                  ["html", "htm"].contains(file.ext.lowercased())
-            else { return }
-            let handler = ReadingModeHandler(file: file, documentController: documentController, documentWorkerController: documentWorkerController)
+            guard FeatureGates.enabled.contains(.readingMode) else { return }
+            guard let documentController, let file = viewModel.state.documentFile as? FileData else {
+                DDLogWarn("HtmlEpubReaderViewController: no reading mode, document controller or file unavailable")
+                return
+            }
+            let mode: ReadingModeHandler.Mode
+            switch viewModel.state.kind {
+            case .document:
+                guard ["html", "htm"].contains(file.ext.lowercased()) else {
+                    DDLogInfo("HtmlEpubReaderViewController: no reading mode for '\(file.ext)' document")
+                    return
+                }
+                mode = .overlay
+
+            case .standaloneReadingMode:
+                mode = .standalone
+            }
+            let handler = ReadingModeHandler(mode: mode, file: file, documentController: documentController, documentWorkerController: documentWorkerController)
             handler.onEnableFailed = { [weak self] in
-                self?.coordinatorDelegate?.show(error: HtmlEpubReaderState.Error.cantEnableReadingMode)
+                guard let self else { return }
+                // In standalone reading mode there is nothing else to show, so the reported error closes the reader.
+                let error: HtmlEpubReaderState.Error = viewModel.state.kind.isStandaloneReadingMode ? .cantShowReadingMode : .cantEnableReadingMode
+                coordinatorDelegate?.show(error: error)
+            }
+            handler.onRequestClose = { [weak self] in
+                guard let self else { return }
+                // Reading mode is going away while the reader which opened it stays, so playback continues there.
+                sourceContext?.readAloudHandedBack(readAloudHandler?.stopForHandOff())
+                onCloseStandaloneReadingMode?()
+            }
+            // Switching replaces the view the user reads, so the spotlight of the segment being read aloud, which was
+            // drawn on the previous one, is drawn again on the new one.
+            handler.onDidSwitchView = { [weak self] in
+                guard let self, let spotlight = readAloudSpotlight else { return }
+                self.documentController?.setReadAloudSpotlight(sdtStart: spotlight.sdtStart, sdtEnd: spotlight.sdtEnd)
             }
             readingModeHandler = handler
             navigationBarLeadingItems.append(handler.createReadingModeButton())
+            handler.start()
         }
 
         func setupReadAloudIfNeeded() {
@@ -275,6 +367,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         func setupViews() {
             let documentController = HtmlEpubDocumentViewController(viewModel: viewModel)
             documentController.parentDelegate = self
+            documentController.pageRegionRenderer = pageRegionRenderer
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
 
             let annotationToolbar = AnnotationToolbarViewController(tools: Defaults.shared.htmlEpubAnnotationTools.map({ $0.type }), undoRedoEnabled: false, size: navigationBarHeight)
@@ -301,14 +394,14 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let documentTopConstraint = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
-            let documentBottomToSafeArea = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
-            let documentBottomToIndicator = pageIndicator.topAnchor.constraint(equalTo: documentController.view.bottomAnchor, constant: 8)
-            let documentBottomToView = view.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
+            // The document always fills down to the bottom of the screen - the page indicator floats above it - and is
+            // only lifted for the read aloud toolbar, which the text can't be allowed to run under.
+            let documentBottom = view.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
             let pageIndicatorBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 0)
 
             NSLayoutConstraint.activate([
                 documentTopConstraint,
-                documentBottomToSafeArea,
+                documentBottom,
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor),
                 documentLeftConstraint,
                 pageIndicator.centerXAnchor.constraint(equalTo: documentController.view.centerXAnchor),
@@ -325,9 +418,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             documentControllerLeft = documentLeftConstraint
             self.pageIndicator = pageIndicator
             self.pageIndicatorLabel = pageIndicatorLabel
-            self.documentBottomToSafeArea = documentBottomToSafeArea
-            self.documentBottomToIndicator = documentBottomToIndicator
-            self.documentBottomToView = documentBottomToView
+            self.documentBottom = documentBottom
             self.pageIndicatorBottom = pageIndicatorBottom
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler!.performInitialLayout()
@@ -366,6 +457,16 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: viewModel.state.library.metadataEditable)
         updateContainerInsets(force: true)
         applyNavigationBarButtons(windowSize: windowSize)
+        applySourceSidebarStateIfNeeded()
+    }
+
+    /// Opens the sidebar when the reader which opened reading mode had it open. Done once the navigation bar items
+    /// exist, because opening it also updates the sidebar button.
+    private func applySourceSidebarStateIfNeeded() {
+        guard let sourceContext, !didApplySourceSidebarState else { return }
+        didApplySourceSidebarState = true
+        guard sourceContext.isSidebarVisible != isSidebarVisible else { return }
+        toggleSidebar(animated: false)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -560,18 +661,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         guard let pageIndicator else { return }
         let hasInfo = viewModel.state.currentPage != nil && viewModel.state.pagesCount != nil
         let shouldShow = hasInfo && !navBarHidden
-        // Pick the document's bottom anchor: full screen fills to the very bottom (under the home indicator), otherwise
-        // it stops above the page indicator (when shown) or at the safe area.
-        documentBottomToView?.isActive = false
-        documentBottomToIndicator?.isActive = false
-        documentBottomToSafeArea?.isActive = false
-        if navBarHidden {
-            documentBottomToView?.isActive = true
-        } else if shouldShow {
-            documentBottomToIndicator?.isActive = true
-        } else {
-            documentBottomToSafeArea?.isActive = true
-        }
+        // The indicator floats above the document rather than shortening it, so only its visibility changes here.
         pageIndicator.alpha = shouldShow ? 1 : 0
     }
 
@@ -631,6 +721,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
     private func toggleSidebar(animated: Bool) {
         toggleSidebar(animated: animated, sidebarButtonTag: NavigationBarButton.sidebar.rawValue)
+        sourceContext?.sidebarVisibilityChanged(isSidebarVisible)
     }
 
     private func showSettings(sender: UIBarButtonItem) {
@@ -682,7 +773,13 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     }
 
     private func close() {
-        navigationController?.presentingViewController?.dismiss(animated: true)
+        guard let sourceContext else {
+            navigationController?.presentingViewController?.dismiss(animated: true)
+            return
+        }
+        // Reading mode continues another reader, which is still open behind it. Closing the document means leaving
+        // both, while turning reading mode off (the reading mode button) returns to that reader.
+        sourceContext.close()
     }
 
     private func updateStatusBarHeight(allowZero: Bool = false) {
@@ -695,7 +792,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private func currentContainerInsets(forToolbarState state: AnnotationToolbarHandler.State? = nil) -> NSDirectionalEdgeInsets {
         let state = state ?? toolbarState
         let toolbarHeight = isTopToolbarVisible(forToolbarState: state) ? (annotationToolbarController?.size ?? 0) : 0
-        let top = statusBarHeight + navigationBarHeight + toolbarHeight
+        // A hidden navigation bar keeps its height, so it can't be part of the inset while the interface is hidden -
+        // the document fills the screen and only the toolbar, if it's still shown, insets the content.
+        let top = isNavigationBarHidden ? toolbarHeight : (statusBarHeight + navigationBarHeight + toolbarHeight)
 
         return NSDirectionalEdgeInsets(top: top, leading: 0, bottom: 0, trailing: 0)
     }
@@ -842,6 +941,13 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
         readAloudHandler != nil
     }
 
+    func documentContentInitialized(didSucceed: Bool) {
+        readingModeHandler?.documentContentInitialized(didSucceed: didSucceed)
+        guard didSucceed, let position = sourceContext?.readAloudPosition, let readAloudHandler else { return }
+        // The structured text is displayed, so the sentence can be looked up in it and read on from there.
+        readAloudHandler.continueHandedOffSession(from: position, resolvedByReader: true)
+    }
+
     func show(url: URL) {
         coordinatorDelegate?.show(url: url)
     }
@@ -871,9 +977,7 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
         isChangingInterfaceVisibility = true
         statusBarVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
-        if isTopToolbarVisible(forToolbarState: toolbarState) {
-            updateContainerInsets(force: true)
-        }
+        updateContainerInsets(force: true)
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
             guard let self else { return }
@@ -886,15 +990,11 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
             applyPageIndicator(navBarHidden: isHidden)
             view.layoutIfNeeded()
             annotationToolbarHandler?.interfaceVisibilityDidChange()
-            if isTopToolbarVisible(forToolbarState: toolbarState) {
-                updateContainerInsets(force: true)
-            }
+            updateContainerInsets(force: true)
         }, completion: { [weak self] _ in
             guard let self else { return }
             isChangingInterfaceVisibility = false
-            if isTopToolbarVisible(forToolbarState: toolbarState) {
-                updateContainerInsets(force: true)
-            }
+            updateContainerInsets(force: true)
         })
 
         if isHidden && isSidebarVisible {
@@ -1059,6 +1159,7 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
     func readAloudHighlightChanged(position: ReadAloudPosition, pageIndex: Int) {
         // Spotlight the currently-spoken segment in the web view via its reader SDT position.
         guard case .htmlEpub(let sdtStart, let sdtEnd) = position else { return }
+        readAloudSpotlight = (sdtStart, sdtEnd)
         documentController?.setReadAloudSpotlight(sdtStart: sdtStart, sdtEnd: sdtEnd)
     }
 
@@ -1082,7 +1183,7 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
 extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
     func readAloudToolbarChanged(height: CGFloat) {
         let toolbarHeightAboveSafeArea = max(0, height - view.safeAreaInsets.bottom)
-        documentBottomToSafeArea?.constant = toolbarHeightAboveSafeArea
+        documentBottom?.constant = height
         pageIndicatorBottom?.constant = toolbarHeightAboveSafeArea + 8
         view.layoutIfNeeded()
     }
@@ -1121,6 +1222,7 @@ extension HtmlEpubReaderViewController: ReadAloudViewDelegate {
 
     func clearSpeechHighlight() {
         // Clear the read-aloud spotlight when playback stops.
+        readAloudSpotlight = nil
         documentController?.clearReadAloudSpotlight()
     }
 

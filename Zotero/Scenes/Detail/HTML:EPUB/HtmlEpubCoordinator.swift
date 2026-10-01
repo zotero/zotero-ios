@@ -37,6 +37,9 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     private let url: URL
     private let readerURL: URL?
     private let preselectedAnnotationKey: String?
+    private let kind: HtmlEpubReaderState.Kind
+    private let pageRegionRenderer: PDFPageRegionRenderer?
+    private let sourceContext: ReadingModeSourceContext?
     unowned let controllers: Controllers
     let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
@@ -48,9 +51,15 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         url: URL,
         readerURL: URL?,
         preselectedAnnotationKey: String?,
+        kind: HtmlEpubReaderState.Kind = .document,
+        pageRegionRenderer: PDFPageRegionRenderer? = nil,
+        sourceContext: ReadingModeSourceContext? = nil,
         navigationController: NavigationViewController,
         controllers: Controllers
     ) {
+        self.kind = kind
+        self.pageRegionRenderer = pageRegionRenderer
+        self.sourceContext = sourceContext
         self.key = key
         self.parentKey = parentKey
         self.libraryId = libraryId
@@ -94,6 +103,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         )
         let state = HtmlEpubReaderState(
             readerURL: readerURL,
+            kind: kind,
             url: url,
             key: key,
             parentKey: parentKey,
@@ -110,9 +120,16 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
             dbStorage: dbStorage,
             documentWorkerController: userControllers.documentWorkerController,
-            remoteVoicesController: remoteVoicesController
+            remoteVoicesController: remoteVoicesController,
+            pageRegionRenderer: pageRegionRenderer,
+            sourceContext: sourceContext
         )
         controller.coordinatorDelegate = self
+        // In standalone reading mode there is no document to switch back to, so turning reading mode off closes the
+        // reader and returns to the reader of the source document.
+        controller.onCloseStandaloneReadingMode = { [weak self] in
+            self?.navigationController?.presentingViewController?.dismiss(animated: false)
+        }
         navigationController?.setViewControllers([controller], animated: false)
     }
 }

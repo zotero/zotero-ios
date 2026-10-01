@@ -32,8 +32,8 @@ protocol AnnotationToolbarHandlerDelegate: AnyObject {
 }
 
 final class AnnotationToolbarHandler: NSObject {
-    struct State: Codable {
-        enum Position: Int, Codable {
+    struct State: Codable, Equatable {
+        enum Position: Int, Codable, Equatable {
             case leading = 0
             case trailing = 1
             case top = 2

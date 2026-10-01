@@ -74,6 +74,12 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     }
     private var previousTraitCollection: UITraitCollection?
     private var readAloudHandler: ReadAloudViewHandler<PDFReaderViewController>?
+    /// Reading mode toggle, selected while the reading mode reader is presented.
+    private weak var readingModeButton: CheckboxButton?
+    /// Sidebar and toolbar changes made in reading mode. Applied when this reader is shown again, rather than while
+    /// it's covered by reading mode.
+    private var readingModeSidebarVisible: Bool?
+    private var readingModeToolbarChanged = false
     private lazy var keyCommandsHandler: DocumentKeyCommandsHandler = {
         let handler = DocumentKeyCommandsHandler()
         handler.onAction = { [weak self] action in
@@ -308,6 +314,68 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             annotationToolbarHandler!.performInitialLayout()
         }
 
+        /// Reading mode shows the structured text of the document in a separate reader, so the button stays selected
+        /// for as long as that reader is presented. Without the feature gate it opens PSPDFKit's plain text reader,
+        /// which is a one-way presentation and so keeps a plain button.
+        func createReadingModeButton(isEnabled: Bool) -> UIBarButtonItem {
+            guard FeatureGates.enabled.contains(.readingMode) else {
+                let item = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+                item.isEnabled = isEnabled
+                item.accessibilityLabel = L10n.Accessibility.Speech.showReader
+                item.title = L10n.AccessibilityPopup.showReader
+                item.rx.tap
+                    .subscribe(onNext: { [weak self] _ in
+                        guard let self else { return }
+                        coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
+                    })
+                    .disposed(by: disposeBag)
+                return item
+            }
+
+            let buttonSize: CGFloat = 38
+            let button = CheckboxButton(
+                image: Asset.Images.pdfRawReader.image.withRenderingMode(.alwaysTemplate),
+                contentInsets: NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
+                cornerStyle: .capsule
+            )
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.showsLargeContentViewer = true
+            button.accessibilityLabel = L10n.Accessibility.Speech.showReader
+            button.deselectedBackgroundColor = .clear
+            button.deselectedTintColor = isEnabled ? Asset.Colors.zoteroBlueWithDarkMode.color : .gray
+            button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
+            button.selectedTintColor = .white
+            button.isSelected = false
+            button.isEnabled = isEnabled
+            button.addAction(
+                UIAction(handler: { [weak self] _ in
+                    self?.showReadingMode()
+                }),
+                for: .touchUpInside
+            )
+            readingModeButton = button
+
+            // Pad the capsule horizontally so the bar button matches the standard bar button footprint and lines up
+            // evenly with the system bar buttons next to it.
+            let container = UIView()
+            container.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(button)
+            let hPadding = max(0, (CheckboxButton.standardNavigationBarButtonSize - buttonSize) / 2)
+            NSLayoutConstraint.activate([
+                button.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: hPadding),
+                container.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: hPadding),
+                button.topAnchor.constraint(equalTo: container.topAnchor),
+                button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                button.widthAnchor.constraint(equalToConstant: buttonSize),
+                button.heightAnchor.constraint(equalToConstant: buttonSize)
+            ])
+
+            let item = UIBarButtonItem(customView: container)
+            item.title = L10n.AccessibilityPopup.showReader
+            item.accessibilityLabel = L10n.Accessibility.Speech.showReader
+            return item
+        }
+
         func setupNavigationBar() {
             let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
             sidebarButton.isEnabled = !viewModel.state.document.isLocked
@@ -320,16 +388,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let readingModeButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
-            readingModeButton.isEnabled = !viewModel.state.document.isLocked
-            readingModeButton.accessibilityLabel = L10n.Accessibility.Speech.showReader
-            readingModeButton.title = L10n.AccessibilityPopup.showReader
-            readingModeButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
-                })
-                .disposed(by: disposeBag)
+            let readingModeButton = createReadingModeButton(isEnabled: !viewModel.state.document.isLocked)
 
             var leftItems: [UIBarButtonItem] = [closeButton, sidebarButton, readingModeButton]
             if FeatureGates.enabled.contains(.speech), let readAloudHandler {
@@ -377,9 +436,46 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
+        applyReadingModeToolbarStateIfNeeded()
         let editingEnabled = viewModel.state.library.metadataEditable && !viewModel.state.document.isLocked
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: editingEnabled)
         applyNavigationBarButtons(windowSize: windowSize)
+        applyReadingModeSidebarStateIfNeeded()
+    }
+
+    /// Lays the toolbar out for the state reading mode left off with, which was stored as it changed. Done before the
+    /// toolbar handler lays out for this appearance, which applies the rest of that state.
+    private func applyReadingModeToolbarStateIfNeeded() {
+        guard readingModeToolbarChanged else { return }
+        readingModeToolbarChanged = false
+        // The toolbar's rotation follows its position and is otherwise only set once, when the reader is first shown.
+        annotationToolbarHandler?.performInitialLayout()
+    }
+
+    /// Takes the read aloud session back from reading mode, continuing at the sentence it left off at.
+    private func continueReadAloud(from position: ReadAloudResumePosition?) {
+        guard let position, let readAloudHandler else { return }
+        // Reading mode reports its position the way the reader expressed it, which for a PDF is the geometry of the
+        // sentence - the same thing this reader stores and resolves against the page.
+        let resolved: ReadAloudResumePosition
+        switch position {
+        case .pdf:
+            resolved = position
+
+        case .reader(let source):
+            guard let fromSource = ReadAloudResumePosition(json: source) else { return }
+            resolved = fromSource
+        }
+        readAloudHandler.continueHandedOffSession(from: resolved, resolvedByReader: false)
+    }
+
+    /// Takes over the sidebar state reading mode left off with. Applied after the navigation bar items, because
+    /// toggling the sidebar also updates the sidebar button.
+    private func applyReadingModeSidebarStateIfNeeded() {
+        guard let readingModeSidebarVisible else { return }
+        self.readingModeSidebarVisible = nil
+        guard readingModeSidebarVisible != isSidebarVisible else { return }
+        toggleSidebar(animated: false)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -677,6 +773,35 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 viewModel.process(action: .setSettings(settings: settings))
             })
             .disposed(by: disposeBag)
+    }
+
+    /// Presents the structured text of this document in its own reader. The button stays selected until that reader is
+    /// dismissed, either by turning reading mode off there or by closing it.
+    private func showReadingMode() {
+        guard let coordinatorDelegate, readingModeButton?.isSelected == false else { return }
+        coordinatorDelegate.showReadingMode(
+            document: viewModel.state.document,
+            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
+            sourceContext: ReadingModeSourceContext(
+                isSidebarVisible: isSidebarVisible,
+                toolbarState: toolbarState,
+                // Closing the document in reading mode leaves this reader as well, which also dismisses reading mode
+                // presented on top of it. Turning reading mode off instead returns here.
+                close: { [weak self] in self?.close() },
+                sidebarVisibilityChanged: { [weak self] isVisible in self?.readingModeSidebarVisible = isVisible },
+                toolbarStateChanged: { [weak self] state in
+                    guard let self else { return }
+                    // Stored right away, so that the state survives closing both readers from reading mode. Only the
+                    // layout waits until this reader is shown again.
+                    toolbarState = state
+                    readingModeToolbarChanged = true
+                },
+                // Reading mode takes the read aloud session over, so that it both reads and highlights; this reader
+                // can't highlight what's being read while it's covered anyway.
+                readAloudPosition: readAloudHandler?.stopForHandOff(),
+                readAloudHandedBack: { [weak self] position in self?.continueReadAloud(from: position) }
+            )
+        )
     }
 
     private func close() {

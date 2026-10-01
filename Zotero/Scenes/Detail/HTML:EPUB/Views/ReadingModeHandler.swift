@@ -18,6 +18,14 @@ import RxSwift
 /// button reflects the state the reader reports back, not the state which was requested, because the reader can refuse
 /// to enable reading mode when the structured text is unavailable.
 final class ReadingModeHandler {
+    enum Mode {
+        /// Reading mode is an overlay which the user turns on and off on top of a document the reader displays itself.
+        case overlay
+        /// Reading mode is all the reader displays, because it can't display the source document. It's on from the
+        /// start, and turning it off closes the reader instead of switching to the document.
+        case standalone
+    }
+
     enum State {
         /// Base document is shown.
         case disabled
@@ -35,6 +43,7 @@ final class ReadingModeHandler {
         return max(0, (CheckboxButton.standardNavigationBarButtonSize - navbarButtonSize) / 2)
     }
 
+    let mode: Mode
     private let file: FileData
     private unowned let documentWorkerController: DocumentWorkerController
     private weak var documentController: HtmlEpubDocumentViewController?
@@ -58,12 +67,21 @@ final class ReadingModeHandler {
     }
     /// Called when enabling reading mode failed, so that the reader can report it to the user.
     var onEnableFailed: (() -> Void)?
+    /// Called in standalone mode when the user turns reading mode off, where there is no document to switch back to.
+    var onRequestClose: (() -> Void)?
+    /// Called once the reader finished switching between the document and its structured text. The view the user reads
+    /// is replaced by the switch, so anything drawn on top of the document has to be drawn again.
+    var onDidSwitchView: (() -> Void)?
 
-    init(file: FileData, documentController: HtmlEpubDocumentViewController, documentWorkerController: DocumentWorkerController) {
+    init(mode: Mode, file: FileData, documentController: HtmlEpubDocumentViewController, documentWorkerController: DocumentWorkerController) {
+        self.mode = mode
         self.file = file
         self.documentController = documentController
         self.documentWorkerController = documentWorkerController
         disposeBag = DisposeBag()
+        // In standalone mode the structured text is the whole content of the reader, so it's loaded right away and
+        // reading mode is on for as long as the reader is open.
+        state = mode == .standalone ? .loading : .disabled
     }
 
     deinit {
@@ -76,6 +94,12 @@ final class ReadingModeHandler {
     // MARK: - Actions
 
     func toggle() {
+        guard mode == .overlay else {
+            // There is no document to switch back to, the reader of the source document shows it.
+            onRequestClose?()
+            return
+        }
+
         switch state {
         case .loading:
             // Ignore taps while the previous change is still in flight, the button is disabled anyway.
@@ -87,6 +111,37 @@ final class ReadingModeHandler {
         case .disabled:
             enable()
         }
+    }
+
+    /// Extracts the structured text and hands it to the reader, which displays it. Standalone mode only, where the
+    /// structured text is the whole content of the reader rather than something the user turns on.
+    func start() {
+        guard mode == .standalone else { return }
+        state = .loading
+        loadSDTPack { [weak self] didLoad in
+            guard let self, !didLoad else { return }
+            DDLogError("ReadingModeHandler: could not load structured document text for standalone reading mode")
+            reportUnavailable()
+        }
+    }
+
+    /// Reports the result of the reader creating its content. Standalone mode only - the reader creates it once it has
+    /// the structured text, so this is what completes `start()`.
+    func documentContentInitialized(didSucceed: Bool) {
+        guard mode == .standalone else { return }
+        if didSucceed {
+            state = .enabled
+        } else {
+            DDLogError("ReadingModeHandler: reader could not display structured document text")
+            reportUnavailable()
+        }
+    }
+
+    /// There is nothing to show without the structured text. Reporting it closes the reader, so it isn't closed here -
+    /// that would take the message away with it before it's read.
+    private func reportUnavailable() {
+        state = .disabled
+        onEnableFailed?()
     }
 
     private func enable() {
@@ -125,7 +180,9 @@ final class ReadingModeHandler {
             if enabled && !isEnabled {
                 DDLogError("ReadingModeHandler: reader did not enable reading mode")
                 onEnableFailed?()
+                return
             }
+            onDidSwitchView?()
         }
     }
 
@@ -244,6 +301,8 @@ final class ReadingModeHandler {
         let item = UIBarButtonItem(customView: container)
         item.title = L10n.AccessibilityPopup.showReader
         item.accessibilityLabel = L10n.Accessibility.Speech.showReader
+        // Standalone mode starts loading before the button exists, so the button is brought up to the current state.
+        updateButton()
         return item
     }
 

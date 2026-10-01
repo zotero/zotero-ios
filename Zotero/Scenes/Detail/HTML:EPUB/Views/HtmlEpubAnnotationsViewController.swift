@@ -257,7 +257,12 @@ class HtmlEpubAnnotationsViewController: UIViewController {
             guard let self else { return }
             var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
             snapshot.appendSections([0])
-            snapshot.appendItems(state.sortedKeys)
+            // Annotations which the reader can't anchor are not listed. Filtered here rather than in the state, because
+            // the state's keys are kept aligned with the observed database results to apply their changes by index.
+            snapshot.appendItems(state.sortedKeys.filter({ key in
+                guard let type = state.annotations[key]?.type else { return false }
+                return state.kind.supports(annotationType: type)
+            }))
             if let keys = state.updatedAnnotationKeys?.filter({ snapshot.itemIdentifiers.contains($0) }), !keys.isEmpty {
                 snapshot.reconfigureItems(keys)
             }

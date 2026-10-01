@@ -64,7 +64,13 @@ class HtmlEpubDocumentViewController: UIViewController {
     /// The reader resets its SDT session on every `setSDTPack`, discarding the materialized document, so the pack is
     /// pushed only once and shared by all its consumers (read aloud, reading mode).
     private var didSetSDTPack: Bool = false
+    /// Indicates whether `createView` was already called, so that calls which need the view aren't made before it.
+    private var didCreateView: Bool = false
+    /// SDT pack requested before the view was created, sent as soon as it is.
+    private var pendingSDTPack: (bytes: Data, packVersion: Int, schemaMajorVersion: Int, completion: ((Bool) -> Void)?)?
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
+    /// Renders regions of the source document for standalone reading mode, `nil` for other documents.
+    weak var pageRegionRenderer: PDFPageRegionRenderer?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
@@ -183,6 +189,12 @@ class HtmlEpubDocumentViewController: UIViewController {
             completion?(true)
             return
         }
+        guard didCreateView else {
+            // The reader has no view to store the pack in yet. In standalone reading mode the pack is what creates it,
+            // so the extraction can finish before the view is requested.
+            pendingSDTPack = (bytes, packVersion, schemaMajorVersion, completion)
+            return
+        }
         didSetSDTPack = true
         webViewHandler.call(javascript: "setSDTPack({ bytes: \(WebViewEncoder.encodeForJavascript(bytes)), packVersion: \(packVersion), schemaMajorVersion: \(schemaMajorVersion) });")
             .observe(on: MainScheduler.instance)
@@ -201,6 +213,31 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     // MARK: - Reading Mode
+
+    /// Answers an `onRequestPageRegionImages` request of standalone reading mode with one image per requested region.
+    private func sendPageRegionImages(requestID: Int, pageIndex: Int, rects: [[Double]], scale: Double) {
+        guard let pageRegionRenderer else {
+            DDLogWarn("HtmlEpubDocumentViewController: no page region renderer, reporting empty images")
+            // Always respond, the reader waits for an image per requested region.
+            send(pageRegionImages: [String](repeating: "", count: rects.count), requestID: requestID)
+            return
+        }
+
+        pageRegionRenderer.renderPageRegions(pageIndex: pageIndex, rects: rects, scale: scale) { [weak self] images in
+            self?.send(pageRegionImages: images, requestID: requestID)
+        }
+    }
+
+    private func send(pageRegionImages images: [String], requestID: Int) {
+        // The reader hands these straight to the view instead of decoding them, so they're inlined as a JSON array.
+        let payload = WebViewEncoder.encodeAsInlineJSONForJavascript(images)
+        webViewHandler.call(javascript: "setPageRegionImages({ requestID: \(requestID), images: \(payload) });")
+            .observe(on: MainScheduler.instance)
+            .subscribe(onFailure: { error in
+                DDLogError("HtmlEpubDocumentViewController: setting page region images failed - \(error)")
+            })
+            .disposed(by: disposeBag)
+    }
 
     /// Enables or disables reading mode, which renders the document's structured text as reflowable HTML over the
     /// (hidden) base view inside the same web view. Enabling needs the SDT pack, so `setSDTPack` has to have run first.
@@ -535,12 +572,22 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
-            DDLogInfo("URL: \(data.url.absoluteString)")
+            DDLogInfo("URL: \(data.url?.absoluteString ?? "none")")
             // A new view starts with a fresh SDT session, so the pack has to be handed over again.
             didSetSDTPack = false
+            didCreateView = false
             let appearance = Appearance.from(appearanceMode: state.settings.appearance, interfaceStyle: state.interfaceStyle)
             setWebViewInterfaceStyle(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
-            var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson), colorScheme: '\(appearance.htmlEpubValue)', \(appearance.htmlEpubThemeOption)"
+            var javascript = "createView({ type: '\(data.type)'"
+            if let sourceType = data.sourceType {
+                javascript += ", sourceType: '\(sourceType)'"
+            }
+            // Standalone reading mode displays the structured document text pack, handed over by `setSDTPack`, so it
+            // has no document to load.
+            if let url = data.url {
+                javascript += ", url: '\(url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))'"
+            }
+            javascript += ", annotations: \(data.annotationsJson), colorScheme: '\(appearance.htmlEpubValue)', \(appearance.htmlEpubThemeOption)"
             var viewState = "scale: \(data.scale)"
             if let page = data.page {
                 switch page {
@@ -557,12 +604,18 @@ class HtmlEpubDocumentViewController: UIViewController {
             }
             javascript += "});"
 
+            didCreateView = true
             webViewHandler.call(javascript: javascript)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onFailure: { error in
                     DDLogError("HtmlEpubDocumentViewController: loading document failed - \(error)")
                 })
                 .disposed(by: disposeBag)
+
+            if let pending = pendingSDTPack {
+                pendingSDTPack = nil
+                setSDTPack(bytes: pending.bytes, packVersion: pending.packVersion, schemaMajorVersion: pending.schemaMajorVersion, completion: pending.completion)
+            }
         }
     }
 
@@ -750,6 +803,27 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 let completion = readAloudStartBlockIndexRequests.removeValue(forKey: requestID)
                 completion?((params["blockIndex"] as? NSNumber)?.intValue)
+
+            case "onViewContentInitialized":
+                parentDelegate?.documentContentInitialized(didSucceed: true)
+
+            case "onViewContentInitializeFailed":
+                // Standalone reading mode only - the structured document text couldn't be displayed.
+                DDLogError("HtmlEpubDocumentViewController: view content failed to initialize")
+                parentDelegate?.documentContentInitialized(didSucceed: false)
+
+            case "onRequestPageRegionImages":
+                // Standalone reading mode asks for regions of the source document to show as figures.
+                guard let params = data["params"] as? [String: Any],
+                      let requestID = params["requestID"] as? Int,
+                      let pageIndex = (params["pageIndex"] as? NSNumber)?.intValue,
+                      let rects = params["rects"] as? [[Double]],
+                      let scale = (params["scale"] as? NSNumber)?.doubleValue
+                else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
+                    return
+                }
+                sendPageRegionImages(requestID: requestID, pageIndex: pageIndex, rects: rects, scale: scale)
 
             case "onReadingModeEnabled":
                 // Reader responded to a `setReadingModeEnabled` request with the state it ended up in; resolve the
