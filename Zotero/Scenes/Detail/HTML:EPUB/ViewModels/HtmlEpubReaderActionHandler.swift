@@ -450,6 +450,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             return
         }
 
+        // Standalone reading mode is a different view of a document which has its own reader, and that reader owns the
+        // reading position. Its stored page is a page index, which it refuses to reopen if anything else is stored
+        // there, so neither page nor scale are written here.
+        guard !viewModel.state.kind.isStandaloneReadingMode else { return }
+
         if let scale = state["scale"] as? Double {
             let readerScale = scale == 1 ? nil : scale
             if readerScale != viewModel.state.scale {
@@ -906,10 +911,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             for file in readerFiles {
                 try fileStorage.copy(from: file, to: viewModel.state.readerDirectory.copy(withName: file.name, ext: file.ext))
             }
-            // Copy document files (in case of snapshot there can be multiple files) to temporary sub-directory
-            let documentFiles: [File] = try fileStorage.contentsOfDirectory(at: viewModel.state.originalFile.directory)
-            for file in documentFiles {
-                try fileStorage.copy(from: file, to: viewModel.state.documentFile.copy(withName: file.name, ext: file.ext))
+            // Copy document files (in case of snapshot there can be multiple files) to temporary sub-directory. In
+            // standalone reading mode the web view displays the structured text instead of the document, so there is
+            // nothing for it to read and the document (a whole PDF) isn't copied.
+            if !viewModel.state.kind.isStandaloneReadingMode {
+                let documentFiles: [File] = try fileStorage.contentsOfDirectory(at: viewModel.state.originalFile.directory)
+                for file in documentFiles {
+                    try fileStorage.copy(from: file, to: viewModel.state.documentFile.copy(withName: file.name, ext: file.ext))
+                }
             }
 
             lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
@@ -936,15 +945,33 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             }
 
             let (sortedKeys, annotations, json) = processAnnotations(items: annotationItems)
-            let (type, page) = try loadTypeAndPage(from: viewModel.state.documentFile, rawPage: rawPage)
-            let documentData = HtmlEpubReaderState.DocumentData(
-                type: type,
-                url: viewModel.state.documentFile.createUrl(),
-                annotationsJson: json,
-                page: page,
-                scale: item.readerScale ?? 1,
-                selectedAnnotationKey: viewModel.state.selectedAnnotationKey
-            )
+            let documentData: HtmlEpubReaderState.DocumentData
+            switch viewModel.state.kind {
+            case .document:
+                let (type, page) = try loadTypeAndPage(from: viewModel.state.documentFile, rawPage: rawPage)
+                documentData = HtmlEpubReaderState.DocumentData(
+                    type: type,
+                    sourceType: nil,
+                    url: viewModel.state.documentFile.createUrl(),
+                    annotationsJson: json,
+                    page: page,
+                    scale: item.readerScale ?? 1,
+                    selectedAnnotationKey: viewModel.state.selectedAnnotationKey
+                )
+
+            case .standaloneReadingMode(let sourceType):
+                // The structured document text pack is the document, handed over separately once it's extracted, so
+                // there is no url and no stored page - the reader of the source document owns the reading position.
+                documentData = HtmlEpubReaderState.DocumentData(
+                    type: "sdt",
+                    sourceType: sourceType,
+                    url: nil,
+                    annotationsJson: json,
+                    page: nil,
+                    scale: 1,
+                    selectedAnnotationKey: viewModel.state.selectedAnnotationKey
+                )
+            }
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
@@ -1288,7 +1315,13 @@ extension RItem {
         for field in fields {
             switch (field.key, field.baseKey) {
             case (_, FieldKeys.Item.Annotation.position):
-                if field.value.first == "{", let json = field.value.data(using: .utf8).flatMap({ try? JSONSerialization.jsonObject(with: $0) }) {
+                // Coerce to the type the reader expects, the same way `UpdatableObject.createAnnotationPosition` does.
+                // PDF positions in particular carry a numeric `pageIndex`, which the reader can't use as a string.
+                if let value = Int(field.value) {
+                    position[field.key] = value
+                } else if let value = Double(field.value) {
+                    position[field.key] = value
+                } else if let json = field.value.data(using: .utf8).flatMap({ try? JSONSerialization.jsonObject(with: $0, options: .allowFragments) }) {
                     position[field.key] = json
                 } else {
                     position[field.key] = field.value
@@ -1318,6 +1351,19 @@ extension RItem {
             default:
                 unknown[field.key] = field.value
             }
+        }
+
+        // A PDF source position (standalone reading mode) keeps its rects in a separate list instead of a field, so that
+        // the rest of the app and the sync can use them. Annotations of HTML/EPUB documents are anchored by selectors
+        // and have no rects, so this is skipped for them.
+        if !rects.isEmpty {
+            // Built as a plain array of arrays, the way `UpdatableObject.createAnnotationPosition` does it. Mapping the
+            // Realm list directly leaves a value which can't be bridged, and serializing the annotation then throws.
+            var rectArray: [[Double]] = []
+            for rect in rects {
+                rectArray.append([rect.minX, rect.minY, rect.maxX, rect.maxY])
+            }
+            position[FieldKeys.Item.Annotation.Position.rects] = rectArray
         }
 
         guard let type, let sortIndex, !position.isEmpty else {
