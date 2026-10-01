@@ -33,8 +33,9 @@ class CreateOrEditHtmlEpubAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbR
             item.fields.append(rField)
         }
 
-        // Create position fields
-        for (key, value) in annotation.position {
+        // Create position fields. `rects` is not a field - a PDF source position (standalone reading mode) keeps it in
+        // a separate list, which `addAdditionalProperties(for:to:changes:database:)` fills.
+        for (key, value) in annotation.position where key != FieldKeys.Item.Annotation.Position.rects {
             let rField = RItemField()
             rField.key = key
             rField.value = positionValueToString(value)
@@ -52,6 +53,29 @@ class CreateOrEditHtmlEpubAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbR
             }
             return "\(value)"
         }
+    }
+
+    /// Stores the `rects` of a PDF source position (standalone reading mode) in the item's rect list, where the rest of
+    /// the app and the sync expect them. Annotations of HTML/EPUB documents are anchored by selectors and have no
+    /// `rects`, so this is a no-op for them.
+    override func addAdditionalProperties(for annotation: HtmlEpubAnnotation, to item: RItem, changes: inout RItemChanges, database: Realm) {
+        if !item.rects.isEmpty {
+            database.delete(item.rects)
+            changes.insert(.rects)
+        }
+
+        guard let rects = annotation.position[FieldKeys.Item.Annotation.Position.rects] as? [[Double]], !rects.isEmpty else { return }
+
+        for rect in rects {
+            guard rect.count == 4 else { continue }
+            let rRect = RRect()
+            rRect.minX = rect[0]
+            rRect.minY = rect[1]
+            rRect.maxX = rect[2]
+            rRect.maxY = rect[3]
+            item.rects.append(rRect)
+        }
+        changes.insert(.rects)
     }
 
     override func addTags(for annotation: HtmlEpubAnnotation, to item: RItem, database: Realm) {
