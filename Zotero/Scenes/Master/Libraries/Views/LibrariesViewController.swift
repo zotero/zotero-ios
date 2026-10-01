@@ -12,9 +12,10 @@ import WebKit
 import RxSwift
 
 final class LibrariesViewController: UIViewController {
-    private weak var tableView: UITableView!
+    private weak var collectionView: UICollectionView!
 
     private static let cellId = "LibraryCell"
+    private static let headerId = "LibraryHeader"
     private static let customLibrariesSection = 0
     private static let groupLibrariesSection = 1
     private let viewModel: ViewModel<LibrariesActionHandler>
@@ -44,7 +45,14 @@ final class LibrariesViewController: UIViewController {
         super.viewDidLoad()
 
         setupNavigationBar()
-        setupTableView()
+        setupCollectionView()
+        if #available(iOS 26.0, *) {
+            registerForTraitChanges([UITraitSplitViewControllerLayoutEnvironment.self]) { (controller: LibrariesViewController, _: UITraitCollection) in
+                controller.collectionView.collectionViewLayout.invalidateLayout()
+                controller.collectionView.reloadData()
+                controller.updateRefreshControl()
+            }
+        }
         viewModel.process(action: .loadData)
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -62,40 +70,61 @@ final class LibrariesViewController: UIViewController {
             navigationItem.rightBarButtonItem = item
         }
 
-        func setupTableView() {
-            let tableView: UITableView
-            if #available(iOS 26.0.0, *) {
-                tableView = UITableView(frame: .zero, style: .insetGrouped)
-                tableView.rowHeight = 52
-                tableView.separatorInset = UIEdgeInsets(top: 0, left: LibraryCell.titleLabelLeadingOffset, bottom: 0, right: 16)
-            } else {
-                tableView = UITableView(frame: .zero, style: .grouped)
-                tableView.rowHeight = 44
-                tableView.separatorInset = UIEdgeInsets(top: 0, left: LibraryCell.titleLabelLeadingOffset, bottom: 0, right: 0)
-            }
-            tableView.dataSource = self
-            tableView.delegate = self
-            tableView.register(LibraryCell.self, forCellReuseIdentifier: Self.cellId)
-            tableView.tableFooterView = UIView()
-            tableView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(tableView)
-            self.tableView = tableView
+        func setupCollectionView() {
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
+            collectionView.backgroundColor = .systemGroupedBackground
+            collectionView.alwaysBounceVertical = true
+            collectionView.dataSource = self
+            collectionView.delegate = self
+            collectionView.register(LibraryCell.self, forCellWithReuseIdentifier: Self.cellId)
+            collectionView.register(UICollectionViewListCell.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: Self.headerId)
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(collectionView)
+            self.collectionView = collectionView
 
             NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+                collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
             ])
+
+            func createLayout() -> UICollectionViewCompositionalLayout {
+                return UICollectionViewCompositionalLayout { sectionIndex, environment in
+                    let appearance: UICollectionLayoutListConfiguration.Appearance
+                    if #available(iOS 26.0, *) {
+                        appearance = environment.traitCollection.splitViewControllerLayoutEnvironment == .expanded ? .sidebar : .insetGrouped
+                    } else {
+                        appearance = .grouped
+                    }
+                    var configuration = UICollectionLayoutListConfiguration(appearance: appearance)
+                    configuration.headerMode = sectionIndex == Self.groupLibrariesSection ? .supplementary : .none
+                    if #available(iOS 26.0, *) {
+                        if appearance == .insetGrouped {
+                            configuration.separatorConfiguration.topSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: 56, bottom: 0, trailing: 16)
+                            configuration.separatorConfiguration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: 56, bottom: 0, trailing: 16)
+                        }
+                    } else {
+                        configuration.separatorConfiguration.color = .separator
+                        configuration.separatorConfiguration.topSeparatorInsets.trailing = 0
+                        configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 0
+                    }
+                    return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+                }
+            }
         }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
 
+        updateRefreshControl()
+    }
+
+    private func updateRefreshControl() {
         if !isSplit {
-            guard tableView.refreshControl == nil else { return }
-            refreshController = SyncRefreshController(libraryId: nil, view: tableView, syncScheduler: syncScheduler)
+            guard collectionView.refreshControl == nil else { return }
+            refreshController = SyncRefreshController(libraryId: nil, view: collectionView, syncScheduler: syncScheduler)
         } else {
             refreshController = nil
         }
@@ -105,7 +134,7 @@ final class LibrariesViewController: UIViewController {
 
     private func update(to state: LibrariesState) {
         if state.changes.contains(.groups) {
-            tableView.reloadData()
+            collectionView.reloadData()
         }
 
         if state.changes.contains(.groupDeletion) {
@@ -137,13 +166,13 @@ final class LibrariesViewController: UIViewController {
     }
 }
 
-extension LibrariesViewController: UITableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
+extension LibrariesViewController: UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         let groupCount = viewModel.state.groupLibraries?.count ?? 0
         return groupCount > 0 ? 2 : 1
     }
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         switch section {
         case Self.customLibrariesSection:
             return viewModel.state.customLibraries?.count ?? 0
@@ -156,12 +185,30 @@ extension LibrariesViewController: UITableViewDataSource {
         }
     }
 
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return section == Self.groupLibrariesSection ? L10n.Libraries.groupLibraries : nil
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: Self.headerId, for: indexPath)
+        if let header = header  as? UICollectionViewListCell {
+            var configuration: UIListContentConfiguration
+            if #available(iOS 26.0, *) {
+                if traitCollection.splitViewControllerLayoutEnvironment == .expanded {
+                    configuration = .sidebarHeader()
+                } else {
+                    configuration = .groupedHeader()
+                }
+            } else {
+                configuration = .groupedHeader()
+                configuration.axesPreservingSuperviewLayoutMargins = []
+                configuration.directionalLayoutMargins.leading = 60
+                configuration.directionalLayoutMargins.trailing = 16
+            }
+            configuration.text = L10n.Libraries.groupLibraries
+            header.contentConfiguration = configuration
+        }
+        return header
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: Self.cellId, for: indexPath)
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Self.cellId, for: indexPath)
         if let cell = cell as? LibraryCell, let (name, state) = libraryData(for: indexPath) {
             cell.setup(with: name, libraryState: state)
         }
@@ -170,11 +217,11 @@ extension LibrariesViewController: UITableViewDataSource {
         func libraryData(for indexPath: IndexPath) -> (name: String, state: LibraryCell.LibraryState)? {
             switch indexPath.section {
             case Self.customLibrariesSection:
-                let library = viewModel.state.customLibraries?[indexPath.row]
+                let library = viewModel.state.customLibraries?[indexPath.item]
                 return library.flatMap({ ($0.type.libraryName, .normal) })
 
             case Self.groupLibrariesSection:
-                guard let library = viewModel.state.groupLibraries?[indexPath.row] else { return nil }
+                guard let library = viewModel.state.groupLibraries?[indexPath.item] else { return nil }
                 let state: LibraryCell.LibraryState
                 if library.isLocalOnly {
                     state = .archived
@@ -192,9 +239,9 @@ extension LibrariesViewController: UITableViewDataSource {
     }
 }
 
-extension LibrariesViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+extension LibrariesViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
         if let library = library(for: indexPath) {
             coordinatorDelegate?.showCollections(for: library.identifier)
         }
@@ -202,11 +249,11 @@ extension LibrariesViewController: UITableViewDelegate {
         func library(for indexPath: IndexPath) -> Library? {
             switch indexPath.section {
             case Self.customLibrariesSection:
-                let library = viewModel.state.customLibraries?[indexPath.row]
+                let library = viewModel.state.customLibraries?[indexPath.item]
                 return library.flatMap({ Library(customLibrary: $0) })
 
             case Self.groupLibrariesSection:
-                let library = viewModel.state.groupLibraries?[indexPath.row]
+                let library = viewModel.state.groupLibraries?[indexPath.item]
                 return library.flatMap({ Library(group: $0) })
 
             default:
@@ -215,8 +262,8 @@ extension LibrariesViewController: UITableViewDelegate {
         }
     }
 
-    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard indexPath.section == Self.groupLibrariesSection, let group = viewModel.state.groupLibraries?[indexPath.row], group.isLocalOnly else { return nil }
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard indexPath.section == Self.groupLibrariesSection, let group = viewModel.state.groupLibraries?[indexPath.item], group.isLocalOnly else { return nil }
 
         let groupId = group.identifier
         let groupName = group.name
