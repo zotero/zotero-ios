@@ -260,6 +260,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
                     popoverPresentationController.sourceRect = CGRect(x: navigationController.view.bounds.midX, y: navigationController.view.bounds.midY, width: 0, height: 0)
                     popoverPresentationController.permittedArrowDirections = []
                 }
+                popoverPresentationController.adaptiveSheetPresentationController.prefersGrabberVisible = true
             }
         } else {
             editNavigationController.modalPresentationStyle = .formSheet
