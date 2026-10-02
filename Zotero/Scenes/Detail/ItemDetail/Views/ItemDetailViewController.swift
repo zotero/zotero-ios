@@ -122,8 +122,8 @@ final class ItemDetailViewController: UIViewController {
 
             NSLayoutConstraint.activate([
                 collectionView.topAnchor.constraint(equalTo: view.topAnchor),
-                collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
                 collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
                 activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
                 activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
