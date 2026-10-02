@@ -22,8 +22,8 @@ private enum MainAttachmentButtonState {
 }
 
 final class ItemDetailViewController: UIViewController {
-    @IBOutlet private weak var collectionView: UICollectionView!
-    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
+    private weak var collectionView: UICollectionView!
+    private weak var activityIndicator: UIActivityIndicatorView!
 
     private let viewModel: ViewModel<ItemDetailActionHandler>
     private let controllers: Controllers
@@ -59,7 +59,7 @@ final class ItemDetailViewController: UIViewController {
         downloadingViaNavigationBar = false
         disposeBag = DisposeBag()
 
-        super.init(nibName: "ItemDetailViewController", bundle: nil)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -70,8 +70,7 @@ final class ItemDetailViewController: UIViewController {
         super.viewDidLoad()
 
         navigationController?.setToolbarHidden(true, animated: false)
-        collectionView.isHidden = true
-        collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
+        setupUI()
         setupFileObservers()
 
         if #available(iOS 26.0, *) {
@@ -99,6 +98,37 @@ final class ItemDetailViewController: UIViewController {
             .disposed(by: disposeBag)
 
         viewModel.process(action: .loadInitialData)
+
+        func setupUI() {
+            view.backgroundColor = .systemBackground
+            view.clearsContextBeforeDrawing = false
+
+            let layout = UICollectionViewFlowLayout()
+            layout.minimumLineSpacing = 0
+            layout.minimumInteritemSpacing = 0
+            layout.itemSize = CGSize(width: 128, height: 128)
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+            collectionView.backgroundColor = .systemBackground
+            collectionView.isHidden = true
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(collectionView)
+            self.collectionView = collectionView
+
+            let activityIndicator = UIActivityIndicatorView()
+            activityIndicator.startAnimating()
+            activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(activityIndicator)
+            self.activityIndicator = activityIndicator
+
+            NSLayoutConstraint.activate([
+                collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            ])
+        }
 
         func setupFileObservers() {
             NotificationCenter.default.rx

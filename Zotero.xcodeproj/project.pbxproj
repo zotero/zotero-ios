@@ -817,7 +817,6 @@
 		B3593F2E241A61C700760E20 /* ItemDetailAttachmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EDC241A61C700760E20 /* ItemDetailAttachmentCell.swift */; };
 		B3593F2F241A61C700760E20 /* ItemDetailTitleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EDD241A61C700760E20 /* ItemDetailTitleCell.swift */; };
 		B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EDE241A61C700760E20 /* ItemDetailAddCell.swift */; };
-		B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EDF241A61C700760E20 /* ItemDetailViewController.xib */; };
 		B3593F32241A61C700760E20 /* ItemDetailAbstractContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EE0241A61C700760E20 /* ItemDetailAbstractContentView.xib */; };
 		B3593F33241A61C700760E20 /* ItemDetailNoteContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EE1241A61C700760E20 /* ItemDetailNoteContentView.xib */; };
 		B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EE4241A61C700760E20 /* ItemDetailSectionView.swift */; };
@@ -2061,7 +2060,6 @@
 		B3593EDC241A61C700760E20 /* ItemDetailAttachmentCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailAttachmentCell.swift; sourceTree = "<group>"; };
 		B3593EDD241A61C700760E20 /* ItemDetailTitleCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailTitleCell.swift; sourceTree = "<group>"; };
 		B3593EDE241A61C700760E20 /* ItemDetailAddCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailAddCell.swift; sourceTree = "<group>"; };
-		B3593EDF241A61C700760E20 /* ItemDetailViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailViewController.xib; sourceTree = "<group>"; };
 		B3593EE0241A61C700760E20 /* ItemDetailAbstractContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailAbstractContentView.xib; sourceTree = "<group>"; };
 		B3593EE1241A61C700760E20 /* ItemDetailNoteContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailNoteContentView.xib; sourceTree = "<group>"; };
 		B3593EE4241A61C700760E20 /* ItemDetailSectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailSectionView.swift; sourceTree = "<group>"; };
@@ -4032,7 +4030,6 @@
 				B3593EDD241A61C700760E20 /* ItemDetailTitleCell.swift */,
 				B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */,
 				B3593EE5241A61C700760E20 /* ItemDetailViewController.swift */,
-				B3593EDF241A61C700760E20 /* ItemDetailViewController.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -5421,7 +5418,6 @@
 				61933F242E7218B500F4547F /* AppIcon.icon in Resources */,
 				B3E8FE1D2714297200F51458 /* CiteSearchViewController.xib in Resources */,
 				B3B398532E4CCB20009C59F5 /* DocumentSearchCell.xib in Resources */,
-				B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */,
 				B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */,
 				B34DF1A2257684590019CCD1 /* AnnotationPageLabelViewController.xib in Resources */,
 				B3593F32241A61C700760E20 /* ItemDetailAbstractContentView.xib in Resources */,
