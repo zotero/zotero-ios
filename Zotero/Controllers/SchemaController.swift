@@ -75,17 +75,31 @@ extension SchemaController: SchemaDataSource {
     }
 
     func locale(for localeId: String) -> SchemaLocale? {
-        if let locale = self.locales[localeId] {
+        let identifier = localeId.replacingOccurrences(of: "-", with: "_")
+        if let locale = locales[identifier] {
             return locale
         }
 
-        let languagePart = localeId.split(separator: "_").first.flatMap(String.init) ?? localeId
+        let requestedLocale = Locale(identifier: identifier)
+        guard let language = requestedLocale.language.languageCode?.identifier else { return locales["en_US"] }
 
-        if let locale = self.locales.first(where: { $0.key.contains(languagePart) })?.value {
+        if let region = requestedLocale.region?.identifier,
+           let locale = locales["\(language)_\(region)"] {
             return locale
         }
 
-        return self.locales["en_US"]
+        let canonical = Locale.Language(identifier: language)
+        if let region = Locale.Language(identifier: canonical.maximalIdentifier).region?.identifier,
+           let locale = locales["\(language)_\(region)"] {
+            return locale
+        }
+
+        // Keep the final same-language fallback independent of dictionary iteration order.
+        if let identifier = locales.keys.sorted().first(where: { $0 == language || $0.hasPrefix(language + "_") }) {
+            return locales[identifier]
+        }
+
+        return locales["en_US"]
     }
 
     private var currentLocale: SchemaLocale? {
