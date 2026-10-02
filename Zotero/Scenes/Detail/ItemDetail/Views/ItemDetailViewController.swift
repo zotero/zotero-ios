@@ -74,6 +74,23 @@ final class ItemDetailViewController: UIViewController {
         collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
         setupFileObservers()
 
+        if #available(iOS 26.0, *) {
+            // On iPadOS 26, split view expansion can leave the navigation buttons invisible despite remaining assigned.
+            registerForTraitChanges([UITraitSplitViewControllerLayoutEnvironment.self]) { (controller: ItemDetailViewController, previous: UITraitCollection) in
+                let old = previous.splitViewControllerLayoutEnvironment
+                let new = controller.traitCollection.splitViewControllerLayoutEnvironment
+                guard old == .collapsed, new == .expanded else { return }
+                if let coordinator = controller.transitionCoordinator {
+                    coordinator.animate(alongsideTransition: nil) { [weak controller] context in
+                        guard !context.isCancelled else { return }
+                        controller?.refreshNavigationButtonsAfterExpansion()
+                    }
+                } else {
+                    controller.refreshNavigationButtonsAfterExpansion()
+                }
+            }
+        }
+
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
@@ -149,6 +166,17 @@ final class ItemDetailViewController: UIViewController {
         coordinator.animate { _ in
             self.collectionView?.reloadData()
         }
+    }
+
+    @available(iOS 26.0, *)
+    private func refreshNavigationButtonsAfterExpansion() {
+        guard UIDevice.current.userInterfaceIdiom == .pad,
+              traitCollection.splitViewControllerLayoutEnvironment == .expanded,
+              navigationController?.topViewController === self
+        else { return }
+        let buttons = navigationItem.rightBarButtonItems
+        navigationItem.setRightBarButtonItems(nil, animated: false)
+        navigationItem.setRightBarButtonItems(buttons, animated: false)
     }
 
     // MARK: - Navigation
