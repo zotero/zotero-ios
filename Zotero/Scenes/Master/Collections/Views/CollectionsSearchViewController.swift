@@ -68,6 +68,7 @@ final class CollectionsSearchViewController: UIViewController {
             let configuration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive, accessories: [.badge])
 
             cell.contentConfiguration = configuration
+            cell.updateSeparatorLayout()
             cell.backgroundConfiguration = .listPlainCell()
         }
     }()
@@ -101,7 +102,14 @@ final class CollectionsSearchViewController: UIViewController {
         collectionView.delegate = self
         collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-            configuration.showsSeparators = false
+            configuration.separatorConfiguration.color = .separator
+            configuration.separatorConfiguration.topSeparatorVisibility = .hidden
+            configuration.separatorConfiguration.bottomSeparatorVisibility = .visible
+            if #available(iOS 26.0, *) {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 16
+            } else {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 0
+            }
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }
         collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true

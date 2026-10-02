@@ -138,6 +138,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             }
 
             cell.contentConfiguration = configuration
+            cell.updateSeparatorLayout()
             cell.backgroundConfiguration = .listPlainCell()
         }
     }()
@@ -145,7 +146,15 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-            configuration.showsSeparators = false
+            configuration.separatorConfiguration.color = .separator
+            configuration.separatorConfiguration.topSeparatorVisibility = .hidden
+            configuration.separatorConfiguration.bottomSeparatorVisibility = .visible
+            if #available(iOS 26.0, *) {
+                configuration.showsSeparators = environment.traitCollection.splitViewControllerLayoutEnvironment != .expanded
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 16
+            } else {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 0
+            }
             let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
             if #available(iOS 26.0.0, *), environment.traitCollection.splitViewControllerLayoutEnvironment == .expanded {
                 section.contentInsets.leading = 16
