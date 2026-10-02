@@ -9,6 +9,17 @@
 import UIKit
 
 final class CollectionCell: UICollectionViewListCell {
+    private var separatorLeadingConstraint: NSLayoutConstraint?
+
+    func updateSeparatorLayout() {
+        separatorLeadingConstraint?.isActive = false
+        separatorLeadingConstraint = nil
+        guard let view = (contentView as? ContentView)?.contentView else { return }
+        let constraint = separatorLayoutGuide.leadingAnchor.constraint(equalTo: view.titleLeadingAnchor)
+        constraint.isActive = true
+        separatorLeadingConstraint = constraint
+    }
+
     struct Accessories: OptionSet {
         typealias RawValue = Int8
 

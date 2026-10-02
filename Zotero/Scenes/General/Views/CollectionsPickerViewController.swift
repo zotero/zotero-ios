@@ -172,6 +172,7 @@ class CollectionsPickerViewController: UICollectionViewController {
             let configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [])
 
             cell.contentConfiguration = configuration
+            cell.updateSeparatorLayout()
             cell.backgroundConfiguration = .listPlainCell()
 
             if multipleSelectionAllowed {
@@ -195,7 +196,14 @@ class CollectionsPickerViewController: UICollectionViewController {
 
         collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-            configuration.showsSeparators = false
+            configuration.separatorConfiguration.color = .separator
+            configuration.separatorConfiguration.topSeparatorVisibility = .hidden
+            configuration.separatorConfiguration.bottomSeparatorVisibility = .visible
+            if #available(iOS 26.0, *) {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 16
+            } else {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 0
+            }
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }
     }

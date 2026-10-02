@@ -15,7 +15,6 @@ final class CollectionCellContentView: UIView {
     private weak var titleLabel: UILabel!
     private weak var badgeContainer: UIView!
     private weak var badgeLabel: UILabel!
-    private weak var separatorView: UIView!
     // These 2 need to be strong because they are being activated/deactivated
     private var titleLabelTrailingConstraint: NSLayoutConstraint!
     private var badgeContainerLeadingConstraint: NSLayoutConstraint!
@@ -27,6 +26,10 @@ final class CollectionCellContentView: UIView {
     private var titleToCarPlayConstraint: NSLayoutConstraint!
     private var toggleCollapsedAction: (() -> Void)?
     private var chevronCollapsed: Bool = false
+
+    var titleLeadingAnchor: NSLayoutXAxisAnchor {
+        titleLabel.leadingAnchor
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -95,12 +98,6 @@ final class CollectionCellContentView: UIView {
             badgeContainer.addSubview(badgeLabel)
             self.badgeLabel = badgeLabel
 
-            let separatorView = UIView()
-            separatorView.backgroundColor = UIColor.separator
-            separatorView.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(separatorView)
-            self.separatorView = separatorView
-
             let iconImageViewLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 32)
             let titleLabelTrailingConstraint = safeAreaLayoutGuide.trailingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 16)
             let badgeContainerLeadingConstraint = badgeContainer.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 16)
@@ -126,11 +123,7 @@ final class CollectionCellContentView: UIView {
                     badgeLabel.topAnchor.constraint(equalTo: badgeContainer.topAnchor),
                     badgeLabel.leadingAnchor.constraint(equalTo: badgeContainer.leadingAnchor),
                     badgeContainer.trailingAnchor.constraint(equalTo: badgeLabel.trailingAnchor),
-                    badgeContainer.bottomAnchor.constraint(equalTo: badgeLabel.bottomAnchor),
-                    separatorView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                    layoutMarginsGuide.trailingAnchor.constraint(equalTo: separatorView.trailingAnchor, constant: 8),
-                    separatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
-                    separatorView.heightAnchor.constraint(equalToConstant: 1)
+                    badgeContainer.bottomAnchor.constraint(equalTo: badgeLabel.bottomAnchor)
                 ])
             } else {
                 NSLayoutConstraint.activate([
@@ -150,11 +143,7 @@ final class CollectionCellContentView: UIView {
                     badgeLabel.topAnchor.constraint(equalTo: badgeContainer.topAnchor, constant: 2),
                     badgeLabel.leadingAnchor.constraint(equalTo: badgeContainer.leadingAnchor, constant: 8),
                     badgeContainer.trailingAnchor.constraint(equalTo: badgeLabel.trailingAnchor, constant: 8),
-                    badgeContainer.bottomAnchor.constraint(equalTo: badgeLabel.bottomAnchor, constant: 2),
-                    separatorView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                    separatorView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                    separatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
-                    separatorView.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+                    badgeContainer.bottomAnchor.constraint(equalTo: badgeLabel.bottomAnchor, constant: 2)
                 ])
             }
         }
@@ -187,24 +176,6 @@ final class CollectionCellContentView: UIView {
         super.layoutSubviews()
         if #unavailable(iOS 26.0.0) {
             badgeContainer.layer.cornerRadius = badgeContainer.frame.height / 2.0
-        }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        if #available(iOS 26.0.0, *) {
-            switch traitCollection.splitViewControllerLayoutEnvironment {
-            case .expanded:
-                separatorView.isHidden = true
-
-            case .collapsed:
-                separatorView.isHidden = false
-
-            case .none:
-                break
-
-            @unknown default:
-                break
-            }
         }
     }
 

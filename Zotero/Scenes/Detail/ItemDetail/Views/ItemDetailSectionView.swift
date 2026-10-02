@@ -15,11 +15,19 @@ final class ItemDetailSectionView: UICollectionReusableView {
         super.init(frame: frame)
 
         let separatorColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-            traitCollection.userInterfaceStyle == .light ? .opaqueSeparator : Asset.Colors.itemDetailDarkSeparator.color
+            if #available(iOS 26.0, *) {
+                .clear
+            } else {
+                traitCollection.userInterfaceStyle == .light ? .opaqueSeparator : Asset.Colors.itemDetailDarkSeparator.color
+            }
         })
 
         let container = UIView()
-        container.backgroundColor = .white
+        if #available(iOS 26.0, *) {
+            container.backgroundColor = .clear
+        } else {
+            container.backgroundColor = .white
+        }
         container.translatesAutoresizingMaskIntoConstraints = false
         addSubview(container)
 
@@ -29,13 +37,22 @@ final class ItemDetailSectionView: UICollectionReusableView {
         container.addSubview(topSeparator)
 
         let titleContainer = UIView()
-        titleContainer.backgroundColor = .systemGray6
+        if #available(iOS 26.0, *) {
+            titleContainer.backgroundColor = .clear
+        } else {
+            titleContainer.backgroundColor = .systemGray6
+        }
         titleContainer.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(titleContainer)
 
         let titleLabel = UILabel()
-        titleLabel.font = .systemFont(ofSize: 17, weight: .semibold)
-        titleLabel.textColor = Asset.Colors.itemDetailHeaderTitle.color
+        if #available(iOS 26.0, *) {
+            titleLabel.font = .preferredFont(for: .body, weight: .semibold)
+            titleLabel.textColor = .secondaryLabel
+        } else {
+            titleLabel.font = .systemFont(ofSize: 17, weight: .semibold)
+            titleLabel.textColor = Asset.Colors.itemDetailHeaderTitle.color
+        }
         titleLabel.setContentHuggingPriority(UILayoutPriority(251), for: .horizontal)
         titleLabel.setContentHuggingPriority(UILayoutPriority(251), for: .vertical)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false

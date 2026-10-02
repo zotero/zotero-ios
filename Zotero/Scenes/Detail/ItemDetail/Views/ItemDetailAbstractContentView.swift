@@ -40,9 +40,13 @@ class ItemDetailAbstractContentView: UIView {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        let titleFont = self.titleFont
-        self.titleLabel.font = titleFont
-        self.titleTop.constant = ItemDetailLayout.separatorHeight - (titleFont.ascender - titleFont.capHeight)
+        if #available(iOS 26.0, *) {
+            titleLabel.removeFromSuperview()
+        } else {
+            let titleFont = self.titleFont
+            titleLabel.font = titleFont
+            titleTop.constant = ItemDetailLayout.separatorHeight - (titleFont.ascender - titleFont.capHeight)
+        }
 
         setupContentTextView()
     }
@@ -57,7 +61,11 @@ class ItemDetailAbstractContentView: UIView {
         textView.setContentCompressionResistancePriority(.init(1000), for: .vertical)
         addSubview(textView)
 
-        titleToContent = textView.topAnchor.constraint(equalTo: titleLabel.lastBaselineAnchor, constant: 15)
+        if #available(iOS 26.0, *) {
+            titleToContent = textView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor)
+        } else {
+            titleToContent = textView.topAnchor.constraint(equalTo: titleLabel.lastBaselineAnchor, constant: 15)
+        }
         NSLayoutConstraint.activate([
             textView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
             textView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
@@ -101,6 +109,10 @@ class ItemDetailAbstractContentView: UIView {
         self.contentTextView.set(text: hyphenatedText, isCollapsed: isCollapsed, maxWidth: maxWidth)
 
         let lineHeightOffset = (ItemDetailLayout.lineHeight - font.lineHeight)
-        self.titleToContent.constant = ceil(self.layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset)
+        if #available(iOS 26.0, *) {
+            titleToContent.constant = ceil(-(font.ascender - font.capHeight) - lineHeightOffset)
+        } else {
+            titleToContent.constant = ceil(layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset)
+        }
     }
 }

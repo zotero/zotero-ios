@@ -286,6 +286,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section].section
 
                 switch section {
+                case .abstract:
+                    view.setup(with: L10n.abstract)
+
                 case .notes:
                     view.setup(with: L10n.ItemDetail.notes)
 
@@ -298,7 +301,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 case .collections:
                     view.setup(with: L10n.ItemDetail.librariesAndCollections)
 
-                default: break
+                default:
+                    break
                 }
             }
 
@@ -327,17 +331,22 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 func createHeader(for section: Section) -> NSCollectionLayoutBoundarySupplementaryItem? {
                     switch section {
+                    case .abstract:
+                        guard #available(iOS 26.0, *) else { return nil }
+
                     case .attachments, .tags, .notes, .collections:
-                        let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
-                        return NSCollectionLayoutBoundarySupplementaryItem(
-                            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
-                            elementKind: UICollectionView.elementKindSectionHeader,
-                            alignment: .top
-                        )
+                        break
 
                     default:
                         return nil
                     }
+
+                    let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
+                    return NSCollectionLayoutBoundarySupplementaryItem(
+                        layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
+                        elementKind: UICollectionView.elementKindSectionHeader,
+                        alignment: .top
+                    )
                 }
 
                 func setupSwipeActions(in configuration: inout UICollectionLayoutListConfiguration, self: ItemDetailCollectionViewHandler) {
@@ -401,41 +410,84 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     configuration.itemSeparatorHandler = { [weak self] indexPath, configuration in
                         guard let self else { return configuration }
                         var newConfiguration = configuration
-                        let isLastRow = indexPath.row == self.dataSource.snapshot(for: section).items.count - 1
-                        newConfiguration.bottomSeparatorVisibility = sectionHasSeparator(section.section, isEditing: self.viewModel.state.isEditing, isLastRow: isLastRow) ? .visible : .hidden
+                        if #available(iOS 26.0, *) {
+                            let isFirstRow = indexPath.row == 0
+                            newConfiguration.topSeparatorVisibility = sectionTopSeparatorVisibility(section.section, isEditing: viewModel.state.isEditing, isFirstRow: isFirstRow)
+                            if newConfiguration.topSeparatorVisibility == .visible {
+                                newConfiguration.topSeparatorInsets = NSDirectionalEdgeInsets(
+                                    top: 0,
+                                    leading: ItemDetailLayout.horizontalInset,
+                                    bottom: 0,
+                                    trailing: ItemDetailLayout.horizontalInset
+                                )
+                            }
+                        }
+                        let isLastRow = indexPath.row == dataSource.snapshot(for: section).items.count - 1
+                        newConfiguration.bottomSeparatorVisibility = sectionBottomSeparatorVisibility(section.section, isEditing: viewModel.state.isEditing, isLastRow: isLastRow)
                         if newConfiguration.bottomSeparatorVisibility == .visible {
-                            newConfiguration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: separatorLeftInset(for: section.section), bottom: 0, trailing: 0)
+                            newConfiguration.bottomSeparatorInsets = separatorInsets(for: section.section, resolvedInsets: configuration.bottomSeparatorInsets)
                         }
                         return newConfiguration
                     }
-                }
 
-                func sectionHasSeparator(_ section: Section, isEditing: Bool, isLastRow: Bool) -> Bool {
-                    switch section {
-                    case .title:
-                        return true
+                    func sectionTopSeparatorVisibility(_ section: Section, isEditing: Bool, isFirstRow: Bool) -> UIListSeparatorConfiguration.Visibility {
+                        let visible: Bool
+                        switch section {
+                        case .title, .creators, .dates, .fields, .type:
+                            visible = false
 
-                    case .abstract:
-                        return false
-
-                    case .type, .fields, .creators:
-                        return isEditing
-
-                    case .attachments, .notes, .tags, .collections:
-                        return !isLastRow
-
-                    case .dates:
-                        return isEditing || isLastRow
+                        case .abstract, .attachments, .notes, .tags, .collections:
+                            visible = isFirstRow
+                        }
+                        return visible ? .visible : .hidden
                     }
-                }
 
-                func separatorLeftInset(for section: Section) -> CGFloat {
-                    switch section {
-                    case .notes, .attachments, .tags, .collections:
-                        return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
+                    func sectionBottomSeparatorVisibility(_ section: Section, isEditing: Bool, isLastRow: Bool) -> UIListSeparatorConfiguration.Visibility {
+                        let visible: Bool
+                        switch section {
+                        case .title:
+                            visible = true
 
-                    case .abstract, .creators, .dates, .fields, .title, .type:
-                        return ItemDetailLayout.horizontalInset
+                        case .abstract:
+                            visible = false
+
+                        case .type, .fields, .creators:
+                            visible = isEditing
+
+                        case .attachments, .notes, .tags, .collections:
+                            visible = !isLastRow
+
+                        case .dates:
+                            if #available(iOS 26.0, *) {
+                                visible = isEditing
+                            } else {
+                                visible = isEditing || isLastRow
+                            }
+                        }
+                        return visible ? .visible : .hidden
+                    }
+
+                    func separatorInsets(for section: Section, resolvedInsets: NSDirectionalEdgeInsets) -> NSDirectionalEdgeInsets {
+                        let leading: CGFloat
+                        switch section {
+                        case .collections:
+                            leading = resolvedInsets.leading
+
+                        case .notes, .attachments, .tags:
+                            leading = ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 12
+
+                        case .abstract, .creators, .dates, .fields, .title, .type:
+                            leading = ItemDetailLayout.horizontalInset
+                        }
+
+                        let trailing: CGFloat
+                        if #available(iOS 26.0, *) {
+                            trailing = ItemDetailLayout.horizontalInset
+                        } else {
+                            trailing = 0
+                        }
+
+                        return NSDirectionalEdgeInsets(top: 0, leading: leading, bottom: 0, trailing: trailing)
                     }
                 }
             }
@@ -793,6 +845,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration<CollectionCell, Library> { [weak self] cell, _, library in
             var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: [])
             cell.contentConfiguration = configuration
+            cell.updateSeparatorLayout()
             cell.backgroundConfiguration = .listPlainCell()
         }
     }()
@@ -807,6 +860,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             configuration.isCollapsedProvider = { false }
 
             cell.contentConfiguration = configuration
+            cell.updateSeparatorLayout()
             cell.backgroundConfiguration = .listPlainCell()
         }
     }()

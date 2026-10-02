@@ -113,6 +113,9 @@ final class ItemDetailViewController: UIViewController {
             collectionView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(collectionView)
             self.collectionView = collectionView
+            if #available(iOS 26.0, *) {
+                setContentScrollView(collectionView)
+            }
 
             let activityIndicator = UIActivityIndicatorView()
             activityIndicator.startAnimating()
@@ -310,7 +313,11 @@ final class ItemDetailViewController: UIViewController {
         if state.changes.contains(.reloadedData) {
             let wasHidden = collectionView.isHidden
             collectionView.isHidden = state.isLoadingData
-            activityIndicator.isHidden = !state.isLoadingData
+            if state.isLoadingData {
+                activityIndicator.startAnimating()
+            } else {
+                activityIndicator.stopAnimating()
+            }
 
             setNavigationBarButtons(to: state)
             collectionViewHandler.recalculateTitleWidth(from: state.data)
