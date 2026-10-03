@@ -139,7 +139,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             collectionView.delegate = self
             // keyboardDismissMode is device based, regardless of horizontal size class.
             collectionView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
-            collectionView.register(UINib(nibName: "ItemDetailSectionView", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
+            collectionView.register(ItemDetailSectionView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
 
             let titleRegistration = self.titleRegistration
             let fieldRegistration = self.fieldRegistration
