@@ -107,6 +107,8 @@ struct HtmlEpubReaderState: ViewModelState {
         let url: URL?
         let annotationsJson: String
         let page: Page?
+        /// Page of the source document to open at in standalone reading mode, `nil` otherwise.
+        let initialPageIndex: Int?
         let scale: Double
         let selectedAnnotationKey: String?
     }
@@ -182,6 +184,8 @@ struct HtmlEpubReaderState: ViewModelState {
 
     let readerURL: URL?
     let kind: Kind
+    /// Page of the source document to open at in standalone reading mode, `nil` otherwise.
+    let initialPageIndex: Int?
     let originalFile: File
     let readerDirectory: File
     let documentFile: File
@@ -254,6 +258,7 @@ struct HtmlEpubReaderState: ViewModelState {
     init(
         readerURL: URL?,
         kind: Kind = .document,
+        initialPageIndex: Int? = nil,
         url: URL,
         key: String,
         parentKey: String?,
@@ -267,6 +272,7 @@ struct HtmlEpubReaderState: ViewModelState {
     ) {
         self.readerURL = readerURL ?? Bundle.main.url(forResource: "reader", withExtension: nil, subdirectory: "Bundled")
         self.kind = kind
+        self.initialPageIndex = initialPageIndex
         let originalFile = Files.file(from: url)
         self.originalFile = originalFile
         readerDirectory = Files.temporaryDirectory

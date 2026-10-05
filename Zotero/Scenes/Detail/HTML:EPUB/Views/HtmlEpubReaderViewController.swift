@@ -32,6 +32,9 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
 struct ReadingModeSourceContext {
     let isSidebarVisible: Bool
     let toolbarState: AnnotationToolbarHandler.State
+    /// Page of the source document the reader which opened reading mode was showing, so that reading mode starts at
+    /// roughly the same place in the text.
+    let initialPageIndex: Int?
     /// Closes the reader which opened reading mode, and reading mode with it.
     let close: () -> Void
     /// Report changes made in reading mode, so that the reader which opened it is in the same state when it's shown

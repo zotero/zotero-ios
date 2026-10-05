@@ -785,6 +785,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             sourceContext: ReadingModeSourceContext(
                 isSidebarVisible: isSidebarVisible,
                 toolbarState: toolbarState,
+                initialPageIndex: (documentController?.pdfController?.pageIndex).map({ Int($0) }),
                 // Closing the document in reading mode leaves this reader as well, which also dismisses reading mode
                 // presented on top of it. Turning reading mode off instead returns here.
                 close: { [weak self] in self?.close() },

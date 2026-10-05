@@ -601,6 +601,10 @@ class HtmlEpubDocumentViewController: UIViewController {
             javascript += ", viewState: {\(viewState)}"
             if let key = data.selectedAnnotationKey {
                 javascript += ", location: {annotationID: '\(key)'}"
+            } else if let pageIndex = data.initialPageIndex {
+                // Standalone reading mode opens at the page the reader of the source document was showing, so the text
+                // starts roughly where the user was.
+                javascript += ", location: {pageIndex: \(pageIndex)}"
             }
             javascript += "});"
 
