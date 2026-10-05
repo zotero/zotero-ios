@@ -106,6 +106,7 @@ final class MainViewController: UISplitViewController {
         if #available(iOS 26.0.0, *) {
             maximumPrimaryColumnWidth = Self.automaticDimension
             presentsWithGesture = false
+            primaryBackgroundStyle = .none
         } else {
             maximumPrimaryColumnWidth = .infinity
         }
