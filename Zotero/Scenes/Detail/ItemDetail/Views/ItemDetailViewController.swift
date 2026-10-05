@@ -109,6 +109,7 @@ final class ItemDetailViewController: UIViewController {
             layout.itemSize = CGSize(width: 128, height: 128)
             let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
             collectionView.backgroundColor = .systemBackground
+            collectionView.allowsSelectionDuringEditing = true
             collectionView.isHidden = true
             collectionView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(collectionView)
