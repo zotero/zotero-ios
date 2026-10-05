@@ -104,6 +104,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         let state = HtmlEpubReaderState(
             readerURL: readerURL,
             kind: kind,
+            initialPageIndex: sourceContext?.initialPageIndex,
             url: url,
             key: key,
             parentKey: parentKey,
