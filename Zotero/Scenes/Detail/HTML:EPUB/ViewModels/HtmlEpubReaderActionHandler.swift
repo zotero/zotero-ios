@@ -955,6 +955,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                     url: viewModel.state.documentFile.createUrl(),
                     annotationsJson: json,
                     page: page,
+                    initialPageIndex: nil,
                     scale: item.readerScale ?? 1,
                     selectedAnnotationKey: viewModel.state.selectedAnnotationKey
                 )
@@ -968,6 +969,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                     url: nil,
                     annotationsJson: json,
                     page: nil,
+                    initialPageIndex: viewModel.state.initialPageIndex,
                     scale: 1,
                     selectedAnnotationKey: viewModel.state.selectedAnnotationKey
                 )
