@@ -334,6 +334,9 @@ final class DetailCoordinator: Coordinator {
         }
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
+        if #available(iOS 26.0, *) {
+            controller.sheetPresentationController?.prefersGrabberVisible = true
+        }
         navigationController.present(controller, animated: true, completion: nil)
     }
 
