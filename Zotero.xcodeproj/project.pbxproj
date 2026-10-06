@@ -880,7 +880,6 @@
 		B36459DA2644116000A0C2C0 /* TagPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD9255451AA00910FE0 /* TagPickerState.swift */; };
 		B36459DB2644117D00A0C2C0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
 		B36459DC2644118800A0C2C0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
-		B36459DD2644118800A0C2C0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
 		B36459DF2644119600A0C2C0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
 		B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
 		B36459E2264411DB00A0C2C0 /* TagPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD8255451AA00910FE0 /* TagPickerAction.swift */; };
@@ -992,7 +991,6 @@
 		B3830CE2255451C200910FE0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
 		B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
 		B3830CF625545EE400910FE0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
-		B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
 		B384B5C22E1539D000D023C6 /* ReadAloudControlsStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B384B5C12E1539C900D023C6 /* ReadAloudControlsStackView.swift */; };
 		B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385B70D25C03E7E0073CA6F /* PDFExportState.swift */; };
 		B386328626C5499900183062 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
@@ -2198,7 +2196,6 @@
 		B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerActionHandler.swift; sourceTree = "<group>"; };
 		B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerViewController.swift; sourceTree = "<group>"; };
 		B3830CF425545EE400910FE0 /* TagPickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerCell.swift; sourceTree = "<group>"; };
-		B3830CF525545EE400910FE0 /* TagPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagPickerCell.xib; sourceTree = "<group>"; };
 		B384B5C12E1539C900D023C6 /* ReadAloudControlsStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAloudControlsStackView.swift; sourceTree = "<group>"; };
 		B385B70D25C03E7E0073CA6F /* PDFExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportState.swift; sourceTree = "<group>"; };
 		B3863FC72AD819AB005082F0 /* EndItemCreationDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndItemCreationDbRequest.swift; sourceTree = "<group>"; };
@@ -4691,7 +4688,6 @@
 				B3DCDF1C24091EC40039ED0D /* SinglePickerView.swift */,
 				B32B4F942475544700F78A05 /* SyncToolbarController.swift */,
 				B3830CF425545EE400910FE0 /* TagPickerCell.swift */,
-				B3830CF525545EE400910FE0 /* TagPickerCell.xib */,
 				B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */,
 				61BD13942A5831EF008A0704 /* TextKit1TextView.swift */,
 				B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */,
@@ -5414,7 +5410,6 @@
 				B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */,
 				B34DF1A2257684590019CCD1 /* AnnotationPageLabelViewController.xib in Resources */,
 				B3593F32241A61C700760E20 /* ItemDetailAbstractContentView.xib in Resources */,
-				B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */,
 				B3F9A4C12B04CED600684030 /* ReaderSettingsSegmentedCellContentView.xib in Resources */,
 				B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditContentView.xib in Resources */,
 				B30B550524B85A6200F94B59 /* Images.xcassets in Resources */,
@@ -5552,7 +5547,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */,
-				B36459DD2644118800A0C2C0 /* TagPickerCell.xib in Resources */,
 				B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */,
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
