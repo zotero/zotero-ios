@@ -21,11 +21,11 @@ final class TagPickerViewController: UIViewController {
         case add(String)
     }
 
-    private weak var tableView: UITableView!
+    private weak var collectionView: UICollectionView!
 
     private static let addCellId = "AddCell"
     private static let tagCellId = "TagCell"
-    private var dataSource: TableViewDiffableDataSource<Section, Row>!
+    private var dataSource: UICollectionViewDiffableDataSource<Section, Row>!
 
     private let viewModel: ViewModel<TagPickerActionHandler>
     private let saveAction: ([Tag]) -> Void
@@ -49,7 +49,7 @@ final class TagPickerViewController: UIViewController {
 
         view.backgroundColor = .systemBackground
 
-        setupTableView()
+        setupCollectionView()
         setupSearchBar()
         setupNavigationBar()
 
@@ -66,46 +66,44 @@ final class TagPickerViewController: UIViewController {
             updateTags(to: viewModel.state)
         }
 
-        func setupTableView() {
-            let tableView = UITableView(frame: .zero, style: .plain)
-            tableView.backgroundColor = .systemBackground
-            tableView.rowHeight = UITableView.automaticDimension
-            tableView.estimatedRowHeight = UITableView.automaticDimension
-            tableView.sectionHeaderHeight = 28
-            tableView.sectionFooterHeight = 28
-            tableView.delegate = self
-            dataSource = TableViewDiffableDataSource<Section, Row>(tableView: tableView) { tableView, indexPath, row in
+        func setupCollectionView() {
+            let configuration = UICollectionLayoutListConfiguration(appearance: .plain)
+            let layout = UICollectionViewCompositionalLayout.list(using: configuration)
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+            collectionView.backgroundColor = .systemBackground
+            collectionView.delegate = self
+            collectionView.allowsMultipleSelectionDuringEditing = true
+            collectionView.isEditing = true
+            collectionView.register(TagPickerCell.self, forCellWithReuseIdentifier: Self.tagCellId)
+            collectionView.register(UICollectionViewListCell.self, forCellWithReuseIdentifier: Self.addCellId)
+            dataSource = UICollectionViewDiffableDataSource<Section, Row>(collectionView: collectionView) { collectionView, indexPath, row in
                 switch row {
                 case .tag(let tag):
-                    let cell = tableView.dequeueReusableCell(withIdentifier: Self.tagCellId, for: indexPath)
+                    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Self.tagCellId, for: indexPath)
                     if let cell = cell as? TagPickerCell {
                         cell.setup(with: tag)
                     }
                     return cell
 
                 case .add(let searchTerm):
-                    let cell = tableView.dequeueReusableCell(withIdentifier: Self.addCellId, for: indexPath)
-                    cell.textLabel?.text = L10n.TagPicker.createTag(searchTerm)
+                    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Self.addCellId, for: indexPath)
+                    if let cell = cell as? UICollectionViewListCell {
+                        var configuration = cell.defaultContentConfiguration()
+                        configuration.text = L10n.TagPicker.createTag(searchTerm)
+                        cell.contentConfiguration = configuration
+                    }
                     return cell
                 }
             }
-            dataSource.canEditRow = { [weak self] indexPath in
-                guard let row = self?.dataSource.itemIdentifier(for: indexPath), case .tag = row else { return false }
-                return true
-            }
-            tableView.allowsMultipleSelectionDuringEditing = true
-            tableView.isEditing = true
-            tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: Self.tagCellId)
-            tableView.register(UITableViewCell.self, forCellReuseIdentifier: Self.addCellId)
-            tableView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(tableView)
-            self.tableView = tableView
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(collectionView)
+            self.collectionView = collectionView
 
             NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+                collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
             ])
         }
 
@@ -197,7 +195,7 @@ final class TagPickerViewController: UIViewController {
         for name in state.selectedTags {
             guard let tag = state.tags.first(where: { $0.name == name }),
                   let indexPath = dataSource.indexPath(for: .tag(tag)) else { continue }
-            tableView.selectRow(at: indexPath, animated: false, scrollPosition: (state.addedTagName == name ? .middle : .none))
+            collectionView.selectItem(at: indexPath, animated: false, scrollPosition: (state.addedTagName == name ? .centeredVertically : []))
         }
     }
 
@@ -230,8 +228,8 @@ final class TagPickerViewController: UIViewController {
     }
 }
 
-extension TagPickerViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+extension TagPickerViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
 
         switch row {
@@ -243,12 +241,13 @@ extension TagPickerViewController: UITableViewDelegate {
         }
     }
 
-    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         guard let row = dataSource.itemIdentifier(for: indexPath), case .tag(let tag) = row else { return }
         viewModel.process(action: .deselect(tag.name))
     }
 
-    func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
+    func collectionView(_ collectionView: UICollectionView, canEditItemAt indexPath: IndexPath) -> Bool {
+        guard let row = dataSource.itemIdentifier(for: indexPath), case .tag = row else { return false }
         return true
     }
 }

@@ -8,15 +8,37 @@
 
 import UIKit
 
-final class TagPickerCell: UITableViewCell {
-    @IBOutlet private weak var tagView: UIView!
-    @IBOutlet private weak var label: UILabel!
+final class TagPickerCell: UICollectionViewListCell {
+    private let tagView = UIView()
+    private let label = UILabel()
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    override init(frame: CGRect) {
+        super.init(frame: frame)
 
-        self.tagView.layer.cornerRadius = self.tagView.frame.width / 2
-        self.tagView.layer.masksToBounds = true
+        tagView.layer.cornerRadius = 8
+        tagView.layer.masksToBounds = true
+        tagView.backgroundColor = .systemBackground
+        label.font = .preferredFont(forTextStyle: .body)
+
+        let stackView = UIStackView(arrangedSubviews: [tagView, label])
+        stackView.alignment = .center
+        stackView.spacing = 16
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            tagView.widthAnchor.constraint(equalToConstant: 16),
+            tagView.heightAnchor.constraint(equalToConstant: 16),
+            stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+        ])
+        accessories = [.multiselect(displayed: .whenEditing)]
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
     func setup(with tag: Tag) {
@@ -24,13 +46,13 @@ final class TagPickerCell: UITableViewCell {
 
         switch style {
         case .border:
-            self.tagView.isHidden = true
+            tagView.isHidden = true
 
         case .filled:
-            self.tagView.backgroundColor = color
-            self.tagView.isHidden = false
+            tagView.backgroundColor = color
+            tagView.isHidden = false
         }
 
-        self.label.text = tag.name
+        label.text = tag.name
     }
 }
