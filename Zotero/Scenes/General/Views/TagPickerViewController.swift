@@ -22,6 +22,7 @@ final class TagPickerViewController: UIViewController {
     }
 
     private weak var collectionView: UICollectionView!
+    private var previousToolbarHidden: Bool?
 
     private static let addCellId = "AddCell"
     private static let tagCellId = "TagCell"
@@ -128,7 +129,12 @@ final class TagPickerViewController: UIViewController {
                 .disposed(by: disposeBag)
 
             navigationItem.searchController = searchController
-            navigationItem.preferredSearchBarPlacement = .stacked
+            if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .phone {
+                navigationItem.searchBarPlacementAllowsToolbarIntegration = true
+                toolbarItems = [navigationItem.searchBarPlacementBarButtonItem]
+            } else {
+                navigationItem.preferredSearchBarPlacement = .stacked
+            }
             navigationItem.hidesSearchBarWhenScrolling = false
         }
 
@@ -144,21 +150,41 @@ final class TagPickerViewController: UIViewController {
             }
             navigationItem.leftBarButtonItem = cancelItem
 
-            let savePrimaryAction = UIAction(title: L10n.save) { [weak self] _ in
+            let savePrimaryAction = UIAction { [weak self] _ in
                 guard let self else { return }
                 save()
                 dismiss()
             }
             let saveItem: UIBarButtonItem
             if #available(iOS 26.0.0, *) {
-                saveItem = UIBarButtonItem(systemItem: .save, primaryAction: savePrimaryAction)
+                saveItem = UIBarButtonItem(systemItem: .done, primaryAction: savePrimaryAction)
                 saveItem.tintColor = Asset.Colors.zoteroBlue.color
                 saveItem.style = .prominent
             } else {
+                savePrimaryAction.title = L10n.save
                 saveItem = UIBarButtonItem(primaryAction: savePrimaryAction)
                 saveItem.style = .done
             }
             navigationItem.rightBarButtonItem = saveItem
+        }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .phone, let navigationController {
+            if previousToolbarHidden == nil {
+                previousToolbarHidden = navigationController.isToolbarHidden
+            }
+            navigationController.setToolbarHidden(false, animated: animated)
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if #available(iOS 26.0, *), let previousToolbarHidden {
+            navigationController?.setToolbarHidden(previousToolbarHidden, animated: animated)
         }
     }
 
