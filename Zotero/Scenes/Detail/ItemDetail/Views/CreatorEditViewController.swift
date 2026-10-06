@@ -14,19 +14,16 @@ typealias CreatorEditSaveAction = (ItemDetailState.Creator) -> Void
 typealias CreatorEditDeleteAction = (String) -> Void
 
 final class CreatorEditViewController: UIViewController {
-    @IBOutlet private weak var typeTitle: UILabel!
-    @IBOutlet private weak var typeValue: UILabel!
-    @IBOutlet private weak var input1Container: UIView!
-    @IBOutlet private weak var input1Title: UILabel!
-    @IBOutlet private weak var input1TextField: UITextField!
-    @IBOutlet private weak var input1Separator: UIView!
-    @IBOutlet private weak var input2Container: UIView!
-    @IBOutlet private weak var input2Title: UILabel!
-    @IBOutlet private weak var input2TextField: UITextField!
-    @IBOutlet private weak var input2Separator: UIView!
-    @IBOutlet private weak var switchButton: UIButton!
-    @IBOutlet private weak var deleteContainer: UIView!
-    @IBOutlet private weak var deleteButton: UIButton!
+    private enum Section: Hashable {
+        case type, name, delete
+    }
+
+    private enum Row: Hashable {
+        case type, input1, input2, namePresentation, delete
+    }
+
+    private weak var collectionView: UICollectionView!
+    private var dataSource: UICollectionViewDiffableDataSource<Section, Row>!
 
     private static let width: CGFloat = 400
 
@@ -41,10 +38,10 @@ final class CreatorEditViewController: UIViewController {
 
     init(viewModel: ViewModel<CreatorEditActionHandler>, saved: @escaping CreatorEditSaveAction, deleted: CreatorEditDeleteAction?) {
         self.viewModel = viewModel
-        self.saveAction = saved
-        self.deleteAction = deleted
-        self.disposeBag = DisposeBag()
-        super.init(nibName: "CreatorEditViewController", bundle: nil)
+        saveAction = saved
+        deleteAction = deleted
+        disposeBag = DisposeBag()
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -54,205 +51,337 @@ final class CreatorEditViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.typeValue.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-            return traitCollection.userInterfaceStyle == .dark ? .white : .black
-        })
-        self.setupSeparatorHeight()
-        self.setupNavigationItems()
-        self.setup(creator: self.viewModel.state.creator)
-        self.setupObservers()
-        self.navigationItem.title = self.viewModel.state.creator.localizedType
-        self.setupConstraints()
+        setupCollectionView()
+        setupNavigationItems()
+        navigationItem.title = L10n.CreatorEditor.title
+        applySnapshot()
 
-        self.viewModel.stateObservable
-            .subscribe(on: MainScheduler.instance)
+        viewModel.stateObservable
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
                 self?.update(to: state)
             })
             .disposed(by: self.disposeBag)
+
+        func setupCollectionView() {
+            let appearance: UICollectionLayoutListConfiguration.Appearance
+            if #available(iOS 26.0, *) {
+                appearance = .insetGrouped
+            } else {
+                appearance = .grouped
+            }
+            let configuration = UICollectionLayoutListConfiguration(appearance: appearance)
+            let layout = UICollectionViewCompositionalLayout.list(using: configuration)
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+            collectionView.backgroundColor = .systemGroupedBackground
+            collectionView.delegate = self
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            view.backgroundColor = .systemGroupedBackground
+            view.addSubview(collectionView)
+            self.collectionView = collectionView
+            if #available(iOS 26.0, *) {
+                setContentScrollView(collectionView)
+            }
+
+            NSLayoutConstraint.activate([
+                collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+            ])
+
+            let nameRegistration = UICollectionView.CellRegistration<CreatorNameCell, Row> { [weak self] cell, _, row in
+                self?.configureNameCell(cell, for: row)
+                cell.textChanged = { [weak self] text in
+                    guard let self else { return }
+                    if row == .input2 {
+                        self.viewModel.process(action: .setFirstName(text))
+                    } else if self.viewModel.state.creator.namePresentation == .full {
+                        self.viewModel.process(action: .setFullName(text))
+                    } else {
+                        self.viewModel.process(action: .setLastName(text))
+                    }
+                }
+            }
+            let actionRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, Row> { [weak self] cell, _, row in
+                self?.configureActionCell(cell, for: row)
+            }
+            dataSource = UICollectionViewDiffableDataSource<Section, Row>(collectionView: collectionView) { collectionView, indexPath, row in
+                switch row {
+                case .input1, .input2:
+                    return collectionView.dequeueConfiguredReusableCell(using: nameRegistration, for: indexPath, item: row)
+
+                case .type, .namePresentation, .delete:
+                    return collectionView.dequeueConfiguredReusableCell(using: actionRegistration, for: indexPath, item: row)
+                }
+            }
+        }
+
+        func setupNavigationItems() {
+            let cancelPrimaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
+                self?.presentingViewController?.dismiss(animated: true)
+            }
+            let cancel: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
+            } else {
+                cancel = UIBarButtonItem(primaryAction: cancelPrimaryAction)
+            }
+            navigationItem.leftBarButtonItem = cancel
+
+            let savePrimaryAction = UIAction { [weak self] _ in
+                self?.save()
+            }
+            let save: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                save = UIBarButtonItem(systemItem: .done, primaryAction: savePrimaryAction)
+                save.tintColor = Asset.Colors.zoteroBlue.color
+                save.style = .prominent
+            } else {
+                savePrimaryAction.title = L10n.save
+                save = UIBarButtonItem(primaryAction: savePrimaryAction)
+                save.style = .done
+            }
+            save.isEnabled = viewModel.state.isValid
+            navigationItem.rightBarButtonItem = save
+        }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.update(preferredContentSize: self.calculateSize(for: self.viewModel.state.creator.namePresentation))
-        self.input1TextField.becomeFirstResponder()
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        focusNameField(for: .input1)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        let height = collectionView.collectionViewLayout.collectionViewContentSize.height + view.safeAreaInsets.top + view.safeAreaInsets.bottom
+        let size = CGSize(width: Self.width, height: height)
+        guard preferredContentSize != size else { return }
+        preferredContentSize = size
+        navigationController?.preferredContentSize = size
     }
 
     // MARK: - Actions
 
     private func update(to state: CreatorEditState) {
         if state.changes.contains(.namePresentation) {
-            self.updateLayout(for: state.creator)
+            let wasEditingName = nameCell(for: .input1)?.textField.isFirstResponder == true || nameCell(for: .input2)?.textField.isFirstResponder == true
+            applySnapshot { [weak self] in
+                guard let self else { return }
+                collectionView.layoutIfNeeded()
+                configureVisibleCells()
+                view.setNeedsLayout()
+                if wasEditingName {
+                    focusNameField(for: .input1)
+                }
+            }
         }
 
         if state.changes.contains(.type) {
-            self.typeValue.text = state.creator.localizedType
-            self.navigationItem.title = state.creator.localizedType
+            configureVisibleCells()
         }
 
         if state.changes.contains(.name) {
-            self.navigationItem.rightBarButtonItem?.isEnabled = state.isValid
+            navigationItem.rightBarButtonItem?.isEnabled = state.isValid
         }
     }
 
     private func save() {
-        guard self.viewModel.state.isValid else { return }
-        self.saveAction(self.viewModel.state.creator)
-        self.presentingViewController?.dismiss(animated: true, completion: nil)
-    }
-
-    private func updateLayout(for creator: ItemDetailState.Creator) {
-        switch creator.namePresentation {
-        case .full:
-            self.input1Title.text = L10n.name
-            self.input1TextField.text = creator.fullName
-            self.switchButton.setTitle(L10n.CreatorEditor.switchToDual, for: .normal)
-
-        case .separate:
-            self.input1Title.text = L10n.CreatorEditor.lastName
-            self.input1TextField.text = creator.lastName
-            self.input2Title.text = L10n.CreatorEditor.firstName
-            self.input2TextField.text = creator.firstName
-            self.switchButton.setTitle(L10n.CreatorEditor.switchToSingle, for: .normal)
-        }
-
-        self.input2Container.isHidden = creator.namePresentation == .full
-        self.input2Separator.isHidden = self.input2Container.isHidden
-
-        self.update(preferredContentSize: self.calculateSize(for: creator.namePresentation))
-    }
-
-    private func update(preferredContentSize contentSize: CGSize) {
-        self.preferredContentSize = contentSize
-        self.navigationController?.preferredContentSize = contentSize
-    }
-
-    private func calculateSize(for namePresentation: ItemDetailState.Creator.NamePresentation) -> CGSize {
-        let separatorHeight = 1 / UIScreen.main.scale
-        var height = 194 + (3 * separatorHeight)
-        if namePresentation == .separate {
-            height += separatorHeight + 43
-        }
-        if self.deleteAction != nil {
-            height += 64
-        }
-        return CGSize(width: CreatorEditViewController.width, height: height)
-    }
-
-    @IBAction private func toggleNamePresentation() {
-        var namePresentation = self.viewModel.state.creator.namePresentation
-        namePresentation.toggle()
-        self.viewModel.process(action: .setNamePresentation(namePresentation))
-    }
-
-    @IBAction private func showTypePicker() {
-        self.coordinatorDelegate?.showCreatorTypePicker(itemType: self.viewModel.state.itemType, selected: self.viewModel.state.creator.type, picked: { [weak self] newType in
-            self?.viewModel.process(action: .setType(newType))
-        })
-    }
-
-    @IBAction private func delete() {
-        let controller = UIAlertController(title: L10n.warning, message: L10n.CreatorEditor.deleteConfirmation, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak self] _ in
-            guard let self = self else { return }
-            self.deleteAction?(self.viewModel.state.creator.id)
-            self.presentingViewController?.dismiss(animated: true, completion: nil)
-        }))
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
-    }
-
-    private func setSeparatorHeight(to height: CGFloat, in views: [UIView]) {
-        for view in views {
-            if view.frame.height == 1 {
-                view.setHeightConstraint(to: height)
-            }
-            if !view.subviews.isEmpty {
-                self.setSeparatorHeight(to: height, in: view.subviews)
-            }
-        }
+        guard viewModel.state.isValid else { return }
+        saveAction(viewModel.state.creator)
+        presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Setups
 
-    private func setup(creator: ItemDetailState.Creator) {
-        self.typeTitle.text = L10n.CreatorEditor.creator
-        self.typeValue.text = creator.localizedType
-
-        self.deleteContainer.isHidden = self.deleteAction == nil
-        if !self.deleteContainer.isHidden {
-            self.deleteButton.setTitle("\(L10n.delete) \(creator.localizedType)", for: .normal)
+    private func applySnapshot(completion: (() -> Void)? = nil) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+        snapshot.appendSections([.type, .name])
+        snapshot.appendItems([.type], toSection: .type)
+        var nameRows: [Row] = [.input1]
+        if viewModel.state.creator.namePresentation == .separate {
+            nameRows.append(.input2)
         }
-
-        self.updateLayout(for: creator)
+        nameRows.append(.namePresentation)
+        snapshot.appendItems(nameRows, toSection: .name)
+        if deleteAction != nil {
+            snapshot.appendSections([.delete])
+            snapshot.appendItems([.delete], toSection: .delete)
+        }
+        dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
     }
 
-    private func setupObservers() {
-        self.input1TextField.rx
-            .controlEvent(.editingChanged)
-            .flatMap({ Observable.just(self.input1TextField.text ?? "") })
-            .subscribe(onNext: { [weak self] value in
-                guard let self = self else { return }
-                switch self.viewModel.state.creator.namePresentation {
-                case .full:
-                    self.viewModel.process(action: .setFullName(value))
-
-                case .separate:
-                    self.viewModel.process(action: .setLastName(value))
-                }
-            })
-            .disposed(by: self.disposeBag)
-
-        self.input2TextField.rx
-            .controlEvent(.editingChanged)
-            .flatMap({ Observable.just(self.input2TextField.text ?? "") })
-            .subscribe(onNext: { [weak self] value in
-                self?.viewModel.process(action: .setFirstName(value))
-            })
-            .disposed(by: self.disposeBag)
+    private func nameCell(for row: Row) -> CreatorNameCell? {
+        guard let indexPath = dataSource.indexPath(for: row) else { return nil }
+        return collectionView.cellForItem(at: indexPath) as? CreatorNameCell
     }
 
-    private func setupNavigationItems() {
-        let cancelPrimaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
-            self?.presentingViewController?.dismiss(animated: true)
+    private func focusNameField(for row: Row) {
+        guard let indexPath = dataSource.indexPath(for: row) else { return }
+        if collectionView.cellForItem(at: indexPath) == nil {
+            collectionView.scrollToItem(at: indexPath, at: .top, animated: false)
+            collectionView.layoutIfNeeded()
         }
-        let cancel: UIBarButtonItem
-        if #available(iOS 26.0.0, *) {
-            cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
+        nameCell(for: row)?.textField.becomeFirstResponder()
+    }
+
+    private func configureVisibleCells() {
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            guard let row = dataSource.itemIdentifier(for: indexPath), let cell = collectionView.cellForItem(at: indexPath) as? UICollectionViewListCell else { continue }
+            if let cell = cell as? CreatorNameCell {
+                configureNameCell(cell, for: row)
+            } else {
+                configureActionCell(cell, for: row)
+            }
+        }
+    }
+
+    private func configureNameCell(_ cell: CreatorNameCell, for row: Row) {
+        let creator = viewModel.state.creator
+        if row == .input2 {
+            cell.set(title: L10n.CreatorEditor.firstName, text: creator.firstName)
+        } else if creator.namePresentation == .full {
+            cell.set(title: L10n.name, text: creator.fullName)
         } else {
-            cancel = UIBarButtonItem(primaryAction: cancelPrimaryAction)
+            cell.set(title: L10n.CreatorEditor.lastName, text: creator.lastName)
         }
-        navigationItem.leftBarButtonItem = cancel
-
-        let savePrimaryAction = UIAction(title: L10n.save) { [weak self] _ in
-            self?.save()
-        }
-        let save: UIBarButtonItem
-        if #available(iOS 26.0.0, *) {
-            save = UIBarButtonItem(systemItem: .save, primaryAction: savePrimaryAction)
-            save.tintColor = Asset.Colors.zoteroBlue.color
-            save.style = .prominent
-        } else {
-            save = UIBarButtonItem(primaryAction: savePrimaryAction)
-            save.style = .done
-        }
-        save.isEnabled = viewModel.state.isValid
-        navigationItem.rightBarButtonItem = save
     }
 
-    private func setupSeparatorHeight() {
-        let height = 1 / UIScreen.main.scale
-        self.setSeparatorHeight(to: height, in: self.view.subviews)
-    }
+    private func configureActionCell(_ cell: UICollectionViewListCell, for row: Row) {
+        let creator = viewModel.state.creator
+        var configuration = cell.defaultContentConfiguration()
+        switch row {
+        case .type:
+            configuration.text = L10n.CreatorEditor.creator
+            configuration.textProperties.font = .preferredFont(forTextStyle: .headline)
+            configuration.textProperties.color = .systemGray
+            configuration.secondaryText = creator.localizedType
+            configuration.secondaryTextProperties.font = .preferredFont(forTextStyle: .body)
+            configuration.secondaryTextProperties.color = .label
+            configuration.prefersSideBySideTextAndSecondaryText = true
+            configuration.textToSecondaryTextHorizontalPadding = 16
+            cell.accessories = [.disclosureIndicator()]
 
-    private func setupConstraints() {
-        self.view.widthAnchor.constraint(equalToConstant: CreatorEditViewController.width).isActive = true
+        case .namePresentation:
+            configuration.text = creator.namePresentation == .full ? L10n.CreatorEditor.switchToDual : L10n.CreatorEditor.switchToSingle
+            configuration.textProperties.color = Asset.Colors.zoteroBlue.color
+            cell.accessories = []
+
+        case .delete:
+            configuration.text = "\(L10n.delete) \(creator.localizedType)"
+            configuration.textProperties.color = .systemRed
+            cell.accessories = []
+
+        case .input1, .input2:
+            return
+        }
+        configuration.textProperties.numberOfLines = 0
+        cell.contentConfiguration = configuration
     }
 }
 
-extension UIView {
-    fileprivate func setHeightConstraint(to value: CGFloat) {
-        guard let constraint = self.constraints.first(where: { $0.isActive && $0.firstAttribute == .height }) else { return }
-        constraint.constant = value
+extension CreatorEditViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
+        switch row {
+        case .type:
+            showTypePicker()
+
+        case .input1, .input2:
+            focusNameField(for: row)
+
+        case .namePresentation:
+            toggleNamePresentation()
+
+        case .delete:
+            delete()
+        }
+
+        func showTypePicker() {
+            coordinatorDelegate?.showCreatorTypePicker(itemType: viewModel.state.itemType, selected: viewModel.state.creator.type, picked: { [weak self] newType in
+                self?.viewModel.process(action: .setType(newType))
+            })
+        }
+
+        func toggleNamePresentation() {
+            var namePresentation = viewModel.state.creator.namePresentation
+            namePresentation.toggle()
+            viewModel.process(action: .setNamePresentation(namePresentation))
+        }
+
+        func delete() {
+            let controller = UIAlertController(title: L10n.warning, message: L10n.CreatorEditor.deleteConfirmation, preferredStyle: .alert)
+            controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak self] _ in
+                guard let self else { return }
+                deleteAction?(viewModel.state.creator.id)
+                presentingViewController?.dismiss(animated: true, completion: nil)
+            }))
+            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+            present(controller, animated: true, completion: nil)
+        }
+    }
+}
+
+private final class CreatorNameCell: UICollectionViewListCell {
+    private let titleLabel = UILabel()
+    let textField = UITextField()
+    var textChanged: ((String) -> Void)?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        titleLabel.font = .preferredFont(forTextStyle: .headline)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = .systemGray
+        titleLabel.numberOfLines = 0
+        titleLabel.setContentHuggingPriority(.required, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        textField.font = .preferredFont(forTextStyle: .body)
+        textField.adjustsFontForContentSizeCategory = true
+        textField.autocapitalizationType = .sentences
+        textField.autocorrectionType = .no
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
+        contentView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(titleLabel)
+        contentView.addSubview(textField)
+        let minimumHeight = contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
+        minimumHeight.priority = .defaultHigh
+        NSLayoutConstraint.activate([
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            titleLabel.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
+            titleLabel.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor),
+            titleLabel.widthAnchor.constraint(lessThanOrEqualTo: contentView.layoutMarginsGuide.widthAnchor, multiplier: 0.5),
+            textField.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 16),
+            textField.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            textField.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
+            textField.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor),
+            minimumHeight
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        textChanged = nil
+    }
+
+    func set(title: String, text: String) {
+        titleLabel.text = title
+        textField.accessibilityLabel = title
+        if textField.text != text {
+            textField.text = text
+        }
+    }
+
+    @objc private func textDidChange() {
+        textChanged?(textField.text ?? "")
     }
 }
