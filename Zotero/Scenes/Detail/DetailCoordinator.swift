@@ -906,6 +906,9 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         let navigationController = NavigationViewController()
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
+        if #available(iOS 26.0, *) {
+            navigationController.sheetPresentationController?.prefersGrabberVisible = true
+        }
 
         let coordinator = CreatorEditCoordinator(creator: creator, itemType: itemType, saved: saved, deleted: deleted, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self

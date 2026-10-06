@@ -217,9 +217,10 @@
 "creator_editor.creator" = "Creator Type";
 "creator_editor.first_name" = "First Name";
 "creator_editor.last_name" = "Last Name";
-"creator_editor.switch_to_single" = "Switch to single field";
-"creator_editor.switch_to_dual" = "Switch to two fields";
+"creator_editor.switch_to_single" = "Switch to Single Field";
+"creator_editor.switch_to_dual" = "Switch to Two Fields";
 "creator_editor.delete_confirmation" = "Do you really want to delete this creator?";
+"creator_editor.title" = "Edit Creator";
 
 "pdf.annotations_sidebar.search_title" = "Search";
 "pdf.annotations_sidebar.add_comment" = "Add comment";
