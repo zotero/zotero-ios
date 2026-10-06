@@ -17,7 +17,7 @@ class ItemsFilterViewController: UIViewController {
     private static let width: CGFloat = 320
     private let tagFilterController: TagFilterViewController
 
-    weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
+//    weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
     private var downloadsFilterEnabled: Bool
     weak var delegate: FiltersDelegate?
 

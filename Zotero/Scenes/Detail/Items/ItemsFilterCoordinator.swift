@@ -8,10 +8,6 @@
 
 import UIKit
 
-protocol ItemsFilterCoordinatorDelegate: AnyObject {
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-}
-
 protocol FiltersDelegate: AnyObject {
     var currentLibrary: Library { get }
 
@@ -62,18 +58,6 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
         let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
         let controller = ItemsFilterViewController(downloadsFilterEnabled: downloadsFilterEnabled, tagFilterController: tagController)
         controller.delegate = filtersDelegate
-        controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: animated)
-    }
-}
-
-extension ItemsFilterCoordinator: ItemsFilterCoordinatorDelegate {
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
-        let handler = TagPickerActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
-        navigationController?.pushViewController(controller, animated: true)
     }
 }
