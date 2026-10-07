@@ -41,6 +41,17 @@ final class TagPickerCell: UICollectionViewListCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        super.updateConfiguration(using: state)
+
+        var configuration = defaultBackgroundConfiguration().updated(for: state)
+        if #available(iOS 26.0, *), state.isSelected {
+            configuration.backgroundColor = .systemGray5
+            configuration.backgroundColorTransformer = nil
+        }
+        backgroundConfiguration = configuration
+    }
+
     func setup(with tag: Tag) {
         let (color, style) = TagColorGenerator.uiColor(for: tag.color)
 
