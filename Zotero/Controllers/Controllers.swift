@@ -209,7 +209,15 @@ final class Controllers {
 
     private func update(with data: SessionData?, isLogin: Bool, debugLogging: DebugLogging) {
         if let data {
-            set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
+            if let userControllers {
+                // Same user logged in again with new API key, keep current user data and continue syncing with new key.
+                // `SessionController` logs out previous user before registering a different one, so `userControllers` are already cleared in that case.
+                DDLogInfo("Controllers: same user re-authenticated")
+                apiClient.set(authToken: ("Bearer " + data.apiToken))
+                userControllers.reauthenticate(apiKey: data.apiToken)
+            } else {
+                set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
+            }
             apiKey = data.apiToken
         } else {
             clearSession()
@@ -524,6 +532,14 @@ final class UserControllers {
         DDLogWarn("Controllers: API key forbidden, stopping websocket and automatic sync")
         isApiKeyForbidden = true
         webSocketController.disconnect(apiKey: nil)
+    }
+
+    /// Restarts websocket connection and sync with new API key after the same user logged in again.
+    /// - parameter apiKey: New API key.
+    fileprivate func reauthenticate(apiKey: String) {
+        disableSync(apiKey: nil)
+        isApiKeyForbidden = false
+        enableSync(apiKey: apiKey)
     }
 
     /// Cancels ongoing sync and stops websocket connection.

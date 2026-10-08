@@ -22,6 +22,7 @@ protocol MainCoordinatorDelegate: AnyObject {
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
     func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType)
+    func showLogin()
 }
 
 final class MainViewController: UISplitViewController {
@@ -169,5 +170,27 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
     func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType) {
         masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
         showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
+    }
+
+    func showLogin() {
+        // Current API key is invalid, remove it so that login requests aren't rejected. New key is set after successful login.
+        controllers.apiClient.set(authToken: nil)
+        let handler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
+        let viewModel = ViewModel(initialState: LoginState(), handler: handler)
+        let controller = OnboardingViewController(size: view.frame.size, htmlConverter: controllers.htmlAttributedStringConverter, loginViewModel: viewModel, isDismissable: true)
+        controller.coordinatorDelegate = self
+        controller.modalPresentationStyle = .fullScreen
+        present(controller, animated: true)
+    }
+}
+
+extension MainViewController: AppOnboardingCoordinatorDelegate {
+    func showAbout() {
+        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/?app=1")!)
+        (presentedViewController ?? self).present(controller, animated: true)
+    }
+
+    func presentAlert(_ controller: UIAlertController) {
+        (presentedViewController ?? self).present(controller, animated: true)
     }
 }

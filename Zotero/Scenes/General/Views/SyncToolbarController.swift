@@ -108,6 +108,10 @@ final class SyncToolbarController {
             default:
                 consecutiveErrorCount += 1
                 pendingErrors = [error]
+                if case .forbidden = error {
+                    // Cancel pending hide, toolbar stays visible until user logs in again
+                    timerDisposeBag = DisposeBag()
+                }
                 if toolbarIsHidden {
                     setToolbar(hidden: false, animated: true)
                 }
@@ -141,10 +145,19 @@ final class SyncToolbarController {
     }
 
     private func showErrorAlert(with errors: [Error]) {
-        setToolbar(hidden: true, animated: true)
+        guard let error = errors.first else {
+            setToolbar(hidden: true, animated: true)
+            return
+        }
+        // Forbidden error stays visible until user logs in again
+        let isForbidden: Bool
+        if let error = error as? SyncError.Fatal, case .forbidden = error {
+            isForbidden = true
+        } else {
+            isForbidden = false
+            setToolbar(hidden: true, animated: true)
+        }
 
-        guard let error = errors.first else { return }
-        
         var (message, data) = alertMessage(from: error)
         var showItemsData: (keys: [String], libraryId: LibraryIdentifier, collectionCustomType: CollectionIdentifier.CustomType)?
 
@@ -158,8 +171,14 @@ final class SyncToolbarController {
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
+            guard !isForbidden else { return }
             self?.pendingErrors = nil
         }))
+        if isForbidden {
+            controller.addAction(UIAlertAction(title: L10n.Onboarding.signIn, style: .default, handler: { [weak self] _ in
+                self?.coordinatorDelegate?.showLogin()
+            }))
+        }
         if let showItemsData {
             let title = showItemsData.keys.count == 1 ? L10n.Errors.SyncToolbar.showItem : L10n.Errors.SyncToolbar.showItems
             controller.addAction(UIAlertAction(title: title, style: .default, handler: { [weak self] _ in
@@ -328,7 +347,14 @@ final class SyncToolbarController {
     }
 
     private func set(progress: SyncProgress) {
-        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningLevel: .init(errorCount: consecutiveErrorCount)))
+        let warningLevel: WarningLevel?
+        if case .aborted(let error) = progress, case .forbidden = error {
+            // Sync won't recover until user logs in again
+            warningLevel = .critical
+        } else {
+            warningLevel = .init(errorCount: consecutiveErrorCount)
+        }
+        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningLevel: warningLevel))
         toolbar.setItems([item], animated: false)
     }
 
