@@ -37,8 +37,11 @@ extension ItemTypes {
                 return Asset.Images.ItemTypes.document.name
             }
             switch attachmentData.contentType {
-            case "pdf":
+            case "application/pdf":
                 return attachmentData.linked ? Asset.Images.ItemTypes.pdfLinked.name : Asset.Images.ItemTypes.pdf.name
+
+            case "image/png", "image/jpeg", "image/gif":
+                return Asset.Images.Attachments.detailImage.name
 
             case "application/epub+zip":
                 return attachmentData.linked ? Asset.Images.ItemTypes.epubLinked.name : Asset.Images.ItemTypes.epub.name
@@ -127,6 +130,9 @@ extension ItemTypes {
 
         case "podcast":
             return Asset.Images.ItemTypes.podcast.name
+
+        case "preprint":
+            return Asset.Images.ItemTypes.preprint.name
 
         case "presentation":
             return Asset.Images.ItemTypes.presentation.name

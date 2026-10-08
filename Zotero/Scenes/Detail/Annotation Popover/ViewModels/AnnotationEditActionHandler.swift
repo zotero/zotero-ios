@@ -25,10 +25,9 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
                 state.lineWidth = width
             }
             
-        case .setPageLabel(let label, let updateSubsequentPages):
+        case .setPageLabel(let label):
             update(viewModel: viewModel) { state in
                 state.pageLabel = label
-                state.updateSubsequentLabels = updateSubsequentPages
                 state.changes = .pageLabel
             }
 

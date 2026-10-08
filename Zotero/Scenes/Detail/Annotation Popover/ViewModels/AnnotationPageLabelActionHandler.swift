@@ -18,11 +18,6 @@ struct AnnotationPageLabelActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.label = label
             }
-
-        case .setUpdateSubsequentLabels(let update):
-            self.update(viewModel: viewModel) { state in
-                state.updateSubsequentPages = update
-            }
         }
     }
 }

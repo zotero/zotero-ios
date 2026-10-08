@@ -149,7 +149,7 @@ class LookupViewController: UIViewController {
                 }
 
                 // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
-                contentSizeObserver = tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
+                contentSizeObserver = tableView.observe(\.contentSize, options: [.initial, .new]) { [weak self] _, change in
                     guard let self, let value = change.newValue, value.height != tableViewHeight.constant else { return }
                     tableViewHeight.constant = value.height
                     if value.height >= self.tableView.frame.height, !tableView.isScrollEnabled {

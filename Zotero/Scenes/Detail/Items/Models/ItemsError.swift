@@ -17,6 +17,7 @@ enum ItemsError: Error, Equatable {
     case dataLoading
     case deletion
     case deletionFromCollection
+    case deletionFromRecentlyRead
     case collectionAssignment
     case itemMove
     case noteSaving

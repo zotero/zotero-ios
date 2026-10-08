@@ -55,7 +55,6 @@
             <color key="backgroundColor" name="navbarBackground"/>
             <constraints>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="npI-uy-k5B" secondAttribute="trailing" id="5g0-MZ-5Oh"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="npI-uy-k5B" secondAttribute="bottom" id="M1O-Ac-pT3"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="qWI-2N-7Qy" secondAttribute="trailing" id="OGT-VL-qKW"/>
                 <constraint firstItem="kKA-Jy-thd" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="U7Y-LL-Ybw"/>
                 <constraint firstItem="npI-uy-k5B" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="cdG-NO-Xkj"/>

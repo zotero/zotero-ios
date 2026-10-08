@@ -80,6 +80,7 @@ struct StoreCollectionsDbRequest: DbRequest {
             parent = RCollection()
             parent.key = key
             parent.syncState = .dirty
+            parent.lastSyncDate = Date(timeIntervalSince1970: 0)
             parent.libraryId = libraryId
             database.add(parent)
         }

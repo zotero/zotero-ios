@@ -25,6 +25,9 @@ final class Defaults {
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
+    @OptionalUserDefault(key: "sessionId")
+    var sessionId: String?
+
     // MARK: - WebDav Session
 
     @UserDefault(key: "webDavEnabled", defaultValue: false)
@@ -126,10 +129,57 @@ final class Defaults {
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings
 
+    @CodableUserDefault(
+        key: "PDFReaderAnnotationTools",
+        defaultValue: [
+            AnnotationToolButton(type: .highlight, isVisible: true),
+            AnnotationToolButton(type: .underline, isVisible: true),
+            AnnotationToolButton(type: .note, isVisible: true),
+            AnnotationToolButton(type: .freeText, isVisible: true),
+            AnnotationToolButton(type: .image, isVisible: true),
+            AnnotationToolButton(type: .ink, isVisible: true),
+            AnnotationToolButton(type: .eraser, isVisible: true)
+        ],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .standard
+    )
+    var pdfAnnotationTools: [AnnotationToolButton]
+
     // MARK: - HTML / Epub Settings
 
     @CodableUserDefault(key: "HtmlEpubReaderSettings", defaultValue: HtmlEpubSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var htmlEpubSettings: HtmlEpubSettings
+
+    @CodableUserDefault(
+        key: "HtmlEpubReaderAnnotationTools",
+        defaultValue: [AnnotationToolButton(type: .highlight, isVisible: true), AnnotationToolButton(type: .underline, isVisible: true), AnnotationToolButton(type: .note, isVisible: true)],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .standard
+    )
+    var htmlEpubAnnotationTools: [AnnotationToolButton]
+
+    // MARK: - Speech
+    
+    @UserDefault(key: "SpeechDefaultLocalVoiceForLanguage", defaultValue: [:])
+    var defaultLocalVoiceForLanguage: [String: String]
+
+    @CodableUserDefault(key: "SpeechDefaultStandardRemoteVoiceForLanguage", defaultValue: [:], encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var defaultStandardRemoteVoiceForLanguage: [String: RemoteVoice]
+
+    @CodableUserDefault(key: "SpeechDefaultPremiumRemoteVoiceForLanguage", defaultValue: [:], encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var defaultPremiumRemoteVoiceForLanguage: [String: RemoteVoice]
+
+    @CodableUserDefault(key: "SpeechRemoteVoiceTier", defaultValue: nil, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var remoteVoiceTier: RemoteVoice.Tier?
+
+    @UserDefault(key: "ReadAloudSpeechRate", defaultValue: 1)
+    var speechRate: Float
+
+    @UserDefault(key: "DidShowReadAloudOnboarding", defaultValue: false)
+    var didShowReadAloudOnboarding: Bool
+
     #endif
 
     // MARK: - Citation / Bibliography Export
@@ -185,6 +235,14 @@ final class Defaults {
     @UserDefault(key: "ClearPSPDFKitCacheGuard", defaultValue: currentClearPSPDFKitCacheGuard - 1)
     var clearPSPDFKitCacheGuard: Int
 
+    // MARK: - Debug
+
+    @UserDefault(key: "DebugReaderUUIDByHash", defaultValue: [:])
+    var debugReaderUUIDByHash: [String: String]
+
+    @OptionalUserDefault(key: "LastDebugReaderHashOrURL")
+    var lastDebugReaderHashOrURL: String?
+
     // MARK: - Actions
 
     func reset() {
@@ -192,6 +250,7 @@ final class Defaults {
         username = ""
         displayName = ""
         userId = 0
+        sessionId = nil
         shareExtensionIncludeTags = true
         shareExtensionIncludeAttachment = true
         selectedLibraryId = .custom(.myLibrary)
@@ -220,6 +279,8 @@ final class Defaults {
         underlineColorHex = AnnotationsConfig.defaultActiveColor
         textColorHex = AnnotationsConfig.defaultActiveColor
         pdfSettings = PDFSettings.default
+        speechRate = 1
+        didShowReadAloudOnboarding = false
         #endif
     }
 }

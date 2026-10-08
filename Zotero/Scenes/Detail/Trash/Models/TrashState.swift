@@ -82,7 +82,7 @@ struct TrashState: ViewModelState {
     var library: Library
     var libraryToken: NotificationToken?
     var snapshot: Snapshot
-    // Cache of item data (accessory, title) so that they don't need to be re-fetched in tableView.
+    // Cache of item data (accessory, title) so that they don't need to be re-fetched in collection view.
     var itemDataCache: [TrashKey: ItemData]
     var updateItemKey: TrashKey?
     var sortType: ItemsSortType

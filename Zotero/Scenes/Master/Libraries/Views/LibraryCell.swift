@@ -8,43 +8,71 @@
 
 import UIKit
 
-final class LibraryCell: UITableViewCell {
+final class LibraryCell: UICollectionViewListCell {
     enum LibraryState {
         case normal, locked, archived
+
+        var image: UIImage {
+            switch self {
+            case .normal:
+                return Asset.Images.Cells.library.image
+
+            case .locked:
+                return Asset.Images.Cells.libraryReadonly.image
+
+            case .archived:
+                return Asset.Images.Cells.libraryArchived.image
+            }
+        }
+
+        var accessibilityNamePrefix: String {
+            switch self {
+            case .normal:
+                return ""
+
+            case .locked:
+                return "\(L10n.Accessibility.locked) "
+
+            case .archived:
+                return "\(L10n.Accessibility.archived) "
+            }
+        }
     }
 
-    @IBOutlet private weak var iconLeftConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var iconView: UIImageView!
-    @IBOutlet private weak var iconToLabelConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleRightConstraint: NSLayoutConstraint!
-
-    private static let horizontalPadding: CGFloat = 16
-
+    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+        if #available(iOS 26.0, *) {
+            if traitCollection.splitViewControllerLayoutEnvironment == .expanded {
+                return super.preferredLayoutAttributesFitting(layoutAttributes)
+            } else {
+                layoutAttributes.size.height = 52
+            }
+        } else {
+            layoutAttributes.size.height = 44
+        }
+        return layoutAttributes
+    }
+    
     func setup(with name: String, libraryState: LibraryState) {
-        self.iconView.image = self.image(for: libraryState).withRenderingMode(.alwaysTemplate)
-        self.titleLabel.text = name
-        self.titleLabel.accessibilityLabel = self.accessibilityNamePrefix(for: libraryState) + name
-
-        let hasExtraPadding = libraryState != .normal
-        self.iconLeftConstraint.constant = LibraryCell.horizontalPadding - (hasExtraPadding ? 2 : 0)
-        self.iconToLabelConstraint.constant = LibraryCell.horizontalPadding - (hasExtraPadding ? 2 : 0)
-        self.titleRightConstraint.constant = LibraryCell.horizontalPadding
-    }
-
-    private func image(for state: LibraryState) -> UIImage {
-        switch state {
-        case .normal: return Asset.Images.Cells.library.image
-        case .locked: return Asset.Images.Cells.libraryReadonly.image
-        case .archived: return Asset.Images.Cells.libraryArchived.image
+        var configuration = defaultContentConfiguration()
+        configuration.image = libraryState.image.withRenderingMode(.alwaysTemplate)
+        configuration.imageProperties.tintColor = Asset.Colors.zoteroBlue.color
+        configuration.imageProperties.reservedLayoutSize = CGSize(width: 28, height: 28)
+        configuration.imageProperties.maximumSize = CGSize(width: 28, height: 28)
+        configuration.text = name
+        configuration.textProperties.font = .systemFont(ofSize: 17)
+        configuration.textProperties.numberOfLines = 1
+        if #available(iOS 26.0, *) {
+            if traitCollection.splitViewControllerLayoutEnvironment != .expanded {
+                configuration.imageToTextPadding = 12
+                configuration.axesPreservingSuperviewLayoutMargins = []
+                configuration.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+            }
+        } else {
+            configuration.imageToTextPadding = 16
+            configuration.axesPreservingSuperviewLayoutMargins = []
+            configuration.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         }
-    }
-
-    private func accessibilityNamePrefix(for state: LibraryState) -> String {
-        switch state {
-        case .normal: return ""
-        case .locked: return "\(L10n.Accessibility.locked) "
-        case .archived: return "\(L10n.Accessibility.archived) "
-        }
+        contentConfiguration = configuration
+        accessibilityLabel = libraryState.accessibilityNamePrefix + name
     }
 }

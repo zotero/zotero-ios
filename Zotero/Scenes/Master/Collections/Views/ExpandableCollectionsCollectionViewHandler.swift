@@ -138,6 +138,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             }
 
             cell.contentConfiguration = configuration
+            cell.updateSeparatorLayout()
             cell.backgroundConfiguration = .listPlainCell()
         }
     }()
@@ -145,8 +146,21 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-            configuration.showsSeparators = false
-            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            configuration.separatorConfiguration.color = .separator
+            configuration.separatorConfiguration.topSeparatorVisibility = .hidden
+            configuration.separatorConfiguration.bottomSeparatorVisibility = .visible
+            if #available(iOS 26.0, *) {
+                configuration.showsSeparators = environment.traitCollection.splitViewControllerLayoutEnvironment != .expanded
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 16
+            } else {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 0
+            }
+            let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            if #available(iOS 26.0.0, *), environment.traitCollection.splitViewControllerLayoutEnvironment == .expanded {
+                section.contentInsets.leading = 16
+                section.contentInsets.trailing = 16
+            }
+            return section
         }
     }
 }
@@ -158,10 +172,6 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDelegate {
         }
 
         let collection = self.dataSource.snapshot().itemIdentifiers(inSection: indexPath.section)[indexPath.row]
-
-        // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
-        // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-        guard self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollectionId else { return }
         self.viewModel.process(action: .select(collection.identifier))
     }
 
@@ -212,7 +222,7 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDelegate {
                         actions.append(trash)
                     }
 
-                case .publications, .all, .unfiled:
+                case .publications, .all, .unfiled, .recentlyRead:
                     actions.insert(downloadAttachmentsAction(for: collection.identifier, in: viewModel), at: 0)
                 }
 

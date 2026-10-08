@@ -41,7 +41,6 @@ final class CollectionsSearchViewController: UIViewController {
         searchBarSeparatorHeight.constant = 1 / UIScreen.main.scale
         setupSearchBar()
         setupCollectionView()
-        setupKeyboardObserving()
         setupDataSource()
 
         viewModel.stateObservable
@@ -69,6 +68,7 @@ final class CollectionsSearchViewController: UIViewController {
             let configuration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive, accessories: [.badge])
 
             cell.contentConfiguration = configuration
+            cell.updateSeparatorLayout()
             cell.backgroundConfiguration = .listPlainCell()
         }
     }()
@@ -102,9 +102,17 @@ final class CollectionsSearchViewController: UIViewController {
         collectionView.delegate = self
         collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-            configuration.showsSeparators = false
+            configuration.separatorConfiguration.color = .separator
+            configuration.separatorConfiguration.topSeparatorVisibility = .hidden
+            configuration.separatorConfiguration.bottomSeparatorVisibility = .visible
+            if #available(iOS 26.0, *) {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 16
+            } else {
+                configuration.separatorConfiguration.bottomSeparatorInsets.trailing = 0
+            }
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }
+        collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
     }
 
     private func setupDataSource() {
@@ -120,34 +128,6 @@ final class CollectionsSearchViewController: UIViewController {
             snapshot.appendSections([0])
             self?.dataSource.apply(snapshot, animatingDifferences: false)
         }
-    }
-
-    private func setupCollectionView(with keyboardData: KeyboardData) {
-        var insets = collectionView.contentInset
-        insets.bottom = keyboardData.visibleHeight
-        collectionView.contentInset = insets
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-            .keyboardWillShow
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupCollectionView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
-
-        NotificationCenter.default
-            .keyboardWillHide
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupCollectionView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
     }
 }
 

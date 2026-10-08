@@ -9,7 +9,7 @@
 import Foundation
 import MobileCoreServices
 
-protocol File {
+protocol File: Sendable {
     var rootPath: String { get }
     var relativeComponents: [String] { get }
     var name: String { get }

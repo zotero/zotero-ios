@@ -10,10 +10,10 @@ import UIKit
 import WebKit
 
 class HtmlEpubWebView: WKWebView {
-    private var customMenuActions: [UIAction]
+    private var customMenuActionBuilder: () -> [UIAction]
 
-    init(customMenuActions: [UIAction], configuration: WKWebViewConfiguration) {
-        self.customMenuActions = customMenuActions
+    init(configuration: WKWebViewConfiguration, customMenuActionBuilder: @escaping () -> [UIAction]) {
+        self.customMenuActionBuilder = customMenuActionBuilder
         super.init(frame: .zero, configuration: configuration)
     }
     
@@ -32,8 +32,11 @@ class HtmlEpubWebView: WKWebView {
 
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
-        let newMenu = UIMenu(title: "", options: .displayInline, children: customMenuActions)
+        let newMenu = UIMenu(title: "", options: .displayInline, children: customMenuActionBuilder())
         builder.insertSibling(newMenu, afterMenu: .standardEdit)
+        if FeatureGates.enabled.contains(.speech) {
+            builder.remove(menu: .speech)
+        }
     }
 
     @objc func customAction(_ sender: Any?) {

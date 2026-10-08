@@ -13,7 +13,6 @@ final class ItemDetailTitleContentView: UIView {
     private weak var textView: FormattedTextView!
     private weak var topConstraint: NSLayoutConstraint!
     private weak var bottomConstraint: NSLayoutConstraint!
-    private weak var separatorHeight: NSLayoutConstraint!
 
     var attributedTextChanged: ((NSAttributedString) -> Void)?
     private let disposeBag: DisposeBag
@@ -42,24 +41,14 @@ final class ItemDetailTitleContentView: UIView {
             delegate = PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, textView: textView)
             textView.delegate = delegate
 
-            let separatorView = UIView()
-            separatorView.backgroundColor = .separator
-            separatorView.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(separatorView)
-
             topConstraint = textView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor, constant: font.capHeight - font.ascender)
             bottomConstraint = layoutMarginsGuide.bottomAnchor.constraint(equalTo: textView.bottomAnchor)
-            separatorHeight = separatorView.heightAnchor.constraint(equalToConstant: ItemDetailLayout.separatorHeight)
 
             NSLayoutConstraint.activate([
                 topConstraint,
                 bottomConstraint,
                 textView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-                layoutMarginsGuide.trailingAnchor.constraint(equalTo: textView.trailingAnchor),
-                bottomAnchor.constraint(equalTo: separatorView.bottomAnchor),
-                separatorView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-                trailingAnchor.constraint(equalTo: separatorView.trailingAnchor),
-                separatorHeight
+                layoutMarginsGuide.trailingAnchor.constraint(equalTo: textView.trailingAnchor)
             ])
         }
 

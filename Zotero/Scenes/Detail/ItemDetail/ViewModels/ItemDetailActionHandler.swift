@@ -153,6 +153,9 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
 
         case .moveAttachmentToStandalone(let attachment):
             self.moveToStandalone(attachment: attachment, in: viewModel)
+            
+        case .deleteCollection(let identifier):
+            deleteCollection(identifier: identifier, in: viewModel)
         }
     }
 
@@ -167,6 +170,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 guard let self, let viewModel else { return }
                 reloadData(isEditing: viewModel.state.isEditing, library: library, in: viewModel)
             })
+            let collections = try self.dbStorage.perform(request: ReadCollectionsDbRequest(libraryId: library.identifier), on: .main)
 
             update(viewModel: viewModel) { state in
                 state.libraryToken = libraryToken
@@ -177,6 +181,8 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 collectionsSource = _collectionsSource
                 data = try ItemDetailDataCreator.createData(
                     from: .new(itemType: itemType, child: child),
+                    library: library,
+                    collections: collections,
                     schemaController: self.schemaController,
                     dateParser: self.dateParser,
                     fileStorage: self.fileStorage,
@@ -190,6 +196,8 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: library.identifier, key: itemKey), on: .main)
                 data = try ItemDetailDataCreator.createData(
                     from: .existing(item: item, ignoreChildren: true),
+                    library: library,
+                    collections: collections,
                     schemaController: self.schemaController,
                     dateParser: self.dateParser,
                     fileStorage: self.fileStorage,
@@ -242,6 +250,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
         do {
             let canEdit = isEditing && library.metadataEditable
             let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key), on: .main, refreshRealm: true)
+            let collections = try self.dbStorage.perform(request: ReadCollectionsDbRequest(libraryId: library.identifier), on: .main)
 
             let token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
                 guard let viewModel = viewModel else { return }
@@ -250,6 +259,8 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
 
             let (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(
                 from: .existing(item: item, ignoreChildren: false),
+                library: library,
+                collections: collections,
                 schemaController: self.schemaController,
                 dateParser: self.dateParser,
                 fileStorage: self.fileStorage,
@@ -657,6 +668,27 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 } else {
                     guard let index = viewModel.state.attachments.firstIndex(of: attachment) else { return }
                     state.attachments.remove(at: index)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Collections
+    
+    private func deleteCollection(identifier: CollectionIdentifier, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard let key = identifier.key else { return }
+        let request = DeleteItemsFromCollectionDbRequest(collectionKey: key, itemKeys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)
+        perform(request: request) { [weak self, weak viewModel] error in
+            guard let self, let viewModel else { return }
+            if let error = error {
+                DDLogError("ItemDetailActionHandler: can't remove from collection - \(error)")
+                update(viewModel: viewModel) { state in
+                    state.error = .cantRemoveCollection
+                }
+            } else {
+                update(viewModel: viewModel) { state in
+                    state.data.collections?.remove(identifier: identifier)
+                    state.reload = .section(.collections)
                 }
             }
         }

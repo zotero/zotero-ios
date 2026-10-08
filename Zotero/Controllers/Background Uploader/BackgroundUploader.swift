@@ -30,7 +30,7 @@ final class BackgroundUploader {
 
     // MARK: - Actions
 
-    func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String], delegate: URLSessionTaskDelegate?) -> Single<URLSession> {
+    func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String], delegate: URLSessionTaskDelegate) -> Single<URLSession> {
         return self.requestProvider.createRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers, schemaVersion: self.schemaVersion)
                                    .flatMap({ request, url, size -> Single<(URL, UInt64, URLRequest, URLSession)> in
                                        return self.createSession(delegate: delegate).flatMap({ Single.just((url, size, request, $0)) })
@@ -45,10 +45,10 @@ final class BackgroundUploader {
                                    })
     }
 
-    private func createSession(delegate: URLSessionTaskDelegate?) -> Single<URLSession> {
+    private func createSession(delegate: URLSessionTaskDelegate) -> Single<URLSession> {
         return Single.create { [weak self] subscriber in
             let sessionId = UUID().uuidString
-            let session = URLSessionCreator.createSession(for: sessionId, forwardingDelegate: delegate, forwardingTaskDelegate: delegate)
+            let session = URLSession(configuration: URLSessionCreator.createBackgroundConfiguration(for: sessionId), delegate: delegate, delegateQueue: nil)
             self?.context.saveSession(with: sessionId)
             self?.context.saveShareExtensionSession(with: sessionId)
             subscriber(.success(session))

@@ -98,6 +98,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 switch self.attachment.type {
                 case .file(_, let contentType, _, _, _):
                     value = contentType
+
                 case .url: continue
                 }
 
@@ -118,6 +119,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 case .file:
                     let modificationTime = Int(round(Date().timeIntervalSince1970 * 1000))
                     value = "\(modificationTime)"
+
                 case .url: continue
                 }
 
@@ -169,6 +171,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 collection = RCollection()
                 collection.key = key
                 collection.syncState = .dirty
+                collection.lastSyncDate = Date(timeIntervalSince1970: 0)
                 collection.libraryId = self.attachment.libraryId
                 database.add(collection)
             }

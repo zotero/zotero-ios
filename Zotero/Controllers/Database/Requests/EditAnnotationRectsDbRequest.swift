@@ -14,7 +14,7 @@ struct EditAnnotationRectsDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
     let rects: [CGRect]
-    unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
+    let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     var needsWrite: Bool { return true }
 

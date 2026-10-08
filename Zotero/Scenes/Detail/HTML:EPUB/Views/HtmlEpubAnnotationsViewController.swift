@@ -13,6 +13,7 @@ import RxSwift
 class HtmlEpubAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
+    private let updateQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
@@ -26,6 +27,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
+        updateQueue = DispatchQueue(label: "org.zotero.HtmlEpubAnnotationsViewController.UpdateQueue")
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -50,7 +52,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         )
 
         if !viewModel.state.annotations.isEmpty {
-            reloadAnnotations(for: viewModel.state)
+            updateUI(state: viewModel.state, animatedDifferences: false)
         }
 
         func setupObserving() {
@@ -150,6 +152,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
 
             // TODO: - add attributed text
             let text = annotation.text.flatMap({ NSAttributedString(string: $0) })
+            let reconfiguringForSameAnnotation = annotation.key == cell.key
             cell.setup(
                 with: annotation,
                 text: text,
@@ -161,10 +164,13 @@ class HtmlEpubAnnotationsViewController: UIViewController {
                 currentUserId: state.userId,
                 state: state
             )
-            let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
-                self?.perform(action: action, annotation: annotation)
-            })
-            _ = cell.disposeBag?.insert(actionSubscription)
+            if !reconfiguringForSameAnnotation {
+                let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
+                    self?.perform(action: action, annotationKey: annotation.key)
+                })
+                _ = cell.disposeBag?.insert(actionSubscription)
+            }
+            // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
         }
         
         func loadAttributedComment(for annotation: HtmlEpubAnnotation) -> NSAttributedString? {
@@ -181,8 +187,9 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         }
     }
 
-    func update(state: HtmlEpubReaderState) {
-        reloadIfNeeded(for: state) { [weak self] in
+    private func update(state: HtmlEpubReaderState) {
+        let isVisible = parentDelegate?.isSidebarVisible ?? false
+        reloadIfNeeded(for: state, isVisible: isVisible) { [weak self] in
             guard let self else { return }
 
             if state.changes.contains(.filter) || state.changes.contains(.annotations) || state.changes.contains(.sidebarEditing) {
@@ -195,7 +202,6 @@ class HtmlEpubAnnotationsViewController: UIViewController {
             }
 
             if let key = state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
-                let isVisible = parentDelegate?.isSidebarVisible ?? false
                 tableView.selectRow(at: indexPath, animated: isVisible, scrollPosition: .middle)
             }
 
@@ -207,65 +213,62 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
         /// - parameter state: Current state.
         /// - parameter completion: Called after reload was performed or even if there was no reload.
-        func reloadIfNeeded(for state: HtmlEpubReaderState, completion: @escaping () -> Void) {
-            if state.changes.contains(.annotations) {
-                reloadAnnotations(for: state, completion: completion)
-                return
+        func reloadIfNeeded(for state: HtmlEpubReaderState, isVisible: Bool, completion: @escaping () -> Void) {
+            if state.changes.contains(.sidebarEditing) {
+                tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
             }
 
-//            if state.changes.contains(.interfaceStyle) {
-//                var snapshot = self.dataSource.snapshot()
-//                snapshot.reloadSections([0])
-//                self.dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
-//                return
-//            }
+            if state.changes.contains(.annotations) {
+                updateUI(state: state, animatedDifferences: isVisible, completion: completion)
+                return
+            }
 
             if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
-                if let keys = state.updatedAnnotationKeys {
-                    var snapshot = dataSource.snapshot()
-                    snapshot.reloadItems(keys)
-                    dataSource.apply(snapshot, animatingDifferences: false)
+                var keys = state.updatedAnnotationKeys ?? []
+                if let key = state.selectedAnnotationKey, !keys.contains(key) {
+                    keys.append(key)
                 }
-
-                updateCellHeight()
-                focusSelectedCell()
-
-                if state.changes.contains(.sidebarEditing) {
-                    let isVisible = parentDelegate?.isSidebarVisible ?? false
-                    tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+                if !keys.isEmpty {
+                    let keysToReconfigure = keys
+                    updateQueue.async { [weak self] in
+                        guard let self else { return }
+                        var snapshot = dataSource.snapshot()
+                        // Filter any item identifiers not existing already in the snapshot. These will be added in a subsequent update.
+                        let existingKeys = keysToReconfigure.filter({ snapshot.itemIdentifiers.contains($0) })
+                        if !existingKeys.isEmpty {
+                            snapshot.reconfigureItems(existingKeys)
+                        }
+                        dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                            guard let self else { return }
+                            focusSelectedCell()
+                            completion()
+                        }
+                    }
+                    return
                 }
-
-                completion()
-
-                return
-            }
-
-            if state.changes.contains(.sidebarEditing) {
-                tableView.setEditing(state.sidebarEditingEnabled, animated: true)
             }
 
             completion()
         }
     }
 
-    private func reloadAnnotations(for state: HtmlEpubReaderState, completion: (() -> Void)? = nil) {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(state.sortedKeys)
-        if let keys = state.updatedAnnotationKeys {
-            snapshot.reloadItems(keys)
+    private func updateUI(state: HtmlEpubReaderState, animatedDifferences: Bool = true, completion: (() -> Void)? = nil) {
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+            var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+            snapshot.appendSections([0])
+            snapshot.appendItems(state.sortedKeys)
+            if let keys = state.updatedAnnotationKeys?.filter({ snapshot.itemIdentifiers.contains($0) }), !keys.isEmpty {
+                snapshot.reconfigureItems(keys)
+            }
+            dataSource.apply(snapshot, animatingDifferences: animatedDifferences, completion: completion)
         }
-        let isVisible = parentDelegate?.isSidebarVisible ?? false
-        if state.changes.contains(.sidebarEditing) {
-            tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
-        }
-        dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
     }
 
-    func perform(action: AnnotationView.Action, annotation: HtmlEpubAnnotation) {
+    private func perform(action: AnnotationView.Action, annotationKey: String) {
         let state = viewModel.state
 
-        guard state.library.metadataEditable else { return }
+        guard state.library.metadataEditable, let annotation = state.annotations[annotationKey] else { return }
 
         switch action {
         case .tags:
@@ -288,18 +291,18 @@ class HtmlEpubAnnotationsViewController: UIViewController {
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
                 highlightFont: viewModel.state.textFont,
+                allowsPageLabelEditing: viewModel.state.allowsPageLabelEditing,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
-                saveAction: { [weak self] data, updateSubsequentLabels in
+                saveAction: { [weak self] data in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key,
                             type: data.type,
                             color: data.color,
                             lineWidth: data.lineWidth,
-                            pageLabel: data.pageLabel,
-                            updateSubsequentLabels: updateSubsequentLabels,
-                            highlightText: data.highlightText
+                            highlightText: data.highlightText,
+                            highlightFont: data.highlightFont
                         )
                     )
                 },
@@ -312,8 +315,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
             viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 
         case .reloadHeight:
-            updateCellHeight()
-            focusSelectedCell()
+            reconfigureSelectedCellIfAny()
 
         case .setCommentActive(let isActive):
             viewModel.process(action: .setCommentActive(isActive))
@@ -321,14 +323,19 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         case .done:
             break // Done button doesn't appear here
         }
-    }
 
-    /// Updates tableView layout in case any cell changed height.
-    private func updateCellHeight() {
-        UIView.setAnimationsEnabled(false)
-        tableView.beginUpdates()
-        tableView.endUpdates()
-        UIView.setAnimationsEnabled(true)
+        func reconfigureSelectedCellIfAny() {
+            guard let key = viewModel.state.selectedAnnotationKey else { return }
+            updateQueue.async { [weak self] in
+                guard let self else { return }
+                var snapshot = dataSource.snapshot()
+                guard snapshot.itemIdentifiers.contains(key) else { return }
+                snapshot.reconfigureItems([key])
+                dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                    self?.focusSelectedCell()
+                }
+            }
+        }
     }
 
     /// Scrolls to selected cell if it's not visible.
@@ -351,40 +358,37 @@ class HtmlEpubAnnotationsViewController: UIViewController {
     private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool) {
         guard !toolbarContainer.isHidden else { return }
 
-        var items: [UIBarButtonItem] = []
-        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+        var items: [UIBarButtonItem] = [.flexibleSpace()]
 
         if editingEnabled {
-            let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
+            let primaryAction = UIAction(title: L10n.delete) { [weak viewModel] _ in
+                guard let viewModel, viewModel.state.sidebarEditingEnabled else { return }
+                viewModel.process(action: .removeSelectedAnnotations)
+            }
+            let delete = UIBarButtonItem(primaryAction: primaryAction)
             delete.isEnabled = deletionEnabled
-            delete.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self, viewModel.state.sidebarEditingEnabled else { return }
-                    viewModel.process(action: .removeSelectedAnnotations)
-                })
-                .disposed(by: disposeBag)
             items.append(delete)
             deleteBarButton = delete
         } else if filterEnabled {
             deleteBarButton = nil
-
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
-            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
-            filter.rx.tap
-                .subscribe(onNext: { [weak self, weak filter] _ in
-                    guard let self, let filter else { return }
-                    showFilterPopup(from: filter, viewModel: viewModel, coordinatorDelegate: coordinatorDelegate)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(image: UIImage(systemName: filterImageName)) { [weak self] action in
+                guard let self, let filter = action.sender as? UIBarButtonItem else { return }
+                showFilterPopup(from: filter, viewModel: viewModel, coordinatorDelegate: coordinatorDelegate)
+            }
+            let filter = UIBarButtonItem(primaryAction: primaryAction)
             items.insert(filter, at: 0)
         }
 
-        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
-        select.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
-            })
-            .disposed(by: disposeBag)
+        let primaryAction = UIAction(title: (editingEnabled ? L10n.done : L10n.select)) { [weak viewModel] _ in
+            viewModel?.process(action: .setSidebarEditingEnabled(!editingEnabled))
+        }
+        let select: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            select = editingEnabled ? UIBarButtonItem(systemItem: .done, primaryAction: primaryAction) : UIBarButtonItem(primaryAction: primaryAction)
+        } else {
+            select = UIBarButtonItem(primaryAction: primaryAction)
+        }
         items.append(select)
 
         toolbar.items = items

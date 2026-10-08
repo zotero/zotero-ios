@@ -22,6 +22,7 @@ struct SetCollectionCollapsedDbRequest: DbRequest {
         case .collection(let key):
             guard let collection = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId), collection.collapsed != self.collapsed else { return }
             collection.collapsed = self.collapsed
+
         case .search: break // TODO
         case .custom: break
         }
@@ -44,6 +45,7 @@ struct SetCollectionsCollapsedDbRequest: DbRequest {
             for collection in database.objects(RCollection.self).filter(.keys(keys, in: self.libraryId)) {
                 collection.collapsed = self.collapsed
             }
+
         case .search: break // TODO
         case .custom: break
         }

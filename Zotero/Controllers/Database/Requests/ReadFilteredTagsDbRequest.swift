@@ -39,11 +39,18 @@ struct ReadFilteredTagsDbRequest: DbResponseRequest {
 
         case .custom(let customType):
             switch customType {
-            case .all, .publications:
+            case .all:
                 break
+
+            case .publications:
+                predicates.append(NSPredicate(format: "item.inPublications = true"))
 
             case .unfiled:
                 predicates.append(NSPredicate(format: "any item.collections.@count == 0"))
+                
+            case .recentlyRead:
+                let lastDate = Calendar.current.date(byAdding: .day, value: -14, to: Date())!
+                predicates.append(NSPredicate(format: "item.lastRead >= %@ or any item.children.lastRead >= %@", lastDate as NSDate, lastDate as NSDate))
 
             case .trash:
                 predicates.append(NSPredicate(format: "item.trash = true"))

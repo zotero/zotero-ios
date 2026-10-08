@@ -10,6 +10,7 @@ import Combine
 import Foundation
 
 import CocoaLumberjackSwift
+import OrderedCollections
 import RealmSwift
 
 struct TagPickerActionHandler: ViewModelActionHandler {
@@ -50,16 +51,23 @@ struct TagPickerActionHandler: ViewModelActionHandler {
     private func add(name: String, in viewModel: ViewModel<TagPickerActionHandler>) {
         guard let snapshot = viewModel.state.snapshot else { return }
         self.update(viewModel: viewModel) { state in
-            let tag = Tag(name: name, color: "")
             state.tags = snapshot
+            let tag: Tag
 
-            let index = state.tags.index(of: tag, sortedBy: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
-            state.tags.insert(tag, at: index)
-            state.selectedTags.insert(name)
+            if let existing = snapshot.first(where: { $0.name == name }) {
+                tag = existing
+            } else {
+                tag = Tag(name: name, color: "")
+
+                let index = Array(state.tags).index(of: tag, sortedBy: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
+                state.tags.insert(tag, at: index)
+            }
+
+            state.selectedTags.insert(tag.name)
 
             state.snapshot = nil
             state.searchTerm = ""
-            state.addedTagName = name
+            state.addedTagName = tag.name
             state.showAddTagButton = false
             state.changes = [.tags, .selection]
         }
@@ -97,7 +105,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
             let others = results.filter("color = \"\" && emojiGroup = nil").sorted(byKeyPath: "name")
             let tags = Array(colored.map(Tag.init)) + Array(emoji.map(Tag.init)) + Array(others.map(Tag.init))
             self.update(viewModel: viewModel) { state in
-                state.tags = tags
+                state.tags = OrderedSet(tags)
                 state.changes = [.tags, .selection]
             }
         } catch let error {

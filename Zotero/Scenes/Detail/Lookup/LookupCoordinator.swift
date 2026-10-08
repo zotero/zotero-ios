@@ -18,12 +18,15 @@ enum LookupStartingView {
 
 protocol LookupCoordinatorDelegate: AnyObject {
     func lookupController(restoreLookupState: Bool, hasDarkBackground: Bool) -> LookupViewController?
+
+    var acknowledgeFailures: Bool { get set }
 }
 
 final class LookupCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
+    internal var acknowledgeFailures: Bool = false
 
     private let startingView: LookupStartingView
     private unowned let controllers: Controllers
@@ -38,9 +41,10 @@ final class LookupCoordinator: NSObject, Coordinator {
 
         super.init()
 
-        navigationController.dismissHandler = {
-            self.controllers.userControllers?.identifierLookupController.presenter = nil
-            self.parentCoordinator?.childDidFinish(self)
+        navigationController.dismissHandler = { [weak self] in
+            guard let self else { return }
+            controllers.userControllers?.identifierLookupController.setPresenter(nil, acknowledgeFailures: acknowledgeFailures)
+            parentCoordinator?.childDidFinish(self)
         }
     }
 
@@ -77,7 +81,7 @@ final class LookupCoordinator: NSObject, Coordinator {
         let handler = ScannerActionHandler()
         let controller = ScannerViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.coordinatorDelegate = self
-        controllers.userControllers?.identifierLookupController.presenter = controller
+        controllers.userControllers?.identifierLookupController.setPresenter(controller, acknowledgeFailures: false)
         return controller
     }
 
@@ -86,7 +90,7 @@ final class LookupCoordinator: NSObject, Coordinator {
         let handler = ManualLookupActionHandler()
         let controller = ManualLookupViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.coordinatorDelegate = self
-        controllers.userControllers?.identifierLookupController.presenter = controller
+        controllers.userControllers?.identifierLookupController.setPresenter(controller, acknowledgeFailures: false)
         return controller
     }
 }

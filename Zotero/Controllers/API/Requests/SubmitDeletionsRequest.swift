@@ -16,7 +16,7 @@ struct SubmitDeletionsRequest: ApiRequest {
     let version: Int
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/\(self.objectType.apiPath)")
+        return .zotero(path: "\(libraryId.apiPath(userId: userId))/\(objectType.apiPath)")
     }
 
     var httpMethod: ApiHttpMethod {
@@ -28,8 +28,8 @@ struct SubmitDeletionsRequest: ApiRequest {
     }
 
     var parameters: [String: Any]? {
-        let joinedKeys = self.keys.joined(separator: ",")
-        switch self.objectType {
+        let joinedKeys = keys.joined(separator: ",")
+        switch objectType {
         case .collection:
             return ["collectionKey": joinedKeys]
 
@@ -40,11 +40,11 @@ struct SubmitDeletionsRequest: ApiRequest {
             return ["searchKey": joinedKeys]
 
         case .settings:
-            return nil
+            return ["settingKey": joinedKeys]
         }
     }
 
     var headers: [String: String]? {
-        return ["If-Unmodified-Since-Version": self.version.description]
+        return ["If-Unmodified-Since-Version": version.description]
     }
 }
