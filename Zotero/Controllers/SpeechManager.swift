@@ -1409,7 +1409,9 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     var detectedLanguage: String?
     private var voice: AVSpeechSynthesisVoice?
     private var shouldReloadUtteranceOnResume = false
-    private var ignoreFinishCallCount = 0
+    /// The utterance being spoken. Synthesizer callbacks for any other utterance are ignored: stopping an utterance
+    /// to start another reports `didCancel`/`didFinish` (and possibly ranges) for the old one asynchronously.
+    private var currentUtterance: AVSpeechUtterance?
     /// Background task identifier to keep the app alive during page transitions
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     var speechRateModifier: Float {
@@ -1444,8 +1446,8 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func speak(segments: [SpeechDocumentParser.Segment], startPageTextOffset: Int) {
-        if synthesizer.isSpeaking {
-            ignoreFinishCallCount += 1
+        currentUtterance = nil
+        if synthesizer.isSpeaking || synthesizer.isPaused {
             synthesizer.stopSpeaking(at: .immediate)
         }
 
@@ -1477,6 +1479,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         let utterance = AVSpeechUtterance(string: remainingText)
         utterance.voice = self.voice
         utterance.rate = 0.5 * speechRateModifier
+        currentUtterance = utterance
         synthesizer.speak(utterance)
 
         func voice(for text: String) -> AVSpeechSynthesisVoice {
@@ -1504,8 +1507,8 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         if delegate.state.value == .initializing {
             finishSpeaking()
         } else {
-            // Ignore finish delegate, which would move us to another page
-            ignoreFinishCallCount = 1
+            // Clearing the current utterance ignores its cancel/finish callbacks, which would move us to another paragraph
+            currentUtterance = nil
             synthesizer.stopSpeaking(at: .immediate)
             finishSpeaking()
         }
@@ -1549,7 +1552,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         utteranceStartIndex = 0
         voice = nil
         shouldReloadUtteranceOnResume = false
-        ignoreFinishCallCount = 0
+        currentUtterance = nil
         endBackgroundTask()
         delegate.state.accept(.stopped)
     }
@@ -1572,28 +1575,30 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
 
 extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        guard utterance === currentUtterance else { return }
         finishSpeaking()
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+        guard utterance === currentUtterance else { return }
         delegate.state.accept(.paused)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        guard utterance === currentUtterance else { return }
         endBackgroundTask()
         delegate.state.accept(.speaking)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+        guard utterance === currentUtterance else { return }
         endBackgroundTask()
         delegate.state.accept(.speaking)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        guard ignoreFinishCallCount <= 0 else {
-            ignoreFinishCallCount -= 1
-            return
-        }
+        guard utterance === currentUtterance else { return }
+        currentUtterance = nil
 
         // Keep the app alive while transitioning to the next paragraph in background
         beginBackgroundTask()
@@ -1601,7 +1606,8 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-        guard characterRange.length > 0 else { return }
+        // A range of an old utterance would be offset by the current utterance's start.
+        guard utterance === currentUtterance, characterRange.length > 0 else { return }
         // AVSpeechSynthesizer reports ranges in UTF-16 code units of the utterance text, while all speech offsets
         // (page/paragraph offsets, tokenizer ranges, per-character rects) are `Character` offsets. Convert to
         // `Character` offsets first, otherwise multi-unit graphemes (composed accents, emoji, math italics) make the
