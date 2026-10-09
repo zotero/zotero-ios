@@ -97,10 +97,14 @@ final class MainViewController: UISplitViewController {
         super.viewIsAppearing(animated)
 
         if syncToolbarController == nil,
-           let progressObservable = controllers.userControllers?.syncScheduler.syncController.progressObservable,
-           let dbStorage = controllers.userControllers?.dbStorage,
+           let userControllers = controllers.userControllers,
            let masterController = viewControllers.first {
-            syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable, dbStorage: dbStorage)
+            syncToolbarController = SyncToolbarController(
+                parent: masterController,
+                progressObservable: userControllers.syncScheduler.syncController.progressObservable,
+                apiKeyForbiddenObservable: userControllers.isApiKeyForbidden.asObservable(),
+                dbStorage: userControllers.dbStorage
+            )
             syncToolbarController?.coordinatorDelegate = self
         }
     }

@@ -47,13 +47,14 @@ final class SyncToolbarController {
     private var pendingErrors: [Error]?
     private var timerDisposeBag: DisposeBag
     private var consecutiveErrorCount = 0
+    private var isApiKeyForbidden = false
     private var toolbarIsHidden: Bool {
         return toolbarBottom.constant != 0
     }
 
     weak var coordinatorDelegate: MainCoordinatorSyncToolbarDelegate?
 
-    init(parent: UIViewController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
+    init(parent: UIViewController, progressObservable: PublishSubject<SyncProgress>, apiKeyForbiddenObservable: Observable<Bool>, dbStorage: DbStorage) {
         viewController = parent
         self.dbStorage = dbStorage
         disposeBag = DisposeBag()
@@ -66,6 +67,11 @@ final class SyncToolbarController {
                               self?.update(progress: progress)
                           })
                           .disposed(by: disposeBag)
+        apiKeyForbiddenObservable.observe(on: MainScheduler.instance)
+                                 .subscribe(onNext: { [weak self] isForbidden in
+                                     self?.apiKeyForbiddenChanged(to: isForbidden)
+                                 })
+                                 .disposed(by: disposeBag)
 
         func setupToolbar() {
             let toolbar = UIToolbar()
@@ -93,6 +99,9 @@ final class SyncToolbarController {
     // MARK: - Actions
 
     private func update(progress: SyncProgress) {
+        // Login prompt stays visible until user logs in again, ignore sync progress until then.
+        guard !isApiKeyForbidden else { return }
+
         pendingErrors = nil
 
         switch progress {
@@ -108,10 +117,6 @@ final class SyncToolbarController {
             default:
                 consecutiveErrorCount += 1
                 pendingErrors = [error]
-                if case .forbidden = error {
-                    // Cancel pending hide, toolbar stays visible until user logs in again
-                    timerDisposeBag = DisposeBag()
-                }
                 if toolbarIsHidden {
                     setToolbar(hidden: false, animated: true)
                 }
@@ -141,6 +146,27 @@ final class SyncToolbarController {
             hideToolbarWithDelay()
 
         default: break
+        }
+    }
+
+    /// Shows login prompt when API key was rejected (by API or websocket). Hides it after user logged in again.
+    private func apiKeyForbiddenChanged(to isForbidden: Bool) {
+        guard isForbidden != isApiKeyForbidden else { return }
+        isApiKeyForbidden = isForbidden
+        timerDisposeBag = DisposeBag()
+
+        if isForbidden {
+            pendingErrors = [SyncError.Fatal.forbidden]
+            if toolbarIsHidden {
+                setToolbar(hidden: false, animated: true)
+            }
+            set(progress: .aborted(.forbidden))
+        } else {
+            pendingErrors = nil
+            consecutiveErrorCount = 0
+            if !toolbarIsHidden {
+                setToolbar(hidden: true, animated: true)
+            }
         }
     }
 
