@@ -159,6 +159,7 @@
 		61F0A1B32F9C0F1B00ABCDEF /* document_worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 61F0A1B22F9C0F1B00ABCDEF /* document_worker.html */; };
 		61F0A1B42F9C0F1B00ABCDEF /* document_worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 61F0A1B22F9C0F1B00ABCDEF /* document_worker.html */; };
 		61F6B8A22E95D00100A71F01 /* PDFReaderAnnotationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61F6B8A12E95D00100A71F01 /* PDFReaderAnnotationProvider.swift */; };
+		6A1C0DE12F9A000100B1A004 /* PDFLinkDestinationResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1C0DE12F9A000100B1A003 /* PDFLinkDestinationResolver.swift */; };
 		61FA14CE2B05081D00E7D423 /* TextConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CD2B05081D00E7D423 /* TextConverter.swift */; };
 		61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */; };
 		61FB13D72EECBE0A00329563 /* bitcoin_pdf_page_0_text.json in Sources */ = {isa = PBXBuildFile; fileRef = 61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */; };
@@ -1069,6 +1070,7 @@
 		B3A71F512EEC39D90006A737 /* AnnotationToolsSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A71F502EEC39D60006A737 /* AnnotationToolsSettingsAction.swift */; };
 		B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */; };
 		B3A95DAA29194BDE00BCCF11 /* DashedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A95DA929194BDE00BCCF11 /* DashedView.swift */; };
+		6A1C0DE12F9A000100B1A002 /* PDFLinkPreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1C0DE12F9A000100B1A001 /* PDFLinkPreviewViewController.swift */; };
 		B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */; };
 		B3AAABD82502A40900031065 /* searchresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD62502A40900031065 /* searchresponse_knownfields.json */; };
 		B3AAB0F8283B9915008188D6 /* LookupItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */; };
@@ -1586,6 +1588,7 @@
 		61F0A1AF2F9C0F1B00ABCDEF /* DocumentWorkerHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerHandling.swift; sourceTree = "<group>"; };
 		61F0A1B22F9C0F1B00ABCDEF /* document_worker.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = document_worker.html; sourceTree = "<group>"; };
 		61F6B8A12E95D00100A71F01 /* PDFReaderAnnotationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderAnnotationProvider.swift; sourceTree = "<group>"; };
+		6A1C0DE12F9A000100B1A003 /* PDFLinkDestinationResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFLinkDestinationResolver.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
 		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
 		61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_page_0_text.json; sourceTree = "<group>"; };
@@ -2406,6 +2409,7 @@
 		B3A71F502EEC39D60006A737 /* AnnotationToolsSettingsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolsSettingsAction.swift; sourceTree = "<group>"; };
 		B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKit+Extensions.swift"; sourceTree = "<group>"; };
 		B3A95DA929194BDE00BCCF11 /* DashedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashedView.swift; sourceTree = "<group>"; };
+		6A1C0DE12F9A000100B1A001 /* PDFLinkPreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFLinkPreviewViewController.swift; sourceTree = "<group>"; };
 		B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3AAABD62502A40900031065 /* searchresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_knownfields.json; sourceTree = "<group>"; };
 		B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupItemCell.swift; sourceTree = "<group>"; };
@@ -3578,6 +3582,7 @@
 				B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */,
 				B33AB487246D315F00490DDE /* MenuTrackingButton.swift */,
 				B3A95DA929194BDE00BCCF11 /* DashedView.swift */,
+				6A1C0DE12F9A000100B1A001 /* PDFLinkPreviewViewController.swift */,
 				B325C4092A7A8DE0008A2F11 /* FreeTextAnnotationView.swift */,
 				B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */,
 				B373879A28FEA0C7004E5031 /* PDFAnnotationsPreviewHandler.swift */,
@@ -4473,6 +4478,7 @@
 				31036750BE9088FB94205ED4 /* PDFReaderAnnotationKey.swift */,
 				B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */,
 				61F6B8A12E95D00100A71F01 /* PDFReaderAnnotationProvider.swift */,
+				6A1C0DE12F9A000100B1A003 /* PDFLinkDestinationResolver.swift */,
 				B3B953C7245981A600FC96DB /* PDFReaderState.swift */,
 				B35B473B25F11BCD0023B6F4 /* PDFSettings.swift */,
 				B310280C2B1E16F300E41554 /* PDFThumbnailsAction.swift */,
@@ -5740,6 +5746,7 @@
 			files = (
 				B311737B2AFCF004007D9741 /* AnnotationType.swift in Sources */,
 				B3A95DAA29194BDE00BCCF11 /* DashedView.swift in Sources */,
+				6A1C0DE12F9A000100B1A002 /* PDFLinkPreviewViewController.swift in Sources */,
 				B3593F1C2668E86100FA4BB2 /* SyncStylesDbRequest.swift in Sources */,
 				B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */,
 				52A94A0133C1789500B9D6E1 /* SetReaderScaleDbRequest.swift in Sources */,
@@ -5991,6 +5998,7 @@
 				B3593F56241A61C700760E20 /* CollectionCell.swift in Sources */,
 				B3B953C8245981A600FC96DB /* PDFReaderState.swift in Sources */,
 				61F6B8A22E95D00100A71F01 /* PDFReaderAnnotationProvider.swift in Sources */,
+				6A1C0DE12F9A000100B1A004 /* PDFLinkDestinationResolver.swift in Sources */,
 				B3D84BED27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift in Sources */,
 				B3F3D632255EC5F200F310C2 /* AnnotationViewHighlightContent.swift in Sources */,
 				B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */,
