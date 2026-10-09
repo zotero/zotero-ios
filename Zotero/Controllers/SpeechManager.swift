@@ -1357,7 +1357,7 @@ private protocol VoiceProcessor {
     /// playback may proceed, or the reason why it can't (a remote voice without credits left).
     func verifyPlaybackAllowed(completion: @escaping (SpeechState.OutOfCreditsReason?) -> Void)
     /// Starts speaking the page's `segments` (paragraphs, each with its page-text offset) from `startPageTextOffset`
-    /// (a character offset within the page's readable text). The local voice joins the segments into one utterance;
+    /// (a character offset within the page's readable text). The local voice speaks one segment per utterance;
     /// the remote voice reads them segment by segment.
     func speak(segments: [SpeechDocumentParser.Segment], startPageTextOffset: Int)
     func pause()
@@ -1399,10 +1399,11 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     private let synthesizer: AVSpeechSynthesizer
     private unowned let delegate: VoiceProcessorDelegate
 
-    private var text: String?
-    /// The start index offset in the original text where the current utterance begins.
+    /// Segments (paragraphs) of the page being read.
+    private var segments: [SpeechDocumentParser.Segment] = []
+    /// The page-text offset where the current utterance begins.
     /// AVSpeechSynthesizer reports ranges relative to the utterance text, so we need this
-    /// to convert back to ranges in the original full text.
+    /// to convert back to page-text offsets.
     private var utteranceStartIndex: Int = 0
     private(set) var preferredLanguage: String?
     var detectedLanguage: String?
@@ -1443,22 +1444,29 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func speak(segments: [SpeechDocumentParser.Segment], startPageTextOffset: Int) {
-        // Local voice reads the whole page as one utterance, so it joins the paragraphs into the page's readable text.
-        speak(pageText: segments.map(\.text).joined(separator: SpeechDocumentParser.segmentSeparator), startIndex: startPageTextOffset)
-    }
-
-    private func speak(pageText text: String, startIndex: Int) {
         if synthesizer.isSpeaking {
             ignoreFinishCallCount += 1
             synthesizer.stopSpeaking(at: .immediate)
         }
 
-        // `startIndex` is a `Character` offset in the page text. Clamped so that an out-of-range offset degrades to
-        // reading from the page's start/end instead of trapping when the text is indexed.
-        let startIndex = min(max(0, startIndex), text.count)
-        self.text = text
-        self.utteranceStartIndex = startIndex
-        let remainingText = String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.endIndex])
+        self.segments = segments
+        // Local voice reads one paragraph per utterance, `didFinish` continues with the next one. A whole page can't be
+        // one utterance: HTML/EPUB is a single page, and the system speech framework runs out of memory preprocessing
+        // a whole book.
+        guard let segment = segments.last(where: { $0.pageOffset <= startPageTextOffset }) ?? segments.first else {
+            continueWithNextParagraph()
+            return
+        }
+
+        // `startPageTextOffset` is a `Character` offset in the page text. Clamped so that an out-of-range offset degrades
+        // to reading from the paragraph's start/end instead of trapping when the text is indexed.
+        let startIndex = min(max(0, startPageTextOffset - segment.pageOffset), segment.text.count)
+        let remainingText = String(segment.text[segment.text.index(segment.text.startIndex, offsetBy: startIndex)..<segment.text.endIndex])
+        guard !remainingText.isEmpty else {
+            continueWithNextParagraph()
+            return
+        }
+        utteranceStartIndex = segment.pageOffset + startIndex
 
         // Language is detected once at session start, so the voice is resolved only the first time and then reused.
         // `self` is explicit because the local `voice(for:)` below shadows the property name.
@@ -1523,15 +1531,21 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func reloadUtterance() {
-        guard let text, let speechRange = delegate.speechRange else { return }
+        guard !segments.isEmpty, let speechRange = delegate.speechRange else { return }
         if synthesizer.isSpeaking {
             synthesizer.pauseSpeaking(at: .immediate)
         }
-        speak(pageText: text, startIndex: speechRange.location)
+        speak(segments: segments, startPageTextOffset: speechRange.location)
+    }
+
+    private func continueWithNextParagraph() {
+        if !delegate.goToNextPageIfAvailable() {
+            finishSpeaking()
+        }
     }
 
     private func finishSpeaking() {
-        text = nil
+        segments = []
         utteranceStartIndex = 0
         voice = nil
         shouldReloadUtteranceOnResume = false
@@ -1581,11 +1595,9 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
             return
         }
 
-        // Keep the app alive while transitioning to the next page in background
+        // Keep the app alive while transitioning to the next paragraph in background
         beginBackgroundTask()
-        if !delegate.goToNextPageIfAvailable() {
-            finishSpeaking()
-        }
+        continueWithNextParagraph()
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
