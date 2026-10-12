@@ -93,3 +93,19 @@ struct ReadLibraryItemsDbRequest: DbResponseRequest {
         return database.objects(RItem.self).filter(.items(for: libraryId))
     }
 }
+
+struct ReadCollectionItemsDbRequest: DbResponseRequest {
+    typealias Response = Results<RItem>
+
+    let collectionKey: String
+    let libraryId: LibraryIdentifier
+    let includeSubcollections: Bool
+    let sortType: ItemsSortType
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RItem> {
+        let keys = includeSubcollections ? database.selfAndSubcollectionKeys(for: collectionKey, libraryId: libraryId) : [collectionKey]
+        return database.objects(RItem.self).filter(.items(forCollections: keys, libraryId: libraryId)).sorted(by: sortType.descriptors)
+    }
+}

@@ -28,6 +28,8 @@ protocol SpeechManagerDelegate: AnyObject {
     associatedtype Index: Hashable
 
     var documentTitle: String? { get }
+    /// Authors of the document, shown with the title in Now Playing.
+    var documentAuthors: String? { get }
     /// File of the document being read. Used by `SpeechManager` to extract structured document text for the whole document.
     var documentFile: FileData? { get }
     /// File derived data (structured document text) is stored next to. Differs from `documentFile` when the reader works on a
@@ -87,6 +89,11 @@ protocol SpeechManagerDelegate: AnyObject {
 }
 
 extension SpeechManagerDelegate {
+    /// Default: Now Playing shows only the title.
+    var documentAuthors: String? {
+        return nil
+    }
+
     /// Default: the document file itself (PDF opens the attachment directly).
     var documentSidecarFile: FileData? {
         return documentFile
@@ -564,7 +571,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     return
                 }
                 // Playback is possible, so the audio session can be taken over from whatever else is playing.
-                nowPlayingManager.activate(title: delegate.documentTitle)
+                nowPlayingManager.activate(title: delegate.documentTitle, artist: delegate.documentAuthors)
                 // Set the session language from the document metadata before playback starts, so that the voice stays
                 // constant for the whole session. No-op when the user has already picked a language or it was already set.
                 applySessionLanguageIfNeeded(manager: self)
