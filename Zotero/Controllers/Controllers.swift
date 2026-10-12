@@ -40,7 +40,7 @@ final class Controllers {
     var userControllers: UserControllers?
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
-    private var didInitialize: Bool
+    private(set) var didInitialize: Bool
     @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
     fileprivate var needsBaseKeyMigration: Bool
     fileprivate static let childItemCollectionsFixVersion: Int = 1

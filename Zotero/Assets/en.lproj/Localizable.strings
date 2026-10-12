@@ -632,3 +632,16 @@
 "accessibility.speech.forward" = "Skip forward";
 "accessibility.speech.backward" = "Skip backward";
 "accessibility.open_document_accessibility" = "Open accessibility options";
+
+"carplay.loading" = "Loading…";
+"carplay.logged_out.title" = "Not Logged In";
+"carplay.logged_out.subtitle" = "Log in to Zotero on your iPhone.";
+"carplay.no_items.title" = "No Readable Items";
+"carplay.no_items.subtitle" = "Items with PDF, EPUB or HTML files appear here.";
+"carplay.subcollections" = "Subcollections";
+"carplay.items" = "Items";
+"carplay.download_failed" = "Couldn't download the file.";
+"carplay.read_aloud_unavailable" = "Read aloud in CarPlay currently supports only PDF files.";
+"carplay.processing_document" = "Processing document…";
+"carplay.processing_failed" = "Couldn't prepare the document for reading aloud.";
+"carplay.out_of_credits" = "You've run out of read aloud time.";
