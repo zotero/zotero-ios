@@ -14,6 +14,8 @@
 		B3AA10010001000000000002 /* ReadAloudResumePosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA10010001000000000003 /* ReadAloudResumePosition.swift */; };
 		2AEE7232A20C0644A40513F1 /* SpeechHighlightSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42AA9D784B9E233A7F57AC5 /* SpeechHighlightSessionManager.swift */; };
 		2E2BF2EF2B40911DF4BCEDA4 /* RDocumentAnnotationsCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */; };
+		332BEB24FB6B2752AB8847E8 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A205AF67B01BE4DC986DAA5 /* CarPlaySceneDelegate.swift */; };
+		B05F42D094AB47C286C46DB3 /* CarPlayReadAloudSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D76F687D3684D8CBB83AE85 /* CarPlayReadAloudSession.swift */; };
 		34319EFF474800EB6BA60376 /* StoreDocumentAnnotationsCacheDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB95656CF4AD91246DF78BDA /* StoreDocumentAnnotationsCacheDbRequest.swift */; };
 		39B480FDABABBF2D3FB95CC8 /* DocumentKeyCommandsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A58CEDE963D3EAA101BBCFE /* DocumentKeyCommandsHandler.swift */; };
 		417E71A0B5569A2CB7414341 /* PDFAnnotationsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6148A17CEF16C1C227498D0 /* PDFAnnotationsActionHandler.swift */; };
@@ -1394,6 +1396,7 @@
 		B3FE4B9C268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FE4B9B268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift */; };
 		B3FE79E32B332E5E009FBDBD /* CreateEditDownloadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30548F52B331B1A00853966 /* CreateEditDownloadDbRequest.swift */; };
 		B3FE79E42B333030009FBDBD /* DeleteDownloadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30548F72B331B2500853966 /* DeleteDownloadDbRequest.swift */; };
+		BA8BCD73DE217DC7EC85A893 /* CarPlayCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874F844832DEBF887B5BAADD /* CarPlayCoordinator.swift */; };
 		C988B9E9211AB3BFE72CFA11 /* RDocumentAnnotationsCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */; };
 		C9ECF06C37EDB9963713C4A0 /* RDocumentAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E83150004BDA76942E1350 /* RDocumentAnnotation.swift */; };
 		D1159AE7B0BBC3D7A1954D00 /* RDocumentAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E83150004BDA76942E1350 /* RDocumentAnnotation.swift */; };
@@ -1591,13 +1594,17 @@
 		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
 		61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_page_0_text.json; sourceTree = "<group>"; };
 		6869C0F7335B4F30B5D8C9EC /* ReadAttachmentUploadsDbRequestSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAttachmentUploadsDbRequestSpec.swift; sourceTree = "<group>"; };
+		874F844832DEBF887B5BAADD /* CarPlayCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarPlayCoordinator.swift; sourceTree = "<group>"; };
 		8A58CEDE963D3EAA101BBCFE /* DocumentKeyCommandsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentKeyCommandsHandler.swift; sourceTree = "<group>"; };
 		977B760291F3124DBBCC6203 /* LibraryScoped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryScoped.swift; sourceTree = "<group>"; };
+		9A205AF67B01BE4DC986DAA5 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
+		1D76F687D3684D8CBB83AE85 /* CarPlayReadAloudSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarPlayReadAloudSession.swift; sourceTree = "<group>"; };
 		A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateLoginSessionRequest.swift; sourceTree = "<group>"; };
 		A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateLoginSessionResponse.swift; sourceTree = "<group>"; };
 		A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckLoginSessionRequest.swift; sourceTree = "<group>"; };
 		A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckLoginSessionResponse.swift; sourceTree = "<group>"; };
 		A541AF4BA7600A430DF136C9 /* PDFAnnotationsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFAnnotationsAction.swift; sourceTree = "<group>"; };
+		AB4C6C1770F7DF1733011D91 /* ZoteroSimulator.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ZoteroSimulator.entitlements; sourceTree = "<group>"; };
 		ADB7B93609C1F05696319226 /* ReadAnnotationPagesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationPagesDbRequest.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -2750,6 +2757,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		356361CE48B66DF69F735B91 /* CarPlay */ = {
+			isa = PBXGroup;
+			children = (
+				874F844832DEBF887B5BAADD /* CarPlayCoordinator.swift */,
+				1D76F687D3684D8CBB83AE85 /* CarPlayReadAloudSession.swift */,
+				9A205AF67B01BE4DC986DAA5 /* CarPlaySceneDelegate.swift */,
+			);
+			name = CarPlay;
+			path = CarPlay;
+			sourceTree = "<group>";
+		};
 		61391B7B2B3C6E98003B314A /* CopyBibliography */ = {
 			isa = PBXGroup;
 			children = (
@@ -3256,6 +3274,7 @@
 				B36181ED24C9A7C000B30D56 /* Onboarding */,
 				B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */,
 				B3A081DC25D2D1420088EC24 /* ConflictViewControllerReceiver.swift */,
+				356361CE48B66DF69F735B91 /* CarPlay */,
 			);
 			path = Scenes;
 			sourceTree = "<group>";
@@ -3476,6 +3495,7 @@
 				B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */,
 				B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */,
 				61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */,
+				AB4C6C1770F7DF1733011D91 /* ZoteroSimulator.entitlements */,
 			);
 			path = Zotero;
 			sourceTree = "<group>";
@@ -6585,6 +6605,9 @@
 				B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */,
 				B387AE612F4759CC009D0DD5 /* LanguageDetector.swift in Sources */,
 				2AEE7232A20C0644A40513F1 /* SpeechHighlightSessionManager.swift in Sources */,
+				BA8BCD73DE217DC7EC85A893 /* CarPlayCoordinator.swift in Sources */,
+				332BEB24FB6B2752AB8847E8 /* CarPlaySceneDelegate.swift in Sources */,
+				B05F42D094AB47C286C46DB3 /* CarPlayReadAloudSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7351,6 +7374,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = Zotero/ZoteroSimulator.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
@@ -7402,6 +7426,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = Zotero/ZoteroSimulator.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
@@ -7707,6 +7732,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = Zotero/ZoteroSimulator.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
