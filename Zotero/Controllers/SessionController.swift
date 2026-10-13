@@ -77,6 +77,19 @@ final class SessionController: ObservableObject {
     }
 
     func register(userId: Int, username: String, displayName: String, apiToken: String) {
+        if let sessionData {
+            if sessionData.userId == userId {
+                // Same user logged in again (e.g. after API key was deleted). Keep current session so that local data are preserved, just replace API key.
+                self.defaults.username = username
+                self.defaults.displayName = displayName
+                self.secureStorage.apiToken = apiToken
+                self.sessionData = (userId, apiToken, sessionData.sessionId)
+                return
+            }
+            // Different user logged in, log out previous user first so that all local data are cleared.
+            reset()
+        }
+
         let sessionId = UUID().uuidString
         self.defaults.userId = userId
         self.defaults.username = username

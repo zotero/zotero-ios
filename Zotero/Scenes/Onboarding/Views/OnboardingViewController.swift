@@ -27,6 +27,8 @@ final class OnboardingViewController: UIViewController {
     @IBOutlet private weak var bottomStackViewWidth: NSLayoutConstraint!
 
     private let parentSize: CGSize
+    /// `true` when presented over logged in app (user needs to log in again), shows close button and dismisses after login.
+    private let isDismissable: Bool
     private unowned let htmlConverter: HtmlAttributedStringConverter
     private let loginViewModel: ViewModel<LoginActionHandler>
     private let loginActivityIndicator: UIActivityIndicatorView
@@ -47,8 +49,9 @@ final class OnboardingViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(size: CGSize, htmlConverter: HtmlAttributedStringConverter, loginViewModel: ViewModel<LoginActionHandler>) {
+    init(size: CGSize, htmlConverter: HtmlAttributedStringConverter, loginViewModel: ViewModel<LoginActionHandler>, isDismissable: Bool = false) {
         self.parentSize = size
+        self.isDismissable = isDismissable
         self.htmlConverter = htmlConverter
         self.loginViewModel = loginViewModel
         self.ignoreScrollDelegate = false
@@ -70,6 +73,9 @@ final class OnboardingViewController: UIViewController {
         self.setupPages(with: pages)
         self.setupPageControl(with: pages)
         self.setupLayout(with: self.parentSize)
+        if isDismissable {
+            setupCloseButton()
+        }
         updateLogin(state: loginViewModel.state)
 
         loginViewModel.stateObservable
@@ -124,6 +130,11 @@ final class OnboardingViewController: UIViewController {
 
     @IBAction private func showAbout() {
         self.coordinatorDelegate?.showAbout()
+    }
+
+    @objc private func close() {
+        loginViewModel.process(action: .cancelLoginSessionIfNeeded)
+        dismiss(animated: true)
     }
 
     // MARK: - Setups
@@ -217,6 +228,17 @@ final class OnboardingViewController: UIViewController {
         }
     }
 
+    private func setupCloseButton() {
+        let button = UIButton(type: .close)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(close), for: .touchUpInside)
+        view.addSubview(button)
+        NSLayoutConstraint.activate([
+            button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: 16)
+        ])
+    }
+
     private func setupPageControl(with pageData: [(String, UIImage)]) {
         self.pageControl.numberOfPages = pageData.count
         self.pageControl.currentPage = 0
@@ -237,6 +259,13 @@ final class OnboardingViewController: UIViewController {
 
     private func updateLogin(state: LoginState) {
         applyLoginState(state)
+
+        if isDismissable && state.sessionStatus == .completed {
+            authSession?.cancel()
+            authSession = nil
+            dismiss(animated: true)
+            return
+        }
 
         if let error = state.error {
             show(error: error)

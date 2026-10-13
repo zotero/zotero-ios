@@ -47,13 +47,14 @@ final class SyncToolbarController {
     private var pendingErrors: [Error]?
     private var timerDisposeBag: DisposeBag
     private var consecutiveErrorCount = 0
+    private var isApiKeyForbidden = false
     private var toolbarIsHidden: Bool {
         return toolbarBottom.constant != 0
     }
 
     weak var coordinatorDelegate: MainCoordinatorSyncToolbarDelegate?
 
-    init(parent: UIViewController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
+    init(parent: UIViewController, progressObservable: PublishSubject<SyncProgress>, apiKeyForbiddenObservable: Observable<Bool>, dbStorage: DbStorage) {
         viewController = parent
         self.dbStorage = dbStorage
         disposeBag = DisposeBag()
@@ -66,6 +67,11 @@ final class SyncToolbarController {
                               self?.update(progress: progress)
                           })
                           .disposed(by: disposeBag)
+        apiKeyForbiddenObservable.observe(on: MainScheduler.instance)
+                                 .subscribe(onNext: { [weak self] isForbidden in
+                                     self?.apiKeyForbiddenChanged(to: isForbidden)
+                                 })
+                                 .disposed(by: disposeBag)
 
         func setupToolbar() {
             let toolbar = UIToolbar()
@@ -93,6 +99,9 @@ final class SyncToolbarController {
     // MARK: - Actions
 
     private func update(progress: SyncProgress) {
+        // Login prompt stays visible until user logs in again, ignore sync progress until then.
+        guard !isApiKeyForbidden else { return }
+
         pendingErrors = nil
 
         switch progress {
@@ -140,11 +149,41 @@ final class SyncToolbarController {
         }
     }
 
-    private func showErrorAlert(with errors: [Error]) {
-        setToolbar(hidden: true, animated: true)
+    /// Shows login prompt when API key was rejected (by API or websocket). Hides it after user logged in again.
+    private func apiKeyForbiddenChanged(to isForbidden: Bool) {
+        guard isForbidden != isApiKeyForbidden else { return }
+        isApiKeyForbidden = isForbidden
+        timerDisposeBag = DisposeBag()
 
-        guard let error = errors.first else { return }
-        
+        if isForbidden {
+            pendingErrors = [SyncError.Fatal.forbidden]
+            if toolbarIsHidden {
+                setToolbar(hidden: false, animated: true)
+            }
+            set(progress: .aborted(.forbidden))
+        } else {
+            pendingErrors = nil
+            consecutiveErrorCount = 0
+            if !toolbarIsHidden {
+                setToolbar(hidden: true, animated: true)
+            }
+        }
+    }
+
+    private func showErrorAlert(with errors: [Error]) {
+        guard let error = errors.first else {
+            setToolbar(hidden: true, animated: true)
+            return
+        }
+        // Forbidden error stays visible until user logs in again
+        let isForbidden: Bool
+        if let error = error as? SyncError.Fatal, case .forbidden = error {
+            isForbidden = true
+        } else {
+            isForbidden = false
+            setToolbar(hidden: true, animated: true)
+        }
+
         var (message, data) = alertMessage(from: error)
         var showItemsData: (keys: [String], libraryId: LibraryIdentifier, collectionCustomType: CollectionIdentifier.CustomType)?
 
@@ -158,8 +197,14 @@ final class SyncToolbarController {
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
+            guard !isForbidden else { return }
             self?.pendingErrors = nil
         }))
+        if isForbidden {
+            controller.addAction(UIAlertAction(title: L10n.Onboarding.signIn, style: .default, handler: { [weak self] _ in
+                self?.coordinatorDelegate?.showLogin()
+            }))
+        }
         if let showItemsData {
             let title = showItemsData.keys.count == 1 ? L10n.Errors.SyncToolbar.showItem : L10n.Errors.SyncToolbar.showItems
             controller.addAction(UIAlertAction(title: title, style: .default, handler: { [weak self] _ in
@@ -328,7 +373,14 @@ final class SyncToolbarController {
     }
 
     private func set(progress: SyncProgress) {
-        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningLevel: .init(errorCount: consecutiveErrorCount)))
+        let warningLevel: WarningLevel?
+        if case .aborted(let error) = progress, case .forbidden = error {
+            // Sync won't recover until user logs in again
+            warningLevel = .critical
+        } else {
+            warningLevel = .init(errorCount: consecutiveErrorCount)
+        }
+        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningLevel: warningLevel))
         toolbar.setItems([item], animated: false)
     }
 

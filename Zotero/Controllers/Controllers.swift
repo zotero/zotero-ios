@@ -11,6 +11,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 import RealmSwift
+import RxCocoa
 import RxSwift
 
 /// Global controllers which don't need user session
@@ -209,7 +210,15 @@ final class Controllers {
 
     private func update(with data: SessionData?, isLogin: Bool, debugLogging: DebugLogging) {
         if let data {
-            set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
+            if let userControllers {
+                // Same user logged in again with new API key, keep current user data and continue syncing with new key.
+                // `SessionController` logs out previous user before registering a different one, so `userControllers` are already cleared in that case.
+                DDLogInfo("Controllers: same user re-authenticated")
+                apiClient.set(authToken: ("Bearer " + data.apiToken))
+                userControllers.reauthenticate(apiKey: data.apiToken)
+            } else {
+                set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
+            }
             apiKey = data.apiToken
         } else {
             clearSession()
@@ -322,6 +331,8 @@ final class UserControllers {
     private static let schemaVersion: UInt64 = 9
 
     private var disposeBag: DisposeBag
+    /// `true` when API key was rejected. Automatic sync stays disabled until app restart or new login.
+    let isApiKeyForbidden = BehaviorRelay(value: false)
 
     // MARK: - Lifecycle
 
@@ -452,8 +463,14 @@ final class UserControllers {
                 case .starting:
                     idleTimerController.startCustomIdleTimer()
 
-                case .finished, .aborted:
+                case .finished:
                     idleTimerController.stopCustomIdleTimer()
+
+                case .aborted(let error):
+                    idleTimerController.stopCustomIdleTimer()
+                    if case .forbidden = error {
+                        stopAutomaticSync()
+                    }
 
                 default:
                     idleTimerController.resetCustomTimer()
@@ -466,7 +483,8 @@ final class UserControllers {
             .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] changedLibraries in
-                self?.syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries))
+                guard let self, !isApiKeyForbidden.value else { return }
+                syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries))
             })
             .disposed(by: disposeBag)
 
@@ -475,25 +493,62 @@ final class UserControllers {
             .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] change in
+                guard let self else { return }
                 switch change {
                 case .translators:
-                    self?.translatorsAndStylesController.updateFromRepo(type: .notification)
+                    translatorsAndStylesController.updateFromRepo(type: .notification)
 
                 case .library(let libraryId, _):
-                    self?.syncScheduler.webSocketUpdate(libraryId: libraryId)
+                    guard !isApiKeyForbidden.value else { return }
+                    syncScheduler.webSocketUpdate(libraryId: libraryId)
                 }
             })
             .disposed(by: disposeBag)
 
+        webSocketController.forbiddenObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] in
+                self?.stopAutomaticSync()
+            })
+            .disposed(by: disposeBag)
+
+        guard !isApiKeyForbidden.value else {
+            DDLogWarn("Controllers: API key forbidden, skipping websocket connection and sync")
+            return
+        }
+
         // Connect to websockets and start sync
         webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
-            guard let self else { return }
-            // Call this before sync so that background uploads are updated and taken care of by sync if needed.
-            backgroundUploadObserver.updateSessions()
+            // We have to move to main thread so that the isApiKeyForbidden is updated (in case of 4403 the websocket controller first calls forbiddenObservable.on(.next(()))
+            // then the completion block, so isApiKeyForbidden is not updated when this completion block is called).
+            inMainThread { [weak self] in
+                guard let self, !isApiKeyForbidden.value else { return }
+                // Call this before sync so that background uploads are updated and taken care of by sync if needed.
+                backgroundUploadObserver.updateSessions()
 
-            let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
-            syncScheduler.request(sync: type, libraries: .all)
+                let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
+                syncScheduler.request(sync: type, libraries: .all)
+            }
         })
+    }
+
+    /// Stops websocket connection and automatic syncs after API key was rejected (HTTP 403 or WS 4403), so that we don't trigger rate limiting.
+    /// They stay stopped until app restart or new login, manual syncs are still allowed.
+    private func stopAutomaticSync() {
+        guard !isApiKeyForbidden.value else { return }
+        DDLogWarn("Controllers: API key forbidden, stopping websocket and automatic sync")
+        isApiKeyForbidden.accept(true)
+        // Remove queued syncs, they would fail with the same error.
+        syncScheduler.cancelSync()
+        webSocketController.disconnect(apiKey: nil)
+    }
+
+    /// Restarts websocket connection and sync with new API key after the same user logged in again.
+    /// - parameter apiKey: New API key.
+    fileprivate func reauthenticate(apiKey: String) {
+        disableSync(apiKey: nil)
+        isApiKeyForbidden.accept(false)
+        enableSync(apiKey: apiKey)
     }
 
     /// Cancels ongoing sync and stops websocket connection.

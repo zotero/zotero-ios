@@ -63,6 +63,7 @@ final class WebSocketController {
     private static let messageTimeout: Int = 30
     private static let clientErrorCloseCodes: ClosedRange<UInt16> = 4400...4499
     private static let rateLimitedCloseCode: UInt16 = 4429
+    fileprivate static let forbiddenCloseCode: UInt16 = 4403
 
     private let queue: DispatchQueue
     private let queueKey: DispatchSpecificKey<String>
@@ -456,6 +457,8 @@ class SubscriptionWebSocketController {
     }
 
     let transport: WebSocketController
+    /// Emits when server rejected the subscription value (e.g. invalid API key). Connection is not retried after that.
+    let forbiddenObservable: PublishSubject<Void>
     private let disposeBag: DisposeBag
 
     private var subscriptionValue: String?
@@ -466,6 +469,7 @@ class SubscriptionWebSocketController {
 
     init(lowPowerModeController: LowPowerModeController?) {
         transport = WebSocketController(lowPowerModeController: lowPowerModeController)
+        forbiddenObservable = PublishSubject()
         disposeBag = DisposeBag()
         subscriptionState = .disconnected
         retryCount = 0
@@ -596,7 +600,10 @@ class SubscriptionWebSocketController {
         DDLogWarn("\(logCategory): connection closed with client error \(code)")
         resetRetryState()
         clearSubscription()
-        // Let the caller continue (e.g. with sync), it doesn't depend on websocket connection.
+        if code == WebSocketController.forbiddenCloseCode {
+            forbiddenObservable.on(.next(()))
+        }
+        // Let the caller continue (e.g. with sync, which reports the error to the user), it doesn't depend on websocket connection.
         completionAction?()
         completionAction = nil
     }
