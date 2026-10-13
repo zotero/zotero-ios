@@ -493,12 +493,14 @@ final class UserControllers {
             .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] change in
+                guard let self else { return }
                 switch change {
                 case .translators:
-                    self?.translatorsAndStylesController.updateFromRepo(type: .notification)
+                    translatorsAndStylesController.updateFromRepo(type: .notification)
 
                 case .library(let libraryId, _):
-                    self?.syncScheduler.webSocketUpdate(libraryId: libraryId)
+                    guard !isApiKeyForbidden.value else { return }
+                    syncScheduler.webSocketUpdate(libraryId: libraryId)
                 }
             })
             .disposed(by: disposeBag)
@@ -517,12 +519,16 @@ final class UserControllers {
 
         // Connect to websockets and start sync
         webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
-            guard let self else { return }
-            // Call this before sync so that background uploads are updated and taken care of by sync if needed.
-            backgroundUploadObserver.updateSessions()
+            // We have to move to main thread so that the isApiKeyForbidden is updated (in case of 4403 the websocket controller first calls forbiddenObservable.on(.next(()))
+            // then the completion block, so isApiKeyForbidden is not updated when this completion block is called).
+            inMainThread { [weak self] in
+                guard let self, !isApiKeyForbidden.value else { return }
+                // Call this before sync so that background uploads are updated and taken care of by sync if needed.
+                backgroundUploadObserver.updateSessions()
 
-            let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
-            syncScheduler.request(sync: type, libraries: .all)
+                let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
+                syncScheduler.request(sync: type, libraries: .all)
+            }
         })
     }
 
