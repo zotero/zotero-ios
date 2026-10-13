@@ -533,7 +533,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
     private func updatePageIndicator(from state: HtmlEpubReaderState) {
         if let page = state.currentPage, let pagesCount = state.pagesCount {
-            pageIndicatorLabel?.text = "\(page.label) of \(pagesCount)"
+            pageIndicatorLabel?.text = "\(page.index + 1) of \(pagesCount)"
         }
         setPageIndicator(navBarHidden: navigationController?.navigationBar.isHidden ?? false, animated: true)
     }
