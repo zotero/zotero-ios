@@ -319,7 +319,7 @@ class WebViewHandler: NSObject {
             let task = session.dataTask(with: request) { [weak self] data, response, error in
                 guard let self else { return }
                 if let response = response as? HTTPURLResponse {
-                    handleResponse(data: data, response: response, request: request, successCodes: successCodes, messageId: messageId)
+                    handleResponse(data: data, response: response, request: request, host: host, originalHeaders: originalHeaders, successCodes: successCodes, messageId: messageId)
                 } else if let error {
                     sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
                 } else {
@@ -328,71 +328,71 @@ class WebViewHandler: NSObject {
             }
             task.resume()
         }
+    }
 
-        func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?) {
-            headers.forEach { key, value in
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-            if headers["User-Agent"] == nil {
-                if let url, shouldUsePlainUserAgent(for: url), let browserUserAgent {
-                    request.setValue(browserUserAgent, forHTTPHeaderField: "User-Agent")
-                } else if let userAgent {
-                    request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-                }
-            }
-            if headers["Referer"] == nil, let referer, !referer.isEmpty {
-                request.setValue(referer, forHTTPHeaderField: "Referer")
+    private func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?) {
+        headers.forEach { key, value in
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        if headers["User-Agent"] == nil {
+            if let url, shouldUsePlainUserAgent(for: url), let browserUserAgent {
+                request.setValue(browserUserAgent, forHTTPHeaderField: "User-Agent")
+            } else if let userAgent {
+                request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
             }
         }
+        if headers["Referer"] == nil, let referer, !referer.isEmpty {
+            request.setValue(referer, forHTTPHeaderField: "Referer")
+        }
+    }
 
-        func handleResponse(data: Data?, response: HTTPURLResponse, request: URLRequest, successCodes: [Int], messageId: Int) {
-            let statusCode = response.statusCode
-            let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
-            let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
+    private func handleResponse(data: Data?, response: HTTPURLResponse, request: URLRequest, host: String, originalHeaders: [String: String], successCodes: [Int], messageId: Int) {
+        let statusCode = response.statusCode
+        let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
+        let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
 
-            guard !isSuccess,
-                  let responseURL = response.url,
-                  let challenge = browserChallenge(for: responseURL, statusCode: statusCode, headers: response.allHeaderFields, responseText: responseText)
-            else {
+        guard !isSuccess,
+              let responseURL = response.url,
+              let challenge = browserChallenge(for: responseURL, statusCode: statusCode, headers: response.allHeaderFields, responseText: responseText)
+                else {
+            sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            guard !attemptedChallenges.contains(challenge.match) else {
                 sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
                 return
             }
-
-            DispatchQueue.main.async { [weak self] in
+            attemptedChallenges.insert(challenge.match)
+            let challengeURL = challenge.challengeURL(responseURL)
+            DDLogInfo("WebViewHandler: detected browser challenge at \(responseURL.absoluteString); clearing at \(challengeURL.absoluteString)")
+            didDetect(browserChallenge: challenge, url: challengeURL)
+            clear(challenge: challenge, at: challengeURL, for: messageId) { [weak self] success in
                 guard let self else { return }
-                guard !attemptedChallenges.contains(challenge.match) else {
+                guard success else {
+                    DDLogWarn("WebViewHandler: browser challenge not cleared at \(challengeURL.absoluteString)")
                     sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
                     return
                 }
-                attemptedChallenges.insert(challenge.match)
-                let challengeURL = challenge.challengeURL(responseURL)
-                DDLogInfo("WebViewHandler: detected browser challenge at \(responseURL.absoluteString); clearing at \(challengeURL.absoluteString)")
-                didDetect(browserChallenge: challenge, url: challengeURL)
-                clear(challenge: challenge, at: challengeURL, for: messageId) { [weak self] success in
+                DDLogInfo("WebViewHandler: browser challenge cleared, retrying \(responseURL.absoluteString)")
+                var retryRequest = request
+                retryRequest.setValue(nil, forHTTPHeaderField: "Cookie")
+                addAdditionalCookies(for: responseURL, host: host, existingHeaders: originalHeaders) { [weak self] retryHeaders in
                     guard let self else { return }
-                    guard success else {
-                        DDLogWarn("WebViewHandler: browser challenge not cleared at \(challengeURL.absoluteString)")
-                        sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
-                        return
-                    }
-                    DDLogInfo("WebViewHandler: browser challenge cleared, retrying \(responseURL.absoluteString)")
-                    var retryRequest = request
-                    retryRequest.setValue(nil, forHTTPHeaderField: "Cookie")
-                    addAdditionalCookies(for: responseURL, host: host, existingHeaders: originalHeaders) { [weak self] retryHeaders in
+                    applyHeaders(to: &retryRequest, headers: retryHeaders, url: retryRequest.url)
+                    let retryTask = session.dataTask(with: retryRequest) { [weak self] data, response, error in
                         guard let self else { return }
-                        applyHeaders(to: &retryRequest, headers: retryHeaders, url: retryRequest.url)
-                        let retryTask = session.dataTask(with: retryRequest) { [weak self] data, response, error in
-                            guard let self else { return }
-                            if let response = response as? HTTPURLResponse {
-                                sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
-                            } else if let error {
-                                sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
-                            } else {
-                                sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
-                            }
+                        if let response = response as? HTTPURLResponse {
+                            sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
+                        } else if let error {
+                            sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                        } else {
+                            sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
                         }
-                        retryTask.resume()
                     }
+                    retryTask.resume()
                 }
             }
         }
