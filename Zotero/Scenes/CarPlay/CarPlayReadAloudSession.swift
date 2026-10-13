@@ -10,12 +10,63 @@ import Foundation
 
 import CocoaLumberjackSwift
 import PSPDFKit
+import RxCocoa
 import RxSwift
 
-/// Read aloud of a PDF without a reader. Playback is controlled through the Now Playing controls.
-final class CarPlayReadAloudSession {
-    private let positionStoreDebounce: RxTimeInterval = .seconds(3)
+/// Read aloud of a document without a reader. Playback is controlled through the Now Playing controls.
+protocol CarPlayReadAloudSession: AnyObject {
+    var documentTitle: String? { get }
+    var state: BehaviorRelay<SpeechState> { get }
+    /// Progress of structured document text extraction, see `SpeechManager.extractionProgress`.
+    var extractionProgress: BehaviorRelay<Double?> { get }
 
+    func start()
+    func stop()
+}
+
+/// Stores the position where read aloud of a document is, debounced the same way as in the readers.
+final class CarPlayReadAloudPositionStore {
+    private let debounce: RxTimeInterval = .seconds(3)
+    private let key: String
+    private let libraryId: LibraryIdentifier
+    private unowned let dbStorage: DbStorage
+    /// Position waiting out the debounce before it's written to the database.
+    private var pending: (position: ReadAloudResumePosition, disposeBag: DisposeBag)?
+
+    init(key: String, libraryId: LibraryIdentifier, dbStorage: DbStorage) {
+        self.key = key
+        self.libraryId = libraryId
+        self.dbStorage = dbStorage
+    }
+
+    deinit {
+        flush()
+    }
+
+    func schedule(position: ReadAloudResumePosition) {
+        let disposeBag = DisposeBag()
+        pending = (position, disposeBag)
+
+        Single<Int>.timer(debounce, scheduler: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.flush()
+            })
+            .disposed(by: disposeBag)
+    }
+
+    /// Writes the pending position right away.
+    func flush() {
+        guard let (position, _) = pending else { return }
+        pending = nil
+        do {
+            try dbStorage.perform(request: StoreLastReadAloudPositionDbRequest(key: key, libraryId: libraryId, position: position), on: .main)
+        } catch let error {
+            DDLogError("CarPlayReadAloudPositionStore: can't store read aloud position - \(error)")
+        }
+    }
+}
+
+final class CarPlayPdfReadAloudSession {
     let key: String
     let libraryId: LibraryIdentifier
     let documentTitle: String?
@@ -24,12 +75,11 @@ final class CarPlayReadAloudSession {
     private let pageCount: UInt
     private let dbStorage: DbStorage
     private let remoteVoicesController: RemoteVoicesController
+    private let positionStore: CarPlayReadAloudPositionStore
     private let disposeBag: DisposeBag
     /// Page being read. Starts at the page the reader was last left on, like the reader does.
     private var currentPage: UInt
-    /// Position waiting out the debounce before it's written to the database.
-    private var pendingPositionStore: (position: ReadAloudResumePosition, disposeBag: DisposeBag)?
-    private(set) var speechManager: SpeechManager<CarPlayReadAloudSession>!
+    private var speechManager: SpeechManager<CarPlayPdfReadAloudSession>!
 
     init(
         key: String,
@@ -50,47 +100,29 @@ final class CarPlayReadAloudSession {
         pageCount = Document(url: file.createUrl()).pageCount
         currentPage = 0
         remoteVoicesController = RemoteVoicesController(apiClient: apiClient)
+        positionStore = CarPlayReadAloudPositionStore(key: key, libraryId: libraryId, dbStorage: dbStorage)
         disposeBag = DisposeBag()
 
-        let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        speechManager = SpeechManager(
-            delegate: self,
-            voiceLanguage: language,
-            remoteVoiceTier: Defaults.shared.remoteVoiceTier,
-            remoteVoicesController: remoteVoicesController,
-            documentWorkerController: documentWorkerController
-        )
-        speechManager.onSpeakingPositionChanged = { [weak self] position in
-            self?.scheduleStore(position: position)
-        }
-        speechManager.state
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] state in
-                guard state.isStoppedOrOutOfCredits else { return }
-                // Reading ended, so the position it stopped at is written right away.
-                self?.storePendingPosition()
-            })
-            .disposed(by: disposeBag)
+        speechManager = SpeechManager<CarPlayPdfReadAloudSession>.carPlay(delegate: self, key: key, libraryId: libraryId, dbStorage: dbStorage, remoteVoicesController: remoteVoicesController, documentWorkerController: documentWorkerController)
+        speechManager.observePosition(storingIn: positionStore, disposeBag: disposeBag)
+    }
+}
+
+extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
+    var state: BehaviorRelay<SpeechState> {
+        return speechManager.state
     }
 
-    deinit {
-        storePendingPosition()
+    var extractionProgress: BehaviorRelay<Double?> {
+        return speechManager.extractionProgress
     }
 
     /// Starts reading where reading aloud of this document last left off, otherwise at the page the reader was last left on.
     func start() {
-        let documentData: ReadDocumentDataDbRequest.Response?
-        do {
-            documentData = try dbStorage.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: "0"), on: .main)
-        } catch let error {
-            DDLogError("CarPlayReadAloudSession: can't read document data - \(error)")
-            documentData = nil
-        }
-
+        let documentData = CarPlayReadAloudSessionHelper.documentData(key: key, libraryId: libraryId, defaultPageValue: "0", dbStorage: dbStorage)
         if let page = documentData.flatMap({ UInt($0.page) }), page < pageCount {
             currentPage = page
         }
-
         if let position = documentData?.lastReadAloudPosition {
             speechManager.start(.resume(position))
         } else {
@@ -100,34 +132,11 @@ final class CarPlayReadAloudSession {
 
     func stop() {
         speechManager.stop()
-        storePendingPosition()
-    }
-
-    // MARK: - Position storing
-
-    private func scheduleStore(position: ReadAloudResumePosition) {
-        let disposeBag = DisposeBag()
-        pendingPositionStore = (position, disposeBag)
-
-        Single<Int>.timer(positionStoreDebounce, scheduler: MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
-                self?.storePendingPosition()
-            })
-            .disposed(by: disposeBag)
-    }
-
-    private func storePendingPosition() {
-        guard let (position, _) = pendingPositionStore else { return }
-        pendingPositionStore = nil
-        do {
-            try dbStorage.perform(request: StoreLastReadAloudPositionDbRequest(key: key, libraryId: libraryId, position: position), on: .main)
-        } catch let error {
-            DDLogError("CarPlayReadAloudSession: can't store read aloud position - \(error)")
-        }
+        positionStore.flush()
     }
 }
 
-extension CarPlayReadAloudSession: SpeechManagerDelegate {
+extension CarPlayPdfReadAloudSession: SpeechManagerDelegate {
     var documentPassword: String? {
         return nil
     }
@@ -173,4 +182,50 @@ extension CarPlayReadAloudSession: SpeechManagerDelegate {
     func createAnnotation(ofType tool: AnnotationTool, color: String, position: ReadAloudPosition, onPage pageIndex: UInt) {}
 
     func clearAnnotationPreview() {}
+}
+
+enum CarPlayReadAloudSessionHelper {
+    static func documentData(key: String, libraryId: LibraryIdentifier, defaultPageValue: String, dbStorage: DbStorage) -> ReadDocumentDataDbRequest.Response? {
+        do {
+            return try dbStorage.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: defaultPageValue), on: .main)
+        } catch let error {
+            DDLogError("CarPlayReadAloudSession: can't read document data - \(error)")
+            return nil
+        }
+    }
+}
+
+extension SpeechManager {
+    /// Speech manager set up the same way as in the readers: the document's stored language and the selected voice tier.
+    static func carPlay(
+        delegate: Delegate,
+        key: String,
+        libraryId: LibraryIdentifier,
+        dbStorage: DbStorage,
+        remoteVoicesController: RemoteVoicesController,
+        documentWorkerController: DocumentWorkerController
+    ) -> SpeechManager<Delegate> {
+        let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
+        return SpeechManager(
+            delegate: delegate,
+            voiceLanguage: language,
+            remoteVoiceTier: Defaults.shared.remoteVoiceTier,
+            remoteVoicesController: remoteVoicesController,
+            documentWorkerController: documentWorkerController
+        )
+    }
+
+    /// Stores the reported reading position, right away once reading ends.
+    func observePosition(storingIn positionStore: CarPlayReadAloudPositionStore, disposeBag: DisposeBag) {
+        onSpeakingPositionChanged = { [weak positionStore] position in
+            positionStore?.schedule(position: position)
+        }
+        state
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak positionStore] state in
+                guard state.isStoppedOrOutOfCredits else { return }
+                positionStore?.flush()
+            })
+            .disposed(by: disposeBag)
+    }
 }
