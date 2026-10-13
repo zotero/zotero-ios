@@ -817,6 +817,12 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 pageView?.zoomView?.setZoomScale(zoomScale, animated: false)
             }
         }
+        if !(pageView.gestureRecognizers ?? []).contains(where: { $0 is InternalLinkLongPressGestureRecognizer }) {
+            let recognizer = InternalLinkLongPressGestureRecognizer(target: self, action: #selector(PDFDocumentViewController.showInternalLinkPreview))
+            recognizer.minimumPressDuration = 0.4
+            recognizer.delegate = self
+            pageView.addGestureRecognizer(recognizer)
+        }
         parentDelegate?.pageDidAppear(PageIndex(pageIndex))
     }
 
@@ -1414,3 +1420,49 @@ extension PDFDocumentViewController: PSPDFKitUI.ScrubberBarDelegate {
 }
 
 extension PDFDocumentViewController: ParentWithSidebarDocumentController {}
+
+// MARK: - Internal link preview
+
+private final class InternalLinkLongPressGestureRecognizer: UILongPressGestureRecognizer {}
+
+extension PDFDocumentViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let recognizer = gestureRecognizer as? InternalLinkLongPressGestureRecognizer else { return true }
+        // Annotation tools own the touch while active.
+        return pdfController?.annotationStateManager.state == nil && internalLink(at: recognizer.location(in: recognizer.view), in: recognizer.view) != nil
+    }
+
+    /// Finds the internal link annotation (one with a go-to action) under `location`.
+    private func internalLink(at location: CGPoint, in view: UIView?) -> (link: LinkAnnotation, destinationPageIndex: PageIndex)? {
+        guard let pageView = view as? PDFPageView, let document = pdfController?.document else { return nil }
+        let point = pageView.convert(location, to: pageView.pdfCoordinateSpace)
+        let links = document.annotationsForPage(at: pageView.pageIndex, type: .link) ?? []
+        for case let link as LinkAnnotation in links {
+            if let action = link.action as? GoToAction, action.pageIndex != PageIndex(NSNotFound), link.boundingBox.contains(point) {
+                return (link, action.pageIndex)
+            }
+        }
+        return nil
+    }
+
+    @objc fileprivate func showInternalLinkPreview(_ recognizer: InternalLinkLongPressGestureRecognizer) {
+        guard recognizer.state == .began,
+              let pageView = recognizer.view as? PDFPageView,
+              let (link, destinationPageIndex) = internalLink(at: recognizer.location(in: pageView), in: pageView),
+              let document = pdfController?.document,
+              presentedViewController == nil
+        else { return }
+
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        let offsetFromTop = document.fileURL.flatMap({ PDFLinkDestinationResolver.destinationOffsetFromTop(of: link.boundingBox, on: pageView.pageIndex, in: $0) })
+        let controller = PDFLinkPreviewViewController(document: document, pageIndex: destinationPageIndex, offsetFromTop: offsetFromTop, appearance: appearance)
+        controller.modalPresentationStyle = .popover
+        if let popover = controller.popoverPresentationController {
+            popover.sourceView = pageView
+            popover.sourceRect = pageView.convert(link.boundingBox, from: pageView.pdfCoordinateSpace)
+            popover.permittedArrowDirections = [.up, .down]
+            popover.delegate = controller
+        }
+        present(controller, animated: true)
+    }
+}
