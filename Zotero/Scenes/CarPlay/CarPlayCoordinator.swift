@@ -154,12 +154,12 @@ final class CarPlayCoordinator: NSObject {
 
     // MARK: - Read aloud
 
-    /// Reads the downloaded attachment aloud. Only PDFs are supported for now.
+    /// Reads the downloaded attachment aloud.
     private func open(attachmentKey key: String, parentKey: String?) {
         guard let attachment = attachmentRows[key]?.first(where: { $0.row != nil })?.attachment else { return }
         guard FeatureGates.enabled.contains(.speech),
               case .file(let filename, let contentType, _, _, _) = attachment.type,
-              contentType == "application/pdf",
+              Self.readableContentTypes.contains(contentType),
               let userControllers = controllers.userControllers,
               let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType) as? FileData
         else {
@@ -172,21 +172,28 @@ final class CarPlayCoordinator: NSObject {
 
         // Now Playing shows the parent item, a standalone attachment shows itself.
         let item = try? userControllers.dbStorage.perform(request: ReadItemDbRequest(libraryId: attachment.libraryId, key: parentKey ?? attachment.key), on: .main)
-        let session = CarPlayReadAloudSession(
-            key: attachment.key,
-            libraryId: attachment.libraryId,
-            file: file,
-            title: item?.displayTitle ?? attachment.title,
-            authors: item?.creatorSummary.flatMap({ $0.isEmpty ? nil : $0 }),
-            dbStorage: userControllers.dbStorage,
-            documentWorkerController: userControllers.documentWorkerController,
-            apiClient: controllers.apiClient
-        )
+        let title = item?.displayTitle ?? attachment.title
+        let authors = item?.creatorSummary.flatMap({ $0.isEmpty ? nil : $0 })
+        let session: CarPlayReadAloudSession
+        do {
+            session = try createReadAloudSession(
+                attachment: attachment,
+                contentType: contentType,
+                file: file,
+                title: title,
+                authors: authors,
+                userControllers: userControllers
+            )
+        } catch let error {
+            DDLogError("CarPlayCoordinator: can't create read aloud session - \(error)")
+            showAlert(title: L10n.Carplay.processingFailed)
+            return
+        }
         readAloudSession = session
         showProcessing(title: session.documentTitle ?? attachment.title, session: session)
         session.start()
 
-        session.speechManager.state
+        session.state
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
                 guard let self else { return }
@@ -211,6 +218,42 @@ final class CarPlayCoordinator: NSObject {
             .disposed(by: readAloudDisposeBag)
     }
 
+    private func createReadAloudSession(
+        attachment: Attachment,
+        contentType: String,
+        file: FileData,
+        title: String,
+        authors: String?,
+        userControllers: UserControllers
+    ) throws -> CarPlayReadAloudSession {
+        switch contentType {
+        case "application/pdf":
+            return CarPlayPdfReadAloudSession(
+                key: attachment.key,
+                libraryId: attachment.libraryId,
+                file: file,
+                title: title,
+                authors: authors,
+                dbStorage: userControllers.dbStorage,
+                documentWorkerController: userControllers.documentWorkerController,
+                apiClient: controllers.apiClient
+            )
+
+        default:
+            return try CarPlayHtmlEpubReadAloudSession(
+                key: attachment.key,
+                libraryId: attachment.libraryId,
+                file: file,
+                title: title,
+                authors: authors,
+                dbStorage: userControllers.dbStorage,
+                fileStorage: controllers.fileStorage,
+                documentWorkerController: userControllers.documentWorkerController,
+                apiClient: controllers.apiClient
+            )
+        }
+    }
+
     private func stopReadAloud() {
         readAloudDisposeBag = DisposeBag()
         readAloudSession?.stop()
@@ -227,7 +270,7 @@ final class CarPlayCoordinator: NSObject {
             }
         }
 
-        session.speechManager.extractionProgress
+        session.extractionProgress
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { progress in
                 row.playbackProgress = CGFloat(progress ?? 0)

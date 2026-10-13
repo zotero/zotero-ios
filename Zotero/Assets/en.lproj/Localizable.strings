@@ -641,7 +641,7 @@
 "carplay.subcollections" = "Subcollections";
 "carplay.items" = "Items";
 "carplay.download_failed" = "Couldn't download the file.";
-"carplay.read_aloud_unavailable" = "Read aloud in CarPlay currently supports only PDF files.";
+"carplay.read_aloud_unavailable" = "Read aloud isn't available for this file.";
 "carplay.processing_document" = "Processing document…";
 "carplay.processing_failed" = "Couldn't prepare the document for reading aloud.";
 "carplay.out_of_credits" = "You've run out of read aloud time.";
