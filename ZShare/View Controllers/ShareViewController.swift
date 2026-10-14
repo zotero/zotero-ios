@@ -792,7 +792,8 @@ final class ShareViewController: UIViewController {
             schemaController: schemaController,
             dbStorage: dbStorage,
             dateParser: dateParser,
-            fileStorage: fileStorage
+            fileStorage: fileStorage,
+            lookupTiming: .shareExtension
         )
         recognizerController.webViewProvider = self
 

@@ -45,13 +45,13 @@ final class LookupWebViewHandler: WebViewHandler {
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<LookupData, Swift.Error>>
 
-    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController, types: TranslatorsAndStylesController.Types) {
+    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController, types: TranslatorsAndStylesController.Types, timing: Timing = .mainApp) {
         self.translatorsController = translatorsController
         self.types = types
         observable = PublishSubject()
         disposeBag = DisposeBag()
 
-        super.init(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
+        super.init(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }), timing: timing)
 
         receivedMessageHandler = { [weak self] name, body in
             self?.receiveMessage(name: name, body: body)
@@ -193,6 +193,10 @@ final class LookupWebViewHandler: WebViewHandler {
     private static let turnstileHosts: Set<String> = ["search.worldcat.org"]
 
     override func browserChallenge(for url: URL, statusCode: Int, headers: [AnyHashable: Any], responseText: String) -> BrowserChallenge? {
+        return Self.turnstileChallenge(for: url, statusCode: statusCode, responseText: responseText)
+    }
+
+    static func turnstileChallenge(for url: URL, statusCode: Int, responseText: String) -> BrowserChallenge? {
         guard statusCode == 403,
               let host = turnstileHost(for: url),
               responseText.range(of: "turnstile_required", options: [.caseInsensitive]) != nil
@@ -218,12 +222,12 @@ final class LookupWebViewHandler: WebViewHandler {
     }
 
     override func shouldUsePlainUserAgent(for url: URL) -> Bool {
-        return turnstileHost(for: url) != nil
+        return Self.turnstileHost(for: url) != nil
     }
 
     override func additionalCookieNames(for url: URL) -> Set<String> {
         var names = super.additionalCookieNames(for: url)
-        if turnstileHost(for: url) != nil {
+        if Self.turnstileHost(for: url) != nil {
             names.insert("turnstile_passed")
         }
         return names
@@ -233,7 +237,7 @@ final class LookupWebViewHandler: WebViewHandler {
         DDLogInfo("LookupWebViewHandler: detected browser challenge for \(url?.absoluteString ?? "-")")
     }
 
-    private func turnstileHost(for url: URL) -> String? {
+    private static func turnstileHost(for url: URL) -> String? {
         guard let host = url.host(percentEncoded: false)?.lowercased(),
               Self.turnstileHosts.contains(host)
         else { return nil }
