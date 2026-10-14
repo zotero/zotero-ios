@@ -1608,7 +1608,6 @@
 		A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckLoginSessionRequest.swift; sourceTree = "<group>"; };
 		A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckLoginSessionResponse.swift; sourceTree = "<group>"; };
 		A541AF4BA7600A430DF136C9 /* PDFAnnotationsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFAnnotationsAction.swift; sourceTree = "<group>"; };
-		AB4C6C1770F7DF1733011D91 /* ZoteroSimulator.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ZoteroSimulator.entitlements; sourceTree = "<group>"; };
 		ADB7B93609C1F05696319226 /* ReadAnnotationPagesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationPagesDbRequest.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -3501,7 +3500,6 @@
 				B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */,
 				B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */,
 				61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */,
-				AB4C6C1770F7DF1733011D91 /* ZoteroSimulator.entitlements */,
 			);
 			path = Zotero;
 			sourceTree = "<group>";
@@ -7382,7 +7380,6 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
-				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = Zotero/ZoteroSimulator.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
@@ -7434,7 +7431,6 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
-				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = Zotero/ZoteroSimulator.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
@@ -7740,7 +7736,6 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
-				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = Zotero/ZoteroSimulator.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
