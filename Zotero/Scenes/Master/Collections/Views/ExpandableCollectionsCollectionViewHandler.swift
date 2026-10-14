@@ -184,6 +184,15 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDelegate {
                 }
                 actions.append(createBibliography)
 
+                // CarPlay shows only My Library.
+                if viewModel.state.library.identifier.isMyLibrary {
+                    let title = collection.showsInCarPlay ? L10n.Collections.hideFromCarplay : L10n.Collections.showInCarplay
+                    let carPlay = UIAction(title: title, image: UIImage(systemName: "car")) { [weak viewModel] _ in
+                        viewModel?.process(action: .toggleShowsInCarPlay(collection))
+                    }
+                    actions.append(carPlay)
+                }
+
                 if viewModel.state.library.metadataEditable {
                     let delete = UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak viewModel] _ in
                         viewModel?.process(action: .deleteCollection(key))
