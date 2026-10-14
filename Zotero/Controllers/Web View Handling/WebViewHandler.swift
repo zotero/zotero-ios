@@ -17,6 +17,11 @@ protocol WebViewProvider: AnyObject {
     func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView
 }
 
+protocol WebViewChallengePresenter: AnyObject {
+    func showBrowserChallenge(in webView: WKWebView, cancelled: @escaping () -> Void, finished: @escaping () -> Void, presented: @escaping () -> Void)
+    func dismissBrowserChallenge(in webView: WKWebView, completion: @escaping () -> Void)
+}
+
 class WebViewHandler: NSObject {
     enum Error: Swift.Error {
         case webViewMissing
@@ -66,6 +71,7 @@ class WebViewHandler: NSObject {
 
     private weak var webView: WKWebView?
     weak var webViewProvider: WebViewProvider?
+    var challengePresenter: WebViewChallengePresenter?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
