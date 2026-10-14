@@ -19,9 +19,17 @@ protocol CarPlayReadAloudSession: AnyObject {
     var state: BehaviorRelay<SpeechState> { get }
     /// Progress of structured document text extraction, see `SpeechManager.extractionProgress`.
     var extractionProgress: BehaviorRelay<Double?> { get }
+    var voice: SpeechVoice? { get }
+    var language: String? { get }
+    var detectedLanguage: String { get }
+    var remoteVoicesController: RemoteVoicesController { get }
 
     func start()
     func stop()
+    func pause()
+    func resume()
+    /// Applies the voice and language selected in voice settings, the same way the readers do.
+    func apply(voiceChange: ReadAloudVoiceChange)
 }
 
 /// Stores the position where read aloud of a document is, debounced the same way as in the readers.
@@ -74,7 +82,7 @@ final class CarPlayPdfReadAloudSession {
     let documentFile: FileData?
     private let pageCount: UInt
     private let dbStorage: DbStorage
-    private let remoteVoicesController: RemoteVoicesController
+    let remoteVoicesController: RemoteVoicesController
     private let positionStore: CarPlayReadAloudPositionStore
     private let disposeBag: DisposeBag
     /// Page being read. Starts at the page the reader was last left on, like the reader does.
@@ -133,6 +141,30 @@ extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
     func stop() {
         speechManager.stop()
         positionStore.flush()
+    }
+
+    var voice: SpeechVoice? {
+        return speechManager.voice
+    }
+
+    var language: String? {
+        return speechManager.language
+    }
+
+    var detectedLanguage: String {
+        return speechManager.detectedLanguage
+    }
+
+    func pause() {
+        speechManager.pause()
+    }
+
+    func resume() {
+        speechManager.resume()
+    }
+
+    func apply(voiceChange: ReadAloudVoiceChange) {
+        speechManager.apply(voiceChange: voiceChange, key: key, libraryId: libraryId, dbStorage: dbStorage)
     }
 }
 
@@ -213,6 +245,16 @@ extension SpeechManager {
             remoteVoicesController: remoteVoicesController,
             documentWorkerController: documentWorkerController
         )
+    }
+
+    /// Stores the document's language and switches the voice, like `ReadAloudViewHandler` does when the voice picker closes.
+    func apply(voiceChange change: ReadAloudVoiceChange, key: String, libraryId: LibraryIdentifier, dbStorage: DbStorage) {
+        do {
+            try dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: change.preferredLanguage), on: .main)
+        } catch let error {
+            DDLogError("SpeechManager: can't store speech language - \(error)")
+        }
+        set(voice: change.voice, preferredLanguage: change.preferredLanguage)
     }
 
     /// Stores the reported reading position, right away once reading ends.

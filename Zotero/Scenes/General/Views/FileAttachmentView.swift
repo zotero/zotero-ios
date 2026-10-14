@@ -45,7 +45,7 @@ final class FileAttachmentView: UIView {
         case failed, missing, download
     }
     
-    private static let size: CGFloat = 28
+    static let size: CGFloat = 28
     private static let badgeDetailBorderWidth: CGFloat = 1.5
     private static let badgeListBorderWidth: CGFloat = 1
     private static let progressCircleWidth: CGFloat = 1.5
