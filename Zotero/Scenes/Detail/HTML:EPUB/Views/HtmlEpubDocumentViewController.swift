@@ -375,7 +375,7 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     /// Parses a reader read-aloud segment JSON dictionary into a `SpeechReaderSegment`.
-    private static func parseReaderSegment(_ dictionary: [String: Any]) -> SpeechReaderSegment? {
+    static func parseReaderSegment(_ dictionary: [String: Any]) -> SpeechReaderSegment? {
         guard let text = dictionary["text"] as? String,
               let position = dictionary["position"] as? [String: Any],
               let start = intArray(position["start"]),
@@ -388,7 +388,7 @@ class HtmlEpubDocumentViewController: UIViewController {
         return (value as? [Any])?.compactMap { ($0 as? NSNumber)?.intValue }
     }
 
-    private static func parseSDTPosition(_ value: Any?) -> SDTPosition? {
+    static func parseSDTPosition(_ value: Any?) -> SDTPosition? {
         guard let position = value as? [String: Any], let start = intArray(position["start"]), let end = intArray(position["end"]) else { return nil }
         return SDTPosition(start: start, end: end)
     }
