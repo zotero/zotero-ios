@@ -191,14 +191,14 @@ class WebViewHandler: NSObject {
     }
 
     func load(webUrl: URL) -> Single<()> {
-        guard let webView else {
+        guard webView != nil else {
             DDLogError("WebViewHandler: web view is nil")
             return .error(Error.webViewMissing)
         }
         let request = URLRequest(url: webUrl)
         // Share extension started crashing when `load()` was called immediately, a little delay fixed the crash (##616)
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-            webView.load(request)
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [weak self] in
+            self?.webView?.load(request)
         }
         return createWebLoadedSingle()
     }
@@ -521,8 +521,8 @@ class WebViewHandler: NSObject {
 extension WebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // Wait for javascript to load
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-            self.webDidLoad?(.success(()))
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [weak self] in
+            self?.webDidLoad?(.success(()))
         }
     }
 
