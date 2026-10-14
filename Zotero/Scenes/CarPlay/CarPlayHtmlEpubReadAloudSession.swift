@@ -239,7 +239,7 @@ final class CarPlayHtmlEpubReadAloudSession {
     let documentFile: FileData?
     private let reader: CarPlayHtmlEpubReader
     private let dbStorage: DbStorage
-    private let remoteVoicesController: RemoteVoicesController
+    let remoteVoicesController: RemoteVoicesController
     private let positionStore: CarPlayReadAloudPositionStore
     private let disposeBag: DisposeBag
     private var speechManager: SpeechManager<CarPlayHtmlEpubReadAloudSession>!
@@ -303,6 +303,30 @@ extension CarPlayHtmlEpubReadAloudSession: CarPlayReadAloudSession {
     func stop() {
         speechManager.stop()
         positionStore.flush()
+    }
+
+    var voice: SpeechVoice? {
+        return speechManager.voice
+    }
+
+    var language: String? {
+        return speechManager.language
+    }
+
+    var detectedLanguage: String {
+        return speechManager.detectedLanguage
+    }
+
+    func pause() {
+        speechManager.pause()
+    }
+
+    func resume() {
+        speechManager.resume()
+    }
+
+    func apply(voiceChange: ReadAloudVoiceChange) {
+        speechManager.apply(voiceChange: voiceChange, key: key, libraryId: libraryId, dbStorage: dbStorage)
     }
 }
 
