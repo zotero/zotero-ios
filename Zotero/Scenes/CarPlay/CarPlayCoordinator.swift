@@ -13,6 +13,7 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
+@MainActor
 final class CarPlayCoordinator: NSObject {
     /// Row showing an attachment icon which follows the attachment's download state. Rows are replaced whenever their
     /// template reloads, so they're held weakly.
@@ -40,12 +41,10 @@ final class CarPlayCoordinator: NSObject {
         }
     }
 
+    /// Content types which can be read aloud.
+    private static let readableContentTypes: Set<String> = ["application/pdf"]
     /// Maximum depth of the template stack for audio apps. Pushing past it raises an exception.
     private static let maximumTemplateDepth = 5
-    /// Depth available for browsing, one level is left for the processing/Now Playing template.
-    private static let maximumBrowsingDepth = maximumTemplateDepth - 1
-    /// Content types which can be read aloud.
-    private static let readableContentTypes: Set<String> = ["application/pdf", "application/epub+zip", "text/html"]
     /// CarPlay shows only the personal library.
     private static let libraryId: LibraryIdentifier = .custom(.myLibrary)
 
@@ -65,6 +64,10 @@ final class CarPlayCoordinator: NSObject {
     private var readAloudDisposeBag = DisposeBag()
     /// Shown while the document of the read aloud session is being processed, replaced by Now Playing once reading starts.
     private var processingTemplate: CPListTemplate?
+    /// Voice settings opened from Now Playing.
+    private var voiceSettings: CarPlayVoiceSettings?
+    /// Whether reading should resume once the voice settings close, like `ReadAloudViewHandler.wasPlayingBeforeVoiceChange`.
+    private var wasPlayingBeforeVoiceSettings = false
 
     init(interfaceController: CPInterfaceController, controllers: Controllers) {
         self.interfaceController = interfaceController
@@ -254,7 +257,55 @@ final class CarPlayCoordinator: NSObject {
         }
     }
 
+    // MARK: - Voice settings
+
+    private func showVoiceSettings() {
+        guard voiceSettings == nil, let session = readAloudSession, let voice = session.voice else { return }
+        // Now Playing is normally right above the collection, but CarPlay's own Now Playing button can push it anywhere. The
+        // settings and language screens have to fit under the template depth limit, pushing past it raises an exception.
+        let depth = interfaceController.templates.count
+        guard depth + 1 <= Self.maximumTemplateDepth else {
+            DDLogWarn("CarPlayCoordinator: no room for voice settings at depth \(depth)")
+            return
+        }
+        let state = session.state.value
+        wasPlayingBeforeVoiceSettings = state.isSpeakingOrLoading || state.isOutOfCredits
+        session.pause()
+
+        let settings = CarPlayVoiceSettings(
+            interfaceController: interfaceController,
+            selectedVoice: voice,
+            language: session.language,
+            detectedLanguage: session.detectedLanguage,
+            remoteVoicesController: session.remoteVoicesController,
+            allowsLanguageScreen: depth + 2 <= Self.maximumTemplateDepth
+        )
+        voiceSettings = settings
+        interfaceController.pushTemplate(settings.settingsTemplate, animated: true) { [weak self] _, error in
+            guard let error else { return }
+            DDLogError("CarPlayCoordinator: can't push voice settings - \(error)")
+            self?.closeVoiceSettings()
+        }
+    }
+
+    /// Applies the selected voice and resumes reading, like `ReadAloudViewHandler` does when the voice picker closes.
+    private func closeVoiceSettings() {
+        guard let settings = voiceSettings else { return }
+        voiceSettings = nil
+        settings.stopSamples()
+        if let change = settings.voiceChange {
+            readAloudSession?.apply(voiceChange: change)
+        }
+        if wasPlayingBeforeVoiceSettings {
+            readAloudSession?.resume()
+            wasPlayingBeforeVoiceSettings = false
+        }
+    }
+
     private func stopReadAloud() {
+        voiceSettings?.stopSamples()
+        voiceSettings = nil
+        wasPlayingBeforeVoiceSettings = false
         readAloudDisposeBag = DisposeBag()
         readAloudSession?.stop()
         readAloudSession = nil
@@ -264,10 +315,16 @@ final class CarPlayCoordinator: NSObject {
         let row = CPListItem(text: L10n.Carplay.processingDocument, detailText: nil)
         let template = CPListTemplate(title: title, sections: [CPListSection(items: [row])])
         processingTemplate = template
-        interfaceController.pushTemplate(template, animated: true) { _, error in
-            if let error {
-                DDLogError("CarPlayCoordinator: can't push processing template - \(error)")
+
+        // Processing and Now Playing are shown right above the collection (the attachments screen is closed), so that voice
+        // settings and its language screen fit under the template depth limit of CarPlay (5).
+        let templates = interfaceController.templates
+        if templates.count > 2 {
+            interfaceController.pop(to: templates[1], animated: false) { [weak self] _, _ in
+                self?.push(processingTemplate: template)
             }
+        } else {
+            push(processingTemplate: template)
         }
 
         session.extractionProgress
@@ -276,6 +333,14 @@ final class CarPlayCoordinator: NSObject {
                 row.playbackProgress = CGFloat(progress ?? 0)
             })
             .disposed(by: readAloudDisposeBag)
+    }
+
+    private func push(processingTemplate template: CPListTemplate) {
+        interfaceController.pushTemplate(template, animated: true) { _, error in
+            if let error {
+                DDLogError("CarPlayCoordinator: can't push processing template - \(error)")
+            }
+        }
     }
 
     private func hideProcessing() {
@@ -290,6 +355,12 @@ final class CarPlayCoordinator: NSObject {
         guard let processingTemplate else { return }
         self.processingTemplate = nil
         let nowPlaying = CPNowPlayingTemplate.shared
+        if let image = UIImage(systemName: "gearshape") {
+            let settings = CPNowPlayingImageButton(image: image) { [weak self] _ in
+                self?.showVoiceSettings()
+            }
+            nowPlaying.updateNowPlayingButtons([settings])
+        }
 
         guard interfaceController.topTemplate === processingTemplate else {
             interfaceController.pushTemplate(nowPlaying, animated: true, completion: nil)
@@ -320,14 +391,16 @@ final class CarPlayCoordinator: NSObject {
         let template = CPListTemplate(title: L10n.Libraries.myLibrary, sections: [])
 
         do {
-            let collections = try dbStorage.perform(request: ReadCollectionsDbRequest(libraryId: Self.libraryId), on: .main)
+            let collections = try dbStorage.perform(request: ReadCarPlayCollectionsDbRequest(libraryId: Self.libraryId), on: .main)
             bind(template, to: [token(for: collections)]) { [weak self] in
                 guard let self else { return [] }
-                // Same order as the collections list in the app. Trash is left out.
-                let rootCollections = [Collection(custom: .all), Collection(custom: .recentlyRead)]
-                    + subcollections(of: nil, in: collections).map({ Collection(object: $0) })
-                    + [Collection(custom: .publications), Collection(custom: .unfiled)]
-                return [CPListSection(items: collectionRows(for: rootCollections, depth: 2, dbStorage: dbStorage, limit: CPListTemplate.maximumItemCount))]
+                // Collections marked to be shown in CarPlay are listed without hierarchy, between the custom collections
+                // in the same order as in the app.
+                let sortedCollections = collections
+                    .sorted(by: { $0.name.compare($1.name, options: [.numeric], locale: Locale.autoupdatingCurrent) == .orderedAscending })
+                    .map({ Collection(object: $0) })
+                let rootCollections = [Collection(custom: .recentlyRead)] + sortedCollections + [Collection(custom: .publications)]
+                return [CPListSection(items: collectionRows(for: rootCollections, dbStorage: dbStorage, limit: CPListTemplate.maximumItemCount))]
             }
         } catch let error {
             DDLogError("CarPlayCoordinator: can't load collections - \(error)")
@@ -336,58 +409,28 @@ final class CarPlayCoordinator: NSObject {
         return template
     }
 
-    /// - parameter depth: Depth of the template in the template stack, the root template is at depth 1.
-    private func createCollectionTemplate(collection: Collection, depth: Int, dbStorage: DbStorage) -> CPListTemplate {
+    private func createCollectionTemplate(collection: Collection, dbStorage: DbStorage) -> CPListTemplate {
         let template = CPListTemplate(title: collection.name, sections: [])
         template.emptyViewTitleVariants = [L10n.Carplay.NoItems.title]
         template.emptyViewSubtitleVariants = [L10n.Carplay.NoItems.subtitle]
 
         do {
-            let collections = try dbStorage.perform(request: ReadCollectionsDbRequest(libraryId: Self.libraryId), on: .main)
             let items: Results<RItem>
-            // Key of the collection whose subcollections are listed, nil if they are not listed.
-            let subcollectionsParentKey: String?
-
             switch collection.identifier {
             case .collection(let key):
-                // A subcollection needs two more templates (its own and the attachments of its items). Deeper
-                // subcollections are not shown, their items are listed in this collection instead.
-                let showsSubcollections = depth + 2 <= Self.maximumBrowsingDepth
-                subcollectionsParentKey = showsSubcollections ? key : nil
-                let request = ReadCollectionItemsDbRequest(
-                    collectionKey: key,
-                    libraryId: Self.libraryId,
-                    includeSubcollections: !showsSubcollections || Defaults.shared.showSubcollectionItems,
-                    sortType: Defaults.shared.itemsSortType
-                )
+                // Subcollections are not listed, so their items are always shown in the collection.
+                let request = ReadCollectionItemsDbRequest(collectionKey: key, libraryId: Self.libraryId, includeSubcollections: true, sortType: Defaults.shared.itemsSortType)
                 items = try dbStorage.perform(request: request, on: .main)
 
             case .custom, .search:
-                subcollectionsParentKey = nil
                 let request = ReadItemsDbRequest(collectionId: collection.identifier, libraryId: Self.libraryId, sortType: Defaults.shared.itemsSortType)
                 items = try dbStorage.perform(request: request, on: .main)
             }
 
-            bind(template, to: [token(for: collections), token(for: items)]) { [weak self] in
+            bind(template, to: [token(for: items)]) { [weak self] in
                 guard let self else { return [] }
-                var sections: [CPListSection] = []
-                var remaining = CPListTemplate.maximumItemCount
-
-                if let subcollectionsParentKey {
-                    let subcollections = subcollections(of: subcollectionsParentKey, in: collections).map({ Collection(object: $0) })
-                    let rows = collectionRows(for: subcollections, depth: depth + 1, dbStorage: dbStorage, limit: remaining)
-                    if !rows.isEmpty {
-                        sections.append(CPListSection(items: rows, header: L10n.Carplay.subcollections, sectionIndexTitle: nil))
-                        remaining -= rows.count
-                    }
-                }
-
-                let rows = itemRows(for: items, limit: remaining)
-                if !rows.isEmpty {
-                    sections.append(CPListSection(items: rows, header: sections.isEmpty ? nil : L10n.Carplay.items, sectionIndexTitle: nil))
-                }
-
-                return sections
+                let rows = itemRows(for: items, limit: CPListTemplate.maximumItemCount)
+                return rows.isEmpty ? [] : [CPListSection(items: rows)]
             }
         } catch let error {
             DDLogError("CarPlayCoordinator: can't load collection \(collection.identifier.id) - \(error)")
@@ -411,15 +454,15 @@ final class CarPlayCoordinator: NSObject {
 
     // MARK: - Rows
 
-    private func collectionRows(for collections: [Collection], depth: Int, dbStorage: DbStorage, limit: Int) -> [CPListItem] {
+    private func collectionRows(for collections: [Collection], dbStorage: DbStorage, limit: Int) -> [CPListItem] {
         return collections.prefix(limit).map { collection in
-            let row = CPListItem(text: collection.name, detailText: nil, image: UIImage(named: collection.iconName), accessoryImage: nil, accessoryType: .disclosureIndicator)
+            let row = CPListItem(text: collection.name, detailText: nil, image: iconImage(named: collection.iconName), accessoryImage: nil, accessoryType: .disclosureIndicator)
             row.handler = { [weak self] _, completion in
                 guard let self else {
                     completion()
                     return
                 }
-                push(createCollectionTemplate(collection: collection, depth: depth, dbStorage: dbStorage), completion: completion)
+                push(createCollectionTemplate(collection: collection, dbStorage: dbStorage), completion: completion)
             }
             return row
         }
@@ -442,7 +485,7 @@ final class CarPlayCoordinator: NSObject {
             let row = CPListItem(
                 text: title,
                 detailText: item.creatorSummary.flatMap({ $0.isEmpty ? nil : $0 }),
-                image: UIImage(named: ItemCellModel.typeIconName(for: item)),
+                image: iconImage(named: ItemCellModel.typeIconName(for: item)),
                 accessoryImage: nil,
                 accessoryType: .none
             )
@@ -467,12 +510,7 @@ final class CarPlayCoordinator: NSObject {
 
     // MARK: - Helpers
 
-    private func subcollections(of parentKey: String?, in collections: Results<RCollection>) -> [RCollection] {
-        return collections.filter({ $0.parentKey == parentKey })
-            .sorted(by: { $0.name.compare($1.name, options: [.numeric], locale: Locale.autoupdatingCurrent) == .orderedAscending })
-    }
-
-    /// Stored PDF, EPUB and HTML attachments of an item, or the item itself if it's such a standalone attachment.
+    /// Stored attachments of an item which can be read aloud, or the item itself if it's such a standalone attachment.
     private func readableAttachments(for item: RItem) -> [Attachment] {
         let candidates: [RItem]
         if item.rawType == ItemTypes.attachment {
@@ -569,13 +607,30 @@ final class CarPlayCoordinator: NSObject {
         }
 
         let main = assets.main.image(compatibleWith: traitCollection)
-        guard let badge = assets.badge?.image(compatibleWith: traitCollection) else { return main }
+        let badge = assets.badge?.image(compatibleWith: traitCollection)
 
-        // The badge is centered on the bottom right corner of the main image, like in `FileAttachmentView`.
-        let size = CGSize(width: main.size.width + (badge.size.width / 2), height: main.size.height + (badge.size.height / 2))
+        // Drawn into the same area as `FileAttachmentView`: the main image centered and the badge centered on its bottom right
+        // corner. CarPlay shows images in their own size, so all icons need the same size.
+        let size = CGSize(width: FileAttachmentView.size, height: FileAttachmentView.size)
         return UIGraphicsImageRenderer(size: size, format: UIGraphicsImageRendererFormat(for: traitCollection)).image { _ in
-            main.draw(at: .zero)
-            badge.draw(at: CGPoint(x: main.size.width - (badge.size.width / 2), y: main.size.height - (badge.size.height / 2)))
+            let mainOrigin = CGPoint(x: (size.width - main.size.width) / 2, y: (size.height - main.size.height) / 2)
+            main.draw(at: mainOrigin)
+            guard let badge else { return }
+            let badgeCenter = CGPoint(x: mainOrigin.x + main.size.width - 0.5, y: mainOrigin.y + main.size.height - 0.5)
+            badge.draw(at: CGPoint(x: badgeCenter.x - (badge.size.width / 2), y: badgeCenter.y - (badge.size.height / 2)))
+        }
+    }
+
+    /// Item type or collection icon drawn into the same area as in the app's lists (scaled to fit 28x28). CarPlay shows images
+    /// in their own size and icons differ in size (PNG and SVG assets), so they'd show in different sizes otherwise.
+    private func iconImage(named name: String) -> UIImage? {
+        let traitCollection = interfaceController.carTraitCollection
+        guard let image = UIImage(named: name, in: nil, compatibleWith: traitCollection), image.size.width > 0, image.size.height > 0 else { return nil }
+        let size = CGSize(width: 28, height: 28)
+        let scale = min(size.width / image.size.width, size.height / image.size.height)
+        let drawSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        return UIGraphicsImageRenderer(size: size, format: UIGraphicsImageRendererFormat(for: traitCollection)).image { _ in
+            image.draw(in: CGRect(origin: CGPoint(x: (size.width - drawSize.width) / 2, y: (size.height - drawSize.height) / 2), size: drawSize))
         }
     }
 
@@ -619,6 +674,13 @@ extension CarPlayCoordinator: CPInterfaceControllerDelegate {
         if aTemplate === processingTemplate {
             processingTemplate = nil
             stopReadAloud()
+        }
+
+        // Voice settings close once both their screens are gone.
+        if let voiceSettings,
+           !interfaceController.templates.contains(voiceSettings.settingsTemplate),
+           !(voiceSettings.languageTemplate.flatMap({ interfaceController.templates.contains($0) }) ?? false) {
+            closeVoiceSettings()
         }
     }
 }

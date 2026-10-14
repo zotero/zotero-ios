@@ -228,9 +228,13 @@ final class NowPlayingManager {
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        // Set explicitly, so that the system (e.g. CarPlay) doesn't derive the state from audio session activity, which doesn't
+        // match speech playback.
+        MPNowPlayingInfoCenter.default().playbackState = isPlaying ? .playing : .paused
     }
 
     private func clearNowPlayingInfo() {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        MPNowPlayingInfoCenter.default().playbackState = .stopped
     }
 }
