@@ -135,25 +135,31 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
                 return
             }
 
-            searchController.overrideUserInterfaceStyle = userInterfaceStyle
-            setupPresentation(for: searchController, with: sender)
+            let controller = presentationController(for: searchController, with: sender)
             searchController.text = text
 
-            navigationController?.present(searchController, animated: true, completion: nil)
+            navigationController?.present(controller, animated: true, completion: nil)
             return
         }
 
         let handler = HtmlEpubSearchHandler(viewModel: viewModel, documentController: documentController)
         let viewController = DocumentSearchViewController(text: text, handler: handler)
-        viewController.overrideUserInterfaceStyle = userInterfaceStyle
-        setupPresentation(for: viewController, with: sender)
-        self.searchController = viewController
-        self.navigationController?.present(viewController, animated: true, completion: nil)
+        let controller = presentationController(for: viewController, with: sender)
+        searchController = viewController
+        navigationController?.present(controller, animated: true, completion: nil)
 
-        func setupPresentation(for pdfSearchController: DocumentSearchViewController, with sender: UIBarButtonItem) {
-            pdfSearchController.modalPresentationStyle = .popover
-            pdfSearchController.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
-            pdfSearchController.popoverPresentationController?.sourceRect = .zero
+        func presentationController(for searchController: DocumentSearchViewController, with sender: UIBarButtonItem) -> UIViewController {
+            let controller: UIViewController
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                controller = searchController
+            } else {
+                controller = searchController.navigationController ?? UINavigationController(rootViewController: searchController)
+            }
+            controller.overrideUserInterfaceStyle = userInterfaceStyle
+            controller.modalPresentationStyle = .popover
+            controller.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
+            controller.popoverPresentationController?.sourceRect = .zero
+            return controller
         }
     }
 

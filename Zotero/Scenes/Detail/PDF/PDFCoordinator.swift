@@ -157,25 +157,31 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
                 return
             }
 
-            existing.overrideUserInterfaceStyle = userInterfaceStyle
-            setupPresentation(for: existing, with: sender)
+            let controller = presentationController(for: existing, with: sender)
             existing.text = text
 
-            self.navigationController?.present(existing, animated: true, completion: nil)
+            navigationController?.present(controller, animated: true, completion: nil)
             return
         }
 
         let handler = PDFSearchHandler(document: document, documentController: documentController)
         let viewController = DocumentSearchViewController(text: text, handler: handler)
-        viewController.overrideUserInterfaceStyle = userInterfaceStyle
-        setupPresentation(for: viewController, with: sender)
-        self.searchController = viewController
-        self.navigationController?.present(viewController, animated: true, completion: nil)
+        let controller = presentationController(for: viewController, with: sender)
+        searchController = viewController
+        navigationController?.present(controller, animated: true, completion: nil)
 
-        func setupPresentation(for pdfSearchController: DocumentSearchViewController, with sender: UIBarButtonItem) {
-            pdfSearchController.modalPresentationStyle = .popover
-            pdfSearchController.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
-            pdfSearchController.popoverPresentationController?.sourceRect = .zero
+        func presentationController(for pdfSearchController: DocumentSearchViewController, with sender: UIBarButtonItem) -> UIViewController {
+            let controller: UIViewController
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                controller = pdfSearchController
+            } else {
+                controller = pdfSearchController.navigationController ?? UINavigationController(rootViewController: pdfSearchController)
+            }
+            controller.overrideUserInterfaceStyle = userInterfaceStyle
+            controller.modalPresentationStyle = .popover
+            controller.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
+            controller.popoverPresentationController?.sourceRect = .zero
+            return controller
         }
     }
 
