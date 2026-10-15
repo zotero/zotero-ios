@@ -23,6 +23,8 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func showReader(document: PSPDFKit.Document, userInterfaceStyle: UIUserInterfaceStyle)
+    /// Shows the structured text of the document in its own reader, continuing the state this reader is in.
+    func showReadingMode(document: PSPDFKit.Document, userInterfaceStyle: UIUserInterfaceStyle, sourceContext: ReadingModeSourceContext)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
@@ -247,6 +249,27 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+
+    func showReadingMode(document: PSPDFKit.Document, userInterfaceStyle: UIUserInterfaceStyle, sourceContext: ReadingModeSourceContext) {
+        DDLogInfo("PDFCoordinator: show reading mode")
+        guard let detailCoordinator = parentCoordinator as? DetailCoordinator else {
+            return
+        }
+        let controller = detailCoordinator.createHtmlEpubController(
+            key: key,
+            parentKey: parentKey,
+            libraryId: libraryId,
+            url: url,
+            readerURL: nil,
+            kind: .standaloneReadingMode(sourceType: "pdf"),
+            // Reading mode displays the structured text, but its figures, equations and tables are rendered from the
+            // document, which only this reader can render.
+            pageRegionRenderer: PSPDFKitPageRegionRenderer(document: document),
+            sourceContext: sourceContext
+        )
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        navigationController?.present(controller, animated: false, completion: nil)
     }
 
     func showCitation(for itemId: String, libraryId: LibraryIdentifier) {
