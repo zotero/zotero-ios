@@ -200,6 +200,20 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations"])
     }
 
+    // MARK: - Document previews
+
+    static var documentPreviews: File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["previews"])
+    }
+
+    static func documentPreviews(for libraryId: LibraryIdentifier) -> File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["previews", libraryId.folderName])
+    }
+
+    static func documentPreview(key: String, libraryId: LibraryIdentifier) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["previews", libraryId.folderName], name: key, contentType: "image/jpeg")
+    }
+
     // MARK: - Share extension
 
     static func shareExtensionDownload(key: String, ext: String) -> File {

@@ -27,6 +27,7 @@ final class Controllers {
     let translatorsAndStylesController: TranslatorsAndStylesController
     let annotationPreviewController: AnnotationPreviewController
     let pdfThumbnailController: PDFThumbnailController
+    let documentPreviewController: DocumentPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -91,6 +92,7 @@ final class Controllers {
         self.translatorsAndStylesController = translatorsAndStylesController
         annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         pdfThumbnailController = PDFThumbnailController(fileStorage: fileStorage)
+        documentPreviewController = DocumentPreviewController(fileStorage: fileStorage)
         self.urlDetector = urlDetector
         dateParser = DateParser()
         htmlAttributedStringConverter = HtmlAttributedStringConverter()
