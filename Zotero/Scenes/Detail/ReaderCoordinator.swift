@@ -100,6 +100,49 @@ protocol ReaderAnnotationsDelegate: AnyObject {
 
 protocol ReaderCoordinator: Coordinator, ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
     var controllers: Controllers { get }
+    var searchController: DocumentSearchViewController? { get set }
+
+    func showSearch(text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, createHandler: @escaping () -> DocumentSearchHandler)
+}
+
+extension ReaderCoordinator {
+    func showSearch(text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, createHandler: @escaping () -> DocumentSearchHandler) {
+        DDLogInfo("ReaderCoordinator: show search")
+
+        if let searchController {
+            if let controller = searchController.presentingViewController {
+                controller.dismiss(animated: true) { [weak self] in
+                    self?.showSearch(text: text, sender: sender, userInterfaceStyle: userInterfaceStyle, createHandler: createHandler)
+                }
+                return
+            }
+
+            let controller = presentationController(for: searchController)
+            searchController.text = text
+
+            navigationController?.present(controller, animated: true, completion: nil)
+            return
+        }
+
+        let viewController = DocumentSearchViewController(text: text, handler: createHandler())
+        let controller = presentationController(for: viewController)
+        searchController = viewController
+        navigationController?.present(controller, animated: true, completion: nil)
+
+        func presentationController(for searchController: DocumentSearchViewController) -> UIViewController {
+            let controller: UIViewController
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                controller = searchController
+            } else {
+                controller = searchController.navigationController ?? UINavigationController(rootViewController: searchController)
+            }
+            controller.overrideUserInterfaceStyle = userInterfaceStyle
+            controller.modalPresentationStyle = .popover
+            controller.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
+            controller.popoverPresentationController?.sourceRect = .zero
+            return controller
+        }
+    }
 }
 
 extension ReaderCoordinator {
