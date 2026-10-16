@@ -43,7 +43,7 @@ protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
 final class PDFCoordinator: ReaderCoordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-    private var searchController: DocumentSearchViewController?
+    var searchController: DocumentSearchViewController?
     weak var navigationController: UINavigationController?
 
     private let key: String
@@ -147,41 +147,8 @@ final class PDFCoordinator: ReaderCoordinator {
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     func showSearch(document: PSPDFKit.Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle) {
-        DDLogInfo("PDFCoordinator: show search")
-
-        if let existing = self.searchController {
-            if let controller = existing.presentingViewController {
-                controller.dismiss(animated: true) { [weak self] in
-                    self?.showSearch(document: document, documentController: documentController, text: text, sender: sender, userInterfaceStyle: userInterfaceStyle)
-                }
-                return
-            }
-
-            let controller = presentationController(for: existing, with: sender)
-            existing.text = text
-
-            navigationController?.present(controller, animated: true, completion: nil)
-            return
-        }
-
-        let handler = PDFSearchHandler(document: document, documentController: documentController)
-        let viewController = DocumentSearchViewController(text: text, handler: handler)
-        let controller = presentationController(for: viewController, with: sender)
-        searchController = viewController
-        navigationController?.present(controller, animated: true, completion: nil)
-
-        func presentationController(for pdfSearchController: DocumentSearchViewController, with sender: UIBarButtonItem) -> UIViewController {
-            let controller: UIViewController
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                controller = pdfSearchController
-            } else {
-                controller = pdfSearchController.navigationController ?? UINavigationController(rootViewController: pdfSearchController)
-            }
-            controller.overrideUserInterfaceStyle = userInterfaceStyle
-            controller.modalPresentationStyle = .popover
-            controller.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
-            controller.popoverPresentationController?.sourceRect = .zero
-            return controller
+        showSearch(text: text, sender: sender, userInterfaceStyle: userInterfaceStyle) {
+            PDFSearchHandler(document: document, documentController: documentController)
         }
     }
 

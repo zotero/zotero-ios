@@ -29,7 +29,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
-    private var searchController: DocumentSearchViewController?
+    var searchController: DocumentSearchViewController?
 
     private let key: String
     private let parentKey: String?
@@ -125,41 +125,8 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
         sender: UIBarButtonItem,
         userInterfaceStyle: UIUserInterfaceStyle
     ) {
-        DDLogInfo("PDFCoordinator: show search")
-
-        if let searchController {
-            if let controller = searchController.presentingViewController {
-                controller.dismiss(animated: true) { [weak self] in
-                    self?.showSearch(viewModel: viewModel, documentController: documentController, text: text, sender: sender, userInterfaceStyle: userInterfaceStyle)
-                }
-                return
-            }
-
-            let controller = presentationController(for: searchController, with: sender)
-            searchController.text = text
-
-            navigationController?.present(controller, animated: true, completion: nil)
-            return
-        }
-
-        let handler = HtmlEpubSearchHandler(viewModel: viewModel, documentController: documentController)
-        let viewController = DocumentSearchViewController(text: text, handler: handler)
-        let controller = presentationController(for: viewController, with: sender)
-        searchController = viewController
-        navigationController?.present(controller, animated: true, completion: nil)
-
-        func presentationController(for searchController: DocumentSearchViewController, with sender: UIBarButtonItem) -> UIViewController {
-            let controller: UIViewController
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                controller = searchController
-            } else {
-                controller = searchController.navigationController ?? UINavigationController(rootViewController: searchController)
-            }
-            controller.overrideUserInterfaceStyle = userInterfaceStyle
-            controller.modalPresentationStyle = .popover
-            controller.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
-            controller.popoverPresentationController?.sourceRect = .zero
-            return controller
+        showSearch(text: text, sender: sender, userInterfaceStyle: userInterfaceStyle) {
+            HtmlEpubSearchHandler(viewModel: viewModel, documentController: documentController)
         }
     }
 
