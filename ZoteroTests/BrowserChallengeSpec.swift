@@ -234,6 +234,27 @@ final class BrowserChallengeSpec: QuickSpec {
                 }
             }
 
+            it("returns a rate limit immediately when errorDelayMax is 0") {
+                let recorder = RequestRecorder()
+                HTTPStubs.removeAllStubs()
+                stub(condition: isHost("challenge.example")) { request in
+                    let count = recorder.record(request)
+                    return HTTPStubsResponse(data: Data(), statusCode: count == 1 ? 429 : 200, headers: ["Retry-After": "1"])
+                }
+                waitUntil(timeout: .seconds(5)) { done in
+                    provider.onShow = { _, _, _, _ in fail("A rate limit must not open a challenge browser") }
+                    handler.onResponse = { status in
+                        expect(status).to(equal(429))
+                        expect(recorder.count).to(equal(1))
+                        done()
+                    }
+                    var noRetryOptions = options
+                    // JS numbers arrive as NSNumber, which casts to Double. A Swift Int literal wouldn't.
+                    noRetryOptions["errorDelayMax"] = 0.0
+                    try! handler.sendRequest(with: noRetryOptions, for: 1)
+                }
+            }
+
             it("respects explicit success codes instead of retrying or presenting") {
                 let recorder = RequestRecorder()
                 HTTPStubs.removeAllStubs()

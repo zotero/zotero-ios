@@ -209,7 +209,8 @@ Zotero.HTTP = new function() {
 	*/
 	this.doGet = function(url, onDone, responseCharset, cookieSandbox, headers) {
 		Zotero.debug('Zotero.HTTP.doGet is deprecated. Use Zotero.HTTP.request');
-		this.request('GET', url, {responseCharset, headers})
+		// Like desktop, don't retry 429/5xx responses for the deprecated helpers
+		this.request('GET', url, {responseCharset, headers, errorDelayMax: 0})
 		.then(onDone, function(e) {
 			onDone({status: e.status, responseText: e.responseText});
 			throw (e);
@@ -230,7 +231,8 @@ Zotero.HTTP = new function() {
 	*/
 	this.doPost = function(url, body, onDone, headers, responseCharset) {
 		Zotero.debug('Zotero.HTTP.doPost is deprecated. Use Zotero.HTTP.request');
-		this.request('POST', url, {body, responseCharset, headers})
+		// Like desktop, don't retry 429/5xx responses for the deprecated helpers
+		this.request('POST', url, {body, responseCharset, headers, errorDelayMax: 0})
 		.then(onDone, function(e) {
 			onDone({status: e.status, responseText: e.responseText});
 			throw (e);

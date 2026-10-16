@@ -88,15 +88,17 @@ class WebViewHandler: NSObject {
         let request: URLRequest
         let headers: [String: String]
         let successCodes: [Int]
+        let retriesServerErrors: Bool
         var retryState = HTTPRetryState()
         var attemptCount = 0
         var task: URLSessionDataTask?
         var retryTimer: Disposable?
 
-        init(request: URLRequest, headers: [String: String], successCodes: [Int]) {
+        init(request: URLRequest, headers: [String: String], successCodes: [Int], retriesServerErrors: Bool) {
             self.request = request
             self.headers = headers
             self.successCodes = successCodes
+            self.retriesServerErrors = retriesServerErrors
         }
 
         deinit {
@@ -443,6 +445,8 @@ class WebViewHandler: NSObject {
         let body = options["body"] as? String
         let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
         let successCodes = (options["successCodes"] as? [Int]) ?? []
+        // Like desktop's `errorDelayMax: 0`, which disables retrying 429 and 5xx responses.
+        let retriesServerErrors = (options["errorDelayMax"] as? Double) != 0
 
         DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
 
@@ -454,7 +458,7 @@ class WebViewHandler: NSObject {
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
 
-        let context = HTTPRequestContext(request: request, headers: originalHeaders, successCodes: successCodes)
+        let context = HTTPRequestContext(request: request, headers: originalHeaders, successCodes: successCodes, retriesServerErrors: retriesServerErrors)
         activeRequests[messageId] = context
         sendRequest(context: context, messageId: messageId)
     }
@@ -509,7 +513,7 @@ class WebViewHandler: NSObject {
 
         let retryAfter = response.value(forHTTPHeaderField: "Retry-After")
         DDLogInfo("WebViewHandler: HTTP response messageId=\(messageId) attempt=\(context.attemptCount) status=\(statusCode) accepted=\(isSuccess) retryAfter=\(retryAfter ?? "none")")
-        if !isSuccess, let delay = context.retryState.nextDelay(statusCode: statusCode, retryAfter: retryAfter) {
+        if !isSuccess, context.retriesServerErrors, let delay = context.retryState.nextDelay(statusCode: statusCode, retryAfter: retryAfter) {
             DDLogInfo("WebViewHandler: HTTP retry scheduled messageId=\(messageId) status=\(statusCode) delay=\(delay)s url=\(context.request.url?.absoluteString ?? "-")")
             context.retryTimer = Single<Int>.timer(.milliseconds(Int(delay * timing.httpRetryDelayScale * 1000)), scheduler: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self, weak context] _ in
