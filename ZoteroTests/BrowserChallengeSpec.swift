@@ -453,6 +453,36 @@ final class BrowserChallengeSpec: QuickSpec {
                 }
             }
 
+            it("retries a request whose 403 arrives after the challenge for its site cleared") {
+                let recorder = RequestRecorder()
+                var statuses: [Int] = []
+                HTTPStubs.removeAllStubs()
+                stub(condition: isHost("challenge.example")) { request in
+                    let count = recorder.record(request)
+                    let cleared = request.value(forHTTPHeaderField: "Cookie")?.contains("turnstile_passed=cleared") == true
+                    let response = HTTPStubsResponse(data: Data((cleared ? "success" : "turnstile_required").utf8), statusCode: cleared ? 200 : 403, headers: nil)
+                    // The second request was sent without the cookie, and its 403 arrives well after the hidden challenge cleared.
+                    return count == 2 ? response.requestTime(3, responseTime: 0) : response
+                }
+                waitUntil(timeout: .seconds(10)) { done in
+                    provider.onPageLoad = { webView in
+                        webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
+                    }
+                    provider.onShow = { _, _, _, _ in fail("An automatically cleared challenge should stay hidden") }
+                    handler.onResponse = { status in
+                        statuses.append(status)
+                        guard statuses.count == 2 else { return }
+                        expect(statuses).to(equal([200, 200]))
+                        // Each request was sent once without and once with the cookie, and no second challenge started.
+                        expect(recorder.count).to(equal(4))
+                        expect(provider.webViews.count).to(equal(2))
+                        done()
+                    }
+                    try! handler.sendRequest(with: options, for: 1)
+                    try! handler.sendRequest(with: options, for: 2)
+                }
+            }
+
             it("does not retain the handler through pending request callbacks") {
                 weak var releasedHandler = handler
                 try! handler.sendRequest(with: options, for: 1)

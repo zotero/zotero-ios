@@ -91,6 +91,8 @@ class WebViewHandler: NSObject {
         let retriesServerErrors: Bool
         var retryState = HTTPRetryState()
         var attemptCount = 0
+        /// When the current attempt read its cookies.
+        var attemptDate: Date?
         var task: URLSessionDataTask?
         var retryTimer: Disposable?
 
@@ -217,6 +219,8 @@ class WebViewHandler: NSObject {
     private var activeRequests: [Int: HTTPRequestContext] = [:]
     private var activeChallenges: [Int: ClearanceContext]
     private var attemptedChallenges: Set<String>
+    /// When each site's challenge last cleared, to retry requests that were sent before the clearance cookie existed.
+    private var lastClearanceDates: [String: Date] = [:]
     private static let webKitPrefix = "AppleWebKit/"
     private static let safariVersionPrefix = "Mobile Safari/"
 
@@ -478,6 +482,7 @@ class WebViewHandler: NSObject {
             var request = context.request
             applyHeaders(to: &request, headers: headers, url: url)
             context.attemptCount += 1
+            context.attemptDate = Date()
             let hasTurnstileCookie = request.value(forHTTPHeaderField: "Cookie")?.contains("turnstile_passed=") == true
             DDLogInfo("WebViewHandler: HTTP attempt messageId=\(messageId) attempt=\(context.attemptCount) hasTurnstileCookie=\(hasTurnstileCookie) url=\(url.absoluteString)")
             context.task = session.dataTask(with: request) { [weak self, weak context] data, response, error in
@@ -558,6 +563,13 @@ class WebViewHandler: NSObject {
             // A challenge for this site is already in progress, so wait for it instead of starting a second one.
             DDLogInfo("WebViewHandler: browser fallback in progress messageId=\(messageId) status=\(statusCode) match=\(challenge.match); waiting for it")
             activeChallenge.completions.append(challengeCompletion)
+            return
+        }
+        if let clearanceDate = lastClearanceDates[challenge.match], let attemptDate = context.attemptDate, attemptDate < clearanceDate {
+            // This request was sent before the challenge for its site cleared, so it lacked the new cookie. Retry it once with the cookie.
+            // The retry starts after the clearance, so a second 403 is returned instead.
+            DDLogInfo("WebViewHandler: browser fallback cleared after request was sent messageId=\(messageId) status=\(statusCode) match=\(challenge.match); retrying")
+            challengeCompletion(true)
             return
         }
         guard !attemptedChallenges.contains(challenge.match) else {
@@ -712,6 +724,9 @@ class WebViewHandler: NSObject {
 
     private func finishClearance(messageId: Int, success: Bool) {
         guard let context = activeChallenges.removeValue(forKey: messageId) else { return }
+        if success {
+            lastClearanceDates[context.challenge.match] = Date()
+        }
         let elapsed = String(format: "%.2f", Date().timeIntervalSince(context.startTime))
         DDLogInfo("WebViewHandler: browser fallback finished messageId=\(messageId) match=\(context.challenge.match) shouldRetry=\(success) requests=\(context.completions.count) elapsed=\(elapsed)s")
         disposeChallenge(context) {
