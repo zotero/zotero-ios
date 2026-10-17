@@ -87,7 +87,7 @@ final class ShareViewController: UIViewController {
         .init(title: L10n.Shareext.save, style: .done, target: self, action: #selector(ShareViewController.done))
     }()
     lazy private var continueButton: UIBarButtonItem = {
-        .init(title: L10n.Shareext.resolveChallenge, style: .done, target: self, action: #selector(ShareViewController.continueAfterChallenge))
+        .init(title: L10n.Shareext.continue, style: .done, target: self, action: #selector(ShareViewController.continueAfterChallenge))
     }()
 
     // MARK: - Lifecycle

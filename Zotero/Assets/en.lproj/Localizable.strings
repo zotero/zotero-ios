@@ -148,7 +148,7 @@
 "items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "Enter ISBNs, DOIs, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
-"lookup.resolve_challenge" = "Resolve Challenge";
+"lookup.continue" = "Continue";
 
 "citation.title" = "Citation Preview";
 "citation.copy_citation" = "Copy Citation";
@@ -414,7 +414,7 @@
 "settings.annotation_tools.reset" = "Reset";
 
 "shareext.save" = "Save to Zotero";
-"shareext.resolve_challenge" = "Resolve Challenge";
+"shareext.continue" = "Continue";
 "shareext.decoding_attachment" = "Searching for items";
 "shareext.translation.item_selection" = "Choose an item";
 "shareext.translation.translating_with" = "Saving with %@";

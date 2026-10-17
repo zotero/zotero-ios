@@ -37,7 +37,7 @@ final class WebViewChallengeViewController: UIViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .cancel, primaryAction: UIAction { [weak self] _ in
             self?.cancelled()
         })
-        navigationItem.rightBarButtonItem = UIBarButtonItem(primaryAction: UIAction(title: L10n.Lookup.resolveChallenge) { [weak self] action in
+        navigationItem.rightBarButtonItem = UIBarButtonItem(primaryAction: UIAction(title: L10n.Lookup.continue) { [weak self] action in
             (action.sender as? UIBarButtonItem)?.isEnabled = false
             self?.finished()
         })
