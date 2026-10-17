@@ -423,6 +423,11 @@ class WebViewHandler: NSObject {
     /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
     /// - parameter options: Options for HTTP request.
     func sendRequest(with options: [String: Any], for messageId: Int) throws {
+        // Without a web view there's no one to respond to. This also covers permanent removal, which invalidates `session`.
+        guard webView != nil else {
+            DDLogError("WebViewHandler: web view is nil")
+            throw Error.webViewMissing
+        }
         guard let urlString = options["url"] as? String,
               let url = URL(string: urlString) ?? urlString.removingPercentEncoding.flatMap({ $0.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed).flatMap(URL.init) }),
               let method = options["method"] as? String else {
