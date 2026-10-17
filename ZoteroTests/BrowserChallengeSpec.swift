@@ -359,10 +359,23 @@ final class BrowserChallengeSpec: QuickSpec {
                 expect(responseCount).to(equal(1))
             }
 
-            it("keeps a challenge in progress when a new lookup resets the attempts") {
+            it("keeps a challenge in progress when a new lookup starts, and retries the new request after it clears") {
+                let recorder = RequestRecorder()
                 var statuses: [Int] = []
                 var presentationCount = 0
                 var finishChallenge: (() -> Void)?
+                HTTPStubs.removeAllStubs()
+                stub(condition: isHost("challenge.example")) { request in
+                    let count = recorder.record(request)
+                    if count == 2 {
+                        // The new lookup's request got its 403. Give the handler time to queue it, then the user resolves the challenge.
+                        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(300)) {
+                            finishChallenge?()
+                        }
+                    }
+                    let cleared = request.value(forHTTPHeaderField: "Cookie")?.contains("turnstile_passed=cleared") == true
+                    return HTTPStubsResponse(data: Data((cleared ? "success" : "turnstile_required").utf8), statusCode: cleared ? 200 : 403, headers: nil)
+                }
                 waitUntil(timeout: .seconds(5)) { done in
                     provider.onShow = { webView, _, finished, presented in
                         presentationCount += 1
@@ -376,17 +389,67 @@ final class BrowserChallengeSpec: QuickSpec {
                     }
                     handler.onResponse = { status in
                         statuses.append(status)
-                        guard statuses.count == 2 else {
-                            // The new request gets its HTTP response instead of a second challenge. Then the user resolves the first one.
-                            expect(status).to(equal(403))
-                            finishChallenge?()
-                            return
-                        }
-                        expect(status).to(equal(200))
+                        guard statuses.count == 2 else { return }
+                        // Both requests are retried with the new cookie, and the new request didn't open a second challenge.
+                        expect(statuses).to(equal([200, 200]))
+                        expect(recorder.count).to(equal(4))
                         expect(presentationCount).to(equal(1))
                         done()
                     }
                     try! handler.sendRequest(with: options, for: 1)
+                }
+            }
+
+            it("returns each waiting request's own response when the challenge is cancelled") {
+                let recorder = RequestRecorder()
+                var statuses: [Int] = []
+                var cancelChallenge: (() -> Void)?
+                HTTPStubs.removeAllStubs()
+                stub(condition: isHost("challenge.example")) { request in
+                    let count = recorder.record(request)
+                    if count == 2 {
+                        // Give the handler time to queue the second request, then the user cancels the challenge.
+                        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(300)) {
+                            cancelChallenge?()
+                        }
+                    }
+                    return HTTPStubsResponse(data: Data("turnstile_required".utf8), statusCode: 403, headers: nil)
+                }
+                waitUntil(timeout: .seconds(5)) { done in
+                    provider.onShow = { _, cancelled, _, presented in
+                        presented()
+                        cancelChallenge = cancelled
+                        try! handler.sendRequest(with: options, for: 2)
+                    }
+                    handler.onResponse = { status in
+                        statuses.append(status)
+                        guard statuses.count == 2 else { return }
+                        expect(statuses).to(equal([403, 403]))
+                        // Neither request is sent again after a failed challenge.
+                        expect(recorder.count).to(equal(2))
+                        done()
+                    }
+                    try! handler.sendRequest(with: options, for: 1)
+                }
+            }
+
+            it("clears one hidden challenge for concurrent requests to the same site") {
+                var statuses: [Int] = []
+                waitUntil(timeout: .seconds(5)) { done in
+                    provider.onPageLoad = { webView in
+                        webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
+                    }
+                    provider.onShow = { _, _, _, _ in fail("An automatically cleared challenge should stay hidden") }
+                    handler.onResponse = { status in
+                        statuses.append(status)
+                        guard statuses.count == 2 else { return }
+                        expect(statuses).to(equal([200, 200]))
+                        // The main web view plus a single challenge web view.
+                        expect(provider.webViews.count).to(equal(2))
+                        done()
+                    }
+                    try! handler.sendRequest(with: options, for: 1)
+                    try! handler.sendRequest(with: options, for: 2)
                 }
             }
 

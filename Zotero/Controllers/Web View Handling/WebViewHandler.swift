@@ -131,7 +131,8 @@ class WebViewHandler: NSObject {
         let cookieStore: WKHTTPCookieStore
         let challenge: BrowserChallenge
         let url: URL
-        let completion: (Bool) -> Void
+        /// Called when the challenge ends: first for the request that started it, then for requests to the same site that waited for it.
+        var completions: [(Bool) -> Void]
         let startTime = Date()
         var presenter: WebViewChallengePresenter?
         var phase: Phase = .hidden
@@ -152,7 +153,7 @@ class WebViewHandler: NSObject {
             cookieStore = webView.configuration.websiteDataStore.httpCookieStore
             self.challenge = challenge
             self.url = url
-            self.completion = completion
+            completions = [completion]
             super.init()
         }
 
@@ -413,8 +414,8 @@ class WebViewHandler: NSObject {
         return ["cf_clearance"]
     }
 
-    /// Lets a new lookup try each browser challenge once again. Challenges still in progress keep running, and their sites stay attempted,
-    /// so a new request to the same site gets its HTTP response instead of starting a second challenge.
+    /// Lets a new lookup try each browser challenge once again. Challenges still in progress keep running, and new requests to their sites
+    /// wait for them instead of starting a second challenge.
     func resetBrowserChallengeAttempts() {
         attemptedChallenges = Set(activeChallenges.values.map({ $0.challenge.match }))
     }
@@ -538,17 +539,8 @@ class WebViewHandler: NSObject {
             return
         }
 
-        guard !attemptedChallenges.contains(challenge.match) else {
-            DDLogInfo("WebViewHandler: browser fallback already attempted messageId=\(messageId) status=\(statusCode) match=\(challenge.match); returning HTTP response")
-            activeRequests.removeValue(forKey: messageId)
-            sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
-            return
-        }
-        attemptedChallenges.insert(challenge.match)
-        let challengeURL = challenge.challengeURL(responseURL)
-        DDLogInfo("WebViewHandler: detected browser fallback messageId=\(messageId) status=\(statusCode) match=\(challenge.match) url=\(challengeURL.absoluteString)")
-        didDetect(browserChallenge: challenge, url: challengeURL)
-        clear(challenge: challenge, at: challengeURL, for: messageId) { [weak self, weak context] retry in
+        // Retries the request once the challenge clears, or returns its own HTTP response if it doesn't.
+        let challengeCompletion: (Bool) -> Void = { [weak self, weak context] retry in
             guard let self, let context, activeRequests[messageId] === context else { return }
             guard retry else {
                 DDLogWarn("WebViewHandler: browser fallback ended without retry messageId=\(messageId) match=\(challenge.match)")
@@ -561,6 +553,24 @@ class WebViewHandler: NSObject {
             context.retryState = HTTPRetryState()
             sendRequest(context: context, messageId: messageId)
         }
+
+        if let activeChallenge = activeChallenges.values.first(where: { $0.challenge.match == challenge.match }) {
+            // A challenge for this site is already in progress, so wait for it instead of starting a second one.
+            DDLogInfo("WebViewHandler: browser fallback in progress messageId=\(messageId) status=\(statusCode) match=\(challenge.match); waiting for it")
+            activeChallenge.completions.append(challengeCompletion)
+            return
+        }
+        guard !attemptedChallenges.contains(challenge.match) else {
+            DDLogInfo("WebViewHandler: browser fallback already attempted messageId=\(messageId) status=\(statusCode) match=\(challenge.match); returning HTTP response")
+            activeRequests.removeValue(forKey: messageId)
+            sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
+            return
+        }
+        attemptedChallenges.insert(challenge.match)
+        let challengeURL = challenge.challengeURL(responseURL)
+        DDLogInfo("WebViewHandler: detected browser fallback messageId=\(messageId) status=\(statusCode) match=\(challenge.match) url=\(challengeURL.absoluteString)")
+        didDetect(browserChallenge: challenge, url: challengeURL)
+        clear(challenge: challenge, at: challengeURL, for: messageId, completion: challengeCompletion)
     }
 
     private func clear(challenge: BrowserChallenge, at url: URL, for messageId: Int, completion: @escaping (Bool) -> Void) {
@@ -703,9 +713,9 @@ class WebViewHandler: NSObject {
     private func finishClearance(messageId: Int, success: Bool) {
         guard let context = activeChallenges.removeValue(forKey: messageId) else { return }
         let elapsed = String(format: "%.2f", Date().timeIntervalSince(context.startTime))
-        DDLogInfo("WebViewHandler: browser fallback finished messageId=\(messageId) match=\(context.challenge.match) shouldRetry=\(success) elapsed=\(elapsed)s")
+        DDLogInfo("WebViewHandler: browser fallback finished messageId=\(messageId) match=\(context.challenge.match) shouldRetry=\(success) requests=\(context.completions.count) elapsed=\(elapsed)s")
         disposeChallenge(context) {
-            context.completion(success)
+            context.completions.forEach { $0(success) }
         }
     }
 
