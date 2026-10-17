@@ -124,7 +124,7 @@ final class LookupWebViewHandler: WebViewHandler {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
-                resetBrowserChallenges()
+                resetBrowserChallengeAttempts()
                 DDLogInfo("LookupWebViewHandler: call translate js")
                 let encodedIdentifiers = WebViewEncoder.encodeForJavascript(identifier.data(using: .utf8))
                 return call(javascript: "lookup(\(encodedIdentifiers), \(saveAttachments ? "true" : "false"));")

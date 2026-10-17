@@ -115,7 +115,11 @@ final class BrowserChallengeSpec: QuickSpec {
             }
 
             afterEach {
-                handler?.resetBrowserChallenges()
+                // Removal tears down any challenge still in progress. Let its main queue block run before releasing the handler.
+                handler?.removeFromSuperviewAsynchronously()
+                waitUntil { done in
+                    DispatchQueue.main.async { done() }
+                }
                 provider.webViews.forEach { $0.stopLoading() }
                 provider.webViews = []
                 handler = nil
@@ -355,14 +359,31 @@ final class BrowserChallengeSpec: QuickSpec {
                 expect(responseCount).to(equal(1))
             }
 
-            it("dismisses a pending presentation on reset and ignores its late callback") {
-                waitUntil(timeout: .seconds(10)) { done in
-                    provider.onShow = { _, _, _, presented in
-                        handler.resetBrowserChallenges()
+            it("keeps a challenge in progress when a new lookup resets the attempts") {
+                var statuses: [Int] = []
+                var presentationCount = 0
+                var finishChallenge: (() -> Void)?
+                waitUntil(timeout: .seconds(5)) { done in
+                    provider.onShow = { webView, _, finished, presented in
+                        presentationCount += 1
                         presented()
+                        finishChallenge = {
+                            webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie, completionHandler: finished)
+                        }
+                        // A new lookup starts while the challenge is visible and requests the same site.
+                        handler.resetBrowserChallengeAttempts()
+                        try! handler.sendRequest(with: options, for: 2)
                     }
                     handler.onResponse = { status in
-                        expect(status).to(equal(403))
+                        statuses.append(status)
+                        guard statuses.count == 2 else {
+                            // The new request gets its HTTP response instead of a second challenge. Then the user resolves the first one.
+                            expect(status).to(equal(403))
+                            finishChallenge?()
+                            return
+                        }
+                        expect(status).to(equal(200))
+                        expect(presentationCount).to(equal(1))
                         done()
                     }
                     try! handler.sendRequest(with: options, for: 1)

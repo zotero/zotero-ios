@@ -386,7 +386,7 @@ class WebViewHandler: NSObject {
             guard let self else { return }
             activeRequests.removeAll()
             session.invalidateAndCancel()
-            tearDownActiveChallenges(completePendingRequests: false)
+            tearDownActiveChallenges()
             webDidLoad = nil
             guard let webView else { return }
             webView.navigationDelegate = nil
@@ -413,9 +413,10 @@ class WebViewHandler: NSObject {
         return ["cf_clearance"]
     }
 
-    func resetBrowserChallenges() {
-        attemptedChallenges = []
-        tearDownActiveChallenges(completePendingRequests: true)
+    /// Lets a new lookup try each browser challenge once again. Challenges still in progress keep running, and their sites stay attempted,
+    /// so a new request to the same site gets its HTTP response instead of starting a second challenge.
+    func resetBrowserChallengeAttempts() {
+        attemptedChallenges = Set(activeChallenges.values.map({ $0.challenge.match }))
     }
 
     // MARK: - HTTP Requests
@@ -708,13 +709,13 @@ class WebViewHandler: NSObject {
         }
     }
 
-    private func disposeChallenge(_ context: ClearanceContext, completion: @escaping () -> Void) {
+    private func disposeChallenge(_ context: ClearanceContext, completion: (() -> Void)? = nil) {
         context.stopObserving()
         context.webView.stopLoading()
         let removeWebView = {
             DispatchQueue.main.async {
                 context.webView.removeFromSuperview()
-                completion()
+                completion?()
             }
         }
         if context.phase != .hidden, let presenter = context.presenter {
@@ -740,15 +741,12 @@ class WebViewHandler: NSObject {
         }
     }
 
-    private func tearDownActiveChallenges(completePendingRequests: Bool) {
+    /// Used on permanent removal, so pending requests aren't completed.
+    private func tearDownActiveChallenges() {
         let contexts = Array(activeChallenges.values)
         activeChallenges.removeAll()
         for context in contexts {
-            disposeChallenge(context) {
-                if completePendingRequests {
-                    context.completion(false)
-                }
-            }
+            disposeChallenge(context)
         }
     }
 }
