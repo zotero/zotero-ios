@@ -88,6 +88,7 @@ final class DocumentSearchViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
+        setupNavigationBarIfNeeded()
         if let text {
             searchBar.text = text
             handler.search(for: text)
@@ -142,6 +143,14 @@ final class DocumentSearchViewController: UIViewController {
                 label.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 label.heightAnchor.constraint(equalToConstant: 36)
             ])
+        }
+
+        func setupNavigationBarIfNeeded() {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+            let primaryAction = UIAction { [weak self] _ in
+                self?.dismissSearch()
+            }
+            navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
         }
     }
 

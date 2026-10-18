@@ -43,7 +43,7 @@ protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
 final class PDFCoordinator: ReaderCoordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-    private var searchController: DocumentSearchViewController?
+    var searchController: DocumentSearchViewController?
     weak var navigationController: UINavigationController?
 
     private let key: String
@@ -147,35 +147,8 @@ final class PDFCoordinator: ReaderCoordinator {
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     func showSearch(document: PSPDFKit.Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle) {
-        DDLogInfo("PDFCoordinator: show search")
-
-        if let existing = self.searchController {
-            if let controller = existing.presentingViewController {
-                controller.dismiss(animated: true) { [weak self] in
-                    self?.showSearch(document: document, documentController: documentController, text: text, sender: sender, userInterfaceStyle: userInterfaceStyle)
-                }
-                return
-            }
-
-            existing.overrideUserInterfaceStyle = userInterfaceStyle
-            setupPresentation(for: existing, with: sender)
-            existing.text = text
-
-            self.navigationController?.present(existing, animated: true, completion: nil)
-            return
-        }
-
-        let handler = PDFSearchHandler(document: document, documentController: documentController)
-        let viewController = DocumentSearchViewController(text: text, handler: handler)
-        viewController.overrideUserInterfaceStyle = userInterfaceStyle
-        setupPresentation(for: viewController, with: sender)
-        self.searchController = viewController
-        self.navigationController?.present(viewController, animated: true, completion: nil)
-
-        func setupPresentation(for pdfSearchController: DocumentSearchViewController, with sender: UIBarButtonItem) {
-            pdfSearchController.modalPresentationStyle = .popover
-            pdfSearchController.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
-            pdfSearchController.popoverPresentationController?.sourceRect = .zero
+        showSearch(text: text, sender: sender, userInterfaceStyle: userInterfaceStyle) {
+            PDFSearchHandler(document: document, documentController: documentController)
         }
     }
 
