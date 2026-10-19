@@ -378,6 +378,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         } else {
             annotations = AnnotationConverter.annotations(
                 from: viewModel.state.databaseAnnotations,
+                source: nil,
                 type: .export,
                 appearance: .light,
                 currentUserId: viewModel.state.userId,
@@ -1054,6 +1055,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             _ = addUserAndKeyIfNeeded(to: annotation, in: viewModel)
         }
         let finalAnnotations = keptAsIs + toAdd
+        // Local creation, replacements, splits and undo/redo additions bypass database conversion.
+        for annotation in finalAnnotations {
+            annotation.source = .database
+        }
         if !toRemove.isEmpty || !toAdd.isEmpty {
             let document = viewModel.state.document
             let undoController = document.undoController
@@ -1952,6 +1957,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             case .sync, .syncResponse:
                 let pdfAnnotation = AnnotationConverter.annotation(
                     from: annotation,
+                    source: .database,
                     type: .zotero,
                     appearance: viewModel.state.appearance,
                     currentUserId: viewModel.state.userId,

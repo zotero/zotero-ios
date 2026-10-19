@@ -240,9 +240,8 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
             func annotation(from cachedAnnotation: RDocumentAnnotation) -> Annotation? {
                 guard let documentAnnotation = PDFDocumentAnnotation(annotation: cachedAnnotation, displayName: displayName, username: username) else { return nil }
-                let annotation = AnnotationConverter.annotation(from: documentAnnotation, appearance: currentAppearance, displayName: displayName, username: username)
+                let annotation = AnnotationConverter.annotation(from: documentAnnotation, source: .document, appearance: currentAppearance, displayName: displayName, username: username)
                 annotation.flags.update(with: [.locked, .readOnly])
-                annotation.source = .document
                 return annotation
             }
         }
@@ -259,6 +258,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 }
                 annotationsToAdd.append(contentsOf: AnnotationConverter.annotations(
                     from: items,
+                    source: .database,
                     appearance: currentAppearance,
                     currentUserId: userId,
                     libraryId: libraryId,
@@ -270,9 +270,6 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 ))
             } catch {
                 DDLogError("PDFReaderAnnotationProvider: failed to read database annotations for page \(pageIndex) - \(error)")
-            }
-            for annotation in annotationsToAdd {
-                annotation.source = .database
             }
             if !annotationsToAdd.isEmpty {
                 _ = add(annotationsToAdd, options: [.suppressNotifications: true])
