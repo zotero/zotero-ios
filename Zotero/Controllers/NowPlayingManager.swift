@@ -18,6 +18,7 @@ import CocoaLumberjackSwift
 final class NowPlayingManager {
     struct NowPlayingInfo {
         let title: String
+        let artist: String?
         let currentText: String?
     }
 
@@ -47,12 +48,13 @@ final class NowPlayingManager {
     /// Activates the Now Playing session and registers for remote command events.
     /// Call this when speech playback starts.
     /// - Parameter title: The document title to display on the lock screen.
-    func activate(title: String? = nil) {
+    /// - Parameter artist: The document authors to display with the title.
+    func activate(title: String? = nil, artist: String? = nil) {
         guard !isActive else { return }
         isActive = true
 
         if let title {
-            nowPlayingInfo = NowPlayingInfo(title: title, currentText: nil)
+            nowPlayingInfo = NowPlayingInfo(title: title, artist: artist, currentText: nil)
         }
 
         setupAudioSession()
@@ -221,14 +223,18 @@ final class NowPlayingManager {
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue
         ]
 
-        if let currentText = nowPlayingInfo?.currentText {
-            info[MPMediaItemPropertyArtist] = currentText
+        if let artist = nowPlayingInfo?.currentText ?? nowPlayingInfo?.artist {
+            info[MPMediaItemPropertyArtist] = artist
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        // Set explicitly, so that the system (e.g. CarPlay) doesn't derive the state from audio session activity, which doesn't
+        // match speech playback.
+        MPNowPlayingInfoCenter.default().playbackState = isPlaying ? .playing : .paused
     }
 
     private func clearNowPlayingInfo() {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        MPNowPlayingInfoCenter.default().playbackState = .stopped
     }
 }

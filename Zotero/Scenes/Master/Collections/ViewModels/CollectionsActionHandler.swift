@@ -55,6 +55,9 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
         case .toggleCollapsed(let collection):
             toggleCollapsed(for: collection, in: viewModel)
 
+        case .toggleShowsInCarPlay(let collection):
+            toggleShowsInCarPlay(for: collection, in: viewModel)
+
         case .emptyTrash:
             emptyTrash(in: viewModel)
 
@@ -160,6 +163,16 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
         perform(request: request) { error in
             guard let error else { return }
             DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
+        }
+    }
+
+    private func toggleShowsInCarPlay(for collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
+        guard let key = collection.identifier.key else { return }
+        // The collection list is updated by observing the database.
+        let request = SetCollectionShowsInCarPlayDbRequest(showsInCarPlay: !collection.showsInCarPlay, key: key, libraryId: viewModel.state.library.identifier)
+        perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("CollectionsActionHandler: can't change shows in CarPlay - \(error)")
         }
     }
 

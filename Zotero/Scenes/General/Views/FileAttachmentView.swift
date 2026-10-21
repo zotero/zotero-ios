@@ -45,10 +45,12 @@ final class FileAttachmentView: UIView {
         case failed, missing, download
     }
     
-    private static let size: CGFloat = 28
+    static let size: CGFloat = 28
     private static let badgeDetailBorderWidth: CGFloat = 1.5
     private static let badgeListBorderWidth: CGFloat = 1
     private static let progressCircleWidth: CGFloat = 1.5
+    private static let stopSize: CGFloat = 8
+    private static let stopCornerRadius: CGFloat = 2
     private static let sfSymbolSize: CGFloat = 16
     private let disposeBag: DisposeBag
 
@@ -153,7 +155,7 @@ final class FileAttachmentView: UIView {
     }
 
     func set(state: State, style: Style) {
-        guard let type = self.contentType(state: state, style: style) else { return }
+        guard let type = Self.contentType(state: state, style: style) else { return }
         self.set(contentType: type, style: style)
     }
 
@@ -234,7 +236,48 @@ final class FileAttachmentView: UIView {
         }
     }
 
-    private func contentType(state: State, style: Style) -> ContentType? {
+    /// Progress circle with a stop button, drawn the same way as the view draws it. For places which can't host the view (CarPlay).
+    static func progressImage(progress: CGFloat, traitCollection: UITraitCollection) -> UIImage {
+        let bounds = CGRect(x: 0, y: 0, width: size, height: size)
+        return UIGraphicsImageRenderer(bounds: bounds, format: UIGraphicsImageRendererFormat(for: traitCollection)).image { _ in
+            let center = CGPoint(x: bounds.midX, y: bounds.midY)
+            // Stroke is centered on the path, so radius needs to be smaller to achieve outer size of `size`.
+            let radius = (size - progressCircleWidth) / 2
+            let progressColor = Asset.Colors.zoteroBlue.color.resolvedColor(with: traitCollection)
+
+            let circle = UIBezierPath(arcCenter: center, radius: radius, startAngle: -.pi / 2, endAngle: 3 * .pi / 2, clockwise: true)
+            circle.lineWidth = progressCircleWidth
+            UIColor.systemGray5.resolvedColor(with: traitCollection).setStroke()
+            circle.stroke()
+
+            if progress > 0 {
+                let arc = UIBezierPath(arcCenter: center, radius: radius, startAngle: -.pi / 2, endAngle: (-.pi / 2) + (2 * .pi * min(progress, 1)), clockwise: true)
+                arc.lineWidth = progressCircleWidth
+                progressColor.setStroke()
+                arc.stroke()
+            }
+
+            let stopRect = CGRect(x: center.x - (stopSize / 2), y: center.y - (stopSize / 2), width: stopSize, height: stopSize)
+            progressColor.setFill()
+            UIBezierPath(roundedRect: stopRect, cornerRadius: stopCornerRadius).fill()
+        }
+    }
+
+    /// Main image and optional badge shown for `state`. Nil while in progress, which shows a progress circle instead.
+    static func assets(for state: State, style: Style) -> (main: ImageAsset, badge: ImageAsset?)? {
+        switch contentType(state: state, style: style) {
+        case .image(let asset):
+            return (asset, nil)
+
+        case .imageWithBadge(let main, let badge):
+            return (main, badge)
+
+        case .progress, .none:
+            return nil
+        }
+    }
+
+    private static func contentType(state: State, style: Style) -> ContentType? {
         switch state {
         case .progress(let progress):
             return .progress(progress)
@@ -244,25 +287,25 @@ final class FileAttachmentView: UIView {
             case .file(_, _, let location, _, _):
                 switch location {
                 case .local:
-                    return .image(asset: self.mainAsset(for: type, style: style))
+                    return .image(asset: Self.mainAsset(for: type, style: style))
 
                 case .remoteMissing:
-                    return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .missing, style: style))
+                    return .imageWithBadge(main: Self.mainAsset(for: type, style: style), badge: Self.badge(for: .missing, style: style))
 
                 case .remote, .localAndChangedRemotely:
-                    return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .download, style: style))
+                    return .imageWithBadge(main: Self.mainAsset(for: type, style: style), badge: Self.badge(for: .download, style: style))
                 }
 
             case .url:
-                return .image(asset: self.mainAsset(for: type, style: style))
+                return .image(asset: Self.mainAsset(for: type, style: style))
             }
 
         case .failed(let type, _):
-            return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .failed, style: style))
+            return .imageWithBadge(main: Self.mainAsset(for: type, style: style), badge: Self.badge(for: .failed, style: style))
         }
     }
 
-    private func badge(for type: BadgeType, style: Style) -> ImageAsset {
+    private static func badge(for type: BadgeType, style: Style) -> ImageAsset {
         switch type {
         case .download:
             switch style {
@@ -296,7 +339,7 @@ final class FileAttachmentView: UIView {
         }
     }
 
-    private func mainAsset(for attachmentType: Attachment.Kind, style: Style) -> ImageAsset {
+    static func mainAsset(for attachmentType: Attachment.Kind, style: Style) -> ImageAsset {
         switch attachmentType {
         case .url:
             switch style {
@@ -502,8 +545,8 @@ final class FileAttachmentView: UIView {
     private func createStopLayer() -> CALayer {
         let layer = CALayer()
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        layer.frame = CGRect(x: 0, y: 0, width: 8, height: 8)
-        layer.cornerRadius = 2
+        layer.frame = CGRect(x: 0, y: 0, width: FileAttachmentView.stopSize, height: FileAttachmentView.stopSize)
+        layer.cornerRadius = FileAttachmentView.stopCornerRadius
         layer.masksToBounds = true
         layer.backgroundColor = Asset.Colors.zoteroBlue.color.cgColor
         layer.shouldRasterize = true
