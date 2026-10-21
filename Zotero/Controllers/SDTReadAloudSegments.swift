@@ -7,14 +7,15 @@
 //
 
 import Foundation
+import NaturalLanguage
 
 /// Builds read aloud segments for HTML/EPUB from structured document text, without the reader. Native port of
 /// `buildSDTReadAloudSegments` from the reader (`src/common/read-aloud/sdt-segments.ts`): every logical paragraph (a part
 /// chain) becomes the concatenated text of its text nodes, with linked citation groups and superscript reference markers
 /// left out of the spoken text, and each segment carries the SDT position it was read from.
 ///
-/// Unlike the reader, which splits paragraphs with `sentencex`, sentences are split with `TextTokenizer`, the same splitting
-/// playback uses.
+/// Unlike the reader, which splits paragraphs with `sentencex`, sentences are split by `TextTokenizer` (in one pass per
+/// paragraph), the same splitting playback uses.
 enum SDTReadAloudSegments {
     /// A text node's contribution to a chain's text: `[absStart, absEnd)` in the chain text corresponds to `[start, end)` in
     /// the node text.
@@ -45,8 +46,10 @@ enum SDTReadAloudSegments {
 
     static func segments(from structure: SDTContent.Node) -> [SpeechReaderSegment] {
         var segments: [SpeechReaderSegment] = []
+        // One tokenizer for the whole document, set up once and reused for every paragraph.
+        let tokenizer = NLTokenizer(unit: .sentence)
         for chain in chainTexts(in: structure) {
-            appendSegments(of: chain, to: &segments)
+            appendSegments(of: chain, tokenizer: tokenizer, to: &segments)
         }
         return segments
     }
@@ -209,8 +212,10 @@ enum SDTReadAloudSegments {
     // MARK: - Segments
 
     /// Splits the chain into sentences and appends a segment for each, the first one starting the paragraph.
-    private static func appendSegments(of chain: ChainText, to segments: inout [SpeechReaderSegment]) {
+    private static func appendSegments(of chain: ChainText, tokenizer: NLTokenizer, to segments: inout [SpeechReaderSegment]) {
         let firstIndex = segments.count
+        // Decoding keeps the UTF-16 length (an unpaired surrogate becomes a single replacement character), so the string's
+        // UTF-16 offsets are the chain's.
         let string = String(decoding: chain.text, as: UTF16.self)
         // `TextTokenizer` works in `Character` offsets, the chain in UTF-16 offsets.
         var utf16Offsets: [Int] = [0]
@@ -218,16 +223,11 @@ enum SDTReadAloudSegments {
             utf16Offsets.append(utf16Offsets[utf16Offsets.count - 1] + character.utf16.count)
         }
 
-        var index = 0
-        var foundSentence = false
-        while let sentence = TextTokenizer.findSentence(startingAt: index, in: string) {
-            let end = NSMaxRange(sentence.range)
-            guard end > index else { break }
-            foundSentence = true
-            appendSegment(chain: chain, rawStart: utf16Offsets[sentence.range.location], rawEnd: utf16Offsets[end])
-            index = end
+        let sentenceRanges = TextTokenizer.sentenceRanges(in: string, tokenizer: tokenizer)
+        for range in sentenceRanges {
+            appendSegment(chain: chain, rawStart: utf16Offsets[range.location], rawEnd: utf16Offsets[NSMaxRange(range)])
         }
-        if !foundSentence {
+        if sentenceRanges.isEmpty {
             appendSegment(chain: chain, rawStart: 0, rawEnd: chain.text.count)
         }
 

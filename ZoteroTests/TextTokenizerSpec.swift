@@ -17,6 +17,24 @@ import Quick
 final class TextTokenizerSpec: QuickSpec {
     override class func spec() {
         describe("TextTokenizer") {
+            describe("sentenceRanges") {
+                it("returns the ranges successive findSentence calls return") {
+                    let longSentence = String(repeating: "word ", count: 90) + "end."
+                    let texts = [
+                        "First sentence. Second sentence.",
+                        "Footnote after a sentence.12 Next sentence follows.",
+                        "A question?15 The answer. Decimals like 3.5 stay.",
+                        "  Leading whitespace. Trailing whitespace.  ",
+                        longSentence + " After the long one.",
+                        "No punctuation at all",
+                        "Emoji 👨‍👩‍👧 in text. Second one."
+                    ]
+                    for text in texts {
+                        expect(TextTokenizer.sentenceRanges(in: text)).to(equal(sentenceRangesBySearching(in: text)))
+                    }
+                }
+            }
+
             describe("findSentence") {
                 it("finds first sentence from start") {
                     let text = "First sentence. Second sentence."
@@ -349,6 +367,18 @@ final class TextTokenizerSpec: QuickSpec {
                     }
                 }
             }
+        }
+
+        func sentenceRangesBySearching(in text: String) -> [NSRange] {
+            var ranges: [NSRange] = []
+            var index = 0
+            while let sentence = TextTokenizer.findSentence(startingAt: index, in: text) {
+                let end = NSMaxRange(sentence.range)
+                guard end > index else { break }
+                ranges.append(sentence.range)
+                index = end
+            }
+            return ranges
         }
     }
 }

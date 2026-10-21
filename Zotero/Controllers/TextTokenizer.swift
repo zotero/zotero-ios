@@ -170,6 +170,65 @@ enum TextTokenizer {
         return (resultText, originalRange)
     }
 
+    /// Ranges of the sentences of `text`, in order, as successive `findSentence(startingAt:)` calls return them (each starting
+    /// where the previous one ended), but normalizing and tokenizing the text once instead of once per sentence.
+    /// - parameter tokenizer: Sentence tokenizer to reuse across calls, so that it's set up once.
+    static func sentenceRanges(in text: String, tokenizer: NLTokenizer = NLTokenizer(unit: .sentence)) -> [NSRange] {
+        let characters = Array(text)
+        guard !characters.isEmpty else { return [] }
+
+        let normalized = normalizeText(text)
+        let normalizedCharacters = Array(normalized.text)
+        tokenizer.string = normalized.text
+        // Sentence tokens as `Character` offsets in the normalized text.
+        var tokens: [(start: Int, end: Int)] = []
+        var lastIndex = normalized.text.startIndex
+        var lastOffset = 0
+        tokenizer.enumerateTokens(in: normalized.text.startIndex..<normalized.text.endIndex) { range, _ in
+            let start = lastOffset + normalized.text.distance(from: lastIndex, to: range.lowerBound)
+            let end = start + normalized.text.distance(from: range.lowerBound, to: range.upperBound)
+            tokens.append((start, end))
+            lastIndex = range.upperBound
+            lastOffset = end
+            return true
+        }
+
+        var ranges: [NSRange] = []
+        var index = 0
+        var tokenIndex = 0
+        while index < characters.count {
+            let normalizedStart = normalized.normalizedIndex(for: index)
+            guard let firstNonWhitespace = normalizedCharacters[normalizedStart...].firstIndex(where: { !$0.isWhitespace && !$0.isNewline }) else { break }
+
+            // `findSentence(startingAt:)` tokenizes the text from its start index, so the sentence runs from there to the end of
+            // the token it falls in.
+            while tokenIndex < tokens.count && tokens[tokenIndex].end <= normalizedStart {
+                tokenIndex += 1
+            }
+            let normalizedRange: NSRange
+            if tokenIndex < tokens.count,
+               tokens[tokenIndex].start <= normalizedStart,
+               normalizedCharacters[normalizedStart..<tokens[tokenIndex].end].contains(where: { !$0.isWhitespace && !$0.isNewline }) {
+                normalizedRange = NSRange(location: normalizedStart, length: tokens[tokenIndex].end - normalizedStart)
+            } else {
+                // No meaningful token, the rest of the text is the sentence (see `findSentence(startingAt:)`).
+                let lastNonWhitespace = normalizedCharacters.lastIndex(where: { !$0.isWhitespace && !$0.isNewline }) ?? firstNonWhitespace
+                normalizedRange = NSRange(location: firstNonWhitespace, length: lastNonWhitespace + 1 - firstNonWhitespace)
+            }
+
+            var range = normalized.originalRange(from: normalizedRange)
+            let sentenceText = String(characters[range.location..<NSMaxRange(range)]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if let (_, splitLength) = enforceMaxLength(in: sentenceText) {
+                range = NSRange(location: range.location, length: splitLength)
+            }
+            let end = NSMaxRange(range)
+            guard end > index else { break }
+            ranges.append(range)
+            index = end
+        }
+        return ranges
+    }
+
     /// Finds the full sentence containing the given index.
     /// Unlike `findSentence(startingAt:)`, this returns the entire sentence from its beginning to its end,
     /// even if the index is in the middle of the sentence.

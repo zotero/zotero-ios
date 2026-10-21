@@ -51,8 +51,7 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
     private var isReaderInitialized: Bool
     /// Pending read-aloud bridge requests, keyed by the `requestID` sent to the reader and resolved on the matching
-    /// response event (`onReadAloudSegments` / `onReadAloudStartBlockIndex`).
-    private var readAloudSegmentRequests: [Int: ([SpeechReaderSegment]?) -> Void] = [:]
+    /// response event (e.g. `onReadAloudStartBlockIndex`).
     private var readAloudStartBlockIndexRequests: [Int: (Int?) -> Void] = [:]
     private var sourceSDTPositionRequests: [Int: (SDTPosition?) -> Void] = [:]
     private var sdtSourcePositionRequests: [Int: (ReaderSourcePosition?) -> Void] = [:]
@@ -160,28 +159,13 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     // MARK: - Read Aloud
 
-    /// Hands the structured-document-text pack to the reader so it can serve `getReadAloudSegments` and create
-    /// annotations from SDT positions. Fire-and-forget.
+    /// Hands the structured-document-text pack to the reader so it can map positions and create annotations from SDT
+    /// positions. Fire-and-forget.
     func setSDTPack(bytes: Data, packVersion: Int, schemaMajorVersion: Int) {
         webViewHandler.call(javascript: "setSDTPack({ bytes: \(WebViewEncoder.encodeForJavascript(bytes)), packVersion: \(packVersion), schemaMajorVersion: \(schemaMajorVersion) });")
             .observe(on: MainScheduler.instance)
             .subscribe(onFailure: { error in
                 DDLogError("HtmlEpubDocumentViewController: setting SDT pack failed - \(error)")
-            })
-            .disposed(by: disposeBag)
-    }
-
-    /// Fetches the reader's read-aloud segments (text + reader SDT position + paragraph-start flag) at the given
-    /// granularity. Resolved asynchronously via the `onReadAloudSegments` event, keyed by `requestID`.
-    func getReadAloudSegments(granularity: String, completion: @escaping ([SpeechReaderSegment]?) -> Void) {
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
-        readAloudSegmentRequests[requestID] = completion
-        webViewHandler.call(javascript: "getReadAloudSegments({ granularity: '\(granularity)', requestID: \(requestID) });")
-            .observe(on: MainScheduler.instance)
-            .subscribe(onFailure: { [weak self] error in
-                DDLogError("HtmlEpubDocumentViewController: getting read aloud segments failed - \(error)")
-                self?.readAloudSegmentRequests.removeValue(forKey: requestID)?(nil)
             })
             .disposed(by: disposeBag)
     }
@@ -372,15 +356,6 @@ class HtmlEpubDocumentViewController: UIViewController {
                 DDLogError("HtmlEpubDocumentViewController: clearing read aloud spotlight failed - \(error)")
             })
             .disposed(by: disposeBag)
-    }
-
-    /// Parses a reader read-aloud segment JSON dictionary into a `SpeechReaderSegment`.
-    private static func parseReaderSegment(_ dictionary: [String: Any]) -> SpeechReaderSegment? {
-        guard let text = dictionary["text"] as? String,
-              let position = dictionary["position"] as? [String: Any],
-              let start = intArray(position["start"]),
-              let end = intArray(position["end"]) else { return nil }
-        return SpeechReaderSegment(text: text, start: start, end: end, isParagraphStart: (dictionary["anchor"] as? String) == "paragraphStart")
     }
 
     /// Coerces a JS number array (bridged as `[NSNumber]`) into `[Int]`.
@@ -678,16 +653,6 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             case "onBackdropTap":
                 parentDelegate?.toggleInterfaceVisibility()
-
-            case "onReadAloudSegments":
-                // Reader responded to a `getReadAloudSegments` request; resolve the matching pending completion.
-                guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {
-                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing requestID - \(message)")
-                    return
-                }
-                let completion = readAloudSegmentRequests.removeValue(forKey: requestID)
-                let segments = (params["segments"] as? [[String: Any]])?.compactMap(Self.parseReaderSegment)
-                completion?(segments)
 
             case "onReadAloudStartBlockIndex":
                 guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {

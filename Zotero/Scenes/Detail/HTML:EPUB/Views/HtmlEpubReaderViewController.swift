@@ -1007,16 +1007,14 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
         // See `moved(to:from:)`. No-op for now.
     }
 
-    func readAloudReaderSegments(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int, completion: @escaping ([SpeechReaderSegment]?) -> Void) {
-        guard let documentController else {
-            completion(nil)
-            return
-        }
-        // The reader is the source of truth for HTML/EPUB read-aloud: hand it the SDT pack, then fetch the segments
-        // (with their SDT positions) used for playback, navigation, and annotation creation. Sentence granularity gives
-        // the finest units; paragraphs are reconstructed from the `paragraphStart` flags.
-        documentController.setSDTPack(bytes: sdtPackData, packVersion: packVersion, schemaMajorVersion: schemaMajorVersion)
-        documentController.getReadAloudSegments(granularity: "sentence", completion: completion)
+    var readAloudUsesSDTSegments: Bool {
+        return true
+    }
+
+    func readAloudLoaded(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int) {
+        // Segments are built natively from the same pack (`SDTReadAloudSegments`), but the reader needs it too, to map
+        // selections and resume positions to SDT positions and to create annotations from them.
+        documentController?.setSDTPack(bytes: sdtPackData, packVersion: packVersion, schemaMajorVersion: schemaMajorVersion)
     }
 
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
