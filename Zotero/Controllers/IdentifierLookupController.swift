@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 import WebKit
 import OrderedCollections
 
@@ -216,6 +217,25 @@ final class IdentifierLookupController {
         guard let lookupWebViewHandler = lookupWebViewHandlersByLookupSettings[lookupSettings] else {
             DDLogError("IdentifierLookupController: can't find lookup web view handler for settings - \(lookupSettings)")
             return
+        }
+        if let lookupViewController = presenter as? UIViewController {
+            lookupWebViewHandler.challengePresenter = WebViewChallengePresentationController(lookupViewController: lookupViewController) { [weak self, weak lookupWebViewHandler] completion in
+                guard let self else {
+                    completion(false)
+                    return
+                }
+                accessQueue.async { [weak self, weak lookupWebViewHandler] in
+                    let ongoing: Bool
+                    if let self, let lookupWebViewHandler {
+                        ongoing = lookupRemainingCount > 0 && lookupWebViewHandlersByLookupSettings[lookupSettings] === lookupWebViewHandler
+                    } else {
+                        ongoing = false
+                    }
+                    DispatchQueue.main.async {
+                        completion(ongoing)
+                    }
+                }
+            }
         }
         lookupWebViewHandler.lookup(identifier: identifier, saveAttachments: true)
     }

@@ -414,7 +414,8 @@ final class UserControllers {
             schemaController: controllers.schemaController,
             dbStorage: dbStorage,
             dateParser: controllers.dateParser,
-            fileStorage: controllers.fileStorage
+            fileStorage: controllers.fileStorage,
+            lookupTiming: .mainApp
         )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
