@@ -2030,6 +2030,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Insert new annotations to `Document`
         if !insertedPdfAnnotations.isEmpty {
             viewModel.state.document.add(annotations: insertedPdfAnnotations, options: nil)
+            if let annotationProvider {
+                // A page may have loaded the same key before the provider handled this insertion.
+                // Only the objects accepted into its index need new previews and filter refreshes.
+                insertedPdfAnnotations = insertedPdfAnnotations.filter { annotation in
+                    annotationProvider.annotationIfLoaded(with: annotation.key ?? annotation.uuid) === annotation
+                }
+            }
             annotationPreviewController.store(
                 annotations: insertedPdfAnnotations,
                 parentKey: viewModel.state.key,

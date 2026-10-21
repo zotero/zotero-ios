@@ -280,7 +280,19 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
     override func add(_ annotations: [Annotation], options: [AnnotationManager.ChangeBehaviorKey: Any]? = nil) -> [Annotation]? {
         return performWriteAndWait {
-            let addedAnnotations = super.add(annotations, options: options)
+            // Incoming database changes and lazy page loading can supply different objects for the same key.
+            // Keep the existing instance, which may also be referenced by the document's undo recorder.
+            var keysToAdd = Set<String>()
+            let annotationsToAdd = annotations.filter { annotation in
+                let key = annotation.key ?? annotation.uuid
+                guard loadedAnnotationsByKey[key] == nil, keysToAdd.insert(key).inserted else {
+                    return false
+                }
+                return true
+            }
+            guard !annotationsToAdd.isEmpty else { return [] }
+
+            let addedAnnotations = super.add(annotationsToAdd, options: options)
             for annotation in addedAnnotations ?? [] {
                 index(annotation: annotation)
             }
