@@ -15,7 +15,7 @@ struct ReadAloudAudioRequest: ApiRequest {
     }
 
     var httpMethod: ApiHttpMethod {
-        return .get
+        return .post
     }
 
     var encoding: ApiParameterEncoding {
