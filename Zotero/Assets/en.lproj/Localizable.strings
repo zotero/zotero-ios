@@ -557,6 +557,7 @@
 "errors.pdf.empty_document" = "This document is empty.";
 "errors.pdf.page_index_not_int" = "Incorrect format of page stored for this document";
 "errors.pdf.document_changed" = "This document has been changed on another device. Please reopen it to continue editing.";
+"errors.reader.cant_enable_reading_mode" = "Reading mode is not available for this document.";
 
 "accessibility.untitled" = "Title";
 "accessibility.locked" = "Locked";
