@@ -317,19 +317,18 @@ final class PDFAnnotationsViewController: UIViewController {
     }
 
     private func requestPreviews(at indexPaths: [IndexPath], notify: Bool) {
-        let keys = indexPaths.compactMap({ dataSource.itemIdentifier(for: $0) })
-            .filter({ key in
-                guard let annotation = viewModel.state.annotation(for: key) else { return false }
-                switch annotation.type {
-                case .image, .ink, .freeText:
-                    return true
+        var keysAndPages: [(String, PageIndex)] = []
+        for indexPath in indexPaths {
+            guard let key = dataSource.itemIdentifier(for: indexPath), let annotation = viewModel.state.annotation(for: key) else { continue }
+            switch annotation.type {
+            case .image, .ink, .freeText:
+                keysAndPages.append((key.key, PageIndex(annotation.page)))
 
-                case .note, .highlight, .underline:
-                    return false
-                }
-            })
-            .map({ $0.key })
-        previewHandler.requestPreviews(keys: keys, notify: notify)
+            case .note, .highlight, .underline:
+                continue
+            }
+        }
+        previewHandler.requestPreviews(keysAndPages: keysAndPages, notify: notify)
     }
 
     /// Scrolls to selected cell if it's not visible.
@@ -409,7 +408,7 @@ final class PDFAnnotationsViewController: UIViewController {
         func loadPreview(for annotation: PDFAnnotation) -> UIImage? {
             let preview = previewHandler.image(for: annotation.key)
             if preview == nil {
-                previewHandler.requestPreviews(keys: [annotation.key], notify: true)
+                previewHandler.requestPreviews(keysAndPages: [(annotation.key, PageIndex(annotation.page))], notify: true)
             }
             return preview
         }
