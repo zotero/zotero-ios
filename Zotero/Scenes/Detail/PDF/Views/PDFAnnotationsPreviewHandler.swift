@@ -66,13 +66,13 @@ final class PDFAnnotationsPreviewHandler {
         previewCache.removeAllObjects()
     }
 
-    func requestPreviews(keys: [String], notify: Bool) {
-        guard !keys.isEmpty else { return }
-        
+    func requestPreviews(keysAndPages: [(String, PageIndex)], notify: Bool) {
+        guard !keysAndPages.isEmpty else { return }
+
         let group = DispatchGroup()
         var loadedKeys: Set<String> = []
         
-        for key in keys {
+        for (key, page) in keysAndPages {
             let nsKey = key as NSString
             guard previewCache.object(forKey: nsKey) == nil else { continue }
             
@@ -82,7 +82,7 @@ final class PDFAnnotationsPreviewHandler {
                     if let image {
                         previewCache.setObject(image, forKey: nsKey)
                         loadedKeys.insert(key)
-                    } else if let annotation = annotationProvider?.annotationIfLoaded(with: key), annotation.shouldRenderPreview {
+                    } else if let annotation = annotationProvider?.annotation(at: page, with: key), annotation.shouldRenderPreview {
                         annotationPreviewController.store(for: annotation, parentKey: attachmentKey, libraryId: libraryId, appearance: appearance, notify: notify)
                     }
                 }
