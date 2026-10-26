@@ -253,6 +253,7 @@ final class CarPlayHtmlEpubReadAloudSession {
         dbStorage: DbStorage,
         fileStorage: FileStorage,
         documentWorkerController: DocumentWorkerController,
+        documentPreviewController: DocumentPreviewController,
         apiClient: ApiClient
     ) throws {
         self.key = key
@@ -272,7 +273,8 @@ final class CarPlayHtmlEpubReadAloudSession {
             libraryId: libraryId,
             dbStorage: dbStorage,
             remoteVoicesController: remoteVoicesController,
-            documentWorkerController: documentWorkerController
+            documentWorkerController: documentWorkerController,
+            documentPreviewController: documentPreviewController
         )
         speechManager.observePosition(storingIn: positionStore, disposeBag: disposeBag)
     }
@@ -298,6 +300,10 @@ extension CarPlayHtmlEpubReadAloudSession: CarPlayReadAloudSession {
         } else {
             speechManager.start(.currentPage)
         }
+    }
+
+    func startFromBeginning() {
+        speechManager.start(.documentStart)
     }
 
     func stop() {
