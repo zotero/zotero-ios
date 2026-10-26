@@ -45,6 +45,13 @@ final class CarPlayCoordinator: NSObject {
     private static let readableContentTypes: Set<String> = ["application/pdf"]
     /// Maximum depth of the template stack for audio apps. Pushing past it raises an exception.
     private static let maximumTemplateDepth = 5
+
+    private static let progressFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .percent
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
     /// CarPlay shows only the personal library.
     private static let libraryId: LibraryIdentifier = .custom(.myLibrary)
 
@@ -239,6 +246,7 @@ final class CarPlayCoordinator: NSObject {
                 authors: authors,
                 dbStorage: userControllers.dbStorage,
                 documentWorkerController: userControllers.documentWorkerController,
+                documentPreviewController: controllers.documentPreviewController,
                 apiClient: controllers.apiClient
             )
 
@@ -252,6 +260,7 @@ final class CarPlayCoordinator: NSObject {
                 dbStorage: userControllers.dbStorage,
                 fileStorage: controllers.fileStorage,
                 documentWorkerController: userControllers.documentWorkerController,
+                documentPreviewController: controllers.documentPreviewController,
                 apiClient: controllers.apiClient
             )
         }
@@ -312,8 +321,12 @@ final class CarPlayCoordinator: NSObject {
     }
 
     private func showProcessing(title: String, session: CarPlayReadAloudSession) {
-        let row = CPListItem(text: L10n.Carplay.processingDocument, detailText: nil)
-        let template = CPListTemplate(title: title, sections: [CPListSection(items: [row])])
+        // CarPlay audio apps can't show custom views. A list without rows shows its empty view title and subtitle centered on
+        // the screen, so it's used to show the processing message with progress below it. The only progress bar CarPlay has is
+        // the one of a list row, which isn't centered, so the progress bar is drawn with text characters.
+        let template = CPListTemplate(title: title, sections: [])
+        template.emptyViewTitleVariants = [L10n.Carplay.processingDocument]
+        template.emptyViewSubtitleVariants = []
         processingTemplate = template
 
         // Processing and Now Playing are shown right above the collection (the attachments screen is closed), so that voice
@@ -329,10 +342,24 @@ final class CarPlayCoordinator: NSObject {
 
         session.extractionProgress
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { progress in
-                row.playbackProgress = CGFloat(progress ?? 0)
+            // Progress is unknown (`nil`) until extraction reports it, then only the message is shown.
+            .map({ progress -> Int? in progress.flatMap({ Int((min(max($0, 0), 1) * 100).rounded(.down)) }) })
+            // Extraction reports progress often, the template is updated only when the shown percentage changes.
+            .distinctUntilChanged()
+            .subscribe(onNext: { [weak template] percentage in
+                template?.emptyViewSubtitleVariants = percentage.flatMap({ Self.progressVariants(percentage: $0) }) ?? []
             })
             .disposed(by: readAloudDisposeBag)
+    }
+
+    /// Progress bar drawn with text characters followed by the percentage, e.g. "▰▰▰▰▱▱▱▱▱▱  42 %". CarPlay picks the
+    /// longest variant that fits, so the percentage alone is the fallback.
+    private static func progressVariants(percentage: Int) -> [String] {
+        let segmentCount = 10
+        let filledCount = min(segmentCount, percentage * segmentCount / 100)
+        let bar = String(repeating: "▰", count: filledCount) + String(repeating: "▱", count: segmentCount - filledCount)
+        guard let text = progressFormatter.string(from: NSNumber(value: Double(percentage) / 100)) else { return [bar] }
+        return ["\(bar)  \(text)", text]
     }
 
     private func push(processingTemplate template: CPListTemplate) {
@@ -355,12 +382,18 @@ final class CarPlayCoordinator: NSObject {
         guard let processingTemplate else { return }
         self.processingTemplate = nil
         let nowPlaying = CPNowPlayingTemplate.shared
-        if let image = UIImage(systemName: "gearshape") {
-            let settings = CPNowPlayingImageButton(image: image) { [weak self] _ in
-                self?.showVoiceSettings()
-            }
-            nowPlaying.updateNowPlayingButtons([settings])
+        var buttons: [CPNowPlayingButton] = []
+        if let image = UIImage(systemName: "chevron.backward.2") {
+            buttons.append(CPNowPlayingImageButton(image: image) { [weak self] _ in
+                self?.readAloudSession?.startFromBeginning()
+            })
         }
+        if let image = UIImage(systemName: "gearshape") {
+            buttons.append(CPNowPlayingImageButton(image: image) { [weak self] _ in
+                self?.showVoiceSettings()
+            })
+        }
+        nowPlaying.updateNowPlayingButtons(buttons)
 
         guard interfaceController.topTemplate === processingTemplate else {
             interfaceController.pushTemplate(nowPlaying, animated: true, completion: nil)
@@ -456,7 +489,7 @@ final class CarPlayCoordinator: NSObject {
 
     private func collectionRows(for collections: [Collection], dbStorage: DbStorage, limit: Int) -> [CPListItem] {
         return collections.prefix(limit).map { collection in
-            let row = CPListItem(text: collection.name, detailText: nil, image: iconImage(named: collection.iconName), accessoryImage: nil, accessoryType: .disclosureIndicator)
+            let row = CPListItem(text: collection.name, detailText: nil, image: templateIconImage(named: collection.iconName), accessoryImage: nil, accessoryType: .disclosureIndicator)
             row.handler = { [weak self] _, completion in
                 guard let self else {
                     completion()
@@ -621,11 +654,47 @@ final class CarPlayCoordinator: NSObject {
         }
     }
 
-    /// Item type or collection icon drawn into the same area as in the app's lists (scaled to fit 28x28). CarPlay shows images
-    /// in their own size and icons differ in size (PNG and SVG assets), so they'd show in different sizes otherwise.
+    /// Item type icon drawn into the same area as in the app's lists (scaled to fit 28x28). CarPlay shows images in their own
+    /// size and icons differ in size (PNG and SVG assets), so they'd show in different sizes otherwise.
     private func iconImage(named name: String) -> UIImage? {
-        let traitCollection = interfaceController.carTraitCollection
-        guard let image = UIImage(named: name, in: nil, compatibleWith: traitCollection), image.size.width > 0, image.size.height > 0 else { return nil }
+        return iconImage(named: name, traitCollection: interfaceController.carTraitCollection, tintColor: nil)
+    }
+
+    /// Template (single color) icon, like collection icons, which the app tints. Their assets are black, so they'd be barely
+    /// visible on CarPlay's dark background. They're tinted with the label color instead, with a variant for both light and
+    /// dark appearance, so that CarPlay picks the matching one when the car switches between them (e.g. day and night mode).
+    private func templateIconImage(named name: String) -> UIImage? {
+        let carTraitCollection = interfaceController.carTraitCollection
+        let asset = UIImageAsset()
+        var registeredImage = false
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traitCollection = Self.traitCollection(carTraitCollection, with: style)
+            guard let image = iconImage(named: name, traitCollection: traitCollection, tintColor: UIColor.label.resolvedColor(with: traitCollection)) else { continue }
+            // The scale has to be registered too. Without it the asset resolves the image as 1x, so a 28pt @3x icon is shown as
+            // 84pt.
+            let assetTraitCollection = Self.traitCollection(UITraitCollection(displayScale: image.scale), with: style)
+            asset.register(image, with: assetTraitCollection)
+            registeredImage = true
+        }
+        guard registeredImage else { return nil }
+        // CarPlay is dark unless the car tells otherwise.
+        let style: UIUserInterfaceStyle = carTraitCollection.userInterfaceStyle == .light ? .light : .dark
+        return asset.image(with: Self.traitCollection(carTraitCollection, with: style))
+    }
+
+    private static func traitCollection(_ traitCollection: UITraitCollection, with style: UIUserInterfaceStyle) -> UITraitCollection {
+        if #available(iOS 17.0, *) {
+            return traitCollection.modifyingTraits { $0.userInterfaceStyle = style }
+        }
+        return UITraitCollection(traitsFrom: [traitCollection, UITraitCollection(userInterfaceStyle: style)])
+    }
+
+    /// Icon drawn into 28x28 area. If `tintColor` is set, the icon is drawn as a template in given color.
+    private func iconImage(named name: String, traitCollection: UITraitCollection, tintColor: UIColor?) -> UIImage? {
+        guard var image = UIImage(named: name, in: nil, compatibleWith: traitCollection), image.size.width > 0, image.size.height > 0 else { return nil }
+        if let tintColor {
+            image = image.withTintColor(tintColor, renderingMode: .alwaysOriginal)
+        }
         let size = CGSize(width: 28, height: 28)
         let scale = min(size.width / image.size.width, size.height / image.size.height)
         let drawSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)

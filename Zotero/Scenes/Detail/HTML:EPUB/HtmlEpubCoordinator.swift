@@ -110,7 +110,8 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
             dbStorage: dbStorage,
             documentWorkerController: userControllers.documentWorkerController,
-            remoteVoicesController: remoteVoicesController
+            remoteVoicesController: remoteVoicesController,
+            documentPreviewController: controllers.documentPreviewController
         )
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: false)
