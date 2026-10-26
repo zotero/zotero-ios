@@ -270,6 +270,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         /// Resume at a previously reported sentence anchor (see `ReadAloudResumePosition`), looking that sentence up
         /// again in the current document. Falls back to starting where the reader is when it can't be found.
         case resume(ReadAloudResumePosition)
+        /// The first readable paragraph of the document, regardless of where the reader is.
+        case documentStart
     }
 
     /// Time window within which a second forward/backward call upgrades the pending sentence skip to a paragraph skip.
@@ -283,7 +285,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private let disposeBag: DisposeBag
     private unowned let remoteVoicesController: RemoteVoicesController
     private unowned let documentWorkerController: DocumentWorkerController
+    private unowned let documentPreviewController: DocumentPreviewController
     private let nowPlayingManager: NowPlayingManager
+    /// Key of the attachment being read. Used to find its cover image for Now Playing.
+    private let key: String
+    /// Library of the attachment being read. Used to find its cover image for Now Playing.
+    private let libraryId: LibraryIdentifier
+    /// Cover image of the document, shown as Now Playing artwork. Loaded once, then reused across playback restarts.
+    private var coverImage: UIImage?
+    /// Generation of the cover image, if it wasn't stored yet.
+    private var coverDisposable: Disposable?
 
     private var processor: VoiceProcessor!
     private var position: Position? {
@@ -436,10 +447,22 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return (chosen, max(0, min(offset - paragraph.pageOffset, paragraph.text.count)))
     }
 
-    init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController, documentWorkerController: DocumentWorkerController) {
+    init(
+        delegate: Delegate,
+        key: String,
+        libraryId: LibraryIdentifier,
+        voiceLanguage: String?,
+        remoteVoiceTier: RemoteVoice.Tier?,
+        remoteVoicesController: RemoteVoicesController,
+        documentWorkerController: DocumentWorkerController,
+        documentPreviewController: DocumentPreviewController
+    ) {
         self.delegate = delegate
+        self.key = key
+        self.libraryId = libraryId
         self.remoteVoicesController = remoteVoicesController
         self.documentWorkerController = documentWorkerController
+        self.documentPreviewController = documentPreviewController
         paragraphs = []
         paragraphIndicesByPage = [:]
         documentLoaded = false
@@ -477,10 +500,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             .subscribe(onNext: { [weak self] state in
                 guard let self else { return }
                 switch state {
-                case .speaking:
+                case .speaking, .initializing, .loading:
+                    // Loading of the next segment (or a restart) is part of playing, so that Now Playing doesn't flip to paused
+                    // between sentences. Before the first start Now Playing isn't active yet, so this is ignored.
                     nowPlayingManager.updatePlaybackState(isPlaying: true)
 
-                case .paused, .initializing, .loading:
+                case .paused:
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
 
                 case .outOfCredits:
@@ -523,6 +548,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     deinit {
+        coverDisposable?.dispose()
         if let speechWorker {
             documentWorkerController.cleanupWorker(speechWorker)
         }
@@ -558,7 +584,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     return
                 }
                 // Playback is possible, so the audio session can be taken over from whatever else is playing.
-                nowPlayingManager.activate(title: delegate.documentTitle, artist: delegate.documentAuthors)
+                // Show the stored cover right away. If there is none yet, it's generated and Now Playing is updated afterwards.
+                loadStoredCoverIfNeeded(manager: self)
+                nowPlayingManager.activate(title: delegate.documentTitle, artist: delegate.documentAuthors, artwork: coverImage)
+                generateCoverIfNeeded(manager: self, file: delegate.documentFile)
                 // Set the session language from the document metadata before playback starts, so that the voice stays
                 // constant for the whole session. No-op when the user has already picked a language or it was already set.
                 applySessionLanguageIfNeeded(manager: self)
@@ -568,6 +597,28 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         // Everything below runs from inside the callbacks above (or from a callback of its own), so each function takes
         // the manager rather than capturing it — a callback then holds only its own weak reference.
+
+        /// Loads the document cover, if it has already been generated and stored.
+        func loadStoredCoverIfNeeded(manager: SpeechManager<Delegate>) {
+            guard manager.coverImage == nil, let file = manager.documentPreviewController.storedPreview(key: manager.key, libraryId: manager.libraryId) else { return }
+            manager.coverImage = UIImage(contentsOfFile: file.createUrl().path)
+        }
+
+        /// Generates and stores the document cover if it hasn't been stored yet, then shows it in Now Playing.
+        func generateCoverIfNeeded(manager: SpeechManager<Delegate>, file: FileData?) {
+            guard manager.coverImage == nil, manager.coverDisposable == nil, let file, DocumentPreviewController.supports(contentType: file.mimeType) else { return }
+            manager.coverDisposable = manager.documentPreviewController
+                .preview(for: file.createUrl(), contentType: file.mimeType, key: manager.key, libraryId: manager.libraryId)
+                .observe(on: MainScheduler.instance)
+                // `coverDisposable` is kept after completion, so that a document without a suitable cover (or a failed
+                // generation, logged by `DocumentPreviewController`) isn't retried on each playback start.
+                .subscribe(onSuccess: { [weak manager] previewFile in
+                    guard let manager, let previewFile, let image = UIImage(contentsOfFile: previewFile.createUrl().path) else { return }
+                    manager.coverImage = image
+                    // Shown right away if Now Playing is active, otherwise with its next activation.
+                    manager.nowPlayingManager.update(artwork: image)
+                })
+        }
 
         /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice
         /// stays constant for the whole session. No-op when the user has chosen a language explicitly or it was already
@@ -713,6 +764,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 beginPlayback(page: selectedPage, startOffset: sentenceStartOffset(for: selectionOffset, in: selectedSegments), manager: manager)
                 return
 
+            case .documentStart:
+                // Paragraphs are in reading order. Without any, there is nothing to read and the default below stops.
+                guard let paragraph = manager.paragraphs.first else { break }
+                if paragraph.page != delegate.getCurrentPageIndex() {
+                    delegate.focusPage(paragraph.page)
+                }
+                beginPlayback(page: paragraph.page, startOffset: paragraph.pageOffset, manager: manager)
+                return
+
             case .currentPage, .pageTextOffset, .readerSelection, .resume:
                 break
             }
@@ -739,7 +799,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     beginPlayback(page: page, startOffset: sentenceStartOffset(for: offset, in: manager.segments(forPage: page)), manager: manager)
                 }
 
-            case .currentPage, .pageTextOffset, .closestSentence, .resume:
+            case .currentPage, .pageTextOffset, .closestSentence, .resume, .documentStart:
                 beginPlaybackAtReaderPosition(page: page, manager: manager)
             }
 

@@ -25,6 +25,8 @@ protocol CarPlayReadAloudSession: AnyObject {
     var remoteVoicesController: RemoteVoicesController { get }
 
     func start()
+    /// Starts reading from the beginning of the document, whether it's currently reading, paused or stopped.
+    func startFromBeginning()
     func stop()
     func pause()
     func resume()
@@ -97,6 +99,7 @@ final class CarPlayPdfReadAloudSession {
         authors: String?,
         dbStorage: DbStorage,
         documentWorkerController: DocumentWorkerController,
+        documentPreviewController: DocumentPreviewController,
         apiClient: ApiClient
     ) {
         self.key = key
@@ -111,7 +114,7 @@ final class CarPlayPdfReadAloudSession {
         positionStore = CarPlayReadAloudPositionStore(key: key, libraryId: libraryId, dbStorage: dbStorage)
         disposeBag = DisposeBag()
 
-        speechManager = SpeechManager<CarPlayPdfReadAloudSession>.carPlay(delegate: self, key: key, libraryId: libraryId, dbStorage: dbStorage, remoteVoicesController: remoteVoicesController, documentWorkerController: documentWorkerController)
+        speechManager = SpeechManager<CarPlayPdfReadAloudSession>.carPlay(delegate: self, key: key, libraryId: libraryId, dbStorage: dbStorage, remoteVoicesController: remoteVoicesController, documentWorkerController: documentWorkerController, documentPreviewController: documentPreviewController)
         speechManager.observePosition(storingIn: positionStore, disposeBag: disposeBag)
     }
 }
@@ -136,6 +139,10 @@ extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
         } else {
             speechManager.start(.currentPage)
         }
+    }
+
+    func startFromBeginning() {
+        speechManager.start(.documentStart)
     }
 
     func stop() {
@@ -235,15 +242,19 @@ extension SpeechManager {
         libraryId: LibraryIdentifier,
         dbStorage: DbStorage,
         remoteVoicesController: RemoteVoicesController,
-        documentWorkerController: DocumentWorkerController
+        documentWorkerController: DocumentWorkerController,
+        documentPreviewController: DocumentPreviewController
     ) -> SpeechManager<Delegate> {
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
         return SpeechManager(
             delegate: delegate,
+            key: key,
+            libraryId: libraryId,
             voiceLanguage: language,
             remoteVoiceTier: Defaults.shared.remoteVoiceTier,
             remoteVoicesController: remoteVoicesController,
-            documentWorkerController: documentWorkerController
+            documentWorkerController: documentWorkerController,
+            documentPreviewController: documentPreviewController
         )
     }
 
