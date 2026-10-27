@@ -23,6 +23,8 @@ protocol CarPlayReadAloudSession: AnyObject {
     var language: String? { get }
     var detectedLanguage: String { get }
     var remoteVoicesController: RemoteVoicesController { get }
+    /// Called when reading is stopped because another session started (e.g. in the reader on the phone).
+    var onPlaybackTakenOver: (() -> Void)? { get set }
 
     func start()
     /// Starts reading from the beginning of the document, whether it's currently reading, paused or stopped.
@@ -98,6 +100,7 @@ final class CarPlayPdfReadAloudSession {
         title: String?,
         authors: String?,
         dbStorage: DbStorage,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
         documentWorkerController: DocumentWorkerController,
         documentPreviewController: DocumentPreviewController,
         apiClient: ApiClient
@@ -114,7 +117,7 @@ final class CarPlayPdfReadAloudSession {
         positionStore = CarPlayReadAloudPositionStore(key: key, libraryId: libraryId, dbStorage: dbStorage)
         disposeBag = DisposeBag()
 
-        speechManager = SpeechManager<CarPlayPdfReadAloudSession>.carPlay(delegate: self, key: key, libraryId: libraryId, dbStorage: dbStorage, remoteVoicesController: remoteVoicesController, documentWorkerController: documentWorkerController, documentPreviewController: documentPreviewController)
+        speechManager = SpeechManager<CarPlayPdfReadAloudSession>.carPlay(delegate: self, key: key, libraryId: libraryId, dbStorage: dbStorage, speechPlaybackOwnership: speechPlaybackOwnership, remoteVoicesController: remoteVoicesController, documentWorkerController: documentWorkerController, documentPreviewController: documentPreviewController)
         speechManager.observePosition(storingIn: positionStore, disposeBag: disposeBag)
     }
 }
@@ -122,6 +125,11 @@ final class CarPlayPdfReadAloudSession {
 extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
     var state: BehaviorRelay<SpeechState> {
         return speechManager.state
+    }
+
+    var onPlaybackTakenOver: (() -> Void)? {
+        get { speechManager.onPlaybackTakenOver }
+        set { speechManager.onPlaybackTakenOver = newValue }
     }
 
     var extractionProgress: BehaviorRelay<Double?> {
@@ -241,6 +249,7 @@ extension SpeechManager {
         key: String,
         libraryId: LibraryIdentifier,
         dbStorage: DbStorage,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
         remoteVoicesController: RemoteVoicesController,
         documentWorkerController: DocumentWorkerController,
         documentPreviewController: DocumentPreviewController
@@ -252,6 +261,7 @@ extension SpeechManager {
             libraryId: libraryId,
             voiceLanguage: language,
             remoteVoiceTier: Defaults.shared.remoteVoiceTier,
+            speechPlaybackOwnership: speechPlaybackOwnership,
             remoteVoicesController: remoteVoicesController,
             documentWorkerController: documentWorkerController,
             documentPreviewController: documentPreviewController

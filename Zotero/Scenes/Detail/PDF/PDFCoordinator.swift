@@ -135,6 +135,7 @@ final class PDFCoordinator: ReaderCoordinator {
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
             documentWorkerController: userControllers.documentWorkerController,
+            speechPlaybackOwnership: controllers.speechPlaybackOwnership,
             remoteVoicesController: remoteVoicesController,
             documentPreviewController: controllers.documentPreviewController,
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)

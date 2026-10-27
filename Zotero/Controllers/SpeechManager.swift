@@ -202,6 +202,27 @@ enum SpeechState: Equatable {
     }
 }
 
+/// Read aloud session which can own playback, see `SpeechPlaybackOwnership`.
+protocol SpeechPlaybackOwner: AnyObject {
+    /// Called when another session starts playback. The owner has to stop and release Now Playing right away.
+    func playbackTakenOver()
+}
+
+/// Makes sure that only one read aloud session plays at a time. Sessions are started from readers (there can be more of them
+/// in multiple windows) and from CarPlay, and all of them share the audio session, remote commands and Now Playing info,
+/// which are app-wide. Starting a session stops the previous one. Used on the main queue only.
+final class SpeechPlaybackOwnership {
+    private weak var owner: SpeechPlaybackOwner?
+
+    func claim(by newOwner: SpeechPlaybackOwner) {
+        guard owner !== newOwner else { return }
+        // Kept strongly while it stops, since whoever holds the previous session can release it in the meantime.
+        let previousOwner = owner
+        owner = newOwner
+        previousOwner?.playbackTakenOver()
+    }
+}
+
 enum SpeechVoice: Equatable {
     case local(AVSpeechSynthesisVoice)
     case remote(RemoteVoice)
@@ -283,6 +304,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// progress is not yet known (indeterminate). Reset to `nil` once extraction finishes.
     let extractionProgress: BehaviorRelay<Double?>
     private let disposeBag: DisposeBag
+    /// Work of the current playback session which outlives a state change: document extraction and parsing, voice
+    /// downgrade. Replaced when playback is taken over, see `stopCompletely()`.
+    private var playbackDisposeBag: DisposeBag
+    /// Incremented when document loading is cancelled, so that a parse which already finished (it can't be cancelled) or a
+    /// reader segments callback doesn't continue a session which was stopped.
+    private var documentLoadingGeneration: Int
+    private unowned let speechPlaybackOwnership: SpeechPlaybackOwnership
     private unowned let remoteVoicesController: RemoteVoicesController
     private unowned let documentWorkerController: DocumentWorkerController
     private unowned let documentPreviewController: DocumentPreviewController
@@ -323,6 +351,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     var onHighlightSessionTimedOut: (() -> Void)?
     var onSpeakingPositionChanged: ((ReadAloudResumePosition) -> Void)?
+    /// Called when playback is stopped because another session started, before the session stops.
+    var onPlaybackTakenOver: (() -> Void)?
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -453,6 +483,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         libraryId: LibraryIdentifier,
         voiceLanguage: String?,
         remoteVoiceTier: RemoteVoice.Tier?,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
         remoteVoicesController: RemoteVoicesController,
         documentWorkerController: DocumentWorkerController,
         documentPreviewController: DocumentPreviewController
@@ -460,6 +491,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         self.delegate = delegate
         self.key = key
         self.libraryId = libraryId
+        self.speechPlaybackOwnership = speechPlaybackOwnership
         self.remoteVoicesController = remoteVoicesController
         self.documentWorkerController = documentWorkerController
         self.documentPreviewController = documentPreviewController
@@ -471,6 +503,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         remainingTime = BehaviorRelay(value: nil)
         extractionProgress = BehaviorRelay(value: nil)
         disposeBag = DisposeBag()
+        playbackDisposeBag = DisposeBag()
+        documentLoadingGeneration = 0
         nowPlayingManager = NowPlayingManager()
         parsingQueue = DispatchQueue(label: "SpeechManager.ParsingQueue", qos: .userInteractive, attributes: .concurrent)
         super.init()
@@ -558,6 +592,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     // MARK: - Actions
 
     func start(_ target: StartTarget) {
+        // Stop whatever else is reading right away, so that two sessions don't read over each other while this document loads.
+        speechPlaybackOwnership.claim(by: self)
         state.accept(.initializing)
         // Ask the processor whether playback may start at all (remote voices need credits) before extracting the
         // document, so that an out-of-credits session fails right away instead of after the whole document has been
@@ -644,6 +680,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
             let worker = manager.speechWorker ?? DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high, password: delegate.documentPassword)
             manager.speechWorker = worker
+            let generation = manager.documentLoadingGeneration
             let start = CFAbsoluteTimeGetCurrent()
             manager.documentWorkerController.queue(work: .structuredDocumentText, in: worker)
                 .observe(on: MainScheduler.instance)
@@ -686,7 +723,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                                 return
                             }
                             delegate.readAloudReaderSegments(sdtPackData: pack.data, packVersion: pack.header.packVersion, schemaMajorVersion: pack.header.schemaMajorVersion) { [weak manager] readerSegments in
-                                guard let manager else { return }
+                                guard let manager, manager.documentLoadingGeneration == generation else { return }
                                 if let readerSegments {
                                     let language = (try? pack.metadataResult.get()).flatMap { SpeechDocumentParser.language(from: ["metadata": $0]) }
                                     manager.store(readerSegments: readerSegments, language: language)
@@ -705,7 +742,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                                         parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
                                     }
                                     DispatchQueue.main.async { [weak manager] in
-                                        guard let manager else { return }
+                                        guard let manager, manager.documentLoadingGeneration == generation else { return }
                                         manager.store(parsed)
                                         manager.documentLoaded = true
                                         DDLogInfo("SpeechManager: extracted \(manager.paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
@@ -721,7 +758,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                         }
                     }
                 })
-                .disposed(by: manager.disposeBag)
+                .disposed(by: manager.playbackDisposeBag)
         }
 
         func startPlayback(target: StartTarget, manager: SpeechManager<Delegate>) {
@@ -1162,7 +1199,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                             DDLogError("SpeechManager: can't load standard voice for downgrade - \(error)")
                         }
                     )
-                    .disposed(by: disposeBag)
+                    .disposed(by: playbackDisposeBag)
 
             case .standard:
                 // Downgrade from standard to local voice
@@ -1570,15 +1607,12 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func stop() {
-        guard synthesizer.isSpeaking || synthesizer.isPaused || delegate.state.value == .initializing else { return }
-        if delegate.state.value == .initializing {
-            finishSpeaking()
-        } else {
-            // Clearing the current utterance ignores its cancel/finish callbacks, which would move us to another paragraph
-            currentUtterance = nil
-            synthesizer.stopSpeaking(at: .immediate)
-            finishSpeaking()
-        }
+        // Stops regardless of the synthesizer state, which doesn't cover the transition between paragraphs. Clearing the
+        // current utterance ignores its cancel/finish callbacks, which would move us to another paragraph.
+        currentUtterance = nil
+        // Stops the current utterance and drops queued ones.
+        synthesizer.stopSpeaking(at: .immediate)
+        finishSpeaking()
     }
 
     func invalidateCurrentPlayback() {
@@ -1621,6 +1655,8 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         shouldReloadUtteranceOnResume = false
         currentUtterance = nil
         endBackgroundTask()
+        // Stopping an already stopped session doesn't report the stop again.
+        guard delegate.state.value != .stopped else { return }
         delegate.state.accept(.stopped)
     }
 
@@ -1720,6 +1756,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var pendingPlaybackRange: NSRange?
     private var shouldReloadOnResume = false
     private var debouncedSpeakWorkItem: DispatchWorkItem?
+    /// Start of the next segment, delayed by the voice's sentence delay.
+    private var nextSegmentWorkItem: DispatchWorkItem?
     private var creditPollTimer: Timer?
     /// Background task identifier to keep the app alive during segment transitions
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -1793,6 +1831,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         disposeBag = DisposeBag()
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
+        nextSegmentWorkItem?.cancel()
+        nextSegmentWorkItem = nil
 
         // Start .loading state unless we're already .initializing
         if delegate.state.value != .initializing {
@@ -1871,8 +1911,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func stop() {
-        finishSpeaking()
+        // Cancels voice, credit and segment requests (including preloading) before the stop is reported.
         disposeBag = DisposeBag()
+        finishSpeaking()
     }
 
     func invalidateCurrentPlayback() {
@@ -2233,6 +2274,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private func finishSpeaking() {
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
+        nextSegmentWorkItem?.cancel()
+        nextSegmentWorkItem = nil
         segments = []
         player?.stop()
         player = nil
@@ -2242,6 +2285,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         shouldReloadOnResume = false
         stopCreditPollTimer()
         endBackgroundTask()
+        // Stopping an already stopped session doesn't report the stop again.
+        guard delegate.state.value != .stopped else { return }
         delegate.state.accept(.stopped)
     }
 }
@@ -2261,16 +2306,56 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
         if delay == 0 {
             startSpeaking(startIndex: nextStartIndex, voice: voice)
         } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                guard let self, self.delegate.state.value.isSpeaking || self.delegate.state.value == .loading else { return }
-                self.startSpeaking(startIndex: nextStartIndex, voice: voice)
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                nextSegmentWorkItem = nil
+                guard delegate.state.value.isSpeaking || delegate.state.value == .loading else { return }
+                startSpeaking(startIndex: nextStartIndex, voice: voice)
             }
+            nextSegmentWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
         }
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
         DDLogError("RemoteVoiceProcessor: decode error - \(String(describing: error))")
         finishSpeaking()
+    }
+}
+
+// MARK: - SpeechPlaybackOwner
+
+extension SpeechManager: SpeechPlaybackOwner {
+    func playbackTakenOver() {
+        DDLogInfo("SpeechManager: playback taken over by another session")
+        // Reported first, so that the owner can tell the stop apart from a failure.
+        onPlaybackTakenOver?()
+        stopCompletely()
+    }
+
+    /// Stops playback together with everything working towards it, so that nothing of this session can produce audio or
+    /// update Now Playing once another session plays: pending navigation, document extraction and parsing, voice
+    /// downgrade, segment downloads and preloading, queued utterances.
+    private func stopCompletely() {
+        pendingNavigation?.workItem.cancel()
+        pendingNavigation = nil
+        cancelDocumentLoading()
+        playbackDisposeBag = DisposeBag()
+        processor.stop()
+        // Released right away rather than once the stopped state is observed, so that it can't clear Now Playing of the new
+        // session afterwards.
+        nowPlayingManager.deactivate()
+
+        func cancelDocumentLoading() {
+            // Already loaded paragraphs are kept, so that this session can restart without extracting the document again.
+            guard !documentLoaded else { return }
+            documentLoadingGeneration += 1
+            extractionProgress.accept(nil)
+            if let speechWorker {
+                documentWorkerController.cleanupWorker(speechWorker)
+                self.speechWorker = nil
+            }
+        }
     }
 }
 

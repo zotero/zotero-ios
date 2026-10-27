@@ -207,6 +207,9 @@ final class CarPlayCoordinator: NSObject {
             return
         }
         readAloudSession = session
+        session.onPlaybackTakenOver = { [weak self] in
+            self?.readAloudTakenOver()
+        }
         showProcessing(title: session.documentTitle ?? attachment.title, session: session)
         session.start()
 
@@ -252,6 +255,7 @@ final class CarPlayCoordinator: NSObject {
                 title: title,
                 authors: authors,
                 dbStorage: userControllers.dbStorage,
+                speechPlaybackOwnership: controllers.speechPlaybackOwnership,
                 documentWorkerController: userControllers.documentWorkerController,
                 documentPreviewController: controllers.documentPreviewController,
                 apiClient: controllers.apiClient
@@ -266,6 +270,7 @@ final class CarPlayCoordinator: NSObject {
                 authors: authors,
                 dbStorage: userControllers.dbStorage,
                 fileStorage: controllers.fileStorage,
+                speechPlaybackOwnership: controllers.speechPlaybackOwnership,
                 documentWorkerController: userControllers.documentWorkerController,
                 documentPreviewController: controllers.documentPreviewController,
                 apiClient: controllers.apiClient
@@ -325,6 +330,16 @@ final class CarPlayCoordinator: NSObject {
         readAloudDisposeBag = DisposeBag()
         readAloudSession?.stop()
         readAloudSession = nil
+    }
+
+    /// Reading was started elsewhere (e.g. in the reader on the phone). That session takes over Now Playing, so only the UI
+    /// of this session is closed.
+    private func readAloudTakenOver() {
+        DDLogInfo("CarPlayCoordinator: read aloud taken over")
+        hideProcessing()
+        // Custom Now Playing buttons control this session.
+        CPNowPlayingTemplate.shared.updateNowPlayingButtons([])
+        stopReadAloud()
     }
 
     private func showProcessing(title: String, session: CarPlayReadAloudSession) {
