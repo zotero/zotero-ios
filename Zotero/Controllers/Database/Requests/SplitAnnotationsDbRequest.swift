@@ -8,9 +8,13 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RealmSwift
 
-struct SplitAnnotationsDbRequest: DbRequest {
+/// Splits annotations which exceed the position size limit. Returns keys of annotations which were split and replaced by their splits.
+struct SplitAnnotationsDbRequest: DbResponseRequest {
+    typealias Response = Set<String>
+
     private struct Point: SplittablePathPoint {
         let x: Double
         let y: Double
@@ -21,58 +25,54 @@ struct SplitAnnotationsDbRequest: DbRequest {
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws {
+    func process(in database: Realm) throws -> Set<String> {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
         let context = DeletionContext()
+        var splitKeys: Set<String> = []
 
         for item in items {
-            self.split(item: item, database: database)
+            // The original is replaced by its splits. If it can't be split, it's kept, so that it's not lost.
+            guard self.split(item: item, database: database) else {
+                DDLogError("SplitAnnotationsDbRequest: can't split annotation \(item.key) in \(libraryId)")
+                continue
+            }
+            splitKeys.insert(item.key)
             context.delete(item, in: database)
         }
         context.cleanup(in: database)
+        return splitKeys
     }
 
     /// Splits database annotation if it exceedes position limit.
     /// - parameter item: Database annotation to split
     /// - parameter database: Database
-    private func split(item: RItem, database: Realm) {
-        guard let annotationType = item.fields.filter(.key(FieldKeys.Item.Annotation.type)).first.flatMap({ AnnotationType(rawValue: $0.value) }) else { return }
+    /// - returns: `true` if the annotation was split, in which case it should be replaced by the created splits.
+    private func split(item: RItem, database: Realm) -> Bool {
+        guard let annotationType = item.fields.filter(.key(FieldKeys.Item.Annotation.type)).first.flatMap({ AnnotationType(rawValue: $0.value) }) else { return false }
 
         switch annotationType {
         case .highlight, .underline:
-            let rects = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
-            
-            guard let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: Array(rects)) else { return }
+            let rects = Array(item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) }))
+            let nextPageRects = Array(item.nextPageRects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) }))
 
-            for (index, split) in splitRects.enumerated() {
+            guard let splits = self.splitHighlight(rects: rects, nextPageRects: nextPageRects) else { return false }
+
+            for (index, split) in splits.enumerated() {
                 self.createCopyWithoutPathsAndRects(of: item, database: database, additionalChange: { new in
-                    for rect in split {
-                        let rRect = RRect()
-                        rRect.minX = rect.minX
-                        rRect.minY = rect.minY
-                        rRect.maxX = rect.maxX
-                        rRect.maxY = rect.maxY
-                        new.rects.append(rRect)
-                    }
-                    // Rects are split from the top of the page, so the last split is the one which continues on the next page.
-                    if index == splitRects.count - 1 {
-                        for rect in item.nextPageRects {
-                            let rRect = RRect()
-                            rRect.minX = rect.minX
-                            rRect.minY = rect.minY
-                            rRect.maxX = rect.maxX
-                            rRect.maxY = rect.maxY
-                            new.nextPageRects.append(rRect)
-                        }
+                    self.append(rects: split.rects, to: new.rects)
+                    self.append(rects: split.nextPageRects, to: new.nextPageRects)
+                    if split.isOnNextPage {
+                        self.moveToNextPage(item: new, order: index)
                     }
                     new.changes.append(RObjectChange.create(changes: RItemChanges.rects))
                 })
             }
+            return true
 
         case .ink:
             let paths = self.points(from: item.paths)
 
-            guard let splitPaths = AnnotationSplitter.splitPathsIfNeeded(paths: paths) else { return }
+            guard let splitPaths = AnnotationSplitter.splitPathsIfNeeded(paths: paths) else { return false }
 
             for split in splitPaths {
                 self.createCopyWithoutPathsAndRects(of: item, database: database) { new in
@@ -97,8 +97,88 @@ struct SplitAnnotationsDbRequest: DbRequest {
                     new.changes.append(RObjectChange.create(changes: RItemChanges.paths))
                 }
             }
+            return true
 
-        default: break
+        default:
+            return false
+        }
+    }
+
+    private struct HighlightSplit {
+        /// Rects on the page of the split.
+        let rects: [CGRect]
+        /// Rects on the following page, if the split spans a page break.
+        let nextPageRects: [CGRect]
+        /// `true` if the split lies only on the page following the original annotation's page.
+        let isOnNextPage: Bool
+    }
+
+    /// Splits rects of a highlight/underline, which may span a page break, so that each split fits the position size limit.
+    ///
+    /// Rects of each page are split separately, from the top of the page. The last split of the first page and the first split of the next page
+    /// stay together as one annotation spanning the page break, if they fit the limit together. Other splits of the next page become annotations
+    /// on the next page.
+    /// - returns: Splits, or `nil` if the rects fit the limit and don't need to be split.
+    private func splitHighlight(rects: [CGRect], nextPageRects: [CGRect]) -> [HighlightSplit]? {
+        let limit = AnnotationsConfig.positionSizeLimit
+        guard !nextPageRects.isEmpty else {
+            return AnnotationSplitter.splitRectsIfNeeded(rects: rects).map({ $0.map({ HighlightSplit(rects: $0, nextPageRects: [], isOnNextPage: false) }) })
+        }
+        guard AnnotationSplitter.positionSize(of: rects) + AnnotationSplitter.positionSize(of: nextPageRects) > limit else { return nil }
+
+        var firstPageSplits = AnnotationSplitter.splitRectsIfNeeded(rects: rects) ?? [rects]
+        var nextPageSplits = AnnotationSplitter.splitRectsIfNeeded(rects: nextPageRects) ?? [nextPageRects]
+        var splits: [HighlightSplit] = []
+
+        let lastFirstPageSplit = firstPageSplits.removeLast()
+        let firstNextPageSplit = nextPageSplits.removeFirst()
+        let spanningSplit: HighlightSplit?
+        if AnnotationSplitter.positionSize(of: lastFirstPageSplit) + AnnotationSplitter.positionSize(of: firstNextPageSplit) <= limit {
+            spanningSplit = HighlightSplit(rects: lastFirstPageSplit, nextPageRects: firstNextPageSplit, isOnNextPage: false)
+        } else {
+            firstPageSplits.append(lastFirstPageSplit)
+            nextPageSplits.insert(firstNextPageSplit, at: 0)
+            spanningSplit = nil
+        }
+
+        splits.append(contentsOf: firstPageSplits.map({ HighlightSplit(rects: $0, nextPageRects: [], isOnNextPage: false) }))
+        if let spanningSplit {
+            splits.append(spanningSplit)
+        }
+        splits.append(contentsOf: nextPageSplits.map({ HighlightSplit(rects: $0, nextPageRects: [], isOnNextPage: true) }))
+        return splits
+    }
+
+    private func append(rects: [CGRect], to list: List<RRect>) {
+        for rect in rects {
+            let rRect = RRect()
+            rRect.minX = rect.minX
+            rRect.minY = rect.minY
+            rRect.maxX = rect.maxX
+            rRect.maxY = rect.maxY
+            list.append(rRect)
+        }
+    }
+
+    /// Moves a split copy of an annotation to the page following the original annotation's page, where its rects lie.
+    /// - parameter item: Split copy, with fields copied from the original annotation.
+    /// - parameter order: Order of the split, used in the sort index so that splits on the next page keep their order.
+    private func moveToNextPage(item: RItem, order: Int) {
+        guard let pageField = item.fields.filter(.key(FieldKeys.Item.Annotation.Position.pageIndex, andBaseKey: FieldKeys.Item.Annotation.position)).first,
+              let page = Int(pageField.value)
+        else { return }
+        let nextPage = page + 1
+        pageField.value = "\(nextPage)"
+
+        // Sort index (page|text offset|y position) can't be computed without the document, the split is placed at the top of the next page,
+        // where the annotation continues.
+        let sortIndex = String(format: "%05d|%06d|%05d", nextPage, 0, order)
+        item.annotationSortIndex = sortIndex
+        item.fields.filter(.key(FieldKeys.Item.Annotation.sortIndex)).first?.value = sortIndex
+
+        // Page label can't be read without the document either, it's derived from the original one when it's a number.
+        if let labelField = item.fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first, let label = Int(labelField.value) {
+            labelField.value = "\(label + 1)"
         }
     }
 
