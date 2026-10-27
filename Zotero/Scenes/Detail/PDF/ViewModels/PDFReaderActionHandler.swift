@@ -92,7 +92,26 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
+    private struct OpenedDocument: Hashable {
+        let key: String
+        let libraryId: LibraryIdentifier
+    }
+
+    private struct OpenedDocumentReaders {
+        var count: Int
+        // Remains set until all readers of the document close, so database changes made by a reader that already closed are still reconciled.
+        var hasMultipleReaders: Bool
+
+        static var none: Self {
+            .init(count: 0, hasMultipleReaders: false)
+        }
+    }
+
+    // Accessed only on main thread.
+    private static var openedDocumentReaders: [OpenedDocument: OpenedDocumentReaders] = [:]
+
     private var pdfDisposeBag: DisposeBag
+    private var openedDocument: OpenedDocument?
     private var pageDebounceDisposeBag: DisposeBag?
     private var freeTextAnnotationRotationDebounceDisposeBagByKey: [String: DisposeBag]
     private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
@@ -249,6 +268,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .deinitialiseReader:
             pdfThumbnailController.stop(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
             lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
+            unregisterOpenedDocument()
 
         case .unlock(let password):
             let result = viewModel.state.document.unlock(withPassword: password)
@@ -1544,6 +1564,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             timeLog += ", default annotation page label: \(endTime - defaultAnnotationPageLabelStartTime)"
             DDLogInfo(DDLogMessageFormat(stringLiteral: timeLog))
 
+            registerOpenedDocument(key: key, libraryId: library.identifier)
             observeDocument(in: viewModel)
         } catch let error {
             DDLogError("PDFReaderActionHandler: failed to load PDF: \(error)")
@@ -1641,6 +1662,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             return (item, results, page, documentData.lastReadAloudPosition)
+        }
+
+        func registerOpenedDocument(key: String, libraryId: LibraryIdentifier) {
+            guard openedDocument == nil else { return }
+            let document = OpenedDocument(key: key, libraryId: libraryId)
+            var readers = Self.openedDocumentReaders[document, default: .none]
+            readers.count += 1
+            readers.hasMultipleReaders = readers.hasMultipleReaders || readers.count > 1
+            Self.openedDocumentReaders[document] = readers
+            openedDocument = document
         }
     }
 
@@ -1805,6 +1836,24 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 return annotation.document == document
             }
         }
+    }
+
+    // MARK: - Multiple readers of the same document
+
+    private func unregisterOpenedDocument() {
+        guard let openedDocument else { return }
+        self.openedDocument = nil
+        if let readers = Self.openedDocumentReaders[openedDocument], readers.count > 1 {
+            Self.openedDocumentReaders[openedDocument]?.count -= 1
+        } else {
+            Self.openedDocumentReaders[openedDocument] = nil
+        }
+    }
+
+    /// Whether user changes in database may have been made by another reader of the same document, so they need to be reconciled with this reader's document.
+    private var documentHasMultipleReaders: Bool {
+        guard let openedDocument else { return false }
+        return Self.openedDocumentReaders[openedDocument]?.hasMultipleReaders ?? false
     }
 
     // MARK: - Translate sync (db) changes to PDF document
