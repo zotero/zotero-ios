@@ -253,7 +253,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
 
         case .setReadingModePresented(let isPresented):
+            let wasPresented = isReadingModePresented
             isReadingModePresented = isPresented
+            if wasPresented && !isPresented {
+                // Reading position could change in reading mode, move the document to it.
+                update(viewModel: viewModel) { state in
+                    state.changes = .visiblePageFromReadingMode
+                }
+            }
 
         case .unlock(let password):
             let result = viewModel.state.document.unlock(withPassword: password)

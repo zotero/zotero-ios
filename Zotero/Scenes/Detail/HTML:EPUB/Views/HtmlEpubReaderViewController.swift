@@ -41,6 +41,8 @@ struct ReadingModeSourceContext {
     /// again.
     let sidebarVisibilityChanged: (Bool) -> Void
     let toolbarStateChanged: (AnnotationToolbarHandler.State) -> Void
+    /// Reports the page of the source document which reading mode shows, so that the reading position isn't lost when reading mode is left.
+    let pageChanged: (Int) -> Void
     /// Sentence read aloud was speaking when reading mode was opened, `nil` when it wasn't playing. Reading mode takes
     /// the session over, so that it both reads and highlights.
     let readAloudPosition: ReadAloudResumePosition?
@@ -575,6 +577,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
         if state.changes.contains(.pages) {
             updatePageIndicator(from: state)
+            if let pageIndex = state.currentPage?.index {
+                sourceContext?.pageChanged(pageIndex)
+            }
         }
 
         if state.changes.contains(.zoomState) {

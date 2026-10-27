@@ -16,9 +16,9 @@ typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
 
 struct PDFReaderState: ViewModelState {
     struct Changes: OptionSet {
-        typealias RawValue = UInt16
+        typealias RawValue = UInt32
 
-        let rawValue: UInt16
+        let rawValue: UInt32
 
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
@@ -36,6 +36,8 @@ struct PDFReaderState: ViewModelState {
         static let md5 = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
         static let lastReadAloudPosition = Changes(rawValue: 1 << 15)
+        /// Visible page changed in reading mode, which was dismissed, and the document needs to move to it.
+        static let visiblePageFromReadingMode = Changes(rawValue: 1 << 16)
     }
 
     enum Error: ReaderError {

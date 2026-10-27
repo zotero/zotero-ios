@@ -426,9 +426,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                     guard let self else { return }
                     previousTraitCollection = traitCollection
                     readAloudHandler?.confirmActiveHighlightSession()
-                    if let page = documentController?.pdfController?.pageIndex {
-                        viewModel.process(action: .submitPendingPage(Int(page)))
-                    }
+                    // Visible page in state follows the document, and also reading mode presented over this reader.
+                    viewModel.process(action: .submitPendingPage(viewModel.state.visiblePage))
                 })
                 .disposed(by: disposeBag)
         }
@@ -800,6 +799,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                     toolbarState = state
                     readingModeToolbarChanged = true
                 },
+                // Reading position in reading mode is the reading position of this document. It's stored like a page change in this reader, which moves to
+                // that page when it's shown again.
+                pageChanged: { [weak self] page in
+                    self?.viewModel.process(action: .setVisiblePage(page: page, userActionFromDocument: false, fromThumbnailList: false))
+                },
                 // Reading mode takes the read aloud session over, so that it both reads and highlights; this reader
                 // can't highlight what's being read while it's covered anyway.
                 readAloudPosition: readAloudHandler?.stopForHandOff(),
@@ -809,9 +813,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     }
 
     private func close() {
-        if let page = documentController?.pdfController?.pageIndex {
-            viewModel.process(action: .submitPendingPage(Int(page)))
-        }
+        // Visible page in state follows the document, and also reading mode, which can close this reader while it's presented over it.
+        viewModel.process(action: .submitPendingPage(viewModel.state.visiblePage))
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
