@@ -25,14 +25,26 @@ final class DocumentPreviewController {
     private static let maxPixelSize: CGFloat = 1024
     private static let jpegQuality: CGFloat = 0.85
 
+    private struct PreviewId: Hashable {
+        let key: String
+        let libraryId: LibraryIdentifier
+    }
+
     private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
     private let fileStorage: FileStorage
+    /// Guards `invalidationCounts` and stored preview files: a preview is written only if it wasn't invalidated while it was
+    /// being rendered, and invalidation removes the stored file, both while holding the lock.
+    private let lock: NSLock
+    /// Number of invalidations of each preview. A preview rendered while its count changed was rendered from a replaced file.
+    private var invalidationCounts: [PreviewId: Int]
 
     init(fileStorage: FileStorage) {
         queue = DispatchQueue(label: "org.zotero.DocumentPreviewController.queue", qos: .utility)
         scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.DocumentPreviewController.scheduler")
         self.fileStorage = fileStorage
+        lock = NSLock()
+        invalidationCounts = [:]
     }
 
     static func supports(contentType: String) -> Bool {
@@ -70,6 +82,8 @@ final class DocumentPreviewController {
                 subscriber(.success(file))
                 return Disposables.create()
             }
+            let previewId = PreviewId(key: key, libraryId: libraryId)
+            let invalidationCount = invalidationCount(for: previewId)
 
             do {
                 let image: CGImage?
@@ -92,6 +106,15 @@ final class DocumentPreviewController {
                 }
 
                 guard let data = autoreleasepool(invoking: { Self.jpegData(from: image) }) else { throw Error.cantCreateImageData }
+                lock.lock()
+                defer { lock.unlock() }
+                guard invalidationCounts[previewId, default: 0] == invalidationCount else {
+                    // The file was replaced while rendering, so the preview may show the previous version. It's not stored, the
+                    // next request renders the new file.
+                    DDLogInfo("DocumentPreviewController: preview invalidated while rendering; key=\(key); library=\(libraryId)")
+                    subscriber(.success(nil))
+                    return Disposables.create()
+                }
                 try fileStorage.write(data, to: file, options: .atomicWrite)
                 subscriber(.success(file))
             } catch let error {
@@ -104,10 +127,24 @@ final class DocumentPreviewController {
         .subscribe(on: scheduler)
     }
 
+    /// Removes the stored preview, e.g. when the attachment file is replaced. Synchronous, so that once it returns the
+    /// previous preview can't be read anymore, and a preview which is being rendered at the same time isn't stored.
     func delete(key: String, libraryId: LibraryIdentifier) {
-        queue.async { [weak self] in
-            try? self?.fileStorage.remove(Files.documentPreview(key: key, libraryId: libraryId))
+        let previewId = PreviewId(key: key, libraryId: libraryId)
+        lock.lock()
+        defer { lock.unlock() }
+        invalidationCounts[previewId, default: 0] += 1
+        do {
+            try fileStorage.remove(Files.documentPreview(key: key, libraryId: libraryId))
+        } catch let error {
+            DDLogError("DocumentPreviewController: can't remove preview; key=\(key); library=\(libraryId); error=\(error)")
         }
+    }
+
+    private func invalidationCount(for previewId: PreviewId) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return invalidationCounts[previewId, default: 0]
     }
 
     /// Draws image into an opaque white context, so that transparent images don't end up with black background, and encodes it as JPEG.
