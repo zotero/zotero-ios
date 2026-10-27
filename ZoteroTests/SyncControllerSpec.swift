@@ -57,7 +57,8 @@ final class SyncControllerSpec: QuickSpec {
                     apiClient: TestControllers.apiClient,
                     fileStorage: TestControllers.fileStorage,
                     dbStorage: dbStorage,
-                    webDavController: webDavController
+                    webDavController: webDavController,
+                    documentPreviewController: TestControllers.documentPreviewController
                 )
                 syncController = SyncController(
                     userId: userId,

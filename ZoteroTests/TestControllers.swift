@@ -13,6 +13,7 @@ import Foundation
 final class TestControllers {
     static let apiClient: ApiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: .default)
     static let fileStorage: FileStorage = FileStorageController()
+    static let documentPreviewController = DocumentPreviewController(fileStorage: fileStorage)
     static let schemaController: SchemaController = SchemaController()
     static let secureStorage: SecureStorage = KeychainSecureStorage()
     static let dateParser = DateParser()

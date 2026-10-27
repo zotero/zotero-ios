@@ -357,7 +357,14 @@ final class UserControllers {
         let backgroundUploadContext = BackgroundUploaderContext()
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundUploadProcessor, backgroundTaskController: controllers.backgroundTaskController)
-        let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
+        let fileDownloader = AttachmentDownloader(
+            userId: userId,
+            apiClient: controllers.apiClient,
+            fileStorage: controllers.fileStorage,
+            dbStorage: dbStorage,
+            webDavController: webDavController,
+            documentPreviewController: controllers.documentPreviewController
+        )
         let syncController = SyncController(
             userId: userId,
             apiClient: controllers.apiClient,
