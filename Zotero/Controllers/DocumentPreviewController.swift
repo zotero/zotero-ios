@@ -444,7 +444,7 @@ private enum EPUBCoverExtractor {
             switch elementName {
             case "item":
                 guard let id = attributeDict["id"], let href = attributeDict["href"] else { return }
-                let properties = (attributeDict["properties"] ?? "").split(separator: " ").map(String.init)
+                let properties = (attributeDict["properties"] ?? "").split(whereSeparator: { $0.isWhitespace }).map(String.init)
                 items.append(Item(id: id, href: href, mediaType: attributeDict["media-type"] ?? "", properties: properties))
 
             case "meta":
