@@ -171,6 +171,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         self.syncLinks(data: response, item: item, database: database)
         self.syncUsers(createdBy: response.createdBy, lastModifiedBy: response.lastModifiedBy, item: item, database: database)
         self.sync(rects: response.rects ?? [], in: item, database: database)
+        self.sync(nextPageRects: response.nextPageRects ?? [], in: item, database: database)
         self.sync(paths: response.paths ?? [], in: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
@@ -288,17 +289,25 @@ struct StoreItemDbRequest: DbResponseRequest {
     }
 
     static func sync(rects: [[Double]], in item: RItem, database: Realm) {
-        guard self.rects(rects, differFrom: item.rects) else { return }
+        sync(rects: rects, in: item.rects, database: database)
+    }
 
-        database.delete(item.rects)
-        
+    static func sync(nextPageRects: [[Double]], in item: RItem, database: Realm) {
+        sync(rects: nextPageRects, in: item.nextPageRects, database: database)
+    }
+
+    private static func sync(rects: [[Double]], in itemRects: List<RRect>, database: Realm) {
+        guard self.rects(rects, differFrom: itemRects) else { return }
+
+        database.delete(itemRects)
+
         for rect in rects {
             let rRect = RRect()
             rRect.minX = rect[0]
             rRect.minY = rect[1]
             rRect.maxX = rect[2]
             rRect.maxY = rect[3]
-            item.rects.append(rRect)
+            itemRects.append(rRect)
         }
     }
 

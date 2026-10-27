@@ -31,6 +31,9 @@ struct ReadAnnotationPagesDbRequest: DbResponseRequest {
             let sortIndex = annotation.annotationSortIndex
             guard let separatorIndex = sortIndex.firstIndex(of: "|"), let page = Int(sortIndex[..<separatorIndex]) else { continue }
             pages.insert(page)
+            if !annotation.nextPageRects.isEmpty {
+                pages.insert(page + 1)
+            }
         }
         if let cachedDocumentAnnotations = try ReadDocumentAnnotationsCacheInfoDbRequest(attachmentKey: attachmentKey, libraryId: libraryId)
             .process(in: database)?

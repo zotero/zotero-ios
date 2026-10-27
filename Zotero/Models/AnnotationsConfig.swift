@@ -36,6 +36,7 @@ struct AnnotationsConfig {
     static let baseColorKey = "Zotero:BaseColor"
     static let sourceKey = "Zotero:Source"
     static let createdByUserIdKey = "Zotero:CreatedByUserId"
+    static let crossPagePartKey = "Zotero:CrossPagePart"
     // Line width of image annotation in PDF document.
     static let imageAnnotationLineWidth: CGFloat = 2
     // Free text annotation font size minimum, maximum, increment and rounding

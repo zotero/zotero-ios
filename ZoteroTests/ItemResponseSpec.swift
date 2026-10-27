@@ -73,16 +73,17 @@ final class ItemResponseSpec: QuickSpec {
                 }
             }
 
-            context("with unknown array position fields") {
+            context("with next page rects") {
                 beforeEach {
                     resourceName = "test_annotation_array_position"
                 }
 
-                it("preserves fields") {
+                it("parses next page rects separately from fields") {
                     do {
                         let response = try ItemResponse(response: jsonData, schemaController: TestControllers.schemaController)
-                        let nextPageRects = response.fields[KeyBaseKeyPair(key: "nextPageRects", baseKey: FieldKeys.Item.Annotation.position)]
-                        expect(nextPageRects).to(equal("[[65.955,709.874,293.106,718.217],[54,700.077,269.333,707.904]]"))
+                        expect(response.rects).to(equal([[317.014, 80.942, 556.121, 88.716], [317.014, 70.76, 399.423, 79.04]]))
+                        expect(response.nextPageRects).to(equal([[65.955, 709.874, 293.106, 718.217], [54, 700.077, 269.333, 707.904]]))
+                        expect(response.fields[KeyBaseKeyPair(key: FieldKeys.Item.Annotation.Position.nextPageRects, baseKey: FieldKeys.Item.Annotation.position)]).to(beNil())
                     } catch let error {
                         fail("\(error)")
                     }
