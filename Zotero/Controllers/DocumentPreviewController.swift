@@ -138,7 +138,6 @@ final class DocumentPreviewController {
 /// 3. Otherwise the first non-blank page is chosen. For text-heavy documents (papers) the first page with title is the most recognizable.
 private enum PDFPreviewRenderer {
     private struct PageMetrics {
-        let pageIndex: PageIndex
         let inkCoverage: Double
         let colorCoverage: Double
         let glyphCount: Int
@@ -177,18 +176,22 @@ private enum PDFPreviewRenderer {
         return image.cgImage
     }
 
+    /// Measures candidate pages sequentially and returns as soon as the selection is decided, so that remaining pages don't need to be rendered.
     private static func pickPage(in document: Document) -> PageIndex? {
-        let metrics = (0..<min(document.pageCount, maxCandidatePages)).compactMap({ pageIndex in
-            autoreleasepool { measure(pageIndex: pageIndex, in: document) }
-        })
-        guard let first = metrics.first(where: { !$0.isBlank }) else { return nil }
-        if first.isCoverLike || first.hasLargeText {
-            return first.pageIndex
+        var firstNonBlank: PageIndex?
+        for pageIndex in 0..<min(document.pageCount, maxCandidatePages) {
+            guard let metrics = autoreleasepool(invoking: { measure(pageIndex: pageIndex, in: document) }) else { continue }
+            if firstNonBlank == nil {
+                guard !metrics.isBlank else { continue }
+                if metrics.isCoverLike || metrics.hasLargeText {
+                    return pageIndex
+                }
+                firstNonBlank = pageIndex
+            } else if metrics.isStrongCover {
+                return pageIndex
+            }
         }
-        if let cover = metrics.first(where: { $0.pageIndex > first.pageIndex && $0.isStrongCover }) {
-            return cover.pageIndex
-        }
-        return first.pageIndex
+        return firstNonBlank
     }
 
     private static func measure(pageIndex: PageIndex, in document: Document) -> PageMetrics? {
@@ -203,7 +206,6 @@ private enum PDFPreviewRenderer {
         let largeGlyphCount = glyphs.reduce(0, { $0 + ($1.frame.height >= minLargeHeight ? 1 : 0) })
 
         return PageMetrics(
-            pageIndex: pageIndex,
             inkCoverage: coverage.ink,
             colorCoverage: coverage.color,
             glyphCount: glyphs.count,
