@@ -378,16 +378,24 @@ final class CarPlayCoordinator: NSObject {
     }
 
     private func push(processingTemplate template: CPListTemplate, sessionId: UUID, completion: @escaping () -> Void) {
-        interfaceController.pushTemplate(template, animated: true) { [weak self] _, error in
+        interfaceController.pushTemplate(template, animated: true) { [weak self] success, error in
             guard let self else { return }
-            if let error {
-                DDLogError("CarPlayCoordinator: can't push processing template - \(error)")
+            let didPush = success && error == nil
+            if !didPush {
+                DDLogError("CarPlayCoordinator: can't push processing template - \(String(describing: error))")
             }
             guard activeSessionId == sessionId, processingTemplate === template else {
                 // Reading was stopped or replaced while the screen was being pushed, nothing else would remove it.
-                if interfaceController.topTemplate === template {
+                if didPush && interfaceController.topTemplate === template {
                     interfaceController.popTemplate(animated: true, completion: nil)
                 }
+                return
+            }
+            guard didPush else {
+                // Reading starts only with the processing screen shown, it's what Now Playing replaces and what cancels
+                // reading when closed.
+                stopReadAloud()
+                showAlert(title: L10n.Carplay.processingFailed)
                 return
             }
             completion()
