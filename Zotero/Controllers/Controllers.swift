@@ -27,6 +27,7 @@ final class Controllers {
     let translatorsAndStylesController: TranslatorsAndStylesController
     let annotationPreviewController: AnnotationPreviewController
     let pdfThumbnailController: PDFThumbnailController
+    let documentPreviewController: DocumentPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -34,13 +35,18 @@ final class Controllers {
     let backgroundTaskController: BackgroundTaskController
     let lowPowerModeController: LowPowerModeController
     let uriConverter: ZoteroURIConverter
+    let speechPlaybackOwnership: SpeechPlaybackOwnership
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
+    /// Reports that the user is being logged out while `userControllers` still exist. It's sent synchronously and
+    /// `userControllers` are released right after, so subscribers have to tear down anything depending on them without
+    /// switching queues.
+    let userWillLogOut: PassthroughSubject<Void, Never>
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
-    private var didInitialize: Bool
+    private(set) var didInitialize: Bool
     @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
     fileprivate var needsBaseKeyMigration: Bool
     fileprivate static let childItemCollectionsFixVersion: Int = 1
@@ -91,15 +97,18 @@ final class Controllers {
         self.translatorsAndStylesController = translatorsAndStylesController
         annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         pdfThumbnailController = PDFThumbnailController(fileStorage: fileStorage)
+        documentPreviewController = DocumentPreviewController(fileStorage: fileStorage)
         self.urlDetector = urlDetector
         dateParser = DateParser()
         htmlAttributedStringConverter = HtmlAttributedStringConverter()
         userInitialized = PassthroughSubject()
+        userWillLogOut = PassthroughSubject()
         lastBuildNumber = Defaults.shared.lastBuildNumber
         idleTimerController = IdleTimerController()
         backgroundTaskController = BackgroundTaskController()
         lowPowerModeController = LowPowerModeController()
         uriConverter = ZoteroURIConverter()
+        speechPlaybackOwnership = SpeechPlaybackOwnership()
         didInitialize = false
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
@@ -274,6 +283,10 @@ final class Controllers {
 
     private func clearSession() {
         // `controllers.logout()` is called last so that the user is first redirected to login screen and then the DB is cleared. Otherwise the user would briefly see all data gone before being redirected.
+        // Stop everything which depends on user controllers (e.g. CarPlay read aloud) while they still exist
+        if userControllers != nil {
+            userWillLogOut.send()
+        }
         // Disable ongoing sync and unsubscribe from websocket
         userControllers?.disableSync(apiKey: apiKey)
         // Cancel all downloads
@@ -344,7 +357,14 @@ final class UserControllers {
         let backgroundUploadContext = BackgroundUploaderContext()
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundUploadProcessor, backgroundTaskController: controllers.backgroundTaskController)
-        let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
+        let fileDownloader = AttachmentDownloader(
+            userId: userId,
+            apiClient: controllers.apiClient,
+            fileStorage: controllers.fileStorage,
+            dbStorage: dbStorage,
+            webDavController: webDavController,
+            documentPreviewController: controllers.documentPreviewController
+        )
         let syncController = SyncController(
             userId: userId,
             apiClient: controllers.apiClient,

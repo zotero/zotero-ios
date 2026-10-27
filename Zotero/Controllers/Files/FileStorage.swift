@@ -195,6 +195,8 @@ final class FileStorageController: FileStorage {
         try? remove(Files.annotationPreviews)
         // Remove attachment page thumbnails
         try? remove(Files.pageThumbnails)
+        // Remove document previews
+        try? remove(Files.documentPreviews)
         // Remove interrupted upload files
         try? remove(Files.uploads)
         // Remove downloaded files

@@ -97,6 +97,7 @@ final class AttachmentDownloader: NSObject {
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
     private unowned let webDavController: WebDavController
+    private unowned let documentPreviewController: DocumentPreviewController
     private let accessQueue: DispatchQueue
     private let dbQueue: DispatchQueue
     private let unzipQueue: DispatchQueue
@@ -129,12 +130,20 @@ final class AttachmentDownloader: NSObject {
         return (progress, remainingBatchCount, totalBatchCount)
     }
 
-    init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController) {
+    init(
+        userId: Int,
+        apiClient: ApiClient,
+        fileStorage: FileStorage,
+        dbStorage: DbStorage,
+        webDavController: WebDavController,
+        documentPreviewController: DocumentPreviewController
+    ) {
         self.userId = userId
         self.fileStorage = fileStorage
         self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.webDavController = webDavController
+        self.documentPreviewController = documentPreviewController
         queue = []
         activeDownloads = [:]
         taskIdToDownload = [:]
@@ -548,6 +557,8 @@ final class AttachmentDownloader: NSObject {
                 if !fileStorage.has(file) {
                     throw AttachmentDownloader.Error.zipDidntContainRequestedFile
                 }
+                // The preview of the previous version would be used for the extracted one, since it's stored by attachment key.
+                documentPreviewController.delete(key: download.key, libraryId: download.libraryId)
                 finishExtraction(downloader: self)
             } catch let error {
                 DDLogError("AttachmentDownloader: unzip error - \(error)")
@@ -979,6 +990,8 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             }
             // Move downloaded file to new location
             try fileStorage.move(from: location.path, to: zipFile ?? activeDownload.file)
+            // The preview of the previous version would be used for the new one, since it's stored by attachment key.
+            documentPreviewController.delete(key: download.key, libraryId: download.libraryId)
 
             dbQueue.sync { [weak self] in
                 guard let self else { return }

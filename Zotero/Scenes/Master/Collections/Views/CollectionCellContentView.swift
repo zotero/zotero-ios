@@ -20,6 +20,11 @@ final class CollectionCellContentView: UIView {
     @IBOutlet private var contentToRightConstraint: NSLayoutConstraint!
     @IBOutlet private var contentToBadgeConstraint: NSLayoutConstraint!
 
+    private var carPlayImage: UIImageView!
+    // Strong because they are being activated/deactivated
+    private var carPlayToBadgeConstraint: NSLayoutConstraint!
+    private var carPlayToRightConstraint: NSLayoutConstraint!
+    private var contentToCarPlayConstraint: NSLayoutConstraint!
     private var toggleCollapsedAction: (() -> Void)?
     private var chevronCollapsed: Bool = false
 
@@ -29,6 +34,7 @@ final class CollectionCellContentView: UIView {
         badgeContainer.layer.masksToBounds = true
         badgeContainer.backgroundColor = badgeBackgroundColor
         contentToRightConstraint.isActive = false
+        setupCarPlayImage()
         separatorHeight.constant = 1 / UIScreen.main.scale
         var chevronConfig = UIButton.Configuration.plain()
         chevronConfig.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
@@ -62,6 +68,7 @@ final class CollectionCellContentView: UIView {
 
         setup(with: collection)
         updateBadgeView(for: accessories.contains(.badge) ? collection.itemCount : 0)
+        updateCarPlayImage(isVisible: collection.showsInCarPlay)
         setupChevron(visible: (accessories.contains(.chevron) && hasChildren), isCollapsed: isCollapsed)
     }
 
@@ -73,6 +80,7 @@ final class CollectionCellContentView: UIView {
         titleLabel.text = libraryName
 
         updateBadgeView(for: 0)
+        updateCarPlayImage(isVisible: false)
         setupChevron(visible: accessories.contains(.chevron), isCollapsed: isCollapsed)
     }
 
@@ -84,6 +92,37 @@ final class CollectionCellContentView: UIView {
         }
         contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden || !self.chevronButton.isHidden
         contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
+    }
+
+    /// Shows the CarPlay icon left of the badge, or at the right edge when there is no badge.
+    private func updateCarPlayImage(isVisible: Bool) {
+        carPlayImage.isHidden = !isVisible
+        carPlayToBadgeConstraint.isActive = isVisible && !badgeContainer.isHidden
+        carPlayToRightConstraint.isActive = isVisible && badgeContainer.isHidden
+        contentToCarPlayConstraint.isActive = isVisible
+    }
+
+    private func setupCarPlayImage() {
+        let imageView = UIImageView(image: UIImage(systemName: "car.fill", withConfiguration: UIImage.SymbolConfiguration(textStyle: .footnote)))
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.tintColor = .systemGray
+        imageView.contentMode = .scaleAspectFit
+        imageView.setContentHuggingPriority(.required, for: .horizontal)
+        imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        imageView.isAccessibilityElement = true
+        imageView.accessibilityLabel = L10n.Accessibility.Collections.shownInCarplay
+        imageView.isHidden = true
+        addSubview(imageView)
+        carPlayImage = imageView
+
+        imageView.centerYAnchor.constraint(equalTo: badgeContainer.centerYAnchor).isActive = true
+        carPlayToBadgeConstraint = badgeContainer.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 8)
+        carPlayToRightConstraint = layoutMarginsGuide.trailingAnchor.constraint(equalTo: imageView.trailingAnchor)
+        if let content = titleLabel.superview {
+            contentToCarPlayConstraint = imageView.leadingAnchor.constraint(greaterThanOrEqualTo: content.trailingAnchor, constant: 16)
+        } else {
+            contentToCarPlayConstraint = imageView.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 16)
+        }
     }
 
     private func setupChevron(visible: Bool, isCollapsed: Bool) {
