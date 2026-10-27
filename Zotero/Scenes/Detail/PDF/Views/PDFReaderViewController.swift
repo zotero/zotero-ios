@@ -74,8 +74,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     }
     private var previousTraitCollection: UITraitCollection?
     private var readAloudHandler: ReadAloudViewHandler<PDFReaderViewController>?
-    /// Reading mode toggle, selected while the reading mode reader is presented.
-    private weak var readingModeButton: CheckboxButton?
     /// Sidebar and toolbar changes made in reading mode. Applied when this reader is shown again, rather than while
     /// it's covered by reading mode.
     private var readingModeSidebarVisible: Bool?
@@ -314,9 +312,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             annotationToolbarHandler!.performInitialLayout()
         }
 
-        /// Reading mode shows the structured text of the document in a separate reader, so the button stays selected
-        /// for as long as that reader is presented. Without the feature gate it opens PSPDFKit's plain text reader,
-        /// which is a one-way presentation and so keeps a plain button.
+        /// Reading mode shows the structured text of the document in a separate reader presented full screen over this one, so the button is
+        /// never seen selected here. It uses the same toggle as reading mode, where it's selected and turns reading mode off. Without the feature
+        /// gate it opens PSPDFKit's plain text reader, which is a one-way presentation and so keeps a plain button.
         func createReadingModeButton(isEnabled: Bool) -> UIBarButtonItem {
             guard FeatureGates.enabled.contains(.readingMode) else {
                 let item = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
@@ -332,48 +330,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 return item
             }
 
-            let buttonSize: CGFloat = 38
-            let button = CheckboxButton(
-                image: Asset.Images.pdfRawReader.image.withRenderingMode(.alwaysTemplate),
-                contentInsets: NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
-                cornerStyle: .capsule
-            )
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.showsLargeContentViewer = true
-            button.accessibilityLabel = L10n.Accessibility.Speech.showReader
-            button.deselectedBackgroundColor = .clear
-            button.deselectedTintColor = isEnabled ? Asset.Colors.zoteroBlueWithDarkMode.color : .gray
-            button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
-            button.selectedTintColor = .white
-            button.isSelected = false
-            button.isEnabled = isEnabled
-            button.addAction(
-                UIAction(handler: { [weak self] _ in
-                    self?.showReadingMode()
-                }),
-                for: .touchUpInside
-            )
-            readingModeButton = button
-
-            // Pad the capsule horizontally so the bar button matches the standard bar button footprint and lines up
-            // evenly with the system bar buttons next to it.
-            let container = UIView()
-            container.translatesAutoresizingMaskIntoConstraints = false
-            container.addSubview(button)
-            let hPadding = max(0, (CheckboxButton.standardNavigationBarButtonSize - buttonSize) / 2)
-            NSLayoutConstraint.activate([
-                button.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: hPadding),
-                container.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: hPadding),
-                button.topAnchor.constraint(equalTo: container.topAnchor),
-                button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-                button.widthAnchor.constraint(equalToConstant: buttonSize),
-                button.heightAnchor.constraint(equalToConstant: buttonSize)
-            ])
-
-            let item = UIBarButtonItem(customView: container)
-            item.title = L10n.AccessibilityPopup.showReader
-            item.accessibilityLabel = L10n.Accessibility.Speech.showReader
-            return item
+            return ReadingModeBarButton(isEnabled: isEnabled) { [weak self] in
+                self?.showReadingMode()
+            }.item
         }
 
         func setupNavigationBar() {
@@ -777,10 +736,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             .disposed(by: disposeBag)
     }
 
-    /// Presents the structured text of this document in its own reader. The button stays selected until that reader is
-    /// dismissed, either by turning reading mode off there or by closing it.
+    /// Presents the structured text of this document in its own reader, full screen over this one. This reader is shown again when that one is
+    /// dismissed by turning reading mode off there, closing it closes this reader as well.
     private func showReadingMode() {
-        guard let coordinatorDelegate, readingModeButton?.isSelected == false else { return }
+        // Ignore taps while reading mode (or anything else) is being presented.
+        guard let coordinatorDelegate, (navigationController ?? self).presentedViewController == nil else { return }
         viewModel.process(action: .setReadingModePresented(true))
         coordinatorDelegate.showReadingMode(
             document: viewModel.state.document,
