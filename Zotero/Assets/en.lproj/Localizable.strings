@@ -647,3 +647,4 @@
 "carplay.processing_document" = "Processing document…";
 "carplay.processing_failed" = "Couldn't prepare the document for reading aloud.";
 "carplay.out_of_credits" = "You've run out of read aloud time.";
+"carplay.voice_settings" = "Voice Settings";
