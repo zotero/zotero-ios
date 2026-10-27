@@ -13,29 +13,6 @@ import PSPDFKit
 import RxCocoa
 import RxSwift
 
-/// Read aloud of a document without a reader. Playback is controlled through the Now Playing controls.
-protocol CarPlayReadAloudSession: AnyObject {
-    var documentTitle: String? { get }
-    var state: BehaviorRelay<SpeechState> { get }
-    /// Progress of structured document text extraction, see `SpeechManager.extractionProgress`.
-    var extractionProgress: BehaviorRelay<Double?> { get }
-    var voice: SpeechVoice? { get }
-    var language: String? { get }
-    var detectedLanguage: String { get }
-    var remoteVoicesController: RemoteVoicesController { get }
-    /// Called when reading is stopped because another session started (e.g. in the reader on the phone).
-    var onPlaybackTakenOver: (() -> Void)? { get set }
-
-    func start()
-    /// Starts reading from the beginning of the document, whether it's currently reading, paused or stopped.
-    func startFromBeginning()
-    func stop()
-    func pause()
-    func resume()
-    /// Applies the voice and language selected in voice settings, the same way the readers do.
-    func apply(voiceChange: ReadAloudVoiceChange)
-}
-
 /// Stores the position where read aloud of a document is, debounced the same way as in the readers.
 final class CarPlayReadAloudPositionStore {
     private let debounce: RxTimeInterval = .seconds(3)
@@ -78,7 +55,8 @@ final class CarPlayReadAloudPositionStore {
     }
 }
 
-final class CarPlayPdfReadAloudSession {
+/// Read aloud of a PDF without a reader. Playback is controlled through the Now Playing controls.
+final class CarPlayReadAloudSession {
     let key: String
     let libraryId: LibraryIdentifier
     let documentTitle: String?
@@ -91,7 +69,34 @@ final class CarPlayPdfReadAloudSession {
     private let disposeBag: DisposeBag
     /// Page being read. Starts at the page the reader was last left on, like the reader does.
     private var currentPage: UInt
-    private var speechManager: SpeechManager<CarPlayPdfReadAloudSession>!
+    private var speechManager: SpeechManager<CarPlayReadAloudSession>!
+
+    var state: BehaviorRelay<SpeechState> {
+        return speechManager.state
+    }
+
+    /// Progress of structured document text extraction, see `SpeechManager.extractionProgress`.
+    var extractionProgress: BehaviorRelay<Double?> {
+        return speechManager.extractionProgress
+    }
+
+    /// Called when reading is stopped because another session started (e.g. in the reader on the phone).
+    var onPlaybackTakenOver: (() -> Void)? {
+        get { speechManager.onPlaybackTakenOver }
+        set { speechManager.onPlaybackTakenOver = newValue }
+    }
+
+    var voice: SpeechVoice? {
+        return speechManager.voice
+    }
+
+    var language: String? {
+        return speechManager.language
+    }
+
+    var detectedLanguage: String {
+        return speechManager.detectedLanguage
+    }
 
     init(
         key: String,
@@ -118,28 +123,31 @@ final class CarPlayPdfReadAloudSession {
         positionStore = CarPlayReadAloudPositionStore(key: key, libraryId: libraryId, dbStorage: dbStorage)
         disposeBag = DisposeBag()
 
-        speechManager = SpeechManager<CarPlayPdfReadAloudSession>.carPlay(delegate: self, key: key, libraryId: libraryId, dbStorage: dbStorage, speechPlaybackOwnership: speechPlaybackOwnership, remoteVoicesController: remoteVoicesController, documentWorkerController: documentWorkerController, documentPreviewController: documentPreviewController)
-        speechManager.observeReading(key: key, libraryId: libraryId, positionStore: positionStore, lastReadWatcher: lastReadWatcher, disposeBag: disposeBag)
-    }
-}
-
-extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
-    var state: BehaviorRelay<SpeechState> {
-        return speechManager.state
-    }
-
-    var onPlaybackTakenOver: (() -> Void)? {
-        get { speechManager.onPlaybackTakenOver }
-        set { speechManager.onPlaybackTakenOver = newValue }
-    }
-
-    var extractionProgress: BehaviorRelay<Double?> {
-        return speechManager.extractionProgress
+        // Set up the same way as in the readers: the document's stored language and the selected voice tier.
+        let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
+        speechManager = SpeechManager(
+            delegate: self,
+            key: key,
+            libraryId: libraryId,
+            voiceLanguage: language,
+            remoteVoiceTier: Defaults.shared.remoteVoiceTier,
+            speechPlaybackOwnership: speechPlaybackOwnership,
+            remoteVoicesController: remoteVoicesController,
+            documentWorkerController: documentWorkerController,
+            documentPreviewController: documentPreviewController
+        )
+        observeReading(lastReadWatcher: lastReadWatcher)
     }
 
     /// Starts reading where reading aloud of this document last left off, otherwise at the page the reader was last left on.
     func start() {
-        let documentData = CarPlayReadAloudSessionHelper.documentData(key: key, libraryId: libraryId, defaultPageValue: "0", dbStorage: dbStorage)
+        let documentData: ReadDocumentDataDbRequest.Response?
+        do {
+            documentData = try dbStorage.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: "0"), on: .main)
+        } catch let error {
+            DDLogError("CarPlayReadAloudSession: can't read document data - \(error)")
+            documentData = nil
+        }
         if let page = documentData.flatMap({ UInt($0.page) }), page < pageCount {
             currentPage = page
         }
@@ -150,6 +158,7 @@ extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
         }
     }
 
+    /// Starts reading from the beginning of the document, whether it's currently reading, paused or stopped.
     func startFromBeginning() {
         speechManager.start(.documentStart)
     }
@@ -157,18 +166,6 @@ extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
     func stop() {
         speechManager.stop()
         positionStore.flush()
-    }
-
-    var voice: SpeechVoice? {
-        return speechManager.voice
-    }
-
-    var language: String? {
-        return speechManager.language
-    }
-
-    var detectedLanguage: String {
-        return speechManager.detectedLanguage
     }
 
     func pause() {
@@ -179,12 +176,51 @@ extension CarPlayPdfReadAloudSession: CarPlayReadAloudSession {
         speechManager.resume()
     }
 
-    func apply(voiceChange: ReadAloudVoiceChange) {
-        speechManager.apply(voiceChange: voiceChange, key: key, libraryId: libraryId, dbStorage: dbStorage)
+    /// Stores the document's language and switches the voice, like `ReadAloudViewHandler` does when the voice picker closes.
+    func apply(voiceChange change: ReadAloudVoiceChange) {
+        do {
+            try dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: change.preferredLanguage), on: .main)
+        } catch let error {
+            DDLogError("CarPlayReadAloudSession: can't store speech language - \(error)")
+        }
+        speechManager.set(voice: change.voice, preferredLanguage: change.preferredLanguage)
+    }
+
+    /// Stores the reported reading position, right away once reading ends. Records reading of the document as its last
+    /// read date (which puts it in Recently Read) the same way the readers do: when reading starts, at most every few
+    /// minutes while reading, and when reading ends.
+    private func observeReading(lastReadWatcher: LastReadWatcher) {
+        speechManager.onSpeakingPositionChanged = { [weak positionStore] position in
+            positionStore?.schedule(position: position)
+        }
+        let key = key
+        let libraryId = libraryId
+        // Only reading which actually started counts, not a document which couldn't be processed or had no credits.
+        var didSpeak = false
+        speechManager.state
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak positionStore, weak lastReadWatcher] state in
+                switch state {
+                case .speaking:
+                    didSpeak = true
+                    // Stored right away for a different document than last time, coalesced while reading the same one.
+                    lastReadWatcher?.submitAfterDelay(key: key, libraryId: libraryId, date: Date())
+
+                case .stopped, .outOfCredits:
+                    positionStore?.flush()
+                    guard didSpeak else { return }
+                    didSpeak = false
+                    lastReadWatcher?.submit(key: key, libraryId: libraryId, date: Date())
+
+                case .paused, .initializing, .loading:
+                    break
+                }
+            })
+            .disposed(by: disposeBag)
     }
 }
 
-extension CarPlayPdfReadAloudSession: SpeechManagerDelegate {
+extension CarPlayReadAloudSession: SpeechManagerDelegate {
     var documentPassword: String? {
         return nil
     }
@@ -230,89 +266,4 @@ extension CarPlayPdfReadAloudSession: SpeechManagerDelegate {
     func createAnnotation(ofType tool: AnnotationTool, color: String, position: ReadAloudPosition, onPage pageIndex: UInt) {}
 
     func clearAnnotationPreview() {}
-}
-
-enum CarPlayReadAloudSessionHelper {
-    static func documentData(key: String, libraryId: LibraryIdentifier, defaultPageValue: String, dbStorage: DbStorage) -> ReadDocumentDataDbRequest.Response? {
-        do {
-            return try dbStorage.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: defaultPageValue), on: .main)
-        } catch let error {
-            DDLogError("CarPlayReadAloudSession: can't read document data - \(error)")
-            return nil
-        }
-    }
-}
-
-extension SpeechManager {
-    /// Speech manager set up the same way as in the readers: the document's stored language and the selected voice tier.
-    static func carPlay(
-        delegate: Delegate,
-        key: String,
-        libraryId: LibraryIdentifier,
-        dbStorage: DbStorage,
-        speechPlaybackOwnership: SpeechPlaybackOwnership,
-        remoteVoicesController: RemoteVoicesController,
-        documentWorkerController: DocumentWorkerController,
-        documentPreviewController: DocumentPreviewController
-    ) -> SpeechManager<Delegate> {
-        let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        return SpeechManager(
-            delegate: delegate,
-            key: key,
-            libraryId: libraryId,
-            voiceLanguage: language,
-            remoteVoiceTier: Defaults.shared.remoteVoiceTier,
-            speechPlaybackOwnership: speechPlaybackOwnership,
-            remoteVoicesController: remoteVoicesController,
-            documentWorkerController: documentWorkerController,
-            documentPreviewController: documentPreviewController
-        )
-    }
-
-    /// Stores the document's language and switches the voice, like `ReadAloudViewHandler` does when the voice picker closes.
-    func apply(voiceChange change: ReadAloudVoiceChange, key: String, libraryId: LibraryIdentifier, dbStorage: DbStorage) {
-        do {
-            try dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: change.preferredLanguage), on: .main)
-        } catch let error {
-            DDLogError("SpeechManager: can't store speech language - \(error)")
-        }
-        set(voice: change.voice, preferredLanguage: change.preferredLanguage)
-    }
-
-    /// Stores the reported reading position, right away once reading ends. Records reading of the document as its last
-    /// read date (which puts it in Recently Read) the same way the readers do: when reading starts, at most every few
-    /// minutes while reading, and when reading ends.
-    func observeReading(
-        key: String,
-        libraryId: LibraryIdentifier,
-        positionStore: CarPlayReadAloudPositionStore,
-        lastReadWatcher: LastReadWatcher,
-        disposeBag: DisposeBag
-    ) {
-        onSpeakingPositionChanged = { [weak positionStore] position in
-            positionStore?.schedule(position: position)
-        }
-        // Only reading which actually started counts, not a document which couldn't be processed or had no credits.
-        var didSpeak = false
-        state
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak positionStore, weak lastReadWatcher] state in
-                switch state {
-                case .speaking:
-                    didSpeak = true
-                    // Stored right away for a different document than last time, coalesced while reading the same one.
-                    lastReadWatcher?.submitAfterDelay(key: key, libraryId: libraryId, date: Date())
-
-                case .stopped, .outOfCredits:
-                    positionStore?.flush()
-                    guard didSpeak else { return }
-                    didSpeak = false
-                    lastReadWatcher?.submit(key: key, libraryId: libraryId, date: Date())
-
-                case .paused, .initializing, .loading:
-                    break
-                }
-            })
-            .disposed(by: disposeBag)
-    }
 }
