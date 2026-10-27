@@ -62,7 +62,34 @@ class CreateOrEditPDFAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbReques
 
     override func addAdditionalProperties(for annotation: PDFDocumentAnnotation, to item: RItem, changes: inout RItemChanges, database: Realm) {
         add(rects: annotation.rects, to: item, changes: &changes, database: database)
+        if let nextPageRects = annotation.nextPageRects {
+            add(nextPageRects: nextPageRects, to: item, changes: &changes, database: database)
+        }
         add(paths: annotation.paths, to: item, changes: &changes, database: database)
+    }
+
+    /// Stores rects of the next page part of an annotation spanning a page break. If they are not available (`PDFDocumentAnnotation.nextPageRects` is `nil`),
+    /// stored `nextPageRects` are kept, so that editing such annotation in a way which doesn't know about the next page part doesn't drop it.
+    private func add(nextPageRects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {
+        if !item.nextPageRects.isEmpty {
+            item.nextPageRects.removeAll()
+            changes.insert(.rects)
+        }
+        guard !nextPageRects.isEmpty, let annotation = PDFDatabaseAnnotation(item: item) else { return }
+
+        let page = UInt(annotation.page + 1)
+
+        for rect in nextPageRects {
+            let dbRect = boundingBoxConverter.convertToDb(rect: rect, page: page) ?? rect
+
+            let rRect = RRect()
+            rRect.minX = Double(dbRect.minX)
+            rRect.minY = Double(dbRect.minY)
+            rRect.maxX = Double(dbRect.maxX)
+            rRect.maxY = Double(dbRect.maxY)
+            item.nextPageRects.append(rRect)
+        }
+        changes.insert(.rects)
     }
 
     private func add(rects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {

@@ -14,11 +14,38 @@ protocol PDFAnnotation: ReaderAnnotation {
     var rotation: UInt? { get }
     var isSyncable: Bool { get }
 
+    /// `true` if this is a highlight or underline which continues on the page following `page`.
+    var hasNextPagePart: Bool { get }
+
     func rects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect]
+    /// Rects on the page following `page` (see `hasNextPagePart`), empty for annotations on a single page.
+    func nextPageRects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect]
     func paths(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]]
 }
 
 extension PDFAnnotation {
+    /// Pages on which this annotation is shown. Highlights and underlines spanning a page break are shown on two pages.
+    var pages: [Int] {
+        return hasNextPagePart ? [page, page + 1] : [page]
+    }
+
+    /// Bounding box of the part of this annotation on given page.
+    func boundingBox(onPage pageIndex: Int, boundingBoxConverter: AnnotationBoundingBoxConverter) -> CGRect? {
+        guard hasNextPagePart else {
+            return pageIndex == page ? boundingBox(boundingBoxConverter: boundingBoxConverter) : nil
+        }
+        let rects: [CGRect]
+        if pageIndex == page {
+            rects = self.rects(boundingBoxConverter: boundingBoxConverter)
+        } else if pageIndex == page + 1 {
+            rects = nextPageRects(boundingBoxConverter: boundingBoxConverter)
+        } else {
+            return nil
+        }
+        guard !rects.isEmpty else { return nil }
+        return boundingBox(rects: rects)
+    }
+
     func previewBoundingBox(boundingBoxConverter: AnnotationBoundingBoxConverter) -> CGRect {
         let boundingBox = boundingBox(boundingBoxConverter: boundingBoxConverter)
         switch self.type {

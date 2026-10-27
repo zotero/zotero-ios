@@ -26,16 +26,19 @@ struct AnnotationConverter {
     /// - parameter username: Username of current user.
     /// - parameter displayName: Display name of current user.
     /// - parameter boundingBoxConverter: Converts rects from pdf coordinate space.
-    /// - returns: Matching Zotero annotation.
+    /// - parameter nextPagePart: Part on the next page, if `annotation` is the first part of an annotation spanning a page break. If it's not available, the returned annotation
+    ///                           has `nextPageRects` set to `nil`, so that the stored ones are kept.
+    /// - returns: Matching Zotero annotation. `nil` for the next page part of an annotation spanning a page break, which has to be converted together with the first part.
     static func annotation(
         from annotation: PSPDFKit.Annotation,
+        nextPagePart: PSPDFKit.Annotation? = nil,
         color: String,
         username: String,
         displayName: String,
         defaultPageLabel: DefaultAnnotationPageLabel?,
         boundingBoxConverter: AnnotationBoundingBoxConverter?
     ) -> PDFDocumentAnnotation? {
-        guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
+        guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type), annotation.crossPagePart != .next else { return nil }
 
         let key = annotation.key ?? annotation.uuid
         let page = Int(annotation.pageIndex)
@@ -56,6 +59,7 @@ struct AnnotationConverter {
         var lineWidth: CGFloat?
         var fontSize: CGFloat?
         var rotation: UInt?
+        var nextPageRects: [CGRect]?
 
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             type = .note
@@ -66,6 +70,7 @@ struct AnnotationConverter {
             rects = self.rects(fromHighlightAndUnderlineAnnotation: annotation)
             text = TextConverter.convertTextForAnnotation(from: annotation.markedUpString)
             paths = []
+            (nextPageRects, text) = nextPageData(firstPartText: text)
         } else if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             type = .image
             rects = self.rects(fromSquareAnnotation: annotation)
@@ -80,6 +85,7 @@ struct AnnotationConverter {
             rects = self.rects(fromHighlightAndUnderlineAnnotation: annotation)
             text = TextConverter.convertTextForAnnotation(from: annotation.markedUpString)
             paths = []
+            (nextPageRects, text) = nextPageData(firstPartText: text)
         } else if let annotation = annotation as? PSPDFKit.FreeTextAnnotation {
             type = .freeText
             let roundedFontSize = AnnotationsConfig.roundFreeTextAnnotationFontSize(annotation.fontSize)
@@ -108,8 +114,23 @@ struct AnnotationConverter {
             rotation: rotation,
             sortIndex: sortIndex,
             dateAdded: dateAdded,
-            dateModified: dateModified
+            dateModified: dateModified,
+            nextPageRects: nextPageRects
         )
+
+        /// Collects rects and text of the next page part of an annotation spanning a page break.
+        /// - parameter firstPartText: Text of the first part.
+        /// - returns: Rects of the next page part, `nil` if not available, and text of the whole annotation.
+        func nextPageData(firstPartText: String?) -> ([CGRect]?, String?) {
+            guard annotation.crossPagePart == .first,
+                  let nextPagePart = nextPagePart as? PSPDFKit.TextMarkupAnnotation,
+                  nextPagePart.crossPagePart == .next
+            else { return (nil, firstPartText) }
+            let rects = self.rects(fromHighlightAndUnderlineAnnotation: nextPagePart)
+            let nextPartText = TextConverter.convertTextForAnnotation(from: nextPagePart.markedUpString)
+            let text = [firstPartText ?? "", nextPartText].filter({ !$0.isEmpty }).joined(separator: " ")
+            return (rects, text)
+        }
 
         /// Creates sort index from annotation and bounding box.
         /// - parameter annotation: PSPDFKit annotation from which sort index is created
@@ -213,6 +234,8 @@ struct AnnotationConverter {
         )
     }
 
+    /// Converts Zotero annotations to document (PSPDFKit) annotations. Annotations spanning a page break are converted to two document annotations, one per page.
+    /// - parameter page: If set, only document annotations on this page are returned.
     static func annotations(
         from items: Results<RItem>,
         type: Kind = .zotero,
@@ -223,16 +246,111 @@ struct AnnotationConverter {
         displayName: String,
         username: String,
         documentPageCount: UInt,
+        page: PageIndex? = nil,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) -> [PSPDFKit.Annotation] {
-        return items.compactMap({ item in
-            guard let dbAnnotation = PDFDatabaseAnnotation(item: item) else { return nil }
+        return items.flatMap({ item -> [PSPDFKit.Annotation] in
+            guard let dbAnnotation = PDFDatabaseAnnotation(item: item) else { return [] }
             guard dbAnnotation.page < documentPageCount else {
                 DDLogWarn("AnnotationConverter: annotation \(item.key) for item \(item.parent?.key ?? ""); \(item.parent?.libraryId ?? .custom(.myLibrary)) has incorrect page index - \(dbAnnotation.page) / \(documentPageCount)")
-                return nil
+                return []
             }
-            return annotation(
+            let converted = AnnotationConverter.annotations(
                 from: dbAnnotation,
+                type: type,
+                appearance: appearance,
+                currentUserId: currentUserId,
+                libraryId: libraryId,
+                metadataEditable: metadataEditable,
+                displayName: displayName,
+                username: username,
+                documentPageCount: documentPageCount,
+                boundingBoxConverter: boundingBoxConverter
+            )
+            guard let page else { return converted }
+            return converted.filter({ $0.pageIndex == page })
+        })
+    }
+
+    static func annotations(
+        from zoteroAnnotation: PDFDatabaseAnnotation,
+        type: Kind,
+        appearance: Appearance,
+        currentUserId: Int,
+        library: Library,
+        displayName: String,
+        username: String,
+        documentPageCount: UInt,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> [PSPDFKit.Annotation] {
+        return annotations(
+            from: zoteroAnnotation,
+            type: type,
+            appearance: appearance,
+            currentUserId: currentUserId,
+            libraryId: library.identifier,
+            metadataEditable: library.metadataEditable,
+            displayName: displayName,
+            username: username,
+            documentPageCount: documentPageCount,
+            boundingBoxConverter: boundingBoxConverter
+        )
+    }
+
+    /// Converts Zotero annotation to document (PSPDFKit) annotations. PDF annotations can't span pages, so a highlight or underline spanning a page break is converted to
+    /// two document annotations (`PSPDFKit.Annotation.CrossPagePart`), which share the same key.
+    /// - returns: One document annotation, or two for an annotation spanning a page break.
+    static func annotations(
+        from zoteroAnnotation: PDFDatabaseAnnotation,
+        type: Kind,
+        appearance: Appearance,
+        currentUserId: Int,
+        libraryId: LibraryIdentifier,
+        metadataEditable: Bool,
+        displayName: String,
+        username: String,
+        documentPageCount: UInt,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> [PSPDFKit.Annotation] {
+        guard zoteroAnnotation.hasNextPagePart else {
+            return [
+                annotation(
+                    from: zoteroAnnotation,
+                    part: nil,
+                    type: type,
+                    appearance: appearance,
+                    currentUserId: currentUserId,
+                    libraryId: libraryId,
+                    metadataEditable: metadataEditable,
+                    displayName: displayName,
+                    username: username,
+                    boundingBoxConverter: boundingBoxConverter
+                )
+            ]
+        }
+
+        guard zoteroAnnotation.page + 1 < documentPageCount else {
+            DDLogWarn("AnnotationConverter: annotation \(zoteroAnnotation.key) continues on page \(zoteroAnnotation.page + 1) outside of document page count \(documentPageCount)")
+            return [
+                annotation(
+                    from: zoteroAnnotation,
+                    part: nil,
+                    type: type,
+                    appearance: appearance,
+                    currentUserId: currentUserId,
+                    libraryId: libraryId,
+                    metadataEditable: metadataEditable,
+                    displayName: displayName,
+                    username: username,
+                    boundingBoxConverter: boundingBoxConverter
+                )
+            ]
+        }
+
+        return [PSPDFKit.Annotation.CrossPagePart.first, .next].map({ part in
+            return annotation(
+                from: zoteroAnnotation,
+                part: part,
                 type: type,
                 appearance: appearance,
                 currentUserId: currentUserId,
@@ -245,31 +363,10 @@ struct AnnotationConverter {
         })
     }
 
-    static func annotation(
+    /// Converts Zotero annotation, or given part of Zotero annotation spanning a page break, to document (PSPDFKit) annotation.
+    private static func annotation(
         from zoteroAnnotation: PDFDatabaseAnnotation,
-        type: Kind,
-        appearance: Appearance,
-        currentUserId: Int,
-        library: Library,
-        displayName: String,
-        username: String,
-        boundingBoxConverter: AnnotationBoundingBoxConverter
-    ) -> PSPDFKit.Annotation {
-        return annotation(
-            from: zoteroAnnotation,
-            type: type,
-            appearance: appearance,
-            currentUserId: currentUserId,
-            libraryId: library.identifier,
-            metadataEditable: library.metadataEditable,
-            displayName: displayName,
-            username: username,
-            boundingBoxConverter: boundingBoxConverter
-        )
-    }
-
-    static func annotation(
-        from zoteroAnnotation: PDFDatabaseAnnotation,
+        part: PSPDFKit.Annotation.CrossPagePart?,
         type: Kind,
         appearance: Appearance,
         currentUserId: Int,
@@ -313,6 +410,9 @@ struct AnnotationConverter {
             if let createdByUserId = zoteroAnnotation.createdByUserId {
                 customData[AnnotationsConfig.createdByUserIdKey] = createdByUserId
             }
+            if let part {
+                customData[AnnotationsConfig.crossPagePartKey] = part.rawValue
+            }
             annotation.customData = customData
 
             if zoteroAnnotation.editability(currentUserId: currentUserId, libraryId: libraryId, metadataEditable: metadataEditable) != .editable {
@@ -324,12 +424,22 @@ struct AnnotationConverter {
             annotation.blendMode = blendMode
         }
 
-        annotation.pageIndex = UInt(zoteroAnnotation.page)
+        annotation.pageIndex = UInt(part == .next ? zoteroAnnotation.page + 1 : zoteroAnnotation.page)
         annotation.contents = zoteroAnnotation.comment
         annotation.user = zoteroAnnotation.author(displayName: displayName, username: username)
         annotation.name = "Zotero-\(zoteroAnnotation.key)"
 
         return annotation
+
+        func markupRects(from annotation: PDFAnnotation, boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect] {
+            switch part {
+            case .next:
+                return annotation.nextPageRects(boundingBoxConverter: boundingBoxConverter)
+
+            case .first, nil:
+                return annotation.rects(boundingBoxConverter: boundingBoxConverter)
+            }
+        }
 
         func areaAnnotation(from annotation: PDFAnnotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.SquareAnnotation {
             let square: PSPDFKit.SquareAnnotation
@@ -358,7 +468,7 @@ struct AnnotationConverter {
                 highlight = HighlightAnnotation()
             }
 
-            highlight.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter)
+            highlight.rects = markupRects(from: annotation, boundingBoxConverter: boundingBoxConverter)
             highlight.boundingBox = annotation.boundingBox(rects: highlight.rects!)
             highlight.color = color
             highlight.alpha = alpha
@@ -404,7 +514,7 @@ struct AnnotationConverter {
                 underline = UnderlineAnnotation()
             }
 
-            underline.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter)
+            underline.rects = markupRects(from: annotation, boundingBoxConverter: boundingBoxConverter)
             underline.boundingBox = annotation.boundingBox(rects: underline.rects!)
             underline.color = color
             underline.alpha = alpha

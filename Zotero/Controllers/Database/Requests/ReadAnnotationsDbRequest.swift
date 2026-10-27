@@ -29,7 +29,13 @@ struct ReadAnnotationsDbRequest: DbResponseRequest {
             .filter("annotationType in %@", supportedTypes)
         if let page {
             let prefix = String(format: "%05d|", page)
-            results = results.filter("annotationSortIndex BEGINSWITH %@", prefix)
+            if page > 0 {
+                // Include annotations from the previous page which continue on this page.
+                let previousPrefix = String(format: "%05d|", page - 1)
+                results = results.filter("annotationSortIndex BEGINSWITH %@ OR (annotationSortIndex BEGINSWITH %@ AND nextPageRects.@count > 0)", prefix, previousPrefix)
+            } else {
+                results = results.filter("annotationSortIndex BEGINSWITH %@", prefix)
+            }
         }
         return results.sorted(byKeyPath: "annotationSortIndex", ascending: true)
     }
