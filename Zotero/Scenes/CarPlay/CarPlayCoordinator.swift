@@ -58,6 +58,7 @@ final class CarPlayCoordinator: NSObject {
     private let interfaceController: CPInterfaceController
     private unowned let controllers: Controllers
     private var userInitializedCancellable: AnyCancellable?
+    private var userWillLogOutCancellable: AnyCancellable?
     /// Database observations of templates in the stack. Removed when their template leaves the stack.
     private var observations: [ObjectIdentifier: [NotificationToken]] = [:]
     /// Rows showing attachments, keyed by attachment key.
@@ -88,6 +89,12 @@ final class CarPlayCoordinator: NSObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] result in
                 self?.showRoot(isLoggedIn: (try? result.get()) ?? false)
+            }
+        // Read aloud depends on user controllers, so it's stopped synchronously, before they're released on logout.
+        // `userInitialized` reports the logout only after they're released and the root is reset on the next main queue pass.
+        userWillLogOutCancellable = controllers.userWillLogOut
+            .sink { [weak self] in
+                self?.stopReadAloud()
             }
 
         if controllers.userControllers != nil {
