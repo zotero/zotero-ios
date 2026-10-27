@@ -252,6 +252,7 @@ final class CarPlayHtmlEpubReadAloudSession {
         authors: String?,
         dbStorage: DbStorage,
         fileStorage: FileStorage,
+        lastReadWatcher: LastReadWatcher,
         speechPlaybackOwnership: SpeechPlaybackOwnership,
         documentWorkerController: DocumentWorkerController,
         documentPreviewController: DocumentPreviewController,
@@ -278,7 +279,7 @@ final class CarPlayHtmlEpubReadAloudSession {
             documentWorkerController: documentWorkerController,
             documentPreviewController: documentPreviewController
         )
-        speechManager.observePosition(storingIn: positionStore, disposeBag: disposeBag)
+        speechManager.observeReading(key: key, libraryId: libraryId, positionStore: positionStore, lastReadWatcher: lastReadWatcher, disposeBag: disposeBag)
     }
 }
 
