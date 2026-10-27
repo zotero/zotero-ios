@@ -194,21 +194,19 @@ final class CarPlayCoordinator: NSObject {
         let item = try? userControllers.dbStorage.perform(request: ReadItemDbRequest(libraryId: attachment.libraryId, key: parentKey ?? attachment.key), on: .main)
         let title = item?.displayTitle ?? attachment.title
         let authors = item?.creatorSummary.flatMap({ $0.isEmpty ? nil : $0 })
-        let session: CarPlayReadAloudSession
-        do {
-            session = try createReadAloudSession(
-                attachment: attachment,
-                contentType: contentType,
-                file: file,
-                title: title,
-                authors: authors,
-                userControllers: userControllers
-            )
-        } catch let error {
-            DDLogError("CarPlayCoordinator: can't create read aloud session - \(error)")
-            showAlert(title: L10n.Carplay.processingFailed)
-            return
-        }
+        let session = CarPlayReadAloudSession(
+            key: attachment.key,
+            libraryId: attachment.libraryId,
+            file: file,
+            title: title,
+            authors: authors,
+            dbStorage: userControllers.dbStorage,
+            lastReadWatcher: userControllers.lastReadWatcher,
+            speechPlaybackOwnership: controllers.speechPlaybackOwnership,
+            documentWorkerController: userControllers.documentWorkerController,
+            documentPreviewController: controllers.documentPreviewController,
+            apiClient: controllers.apiClient
+        )
         readAloudSession = session
         session.onPlaybackTakenOver = { [weak self] in
             self?.readAloudTakenOver()
@@ -241,48 +239,6 @@ final class CarPlayCoordinator: NSObject {
                 }
             })
             .disposed(by: readAloudDisposeBag)
-    }
-
-    private func createReadAloudSession(
-        attachment: Attachment,
-        contentType: String,
-        file: FileData,
-        title: String,
-        authors: String?,
-        userControllers: UserControllers
-    ) throws -> CarPlayReadAloudSession {
-        switch contentType {
-        case "application/pdf":
-            return CarPlayPdfReadAloudSession(
-                key: attachment.key,
-                libraryId: attachment.libraryId,
-                file: file,
-                title: title,
-                authors: authors,
-                dbStorage: userControllers.dbStorage,
-                lastReadWatcher: userControllers.lastReadWatcher,
-                speechPlaybackOwnership: controllers.speechPlaybackOwnership,
-                documentWorkerController: userControllers.documentWorkerController,
-                documentPreviewController: controllers.documentPreviewController,
-                apiClient: controllers.apiClient
-            )
-
-        default:
-            return try CarPlayHtmlEpubReadAloudSession(
-                key: attachment.key,
-                libraryId: attachment.libraryId,
-                file: file,
-                title: title,
-                authors: authors,
-                dbStorage: userControllers.dbStorage,
-                fileStorage: controllers.fileStorage,
-                lastReadWatcher: userControllers.lastReadWatcher,
-                speechPlaybackOwnership: controllers.speechPlaybackOwnership,
-                documentWorkerController: userControllers.documentWorkerController,
-                documentPreviewController: controllers.documentPreviewController,
-                apiClient: controllers.apiClient
-            )
-        }
     }
 
     // MARK: - Voice settings

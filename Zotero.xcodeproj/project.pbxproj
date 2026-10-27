@@ -16,7 +16,6 @@
 		2E2BF2EF2B40911DF4BCEDA4 /* RDocumentAnnotationsCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */; };
 		332BEB24FB6B2752AB8847E8 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A205AF67B01BE4DC986DAA5 /* CarPlaySceneDelegate.swift */; };
 		323EE001FFED44CE8BE4FE7D /* CarPlayVoiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1694BC77C5804D00B038441D /* CarPlayVoiceSettings.swift */; };
-		E401B25C6E7C49C4AD98C487 /* CarPlayHtmlEpubReadAloudSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2300091B89FB41088F112C34 /* CarPlayHtmlEpubReadAloudSession.swift */; };
 		B05F42D094AB47C286C46DB3 /* CarPlayReadAloudSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D76F687D3684D8CBB83AE85 /* CarPlayReadAloudSession.swift */; };
 		34319EFF474800EB6BA60376 /* StoreDocumentAnnotationsCacheDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB95656CF4AD91246DF78BDA /* StoreDocumentAnnotationsCacheDbRequest.swift */; };
 		39B480FDABABBF2D3FB95CC8 /* DocumentKeyCommandsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A58CEDE963D3EAA101BBCFE /* DocumentKeyCommandsHandler.swift */; };
@@ -1602,7 +1601,6 @@
 		977B760291F3124DBBCC6203 /* LibraryScoped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryScoped.swift; sourceTree = "<group>"; };
 		9A205AF67B01BE4DC986DAA5 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		1694BC77C5804D00B038441D /* CarPlayVoiceSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarPlayVoiceSettings.swift; sourceTree = "<group>"; };
-		2300091B89FB41088F112C34 /* CarPlayHtmlEpubReadAloudSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarPlayHtmlEpubReadAloudSession.swift; sourceTree = "<group>"; };
 		1D76F687D3684D8CBB83AE85 /* CarPlayReadAloudSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarPlayReadAloudSession.swift; sourceTree = "<group>"; };
 		A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateLoginSessionRequest.swift; sourceTree = "<group>"; };
 		A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateLoginSessionResponse.swift; sourceTree = "<group>"; };
@@ -2766,7 +2764,6 @@
 			isa = PBXGroup;
 			children = (
 				874F844832DEBF887B5BAADD /* CarPlayCoordinator.swift */,
-				2300091B89FB41088F112C34 /* CarPlayHtmlEpubReadAloudSession.swift */,
 				1D76F687D3684D8CBB83AE85 /* CarPlayReadAloudSession.swift */,
 				9A205AF67B01BE4DC986DAA5 /* CarPlaySceneDelegate.swift */,
 				1694BC77C5804D00B038441D /* CarPlayVoiceSettings.swift */,
@@ -6616,7 +6613,6 @@
 				BA8BCD73DE217DC7EC85A893 /* CarPlayCoordinator.swift in Sources */,
 				332BEB24FB6B2752AB8847E8 /* CarPlaySceneDelegate.swift in Sources */,
 				323EE001FFED44CE8BE4FE7D /* CarPlayVoiceSettings.swift in Sources */,
-				E401B25C6E7C49C4AD98C487 /* CarPlayHtmlEpubReadAloudSession.swift in Sources */,
 				B05F42D094AB47C286C46DB3 /* CarPlayReadAloudSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
