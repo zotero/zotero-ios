@@ -40,6 +40,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let documentWorkerController: DocumentWorkerController
+    private unowned let speechPlaybackOwnership: SpeechPlaybackOwnership
     private unowned let remoteVoicesController: RemoteVoicesController
     private unowned let documentPreviewController: DocumentPreviewController
     let disposeBag: DisposeBag
@@ -202,12 +203,14 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     init(
         viewModel: ViewModel<PDFReaderActionHandler>,
         documentWorkerController: DocumentWorkerController,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
         remoteVoicesController: RemoteVoicesController,
         documentPreviewController: DocumentPreviewController,
         compactSize: Bool
     ) {
         self.viewModel = viewModel
         self.documentWorkerController = documentWorkerController
+        self.speechPlaybackOwnership = speechPlaybackOwnership
         self.remoteVoicesController = remoteVoicesController
         self.documentPreviewController = documentPreviewController
         isCompactWidth = compactSize
@@ -239,6 +242,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 documentContainer: documentController!.view,
                 delegate: self,
                 dbStorage: viewModel.handler.dbStorage,
+                speechPlaybackOwnership: speechPlaybackOwnership,
                 remoteVoicesController: remoteVoicesController,
                 documentWorkerController: documentWorkerController,
                 documentPreviewController: documentPreviewController

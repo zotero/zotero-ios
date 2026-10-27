@@ -35,6 +35,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
     private unowned let dbStorage: DbStorage
     private unowned let documentWorkerController: DocumentWorkerController
+    private unowned let speechPlaybackOwnership: SpeechPlaybackOwnership
     private unowned let remoteVoicesController: RemoteVoicesController
     private unowned let documentPreviewController: DocumentPreviewController
     private var readAloudHandler: ReadAloudViewHandler<HtmlEpubReaderViewController>?
@@ -171,12 +172,14 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         compactSize: Bool,
         dbStorage: DbStorage,
         documentWorkerController: DocumentWorkerController,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
         remoteVoicesController: RemoteVoicesController,
         documentPreviewController: DocumentPreviewController
     ) {
         self.viewModel = viewModel
         self.dbStorage = dbStorage
         self.documentWorkerController = documentWorkerController
+        self.speechPlaybackOwnership = speechPlaybackOwnership
         self.remoteVoicesController = remoteVoicesController
         self.documentPreviewController = documentPreviewController
         isCompactWidth = compactSize
@@ -224,6 +227,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                 documentContainer: documentController.view,
                 delegate: self,
                 dbStorage: dbStorage,
+                speechPlaybackOwnership: speechPlaybackOwnership,
                 remoteVoicesController: remoteVoicesController,
                 documentWorkerController: documentWorkerController,
                 documentPreviewController: documentPreviewController

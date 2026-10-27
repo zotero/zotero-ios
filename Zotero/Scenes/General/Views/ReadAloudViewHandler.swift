@@ -107,6 +107,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         documentContainer: UIView,
         delegate: Delegate,
         dbStorage: DbStorage,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
         remoteVoicesController: RemoteVoicesController,
         documentWorkerController: DocumentWorkerController,
         documentPreviewController: DocumentPreviewController
@@ -125,6 +126,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             libraryId: libraryId,
             voiceLanguage: language,
             remoteVoiceTier: Defaults.shared.remoteVoiceTier,
+            speechPlaybackOwnership: speechPlaybackOwnership,
             remoteVoicesController: remoteVoicesController,
             documentWorkerController: documentWorkerController,
             documentPreviewController: documentPreviewController

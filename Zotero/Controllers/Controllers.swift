@@ -35,6 +35,7 @@ final class Controllers {
     let backgroundTaskController: BackgroundTaskController
     let lowPowerModeController: LowPowerModeController
     let uriConverter: ZoteroURIConverter
+    let speechPlaybackOwnership: SpeechPlaybackOwnership
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     /// Reports that the user is being logged out while `userControllers` still exist. It's sent synchronously and
     /// `userControllers` are released right after, so subscribers have to tear down anything depending on them without
@@ -107,6 +108,7 @@ final class Controllers {
         backgroundTaskController = BackgroundTaskController()
         lowPowerModeController = LowPowerModeController()
         uriConverter = ZoteroURIConverter()
+        speechPlaybackOwnership = SpeechPlaybackOwnership()
         didInitialize = false
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber

@@ -252,6 +252,7 @@ final class CarPlayHtmlEpubReadAloudSession {
         authors: String?,
         dbStorage: DbStorage,
         fileStorage: FileStorage,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
         documentWorkerController: DocumentWorkerController,
         documentPreviewController: DocumentPreviewController,
         apiClient: ApiClient
@@ -272,6 +273,7 @@ final class CarPlayHtmlEpubReadAloudSession {
             key: key,
             libraryId: libraryId,
             dbStorage: dbStorage,
+            speechPlaybackOwnership: speechPlaybackOwnership,
             remoteVoicesController: remoteVoicesController,
             documentWorkerController: documentWorkerController,
             documentPreviewController: documentPreviewController
@@ -283,6 +285,11 @@ final class CarPlayHtmlEpubReadAloudSession {
 extension CarPlayHtmlEpubReadAloudSession: CarPlayReadAloudSession {
     var state: BehaviorRelay<SpeechState> {
         return speechManager.state
+    }
+
+    var onPlaybackTakenOver: (() -> Void)? {
+        get { speechManager.onPlaybackTakenOver }
+        set { speechManager.onPlaybackTakenOver = newValue }
     }
 
     var extractionProgress: BehaviorRelay<Double?> {
