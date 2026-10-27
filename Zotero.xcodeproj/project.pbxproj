@@ -609,6 +609,7 @@
 		B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B30BA8C3255D415600361D25 /* Bundled */; };
 		B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F942475544700F78A05 /* SyncToolbarController.swift */; };
 		B32B4F972475636600F78A05 /* RxTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F962475636600F78A05 /* RxTableViewCell.swift */; };
+		B3D0C5E12EA0F00100A1B2C3 /* DocumentPreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0C5E02EA0F00100A1B2C3 /* DocumentPreviewController.swift */; };
 		B32B8A572B18A08900A9A741 /* PDFThumbnailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B8A562B18A08900A9A741 /* PDFThumbnailController.swift */; };
 		B32CDD3D2AEA9BB100EF5054 /* AnnotationPopoverViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32CDD3C2AEA9BB100EF5054 /* AnnotationPopoverViewController.xib */; };
 		B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */; };
@@ -1877,6 +1878,7 @@
 		B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentIconDrawingController.swift; sourceTree = "<group>"; };
 		B32B4F942475544700F78A05 /* SyncToolbarController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncToolbarController.swift; sourceTree = "<group>"; };
 		B32B4F962475636600F78A05 /* RxTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxTableViewCell.swift; sourceTree = "<group>"; };
+		B3D0C5E02EA0F00100A1B2C3 /* DocumentPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPreviewController.swift; sourceTree = "<group>"; };
 		B32B8A562B18A08900A9A741 /* PDFThumbnailController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailController.swift; sourceTree = "<group>"; };
 		B32CDD3C2AEA9BB100EF5054 /* AnnotationPopoverViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = AnnotationPopoverViewController.xib; sourceTree = "<group>"; };
 		B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverNavigationViewController.swift; sourceTree = "<group>"; };
@@ -2902,6 +2904,7 @@
 				B3825F7E2F4C86BC00D0578A /* OggOpusConverter.swift */,
 				61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */,
 				B34A9F6325BF1ABB007C9A4A /* PDFDocumentExporter.swift */,
+				B3D0C5E02EA0F00100A1B2C3 /* DocumentPreviewController.swift */,
 				B32B8A562B18A08900A9A741 /* PDFThumbnailController.swift */,
 				61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */,
 				61C0DE132FBD000100000000 /* SDTPack.swift */,
@@ -5819,6 +5822,7 @@
 				B3A351E527157EC6002E597A /* WebDavPropParserDelegate.swift in Sources */,
 				B3A2AECC26552248004BF3A4 /* SettingsCoordinator.swift in Sources */,
 				B3825F842F4DB21400D0578A /* RemainingTimeFormatter.swift in Sources */,
+				B3D0C5E12EA0F00100A1B2C3 /* DocumentPreviewController.swift in Sources */,
 				B32B8A572B18A08900A9A741 /* PDFThumbnailController.swift in Sources */,
 				B3E8FE6A2714344D00F51458 /* SettingsActionHandler.swift in Sources */,
 				B3E8FE3C27142A9900F51458 /* StylePickerAction.swift in Sources */,
