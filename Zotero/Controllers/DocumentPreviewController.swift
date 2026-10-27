@@ -268,8 +268,9 @@ private enum PDFPreviewRenderer {
 /// Looks for cover in following order:
 /// 1. EPUB 3 manifest item with `cover-image` property.
 /// 2. EPUB 2 `<meta name="cover" content="{item id}"/>`.
-/// 3. Manifest image item with "cover" in its id or href.
-/// 4. First image in cover page XHTML (`<guide>` reference with type "cover", or manifest item with "cover" id).
+/// 3. First image in cover page XHTML referenced by `<guide>` reference with type "cover".
+/// 4. Manifest image item with "cover" in its id or href.
+/// 5. First image in manifest XHTML item with "cover" in its id.
 private enum EPUBCoverExtractor {
     /// Protects against decompressing unreasonably large entries.
     private static let maxEntrySize: UInt64 = 50 * 1024 * 1024
@@ -285,41 +286,67 @@ private enum EPUBCoverExtractor {
         let package = PackageParser.parse(data: packageData)
         let packageDirectory = (packagePath as NSString).deletingLastPathComponent
 
-        for href in imageCandidates(in: package) {
-            guard let path = resolve(href: href, relativeTo: packageDirectory) else { continue }
-            if let image = image(at: path, in: archive, maxPixelSize: maxPixelSize) {
-                return image
+        func firstImage(fromImageHrefs hrefs: [String]) -> CGImage? {
+            for href in hrefs {
+                guard let path = resolve(href: href, relativeTo: packageDirectory) else { continue }
+                if let image = image(at: path, in: archive, maxPixelSize: maxPixelSize) {
+                    return image
+                }
             }
+            return nil
         }
 
-        for href in coverPageCandidates(in: package) {
-            guard let pagePath = resolve(href: href, relativeTo: packageDirectory),
-                  let pageData = data(at: pagePath, in: archive),
-                  let imageHref = CoverPageParser.firstImageHref(from: pageData),
-                  let imagePath = resolve(href: imageHref, relativeTo: (pagePath as NSString).deletingLastPathComponent)
-            else { continue }
-            if let image = image(at: imagePath, in: archive, maxPixelSize: maxPixelSize) {
-                return image
+        func firstImage(fromPageHrefs hrefs: [String]) -> CGImage? {
+            for href in hrefs {
+                guard let pagePath = resolve(href: href, relativeTo: packageDirectory),
+                      let pageData = data(at: pagePath, in: archive),
+                      let imageHref = CoverPageParser.firstImageHref(from: pageData),
+                      let imagePath = resolve(href: imageHref, relativeTo: (pagePath as NSString).deletingLastPathComponent)
+                else { continue }
+                if let image = image(at: imagePath, in: archive, maxPixelSize: maxPixelSize) {
+                    return image
+                }
             }
+            return nil
         }
 
-        return nil
+        let explicitImages = declaredCoverImageHrefs(in: package)
+        let explicitPages = package.guideCoverHrefs.removingDuplicates()
+        // Guesses are tried only after all explicitly declared covers, so that e.g. an image with "back-cover" id doesn't win over guide's cover page.
+        let guessedImages = guessedCoverImageHrefs(in: package).filter({ !explicitImages.contains($0) })
+        let guessedPages = guessedCoverPageHrefs(in: package).filter({ !explicitPages.contains($0) })
+
+        return firstImage(fromImageHrefs: explicitImages)
+            ?? firstImage(fromPageHrefs: explicitPages)
+            ?? firstImage(fromImageHrefs: guessedImages)
+            ?? firstImage(fromPageHrefs: guessedPages)
     }
 
-    private static func imageCandidates(in package: PackageParser.Package) -> [String] {
-        let images = package.items.filter({ $0.mediaType.hasPrefix("image/") })
-        var candidates: [String] = []
-        candidates += images.filter({ $0.properties.contains("cover-image") }).map(\.href)
+    private static func imageItems(in package: PackageParser.Package) -> [PackageParser.Item] {
+        return package.items.filter({ $0.mediaType.hasPrefix("image/") })
+    }
+
+    private static func declaredCoverImageHrefs(in package: PackageParser.Package) -> [String] {
+        let images = imageItems(in: package)
+        var hrefs = images.filter({ $0.properties.contains("cover-image") }).map(\.href)
         if let coverId = package.coverId, let item = images.first(where: { $0.id == coverId }) {
-            candidates.append(item.href)
+            hrefs.append(item.href)
         }
-        candidates += images.filter({ $0.id.lowercased().contains("cover") || $0.href.lowercased().contains("cover") }).map(\.href)
-        return candidates.removingDuplicates()
+        return hrefs.removingDuplicates()
     }
 
-    private static func coverPageCandidates(in package: PackageParser.Package) -> [String] {
-        let pages = package.items.filter({ $0.mediaType == "application/xhtml+xml" && $0.id.lowercased().contains("cover") }).map(\.href)
-        return (package.guideCoverHrefs + pages).removingDuplicates()
+    private static func guessedCoverImageHrefs(in package: PackageParser.Package) -> [String] {
+        return imageItems(in: package)
+            .filter({ $0.id.lowercased().contains("cover") || $0.href.lowercased().contains("cover") })
+            .map(\.href)
+            .removingDuplicates()
+    }
+
+    private static func guessedCoverPageHrefs(in package: PackageParser.Package) -> [String] {
+        return package.items
+            .filter({ $0.mediaType == "application/xhtml+xml" && $0.id.lowercased().contains("cover") })
+            .map(\.href)
+            .removingDuplicates()
     }
 
     private static func image(at path: String, in archive: Archive, maxPixelSize: CGFloat) -> CGImage? {
