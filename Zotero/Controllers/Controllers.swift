@@ -36,6 +36,10 @@ final class Controllers {
     let lowPowerModeController: LowPowerModeController
     let uriConverter: ZoteroURIConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
+    /// Reports that the user is being logged out while `userControllers` still exist. It's sent synchronously and
+    /// `userControllers` are released right after, so subscribers have to tear down anything depending on them without
+    /// switching queues.
+    let userWillLogOut: PassthroughSubject<Void, Never>
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
@@ -97,6 +101,7 @@ final class Controllers {
         dateParser = DateParser()
         htmlAttributedStringConverter = HtmlAttributedStringConverter()
         userInitialized = PassthroughSubject()
+        userWillLogOut = PassthroughSubject()
         lastBuildNumber = Defaults.shared.lastBuildNumber
         idleTimerController = IdleTimerController()
         backgroundTaskController = BackgroundTaskController()
@@ -276,6 +281,10 @@ final class Controllers {
 
     private func clearSession() {
         // `controllers.logout()` is called last so that the user is first redirected to login screen and then the DB is cleared. Otherwise the user would briefly see all data gone before being redirected.
+        // Stop everything which depends on user controllers (e.g. CarPlay read aloud) while they still exist
+        if userControllers != nil {
+            userWillLogOut.send()
+        }
         // Disable ongoing sync and unsubscribe from websocket
         userControllers?.disableSync(apiKey: apiKey)
         // Cancel all downloads
