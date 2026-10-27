@@ -35,19 +35,10 @@ final class ReadingModeHandler {
         case enabled
     }
 
-    /// Size of the reading mode checkbox capsule itself.
-    private let navbarButtonSize: CGFloat = 38
-    /// Transparent horizontal padding added around the capsule so the bar button matches the standard bar button
-    /// footprint and lines up evenly with the system bar buttons next to it.
-    private var navbarHorizontalPadding: CGFloat {
-        return max(0, (CheckboxButton.standardNavigationBarButtonSize - navbarButtonSize) / 2)
-    }
-
     let mode: Mode
     private let file: FileData
     private unowned let documentWorkerController: DocumentWorkerController
     private weak var documentController: HtmlEpubDocumentViewController?
-    private let disposeBag: DisposeBag
 
     private weak var buttonRef: CheckboxButton?
     private weak var progressViewRef: CircularProgressView?
@@ -78,7 +69,6 @@ final class ReadingModeHandler {
         self.file = file
         self.documentController = documentController
         self.documentWorkerController = documentWorkerController
-        disposeBag = DisposeBag()
         // In standalone mode the structured text is the whole content of the reader, so it's loaded right away and
         // reading mode is on for as long as the reader is open.
         state = mode == .standalone ? .loading : .disabled
@@ -252,58 +242,19 @@ final class ReadingModeHandler {
     // MARK: - Button
 
     func createReadingModeButton() -> UIBarButtonItem {
-        let button = CheckboxButton(
-            image: Asset.Images.pdfRawReader.image.withRenderingMode(.alwaysTemplate),
-            contentInsets: NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
-            cornerStyle: .capsule
-        )
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.showsLargeContentViewer = true
-        button.accessibilityLabel = L10n.Accessibility.Speech.showReader
-        button.deselectedBackgroundColor = .clear
-        button.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
-        button.selectedTintColor = .white
-        button.isSelected = false
-        button.addAction(
-            UIAction(handler: { [weak self] _ in
-                self?.toggle()
-            }),
-            for: .touchUpInside
-        )
-        buttonRef = button
-
         let progressView = CircularProgressView(size: 20, lineWidth: 2)
         progressView.translatesAutoresizingMaskIntoConstraints = false
         progressView.isUserInteractionEnabled = false
         progressView.isHidden = true
         progressViewRef = progressView
 
-        let container = UIView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(button)
-        container.addSubview(progressView)
-
-        // Pad the capsule horizontally so the bar button matches the standard bar button footprint and lines up
-        // evenly with the system bar buttons next to it (which have more surrounding padding than the tight capsule).
-        let hPadding = navbarHorizontalPadding
-        NSLayoutConstraint.activate([
-            button.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: hPadding),
-            container.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: hPadding),
-            button.topAnchor.constraint(equalTo: container.topAnchor),
-            button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            button.widthAnchor.constraint(equalToConstant: navbarButtonSize),
-            button.heightAnchor.constraint(equalToConstant: navbarButtonSize),
-            progressView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-            progressView.centerYAnchor.constraint(equalTo: button.centerYAnchor)
-        ])
-
-        let item = UIBarButtonItem(customView: container)
-        item.title = L10n.AccessibilityPopup.showReader
-        item.accessibilityLabel = L10n.Accessibility.Speech.showReader
+        let barButton = ReadingModeBarButton(overlay: progressView) { [weak self] in
+            self?.toggle()
+        }
+        buttonRef = barButton.button
         // Standalone mode starts loading before the button exists, so the button is brought up to the current state.
         updateButton()
-        return item
+        return barButton.item
     }
 
     private func updateButton() {
@@ -346,5 +297,65 @@ final class ReadingModeHandler {
         } else {
             progressView.startIndeterminateAnimation()
         }
+    }
+}
+
+/// Reading mode toggle in the navigation bar, shared by the readers which offer reading mode. It's a capsule checkbox, selected while reading mode
+/// is shown.
+struct ReadingModeBarButton {
+    /// Size of the checkbox capsule itself.
+    private static let buttonSize: CGFloat = 38
+
+    let item: UIBarButtonItem
+    let button: CheckboxButton
+
+    /// - parameter isEnabled: Whether the button can be tapped.
+    /// - parameter overlay: View centered over the button (e.g. a progress view shown while reading mode loads).
+    /// - parameter action: Called when the button is tapped.
+    init(isEnabled: Bool = true, overlay: UIView? = nil, action: @escaping () -> Void) {
+        let button = CheckboxButton(
+            image: Asset.Images.pdfRawReader.image.withRenderingMode(.alwaysTemplate),
+            contentInsets: NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
+            cornerStyle: .capsule
+        )
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.showsLargeContentViewer = true
+        button.accessibilityLabel = L10n.Accessibility.Speech.showReader
+        button.deselectedBackgroundColor = .clear
+        button.deselectedTintColor = isEnabled ? Asset.Colors.zoteroBlueWithDarkMode.color : .gray
+        button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
+        button.selectedTintColor = .white
+        button.isSelected = false
+        button.isEnabled = isEnabled
+        button.addAction(UIAction(handler: { _ in action() }), for: .touchUpInside)
+
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(button)
+
+        // Pad the capsule horizontally so the bar button matches the standard bar button footprint and lines up
+        // evenly with the system bar buttons next to it (which have more surrounding padding than the tight capsule).
+        let horizontalPadding = max(0, (CheckboxButton.standardNavigationBarButtonSize - Self.buttonSize) / 2)
+        var constraints = [
+            button.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: horizontalPadding),
+            container.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: horizontalPadding),
+            button.topAnchor.constraint(equalTo: container.topAnchor),
+            button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            button.widthAnchor.constraint(equalToConstant: Self.buttonSize),
+            button.heightAnchor.constraint(equalToConstant: Self.buttonSize)
+        ]
+        if let overlay {
+            container.addSubview(overlay)
+            constraints.append(overlay.centerXAnchor.constraint(equalTo: button.centerXAnchor))
+            constraints.append(overlay.centerYAnchor.constraint(equalTo: button.centerYAnchor))
+        }
+        NSLayoutConstraint.activate(constraints)
+
+        let item = UIBarButtonItem(customView: container)
+        item.title = L10n.AccessibilityPopup.showReader
+        item.accessibilityLabel = L10n.Accessibility.Speech.showReader
+
+        self.item = item
+        self.button = button
     }
 }
