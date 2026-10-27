@@ -447,29 +447,31 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
 
     // MARK: - Session hand off
 
-    /// Sentence playback is at, `nil` when nothing is playing. Lets another reader of the same document continue the
-    /// session where this one left off.
-    var activeResumePosition: ReadAloudResumePosition? {
-        guard !speechManager.state.value.isStopped else { return nil }
-        return lastSpeakingPosition
+    /// Sentence the session is at and whether it's paused, `nil` when there is no session. Lets another reader of the
+    /// same document continue the session where this one left off.
+    var activeHandOff: ReadAloudHandOff? {
+        let state = speechManager.state.value
+        guard !state.isStopped, let lastSpeakingPosition else { return nil }
+        return ReadAloudHandOff(position: lastSpeakingPosition, isPaused: state.isPaused)
     }
 
-    /// Stops playback and reports where it left off, for another reader of the same document to continue from.
-    func stopForHandOff() -> ReadAloudResumePosition? {
-        guard let position = activeResumePosition else { return nil }
+    /// Stops the session and reports where it left off, for another reader of the same document to continue from.
+    func stopForHandOff() -> ReadAloudHandOff? {
+        guard let handOff = activeHandOff else { return nil }
         speechManager.stop()
-        return position
+        return handOff
     }
 
-    /// Continues a session handed over by another reader of the same document. `resolvedByReader` looks the sentence
-    /// up through the reader's structured text, which is how a reader that has no page geometry of its own (reading
-    /// mode) finds it; otherwise it resolves against the page geometry.
-    func continueHandedOffSession(from position: ReadAloudResumePosition, resolvedByReader: Bool) {
-        lastSpeakingPosition = position
+    /// Continues a session handed over by another reader of the same document. A paused session stays paused at the
+    /// sentence, it's not played until the user resumes it. `resolvedByReader` looks the sentence up through the
+    /// reader's structured text, which is how a reader that has no page geometry of its own (reading mode) finds it;
+    /// otherwise it resolves against the page geometry.
+    func continueHandedOffSession(_ handOff: ReadAloudHandOff, resolvedByReader: Bool) {
+        lastSpeakingPosition = handOff.position
         if resolvedByReader {
-            speechManager.start(.readerSelection(position.json))
+            speechManager.start(.readerSelection(handOff.position.json), paused: handOff.isPaused)
         } else {
-            speechManager.start(.resume(position))
+            speechManager.start(.resume(handOff.position), paused: handOff.isPaused)
         }
     }
 

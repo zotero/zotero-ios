@@ -454,20 +454,21 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     }
 
     /// Takes the read aloud session back from reading mode, continuing at the sentence it left off at.
-    private func continueReadAloud(from position: ReadAloudResumePosition?) {
-        guard let position, let readAloudHandler else { return }
+    private func continueReadAloud(from handOff: ReadAloudHandOff?) {
+        guard let handOff, let readAloudHandler else { return }
         // Reading mode reports its position the way the reader expressed it, which for a PDF is the geometry of the
         // sentence - the same thing this reader stores and resolves against the page.
         let resolved: ReadAloudResumePosition
-        switch position {
+        switch handOff.position {
         case .pdf:
-            resolved = position
+            resolved = handOff.position
 
         case .reader(let source):
             guard let fromSource = ReadAloudResumePosition(json: source) else { return }
             resolved = fromSource
         }
-        readAloudHandler.continueHandedOffSession(from: resolved, resolvedByReader: false)
+        // Playback state is kept, a paused session stays paused.
+        readAloudHandler.continueHandedOffSession(handOff.with(position: resolved), resolvedByReader: false)
     }
 
     /// Takes over the sidebar state reading mode left off with. Applied after the navigation bar items, because
@@ -806,8 +807,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 },
                 // Reading mode takes the read aloud session over, so that it both reads and highlights; this reader
                 // can't highlight what's being read while it's covered anyway.
-                readAloudPosition: readAloudHandler?.stopForHandOff(),
-                readAloudHandedBack: { [weak self] position in self?.continueReadAloud(from: position) }
+                readAloudHandOff: readAloudHandler?.stopForHandOff(),
+                readAloudHandedBack: { [weak self] handOff in self?.continueReadAloud(from: handOff) }
             )
         )
     }

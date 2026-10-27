@@ -43,11 +43,11 @@ struct ReadingModeSourceContext {
     let toolbarStateChanged: (AnnotationToolbarHandler.State) -> Void
     /// Reports the page of the source document which reading mode shows, so that the reading position isn't lost when reading mode is left.
     let pageChanged: (Int) -> Void
-    /// Sentence read aloud was speaking when reading mode was opened, `nil` when it wasn't playing. Reading mode takes
-    /// the session over, so that it both reads and highlights.
-    let readAloudPosition: ReadAloudResumePosition?
+    /// Read aloud session (sentence and whether it was paused) when reading mode was opened, `nil` when there was none.
+    /// Reading mode takes the session over, so that it both reads and highlights, and keeps it paused if it was.
+    let readAloudHandOff: ReadAloudHandOff?
     /// Hands the session back when reading mode is turned off, so that the reader which opened it keeps reading.
-    let readAloudHandedBack: (ReadAloudResumePosition?) -> Void
+    let readAloudHandedBack: (ReadAloudHandOff?) -> Void
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
@@ -951,9 +951,9 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
 
     func documentContentInitialized(didSucceed: Bool) {
         readingModeHandler?.documentContentInitialized(didSucceed: didSucceed)
-        guard didSucceed, let position = sourceContext?.readAloudPosition, let readAloudHandler else { return }
+        guard didSucceed, let handOff = sourceContext?.readAloudHandOff, let readAloudHandler else { return }
         // The structured text is displayed, so the sentence can be looked up in it and read on from there.
-        readAloudHandler.continueHandedOffSession(from: position, resolvedByReader: true)
+        readAloudHandler.continueHandedOffSession(handOff, resolvedByReader: true)
     }
 
     func show(url: URL) {
