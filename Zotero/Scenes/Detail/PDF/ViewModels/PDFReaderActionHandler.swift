@@ -112,6 +112,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private var pdfDisposeBag: DisposeBag
     private var openedDocument: OpenedDocument?
+    // Count of local document changes per annotation key, from document notification until database write completion. Accessed only on main thread.
+    private var pendingAnnotationChanges: [String: Int] = [:]
     private var pageDebounceDisposeBag: DisposeBag?
     private var freeTextAnnotationRotationDebounceDisposeBagByKey: [String: DisposeBag]
     private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
@@ -1415,7 +1417,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !requests.isEmpty else { return }
 
+        beginAnnotationChange(key: key)
         perform(writeRequests: requests) { [weak self, weak viewModel] error in
+            self?.finishAnnotationChange(key: key)
             guard let error, let self, let viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update changed annotations - \(error)")
@@ -1769,10 +1773,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         func processAnnotationObserving(handler: PDFReaderActionHandler, notification: Notification, viewModel: ViewModel<PDFReaderActionHandler>) {
             guard isNotification(notification, from: viewModel.state.document) else { return }
+            // Mark document change as pending from now on, so that it isn't reverted by database changes until it is stored.
+            var pendingKey: String?
+            if notification.name == .PSPDFAnnotationChanged,
+               notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] != ["flags"],
+               let key = (notification.object as? PSPDFKit.Annotation)?.key {
+                pendingKey = key
+                handler.beginAnnotationChange(key: key)
+            }
 
             // TODO: Improve this if PSPDFKit allows more control for automatic command recording, e.g. by providing a detached recorder
             // Delay handling of notifications until next main run loop iteration, so they have completely recorded their undo command.
             DispatchQueue.main.async { [weak handler, weak viewModel] in
+                defer {
+                    if let pendingKey { handler?.finishAnnotationChange(key: pendingKey) }
+                }
                 guard let handler, let viewModel else { return }
 
                 switch notification.name {
@@ -1836,6 +1851,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 return annotation.document === document
             }
         }
+    }
+
+    private func beginAnnotationChange(key: String) {
+        pendingAnnotationChanges[key, default: 0] += 1
+    }
+
+    private func finishAnnotationChange(key: String) {
+        guard let count = pendingAnnotationChanges[key] else { return }
+        pendingAnnotationChanges[key] = count > 1 ? count - 1 : nil
     }
 
     // MARK: - Multiple readers of the same document
