@@ -266,11 +266,14 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                     displayName: displayName,
                     username: username,
                     documentPageCount: documentPageCount,
+                    page: pageIndex,
                     boundingBoxConverter: boundingBoxConverter
                 ))
             } catch {
                 DDLogError("PDFReaderAnnotationProvider: failed to read database annotations for page \(pageIndex) - \(error)")
             }
+            // Annotations inserted into the document before this page was loaded (e.g. by sync, or created in reading mode) are already in the cache.
+            annotationsToAdd = annotationsToAdd.filter({ loadedAnnotationsByPageByKey[pageIndex]?[$0.key ?? $0.uuid] == nil })
             for annotation in annotationsToAdd {
                 annotation.source = .database
             }
@@ -433,6 +436,8 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         }
     }
 
+    /// Returns loaded document annotation with given key. For annotations spanning a page break, which are represented by one document annotation per page,
+    /// the part on the first page is preferred.
     public func annotationIfLoaded(with key: String) -> Annotation? {
         return performRead {
             loadedAnnotationsByKey[key]
@@ -465,14 +470,36 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         let key = annotation.key ?? annotation.uuid
         let pageIndex = annotation.pageIndex
         loadedAnnotationsByPageByKey[pageIndex, default: [:]][key] = annotation
+        // Parts of an annotation spanning a page break share the key. Keep the first part indexed by key, if loaded.
+        if annotation.crossPagePart == .next, let indexed = loadedAnnotationsByKey[key], indexed !== annotation, indexed.crossPagePart == .first {
+            return
+        }
         loadedAnnotationsByKey[key] = annotation
     }
 
     private func deindex(annotation: Annotation, key: String? = nil) {
         let key = key ?? annotation.key ?? annotation.uuid
         let pageIndex = annotation.pageIndex
-        loadedAnnotationsByPageByKey[pageIndex]?[key] = nil
+        if loadedAnnotationsByPageByKey[pageIndex]?[key] === annotation {
+            loadedAnnotationsByPageByKey[pageIndex]?[key] = nil
+        }
+        guard loadedAnnotationsByKey[key] === annotation else { return }
         loadedAnnotationsByKey[key] = nil
+        // If this was a part of an annotation spanning a page break, index the other part by key, if loaded.
+        let otherPageIndex: PageIndex?
+        switch annotation.crossPagePart {
+        case .first:
+            otherPageIndex = pageIndex + 1
+
+        case .next:
+            otherPageIndex = pageIndex > 0 ? pageIndex - 1 : nil
+
+        case nil:
+            otherPageIndex = nil
+        }
+        if let otherPageIndex, let otherPart = loadedAnnotationsByPageByKey[otherPageIndex]?[key] {
+            loadedAnnotationsByKey[key] = otherPart
+        }
     }
 
     public func loadDocumentAnnotationsDatabaseCache(documentMD5: String?) {

@@ -1355,17 +1355,24 @@ extension RItem {
             }
         }
 
-        // A PDF source position (standalone reading mode) keeps its rects in a separate list instead of a field, so that
-        // the rest of the app and the sync can use them. Annotations of HTML/EPUB documents are anchored by selectors
-        // and have no rects, so this is skipped for them.
+        // A PDF source position (standalone reading mode) keeps its rects (and `nextPageRects` of an annotation which
+        // continues on the next page) in separate lists instead of fields, so that the rest of the app and the sync can use
+        // them. Annotations of HTML/EPUB documents are anchored by selectors and have no rects, so this is skipped for them.
         if !rects.isEmpty {
-            // Built as a plain array of arrays, the way `UpdatableObject.createAnnotationPosition` does it. Mapping the
-            // Realm list directly leaves a value which can't be bridged, and serializing the annotation then throws.
+            position[FieldKeys.Item.Annotation.Position.rects] = rectArray(from: rects)
+        }
+        if !nextPageRects.isEmpty {
+            position[FieldKeys.Item.Annotation.Position.nextPageRects] = rectArray(from: nextPageRects)
+        }
+
+        // Built as a plain array of arrays, the way `UpdatableObject.createAnnotationPosition` does it. Mapping the
+        // Realm list directly leaves a value which can't be bridged, and serializing the annotation then throws.
+        func rectArray(from rects: List<RRect>) -> [[Double]] {
             var rectArray: [[Double]] = []
             for rect in rects {
                 rectArray.append([rect.minX, rect.minY, rect.maxX, rect.maxY])
             }
-            position[FieldKeys.Item.Annotation.Position.rects] = rectArray
+            return rectArray
         }
 
         guard let type, let sortIndex, !position.isEmpty else {

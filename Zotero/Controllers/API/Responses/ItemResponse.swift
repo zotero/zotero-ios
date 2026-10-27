@@ -37,6 +37,8 @@ struct ItemResponse {
     let createdBy: UserResponse?
     let lastModifiedBy: UserResponse?
     let rects: [[Double]]?
+    /// Rects on the page following `pageIndex` for annotations which span a page break.
+    let nextPageRects: [[Double]]?
     let paths: [[Double]]?
     let lastRead: Date?
 
@@ -59,6 +61,7 @@ struct ItemResponse {
         createdBy: UserResponse?,
         lastModifiedBy: UserResponse?,
         rects: [[Double]]?,
+        nextPageRects: [[Double]]? = nil,
         paths: [[Double]]?,
         lastRead: Date?
     ) {
@@ -81,6 +84,7 @@ struct ItemResponse {
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
         self.rects = rects
+        self.nextPageRects = nextPageRects
         self.paths = paths
         self.lastRead = lastRead
     }
@@ -172,6 +176,7 @@ struct ItemResponse {
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
         self.rects = nil
+        self.nextPageRects = nil
         self.paths = nil
         self.lastRead = (data["lastRead"] as? Int).flatMap({ Date(timeIntervalSince1970: TimeInterval($0)) })
 
@@ -199,7 +204,7 @@ struct ItemResponse {
         let dateModified = data["dateModified"] as? String
         let tags = (data["tags"] as? [[String: Any]]) ?? []
 
-        let (fields, rects, paths) = try ItemResponse.parseFields(from: data, rawType: ItemTypes.annotation, key: key, schemaController: schemaController)
+        let (fields, rects, nextPageRects, paths) = try ItemResponse.parseFields(from: data, rawType: ItemTypes.annotation, key: key, schemaController: schemaController)
 
         self.rawType = ItemTypes.annotation
         self.key = key
@@ -220,6 +225,7 @@ struct ItemResponse {
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
         self.rects = rects
+        self.nextPageRects = nextPageRects
         self.paths = paths
         self.lastRead = nil
     }
@@ -252,6 +258,7 @@ struct ItemResponse {
         self.createdBy = nil
         self.lastModifiedBy = nil
         self.rects = nil
+        self.nextPageRects = nil
         self.paths = nil
         self.lastRead = nil
     }
@@ -276,6 +283,7 @@ struct ItemResponse {
             createdBy: createdBy,
             lastModifiedBy: lastModifiedBy,
             rects: rects,
+            nextPageRects: nextPageRects,
             paths: paths,
             lastRead: lastRead
         )
@@ -301,6 +309,7 @@ struct ItemResponse {
             createdBy: createdBy,
             lastModifiedBy: lastModifiedBy,
             rects: rects,
+            nextPageRects: nextPageRects,
             paths: paths,
             lastRead: lastRead
         )
@@ -347,10 +356,11 @@ struct ItemResponse {
         key: String,
         schemaController: SchemaController,
         ignoreUnknownFields: Bool = false
-    ) throws -> (fields: [KeyBaseKeyPair: String], rects: [[Double]]?, paths: [[Double]]?) {
+    ) throws -> (fields: [KeyBaseKeyPair: String], rects: [[Double]]?, nextPageRects: [[Double]]?, paths: [[Double]]?) {
         let excludedKeys = FieldKeys.Item.knownNonFieldKeys
         var fields: [KeyBaseKeyPair: String] = [:]
         var rects: [[Double]]?
+        var nextPageRects: [[Double]]?
         var paths: [[Double]]?
 
         guard let schemaFields = schemaController.fields(for: rawType) else { throw SchemaError.missingSchemaFields(itemType: rawType) }
@@ -375,8 +385,9 @@ struct ItemResponse {
             switch object.key {
             case FieldKeys.Item.Annotation.position:
                 // Annotations have `annotationPosition` which is a JSON string, so the string needs to be decoded and stored as proper field values
-                let (_rects, _paths) = try self.parsePositionFields(from: value, key: key, fields: &fields)
+                let (_rects, _nextPageRects, _paths) = try self.parsePositionFields(from: value, key: key, fields: &fields)
                 rects = _rects
+                nextPageRects = _nextPageRects
                 paths = _paths
 
             case FieldKeys.Item.accessDate:
@@ -392,19 +403,20 @@ struct ItemResponse {
 
         try self.validate(fields: fields, itemType: rawType, key: key, hasPaths: (paths != nil), hasRects: (rects != nil))
 
-        return (fields, rects, paths)
+        return (fields, rects, nextPageRects, paths)
     }
 
     private static func parsePositionFields(
         from encoded: String,
         key: String,
         fields: inout [KeyBaseKeyPair: String]
-    ) throws -> (rects: [[Double]]?, paths: [[Double]]?) {
+    ) throws -> (rects: [[Double]]?, nextPageRects: [[Double]]?, paths: [[Double]]?) {
         guard let data = encoded.data(using: .utf8), let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any] else {
             throw SchemaError.invalidValue(value: encoded, field: FieldKeys.Item.Annotation.position, key: key)
         }
 
         var rects: [[Double]]?
+        var nextPageRects: [[Double]]?
         var paths: [[Double]]?
 
         for object in json {
@@ -418,6 +430,12 @@ struct ItemResponse {
             case FieldKeys.Item.Annotation.Position.rects:
                 if let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && !parsedRects.contains(where: { $0.count != 4 }) {
                     rects = parsedRects
+                }
+                continue
+
+            case FieldKeys.Item.Annotation.Position.nextPageRects:
+                if let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && !parsedRects.contains(where: { $0.count != 4 }) {
+                    nextPageRects = parsedRects
                 }
                 continue
 
@@ -442,7 +460,7 @@ struct ItemResponse {
             fields[KeyBaseKeyPair(key: object.key, baseKey: FieldKeys.Item.Annotation.position)] = value
         }
 
-        return (rects, paths)
+        return (rects, nextPageRects, paths)
     }
 
     private static func validate(fields: [KeyBaseKeyPair: String], itemType: String, key: String, hasPaths: Bool, hasRects: Bool) throws {
