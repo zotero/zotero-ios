@@ -24,6 +24,18 @@ enum ReadAloudResumePosition {
     case reader(source: ReaderSourcePosition)
 }
 
+/// Read aloud session handed over between readers of the same document (a reader and its reading mode).
+struct ReadAloudHandOff {
+    /// Sentence the session is at.
+    let position: ReadAloudResumePosition
+    /// `true` if playback was paused. The receiving reader then continues the session paused, without playing.
+    let isPaused: Bool
+
+    func with(position: ReadAloudResumePosition) -> ReadAloudHandOff {
+        return ReadAloudHandOff(position: position, isPaused: isPaused)
+    }
+}
+
 extension ReadAloudResumePosition {
     /// The synced `value` payload: `["pageIndex": Int, "rects": [[minX, minY, maxX, maxY]]]` for PDF, the reader's
     /// selector dictionary as it reported it for HTML/EPUB.

@@ -289,6 +289,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var lastReportedSentence: (paragraphIndex: Int, range: NSRange)?
     /// The page currently handed to the voice processor. Used to map processor-reported page-text offsets back to a paragraph.
     private var currentSpeakingPage: Delegate.Index?
+    /// `true` while a session started paused (see `start(_:paused:)`) hasn't played yet. The processor has nothing to resume then, so resuming starts
+    /// speaking at the current position.
+    private var isPausedBeforePlayback = false
+    /// `true` while a session is being started paused, so that it ends up paused at the resolved position instead of speaking.
+    private var shouldStartPaused = false
     /// Readable paragraphs for the whole document, in reading order.
     private var paragraphs: [SpeechParagraph]
     /// Indices into `paragraphs`, grouped by page in reading order.
@@ -524,7 +529,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     // MARK: - Actions
 
-    func start(_ target: StartTarget) {
+    /// Starts a session at given target.
+    /// - parameter target: Where reading starts.
+    /// - parameter paused: If `true`, the session is prepared at the target, with its sentence highlighted, but stays paused until `resume()` is called.
+    func start(_ target: StartTarget, paused: Bool = false) {
+        isPausedBeforePlayback = false
+        shouldStartPaused = paused
         state.accept(.initializing)
         // Ask the processor whether playback may start at all (remote voices need credits) before extracting the
         // document, so that an out-of-credits session fails right away instead of after the whole document has been
@@ -802,7 +812,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     manager.state.accept(.stopped)
                     return
                 }
-                manager.startSpeaking(paragraphIndex: paragraphIndex, offset: offset, reportPageChange: false)
+                if manager.shouldStartPaused {
+                    manager.prepareSpeaking(paragraphIndex: paragraphIndex, offset: offset)
+                } else {
+                    manager.startSpeaking(paragraphIndex: paragraphIndex, offset: offset, reportPageChange: false)
+                }
             }
         }
     }
@@ -875,7 +889,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     func resume() {
-        if processor.canResume {
+        if isPausedBeforePlayback, let position, position.paragraphIndex < paragraphs.count {
+            // Session was started paused, so nothing has played yet. Start at the current position, which may have been moved by navigation while paused.
+            isPausedBeforePlayback = false
+            startSpeaking(paragraphIndex: position.paragraphIndex, offset: position.range.location, reportPageChange: false)
+        } else if processor.canResume {
             processor.resume()
         } else {
             start(.currentPage)
@@ -883,7 +901,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     func stop() {
+        let wasPausedBeforePlayback = isPausedBeforePlayback
+        isPausedBeforePlayback = false
+        shouldStartPaused = false
         processor.stop()
+        // A session which hasn't played yet has nothing to stop in the processor, which then doesn't report the stop.
+        if wasPausedBeforePlayback && !state.value.isStopped {
+            state.accept(.stopped)
+        }
     }
 
     func set(voice: SpeechVoice, preferredLanguage: String?) {
@@ -1277,7 +1302,28 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
+    /// Prepares a session started paused at given paragraph position: moves the position and highlight there, without speaking. Playback starts there
+    /// on `resume()`.
+    private func prepareSpeaking(paragraphIndex index: Int, offset: Int) {
+        guard index < paragraphs.count else {
+            stop()
+            return
+        }
+        shouldStartPaused = false
+        isPausedBeforePlayback = true
+        let paragraph = paragraphs[index]
+        let granularity = highlightGranularity
+        let sentenceRange = TextTokenizer.findSentence(startingAt: offset, in: paragraph.text)?.range ?? NSRange(location: offset, length: 0)
+        let highlightRange = findHighlightUnit(at: offset, in: paragraph.text, granularity: granularity)?.range ?? sentenceRange
+        currentSpeakingPage = paragraph.page
+        position = Position(paragraphIndex: index, range: sentenceRange, highlightRange: highlightRange, highlightGranularity: granularity)
+        state.accept(.paused)
+        // Highlight the sentence like playback would, so that the paused session shows where it continues.
+        delegate?.readAloudHighlightChanged(position: highlightPosition(paragraph: paragraph, highlightRange: highlightRange), pageIndex: paragraph.page)
+    }
+
     private func startSpeaking(paragraphIndex index: Int, offset: Int = 0, reportPageChange: Bool) {
+        isPausedBeforePlayback = false
         guard index < paragraphs.count else {
             stop()
             return

@@ -29,6 +29,8 @@ extension RItemChanges {
     static let tags = RItemChanges(rawValue: 1 << 5)
     static let creators = RItemChanges(rawValue: 1 << 6)
     static let relations = RItemChanges(rawValue: 1 << 7)
+    /// Rect geometry of an annotation changed - both `RItem.rects` and `RItem.nextPageRects`, since they are submitted together as
+    /// part of `annotationPosition`.
     static let rects = RItemChanges(rawValue: 1 << 8)
     static let paths = RItemChanges(rawValue: 1 << 9)
     static let lastRead = RItemChanges(rawValue: 1 << 10)
@@ -89,6 +91,9 @@ final class RItem: Object {
     @Persisted var fileCompressed: Bool
     // MARK: - Annotation data
     @Persisted var rects: List<RRect>
+    /// Rects on the page following the annotation's `pageIndex`. Non-empty only for highlights and underlines which span a page
+    /// break, in which case `rects` contain the part on the first page.
+    @Persisted var nextPageRects: List<RRect>
     @Persisted var paths: List<RPath>
     // MARK: - Derived data
     /// Localized type based on current localization of device, used for sorting

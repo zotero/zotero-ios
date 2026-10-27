@@ -74,6 +74,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     }
     private var previousTraitCollection: UITraitCollection?
     private var readAloudHandler: ReadAloudViewHandler<PDFReaderViewController>?
+    /// Sidebar and toolbar changes made in reading mode. Applied when this reader is shown again, rather than while
+    /// it's covered by reading mode.
+    private var readingModeSidebarVisible: Bool?
+    private var readingModeToolbarChanged = false
     private lazy var keyCommandsHandler: DocumentKeyCommandsHandler = {
         let handler = DocumentKeyCommandsHandler()
         handler.onAction = { [weak self] action in
@@ -308,6 +312,29 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             annotationToolbarHandler!.performInitialLayout()
         }
 
+        /// Reading mode shows the structured text of the document in a separate reader presented full screen over this one, so the button is
+        /// never seen selected here. It uses the same toggle as reading mode, where it's selected and turns reading mode off. Without the feature
+        /// gate it opens PSPDFKit's plain text reader, which is a one-way presentation and so keeps a plain button.
+        func createReadingModeButton(isEnabled: Bool) -> UIBarButtonItem {
+            guard FeatureGates.enabled.contains(.readingMode) else {
+                let item = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+                item.isEnabled = isEnabled
+                item.accessibilityLabel = L10n.Accessibility.Speech.showReader
+                item.title = L10n.AccessibilityPopup.showReader
+                item.rx.tap
+                    .subscribe(onNext: { [weak self] _ in
+                        guard let self else { return }
+                        coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
+                    })
+                    .disposed(by: disposeBag)
+                return item
+            }
+
+            return ReadingModeBarButton(isEnabled: isEnabled) { [weak self] in
+                self?.showReadingMode()
+            }.item
+        }
+
         func setupNavigationBar() {
             let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
             sidebarButton.isEnabled = !viewModel.state.document.isLocked
@@ -320,16 +347,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let readingModeButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
-            readingModeButton.isEnabled = !viewModel.state.document.isLocked
-            readingModeButton.accessibilityLabel = L10n.Accessibility.Speech.showReader
-            readingModeButton.title = L10n.AccessibilityPopup.showReader
-            readingModeButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
-                })
-                .disposed(by: disposeBag)
+            let readingModeButton = createReadingModeButton(isEnabled: !viewModel.state.document.isLocked)
 
             var leftItems: [UIBarButtonItem] = [closeButton, sidebarButton, readingModeButton]
             if FeatureGates.enabled.contains(.speech), let readAloudHandler {
@@ -367,9 +385,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                     guard let self else { return }
                     previousTraitCollection = traitCollection
                     readAloudHandler?.confirmActiveHighlightSession()
-                    if let page = documentController?.pdfController?.pageIndex {
-                        viewModel.process(action: .submitPendingPage(Int(page)))
-                    }
+                    // Visible page in state follows the document, and also reading mode presented over this reader.
+                    viewModel.process(action: .submitPendingPage(viewModel.state.visiblePage))
                 })
                 .disposed(by: disposeBag)
         }
@@ -377,9 +394,49 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
+        // Reading mode is presented full screen, so this reader appears again when it's dismissed.
+        viewModel.process(action: .setReadingModePresented(false))
+        applyReadingModeToolbarStateIfNeeded()
         let editingEnabled = viewModel.state.library.metadataEditable && !viewModel.state.document.isLocked
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: editingEnabled)
         applyNavigationBarButtons(windowSize: windowSize)
+        applyReadingModeSidebarStateIfNeeded()
+    }
+
+    /// Lays the toolbar out for the state reading mode left off with, which was stored as it changed. Done before the
+    /// toolbar handler lays out for this appearance, which applies the rest of that state.
+    private func applyReadingModeToolbarStateIfNeeded() {
+        guard readingModeToolbarChanged else { return }
+        readingModeToolbarChanged = false
+        // The toolbar's rotation follows its position and is otherwise only set once, when the reader is first shown.
+        annotationToolbarHandler?.performInitialLayout()
+    }
+
+    /// Takes the read aloud session back from reading mode, continuing at the sentence it left off at.
+    private func continueReadAloud(from handOff: ReadAloudHandOff?) {
+        guard let handOff, let readAloudHandler else { return }
+        // Reading mode reports its position the way the reader expressed it, which for a PDF is the geometry of the
+        // sentence - the same thing this reader stores and resolves against the page.
+        let resolved: ReadAloudResumePosition
+        switch handOff.position {
+        case .pdf:
+            resolved = handOff.position
+
+        case .reader(let source):
+            guard let fromSource = ReadAloudResumePosition(json: source) else { return }
+            resolved = fromSource
+        }
+        // Playback state is kept, a paused session stays paused.
+        readAloudHandler.continueHandedOffSession(handOff.with(position: resolved), resolvedByReader: false)
+    }
+
+    /// Takes over the sidebar state reading mode left off with. Applied after the navigation bar items, because
+    /// toggling the sidebar also updates the sidebar button.
+    private func applyReadingModeSidebarStateIfNeeded() {
+        guard let readingModeSidebarVisible else { return }
+        self.readingModeSidebarVisible = nil
+        guard readingModeSidebarVisible != isSidebarVisible else { return }
+        toggleSidebar(animated: false)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -679,10 +736,46 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             .disposed(by: disposeBag)
     }
 
+    /// Presents the structured text of this document in its own reader, full screen over this one. This reader is shown again when that one is
+    /// dismissed by turning reading mode off there, closing it closes this reader as well.
+    private func showReadingMode() {
+        // Ignore taps while reading mode (or anything else) is being presented.
+        guard let coordinatorDelegate, (navigationController ?? self).presentedViewController == nil else { return }
+        viewModel.process(action: .setReadingModePresented(true))
+        coordinatorDelegate.showReadingMode(
+            document: viewModel.state.document,
+            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
+            sourceContext: ReadingModeSourceContext(
+                isSidebarVisible: isSidebarVisible,
+                toolbarState: toolbarState,
+                initialPageIndex: (documentController?.pdfController?.pageIndex).map({ Int($0) }),
+                // Closing the document in reading mode leaves this reader as well, which also dismisses reading mode
+                // presented on top of it. Turning reading mode off instead returns here.
+                close: { [weak self] in self?.close() },
+                sidebarVisibilityChanged: { [weak self] isVisible in self?.readingModeSidebarVisible = isVisible },
+                toolbarStateChanged: { [weak self] state in
+                    guard let self else { return }
+                    // Stored right away, so that the state survives closing both readers from reading mode. Only the
+                    // layout waits until this reader is shown again.
+                    toolbarState = state
+                    readingModeToolbarChanged = true
+                },
+                // Reading position in reading mode is the reading position of this document. It's stored like a page change in this reader, which moves to
+                // that page when it's shown again.
+                pageChanged: { [weak self] page in
+                    self?.viewModel.process(action: .setVisiblePage(page: page, userActionFromDocument: false, fromThumbnailList: false))
+                },
+                // Reading mode takes the read aloud session over, so that it both reads and highlights; this reader
+                // can't highlight what's being read while it's covered anyway.
+                readAloudHandOff: readAloudHandler?.stopForHandOff(),
+                readAloudHandedBack: { [weak self] handOff in self?.continueReadAloud(from: handOff) }
+            )
+        )
+    }
+
     private func close() {
-        if let page = documentController?.pdfController?.pageIndex {
-            viewModel.process(action: .submitPendingPage(Int(page)))
-        }
+        // Visible page in state follows the document, and also reading mode, which can close this reader while it's presented over it.
+        viewModel.process(action: .submitPendingPage(viewModel.state.visiblePage))
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 

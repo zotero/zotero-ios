@@ -1,0 +1,361 @@
+//
+//  ReadingModeHandler.swift
+//  Zotero
+//
+//  Created by Michal Rentka on 25.09.2026.
+//  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
+//
+
+import UIKit
+
+import CocoaLumberjackSwift
+import RxSwift
+
+/// Drives reading mode in the HTML/EPUB reader, which renders the document's structured text as reflowable HTML over
+/// the (hidden) base view inside the same web view.
+///
+/// Owns the navigation bar toggle button and the structured-document-text extraction which enabling requires. The
+/// button reflects the state the reader reports back, not the state which was requested, because the reader can refuse
+/// to enable reading mode when the structured text is unavailable.
+final class ReadingModeHandler {
+    enum Mode {
+        /// Reading mode is an overlay which the user turns on and off on top of a document the reader displays itself.
+        case overlay
+        /// Reading mode is all the reader displays, because it can't display the source document. It's on from the
+        /// start, and turning it off closes the reader instead of switching to the document.
+        case standalone
+    }
+
+    enum State {
+        /// Base document is shown.
+        case disabled
+        /// Structured text is being extracted, or the reader is switching views.
+        case loading
+        /// Reading mode is shown.
+        case enabled
+    }
+
+    let mode: Mode
+    private let file: FileData
+    private unowned let documentWorkerController: DocumentWorkerController
+    private weak var documentController: HtmlEpubDocumentViewController?
+
+    private weak var buttonRef: CheckboxButton?
+    private weak var progressViewRef: CircularProgressView?
+    /// Latest extraction progress reported by the document worker, `nil` while it is unknown.
+    private var currentProgress: Double?
+    /// Worker extracting the structured text of this document, kept so that it can be cleaned up when the reader closes
+    /// while the extraction is still running. A one-off worker is finished as soon as its work drains and rejects any
+    /// further work, so each extraction gets a fresh one.
+    private var worker: DocumentWorkerController.Worker?
+    /// Dispose bag of the current extraction, so that starting another one drops the previous subscription.
+    private var extractionDisposeBag: DisposeBag?
+
+    private(set) var state: State = .disabled {
+        didSet {
+            updateButton()
+        }
+    }
+    /// Called when enabling reading mode failed, so that the reader can report it to the user.
+    var onEnableFailed: (() -> Void)?
+    /// Called in standalone mode when the user turns reading mode off, where there is no document to switch back to.
+    var onRequestClose: (() -> Void)?
+    /// Called once the reader finished switching between the document and its structured text. The view the user reads
+    /// is replaced by the switch, so anything drawn on top of the document has to be drawn again.
+    var onDidSwitchView: (() -> Void)?
+
+    init(mode: Mode, file: FileData, documentController: HtmlEpubDocumentViewController, documentWorkerController: DocumentWorkerController) {
+        self.mode = mode
+        self.file = file
+        self.documentController = documentController
+        self.documentWorkerController = documentWorkerController
+        // In standalone mode the structured text is the whole content of the reader, so it's loaded right away and
+        // reading mode is on for as long as the reader is open.
+        state = mode == .standalone ? .loading : .disabled
+    }
+
+    deinit {
+        if let worker {
+            documentWorkerController.cleanupWorker(worker)
+        }
+        DDLogInfo("ReadingModeHandler: deinitialized")
+    }
+
+    // MARK: - Actions
+
+    func toggle() {
+        guard mode == .overlay else {
+            // There is no document to switch back to, the reader of the source document shows it.
+            onRequestClose?()
+            return
+        }
+
+        switch state {
+        case .loading:
+            // Ignore taps while the previous change is still in flight, the button is disabled anyway.
+            break
+
+        case .enabled:
+            disable()
+
+        case .disabled:
+            enable()
+        }
+    }
+
+    /// Extracts the structured text and hands it to the reader, which displays it. Standalone mode only, where the
+    /// structured text is the whole content of the reader rather than something the user turns on.
+    func start() {
+        guard mode == .standalone else { return }
+        state = .loading
+        loadSDTPack { [weak self] didLoad in
+            guard let self, !didLoad else { return }
+            DDLogError("ReadingModeHandler: could not load structured document text for standalone reading mode")
+            reportUnavailable()
+        }
+    }
+
+    /// Reports the result of the reader creating its content. Standalone mode only - the reader creates it once it has
+    /// the structured text, so this is what completes `start()`.
+    func documentContentInitialized(didSucceed: Bool) {
+        guard mode == .standalone else { return }
+        if didSucceed {
+            state = .enabled
+        } else {
+            DDLogError("ReadingModeHandler: reader could not display structured document text")
+            reportUnavailable()
+        }
+    }
+
+    /// There is nothing to show without the structured text. Reporting it closes the reader, so it isn't closed here -
+    /// that would take the message away with it before it's read.
+    private func reportUnavailable() {
+        state = .disabled
+        onEnableFailed?()
+    }
+
+    private func enable() {
+        guard let documentController else { return }
+        state = .loading
+        // Read aloud may have handed the pack over already, in which case the reader can switch right away.
+        guard !documentController.hasSDTPack else {
+            setReadingModeEnabled(true)
+            return
+        }
+        loadSDTPack { [weak self] didLoad in
+            guard let self else { return }
+            guard didLoad else {
+                DDLogError("ReadingModeHandler: could not load structured document text")
+                state = .disabled
+                onEnableFailed?()
+                return
+            }
+            setReadingModeEnabled(true)
+        }
+    }
+
+    private func disable() {
+        state = .loading
+        setReadingModeEnabled(false)
+    }
+
+    private func setReadingModeEnabled(_ enabled: Bool) {
+        guard let documentController else {
+            state = .disabled
+            return
+        }
+        documentController.setReadingModeEnabled(enabled) { [weak self] isEnabled in
+            guard let self else { return }
+            state = isEnabled ? .enabled : .disabled
+            if enabled && !isEnabled {
+                DDLogError("ReadingModeHandler: reader did not enable reading mode")
+                onEnableFailed?()
+                return
+            }
+            onDidSwitchView?()
+        }
+    }
+
+    // MARK: - Structured document text
+
+    /// Extracts the structured text of the document and hands it to the reader. Reports whether the reader has the pack
+    /// afterwards. Progress of the extraction is shown in the toggle button.
+    private func loadSDTPack(completion: @escaping (Bool) -> Void) {
+        // A one-off worker is finished as soon as its work drains, and rejects anything queued afterwards, so every
+        // extraction starts from a fresh worker.
+        if let worker {
+            documentWorkerController.cleanupWorker(worker)
+        }
+        let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high)
+        self.worker = worker
+        let extractionDisposeBag = DisposeBag()
+        self.extractionDisposeBag = extractionDisposeBag
+
+        documentWorkerController.queue(work: .structuredDocumentText, in: worker)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] update in
+                guard let self else { return }
+
+                switch update.kind {
+                case .queued:
+                    // Extraction is queued but not started yet, progress is unknown.
+                    updateProgress(nil)
+
+                case .inProgress(let progress):
+                    updateProgress(progress.map({ $0 / 100 }))
+
+                case .failed, .cancelled:
+                    DDLogError("ReadingModeHandler: structured document text extraction failed")
+                    updateProgress(nil)
+                    completion(false)
+
+                case .extractedData(let result, _):
+                    // Extraction is done, but handing the pack over and switching the reader to the structured text
+                    // still takes a moment, so go back to the indeterminate spinner for the rest of the wait.
+                    updateProgress(nil)
+                    guard case .structuredDocumentText(let sdtResult) = result else {
+                        DDLogError("ReadingModeHandler: unexpected result for structured document text work")
+                        completion(false)
+                        return
+                    }
+                    guard let documentController else {
+                        completion(false)
+                        return
+                    }
+                    do {
+                        let pack = try sdtResult.pack()
+                        documentController.setSDTPack(
+                            bytes: pack.data,
+                            packVersion: pack.header.packVersion,
+                            schemaMajorVersion: pack.header.schemaMajorVersion,
+                            completion: completion
+                        )
+                    } catch let error {
+                        DDLogError("ReadingModeHandler: could not open structured document text pack - \(error)")
+                        completion(false)
+                    }
+                }
+            })
+            .disposed(by: extractionDisposeBag)
+    }
+
+    // MARK: - Button
+
+    func createReadingModeButton() -> UIBarButtonItem {
+        let progressView = CircularProgressView(size: 20, lineWidth: 2)
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        progressView.isUserInteractionEnabled = false
+        progressView.isHidden = true
+        progressViewRef = progressView
+
+        let barButton = ReadingModeBarButton(overlay: progressView) { [weak self] in
+            self?.toggle()
+        }
+        buttonRef = barButton.button
+        // Standalone mode starts loading before the button exists, so the button is brought up to the current state.
+        updateButton()
+        return barButton.item
+    }
+
+    private func updateButton() {
+        guard let button = buttonRef else { return }
+        let isLoading = state == .loading
+        button.isSelected = state == .enabled
+        button.isEnabled = !isLoading
+        // The progress ring takes the place of the icon while loading, as in the read aloud controls.
+        button.configuration?.image = isLoading ? nil : Asset.Images.pdfRawReader.image.withRenderingMode(.alwaysTemplate)
+        if isLoading {
+            showProgressView()
+        } else {
+            hideProgressView()
+        }
+    }
+
+    /// Shows the progress view, seeding it with the latest reported extraction progress (falling back to an
+    /// indeterminate spinner while progress is unknown).
+    private func showProgressView() {
+        progressViewRef?.isHidden = false
+        updateProgress(currentProgress)
+    }
+
+    private func hideProgressView() {
+        guard let progressView = progressViewRef else { return }
+        progressView.stopIndeterminateAnimation()
+        progressView.progress = 0
+        progressView.isHidden = true
+        currentProgress = nil
+    }
+
+    /// Reflects the extraction progress in the progress view: a determinate arc when a value is known, an indeterminate
+    /// spinner otherwise. No-op while the progress view is hidden.
+    private func updateProgress(_ progress: Double?) {
+        currentProgress = progress
+        guard let progressView = progressViewRef, !progressView.isHidden else { return }
+        if let progress {
+            progressView.stopIndeterminateAnimation()
+            progressView.progress = CGFloat(progress)
+        } else {
+            progressView.startIndeterminateAnimation()
+        }
+    }
+}
+
+/// Reading mode toggle in the navigation bar, shared by the readers which offer reading mode. It's a capsule checkbox, selected while reading mode
+/// is shown.
+struct ReadingModeBarButton {
+    /// Size of the checkbox capsule itself.
+    private static let buttonSize: CGFloat = 38
+
+    let item: UIBarButtonItem
+    let button: CheckboxButton
+
+    /// - parameter isEnabled: Whether the button can be tapped.
+    /// - parameter overlay: View centered over the button (e.g. a progress view shown while reading mode loads).
+    /// - parameter action: Called when the button is tapped.
+    init(isEnabled: Bool = true, overlay: UIView? = nil, action: @escaping () -> Void) {
+        let button = CheckboxButton(
+            image: Asset.Images.pdfRawReader.image.withRenderingMode(.alwaysTemplate),
+            contentInsets: NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
+            cornerStyle: .capsule
+        )
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.showsLargeContentViewer = true
+        button.accessibilityLabel = L10n.Accessibility.Speech.showReader
+        button.deselectedBackgroundColor = .clear
+        button.deselectedTintColor = isEnabled ? Asset.Colors.zoteroBlueWithDarkMode.color : .gray
+        button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
+        button.selectedTintColor = .white
+        button.isSelected = false
+        button.isEnabled = isEnabled
+        button.addAction(UIAction(handler: { _ in action() }), for: .touchUpInside)
+
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(button)
+
+        // Pad the capsule horizontally so the bar button matches the standard bar button footprint and lines up
+        // evenly with the system bar buttons next to it (which have more surrounding padding than the tight capsule).
+        let horizontalPadding = max(0, (CheckboxButton.standardNavigationBarButtonSize - Self.buttonSize) / 2)
+        var constraints = [
+            button.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: horizontalPadding),
+            container.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: horizontalPadding),
+            button.topAnchor.constraint(equalTo: container.topAnchor),
+            button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            button.widthAnchor.constraint(equalToConstant: Self.buttonSize),
+            button.heightAnchor.constraint(equalToConstant: Self.buttonSize)
+        ]
+        if let overlay {
+            container.addSubview(overlay)
+            constraints.append(overlay.centerXAnchor.constraint(equalTo: button.centerXAnchor))
+            constraints.append(overlay.centerYAnchor.constraint(equalTo: button.centerYAnchor))
+        }
+        NSLayoutConstraint.activate(constraints)
+
+        let item = UIBarButtonItem(customView: container)
+        item.title = L10n.AccessibilityPopup.showReader
+        item.accessibilityLabel = L10n.Accessibility.Speech.showReader
+
+        self.item = item
+        self.button = button
+    }
+}

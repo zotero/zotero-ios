@@ -445,6 +445,36 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         }
     }
 
+    // MARK: - Session hand off
+
+    /// Sentence the session is at and whether it's paused, `nil` when there is no session. Lets another reader of the
+    /// same document continue the session where this one left off.
+    var activeHandOff: ReadAloudHandOff? {
+        let state = speechManager.state.value
+        guard !state.isStopped, let lastSpeakingPosition else { return nil }
+        return ReadAloudHandOff(position: lastSpeakingPosition, isPaused: state.isPaused)
+    }
+
+    /// Stops the session and reports where it left off, for another reader of the same document to continue from.
+    func stopForHandOff() -> ReadAloudHandOff? {
+        guard let handOff = activeHandOff else { return nil }
+        speechManager.stop()
+        return handOff
+    }
+
+    /// Continues a session handed over by another reader of the same document. A paused session stays paused at the
+    /// sentence, it's not played until the user resumes it. `resolvedByReader` looks the sentence up through the
+    /// reader's structured text, which is how a reader that has no page geometry of its own (reading mode) finds it;
+    /// otherwise it resolves against the page geometry.
+    func continueHandedOffSession(_ handOff: ReadAloudHandOff, resolvedByReader: Bool) {
+        lastSpeakingPosition = handOff.position
+        if resolvedByReader {
+            speechManager.start(.readerSelection(handOff.position.json), paused: handOff.isPaused)
+        } else {
+            speechManager.start(.resume(handOff.position), paused: handOff.isPaused)
+        }
+    }
+
     /// Hands over the position stored for this document (read with the rest of the document data), so that reading can
     /// pick up where it left off the last time the document was open. Ignored once reading has started, so that a
     /// late-arriving load doesn't move the current session.
