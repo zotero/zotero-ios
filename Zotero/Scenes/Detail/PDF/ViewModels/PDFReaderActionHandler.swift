@@ -1756,6 +1756,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         NotificationCenter.default.rx
             .notification(.PSPDFAnnotationChanged)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: nextBlock)
             .disposed(by: pdfDisposeBag)
 
