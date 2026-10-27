@@ -76,6 +76,9 @@ final class CarPlayCoordinator: NSObject {
     private var voiceSettings: CarPlayVoiceSettings?
     /// Whether reading should resume once the voice settings close, like `ReadAloudViewHandler.wasPlayingBeforeVoiceChange`.
     private var wasPlayingBeforeVoiceSettings = false
+    /// Whether Now Playing was shown for the current session, i.e. reading has started. Voice settings opened before that
+    /// (from the alert shown when the voice has no credits left at startup) start reading again with the new voice.
+    private var didShowNowPlaying = false
 
     init(interfaceController: CPInterfaceController, controllers: Controllers) {
         self.interfaceController = interfaceController
@@ -223,7 +226,9 @@ final class CarPlayCoordinator: NSObject {
 
                 case .outOfCredits:
                     hideProcessing()
-                    showAlert(title: L10n.Carplay.outOfCredits)
+                    // Switching to another voice (e.g. a free local one) is the way to continue. When credits run out at
+                    // startup, the Now Playing buttons with voice settings aren't shown yet, so they're offered here.
+                    showAlert(title: L10n.Carplay.outOfCredits, offersVoiceSettings: readAloudSession?.voice != nil)
 
                 case .stopped:
                     // Stopping while the document is still being processed means it couldn't be read.
@@ -314,12 +319,19 @@ final class CarPlayCoordinator: NSObject {
         guard let settings = voiceSettings else { return }
         voiceSettings = nil
         settings.stopSamples()
-        if let change = settings.voiceChange {
+        let change = settings.voiceChange
+        if let change {
             readAloudSession?.apply(voiceChange: change)
         }
-        if wasPlayingBeforeVoiceSettings {
+        guard wasPlayingBeforeVoiceSettings else { return }
+        wasPlayingBeforeVoiceSettings = false
+        if didShowNowPlaying {
             readAloudSession?.resume()
-            wasPlayingBeforeVoiceSettings = false
+        } else if change != nil, let session = readAloudSession {
+            // Reading didn't start (the voice had no credits), so it starts again with the new voice, the same way as when
+            // the document was opened.
+            showProcessing(title: session.documentTitle ?? "", session: session)
+            session.start()
         }
     }
 
@@ -327,6 +339,7 @@ final class CarPlayCoordinator: NSObject {
         voiceSettings?.stopSamples()
         voiceSettings = nil
         wasPlayingBeforeVoiceSettings = false
+        didShowNowPlaying = false
         readAloudDisposeBag = DisposeBag()
         readAloudSession?.stop()
         readAloudSession = nil
@@ -403,6 +416,7 @@ final class CarPlayCoordinator: NSObject {
     private func showNowPlayingIfProcessing() {
         guard let processingTemplate else { return }
         self.processingTemplate = nil
+        didShowNowPlaying = true
         let nowPlaying = CPNowPlayingTemplate.shared
         var buttons: [CPNowPlayingButton] = []
         if let image = UIImage(systemName: "chevron.backward.2") {
@@ -426,11 +440,19 @@ final class CarPlayCoordinator: NSObject {
         }
     }
 
-    private func showAlert(title: String) {
-        let action = CPAlertAction(title: L10n.ok, style: .default) { [weak self] _ in
-            self?.interfaceController.dismissTemplate(animated: true, completion: nil)
+    private func showAlert(title: String, offersVoiceSettings: Bool = false) {
+        var actions: [CPAlertAction] = []
+        if offersVoiceSettings {
+            actions.append(CPAlertAction(title: L10n.Carplay.voiceSettings, style: .default) { [weak self] _ in
+                self?.interfaceController.dismissTemplate(animated: true) { _, _ in
+                    self?.showVoiceSettings()
+                }
+            })
         }
-        interfaceController.presentTemplate(CPAlertTemplate(titleVariants: [title], actions: [action]), animated: true, completion: nil)
+        actions.append(CPAlertAction(title: L10n.ok, style: offersVoiceSettings ? .cancel : .default) { [weak self] _ in
+            self?.interfaceController.dismissTemplate(animated: true, completion: nil)
+        })
+        interfaceController.presentTemplate(CPAlertTemplate(titleVariants: [title], actions: actions), animated: true, completion: nil)
     }
 
     // MARK: - Templates
