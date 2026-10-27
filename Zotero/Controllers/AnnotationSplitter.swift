@@ -14,6 +14,17 @@ protocol SplittablePathPoint {
 }
 
 final class AnnotationSplitter {
+    /// Size of rects in a serialized annotation position, counted the same way as `splitRectsIfNeeded(rects:)` counts it against
+    /// `AnnotationsConfig.positionSizeLimit`.
+    static func positionSize(of rects: [CGRect]) -> Int {
+        return rects.reduce(2, { $0 + positionSize(of: $1) }) // 2 for starting and ending brackets of array
+    }
+
+    private static func positionSize(of rect: CGRect) -> Int {
+        return "\(Decimal(rect.minX).rounded(to: 3))".count + "\(Decimal(rect.minY).rounded(to: 3))".count +
+               "\(Decimal(rect.maxX).rounded(to: 3))".count + "\(Decimal(rect.maxY).rounded(to: 3))".count + 6 // 4 commas (3 inbetween numbers, 1 after brackets) and 2 brackets for array
+    }
+
     static func splitRectsIfNeeded(rects: [CGRect]) -> [[CGRect]]? {
         guard !rects.isEmpty else { return nil }
 
@@ -29,8 +40,7 @@ final class AnnotationSplitter {
         var currentRects: [CGRect] = []
 
         for rect in sortedRects {
-            let size = "\(Decimal(rect.minX).rounded(to: 3))".count + "\(Decimal(rect.minY).rounded(to: 3))".count +
-                       "\(Decimal(rect.maxX).rounded(to: 3))".count + "\(Decimal(rect.maxY).rounded(to: 3))".count + 6 // 4 commas (3 inbetween numbers, 1 after brackets) and 2 brackets for array
+            let size = positionSize(of: rect)
 
             if count + size > AnnotationsConfig.positionSizeLimit {
                 if !currentRects.isEmpty {

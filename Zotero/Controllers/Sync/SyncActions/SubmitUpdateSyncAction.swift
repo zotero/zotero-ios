@@ -146,8 +146,11 @@ struct SubmitUpdateSyncAction: SyncAction {
             DDLogWarn("SubmitUpdateSyncAction: annotations too long: \(splitKeys) in \(libraryId)")
 
             do {
-                try self.dbStorage.perform(request: SplitAnnotationsDbRequest(keys: splitKeys, libraryId: libraryId), on: self.queue)
-                return SyncActionError.annotationNeededSplitting(message: self.splitMessage, keys: splitKeys, libraryId: libraryId)
+                let didSplitKeys = try self.dbStorage.perform(request: SplitAnnotationsDbRequest(keys: splitKeys, libraryId: libraryId), on: self.queue)
+                // Annotations which couldn't be split are kept, and reported with the remaining failures below.
+                if !didSplitKeys.isEmpty {
+                    return SyncActionError.annotationNeededSplitting(message: self.splitMessage, keys: didSplitKeys, libraryId: libraryId)
+                }
             } catch let error {
                 DDLogError("SubmitUpdateSyncAction: could not split annotations - \(error)")
             }
