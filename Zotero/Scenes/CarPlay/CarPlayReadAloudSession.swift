@@ -100,6 +100,7 @@ final class CarPlayPdfReadAloudSession {
         title: String?,
         authors: String?,
         dbStorage: DbStorage,
+        lastReadWatcher: LastReadWatcher,
         speechPlaybackOwnership: SpeechPlaybackOwnership,
         documentWorkerController: DocumentWorkerController,
         documentPreviewController: DocumentPreviewController,
@@ -118,7 +119,7 @@ final class CarPlayPdfReadAloudSession {
         disposeBag = DisposeBag()
 
         speechManager = SpeechManager<CarPlayPdfReadAloudSession>.carPlay(delegate: self, key: key, libraryId: libraryId, dbStorage: dbStorage, speechPlaybackOwnership: speechPlaybackOwnership, remoteVoicesController: remoteVoicesController, documentWorkerController: documentWorkerController, documentPreviewController: documentPreviewController)
-        speechManager.observePosition(storingIn: positionStore, disposeBag: disposeBag)
+        speechManager.observeReading(key: key, libraryId: libraryId, positionStore: positionStore, lastReadWatcher: lastReadWatcher, disposeBag: disposeBag)
     }
 }
 
@@ -278,16 +279,39 @@ extension SpeechManager {
         set(voice: change.voice, preferredLanguage: change.preferredLanguage)
     }
 
-    /// Stores the reported reading position, right away once reading ends.
-    func observePosition(storingIn positionStore: CarPlayReadAloudPositionStore, disposeBag: DisposeBag) {
+    /// Stores the reported reading position, right away once reading ends. Records reading of the document as its last
+    /// read date (which puts it in Recently Read) the same way the readers do: when reading starts, at most every few
+    /// minutes while reading, and when reading ends.
+    func observeReading(
+        key: String,
+        libraryId: LibraryIdentifier,
+        positionStore: CarPlayReadAloudPositionStore,
+        lastReadWatcher: LastReadWatcher,
+        disposeBag: DisposeBag
+    ) {
         onSpeakingPositionChanged = { [weak positionStore] position in
             positionStore?.schedule(position: position)
         }
+        // Only reading which actually started counts, not a document which couldn't be processed or had no credits.
+        var didSpeak = false
         state
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak positionStore] state in
-                guard state.isStoppedOrOutOfCredits else { return }
-                positionStore?.flush()
+            .subscribe(onNext: { [weak positionStore, weak lastReadWatcher] state in
+                switch state {
+                case .speaking:
+                    didSpeak = true
+                    // Stored right away for a different document than last time, coalesced while reading the same one.
+                    lastReadWatcher?.submitAfterDelay(key: key, libraryId: libraryId, date: Date())
+
+                case .stopped, .outOfCredits:
+                    positionStore?.flush()
+                    guard didSpeak else { return }
+                    didSpeak = false
+                    lastReadWatcher?.submit(key: key, libraryId: libraryId, date: Date())
+
+                case .paused, .initializing, .loading:
+                    break
+                }
             })
             .disposed(by: disposeBag)
     }
