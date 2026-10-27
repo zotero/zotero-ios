@@ -1879,6 +1879,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         // Check which annotations changed and update `Document`
         // Modifications are indexed by the previously observed items
+        // User changes are made by this reader, unless the document is opened in multiple readers. In that case they are reconciled with the `Document`.
+        let shouldReconcileUserChanges = documentHasMultipleReaders
         for index in modifications {
             if index >= databaseAnnotations.count {
                 DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(databaseAnnotations.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
@@ -1995,8 +1997,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 continue
             }
 
+            // Annotations created by this reader are added to the provider's index before they are stored in the database, regardless of whether their page has been lazily loaded.
+            let existsInDocument = annotationProvider?.annotationIfLoaded(with: item.key) != nil
             switch item.changeType {
-            case .user:
+            case .user where existsInDocument || !shouldReconcileUserChanges:
                 // Select newly created annotation if needed
                 let sidebarVisible = delegate?.isSidebarVisible ?? false
                 let isNote = annotation.type == .note
@@ -2005,7 +2009,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     DDLogInfo("PDFReaderActionHandler: select new annotation")
                 }
 
-            case .sync, .syncResponse:
+            case .user, .sync, .syncResponse:
+                if annotation.pageLabel != viewModel.state.defaultAnnotationPageLabel.label(for: annotation.page) {
+                    shouldRecomputeDefaultAnnotationPageLabel = true
+                }
+                // Annotations of pages that are not loaded yet will be read from the database when first requested.
+                guard !existsInDocument, annotationProvider?.hasLoadedAnnotationsForPage(at: PageIndex(annotation.page)) != false else { continue }
                 let pdfAnnotation = AnnotationConverter.annotation(
                     from: annotation,
                     source: .database,
@@ -2018,10 +2027,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     boundingBoxConverter: boundingBoxConverter
                 )
                 insertedPdfAnnotations.append(pdfAnnotation)
-                if annotation.pageLabel != viewModel.state.defaultAnnotationPageLabel.label(for: annotation.page) {
-                    shouldRecomputeDefaultAnnotationPageLabel = true
-                }
-
                 DDLogInfo("PDFReaderActionHandler: insert PDF annotation")
             }
         }
@@ -2081,13 +2086,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Insert new annotations to `Document`
         if !insertedPdfAnnotations.isEmpty {
             viewModel.state.document.add(annotations: insertedPdfAnnotations, options: nil)
-            if let annotationProvider {
-                // A page may have loaded the same key before the provider handled this insertion.
-                // Only the objects accepted into its index need new previews and filter refreshes.
-                insertedPdfAnnotations = insertedPdfAnnotations.filter { annotation in
-                    annotationProvider.annotationIfLoaded(with: annotation.key ?? annotation.uuid) === annotation
-                }
-            }
             annotationPreviewController.store(
                 annotations: insertedPdfAnnotations,
                 parentKey: viewModel.state.key,
