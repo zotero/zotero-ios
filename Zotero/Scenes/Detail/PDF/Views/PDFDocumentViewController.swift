@@ -367,6 +367,10 @@ final class PDFDocumentViewController: UIViewController {
             showPopupAnnotationIfNeeded(state: state)
         }
 
+        if state.changes.contains(.visiblePageFromReadingMode), pdfController.pageIndex != PageIndex(state.visiblePage) {
+            pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
+        }
+
         if state.changes.contains(.visiblePageFromThumbnailList) {
             let currentPageIndex = pdfController.pageIndex
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
