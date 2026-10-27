@@ -1863,6 +1863,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         pendingAnnotationChanges[key] = count > 1 ? count - 1 : nil
     }
 
+    private func hasPendingAnnotationChange(key: String) -> Bool {
+        return pendingAnnotationChanges[key] != nil || debouncedFreeTextAnnotationAndChangesByKey[key] != nil
+    }
+
     // MARK: - Multiple readers of the same document
 
     private func unregisterOpenedDocument() {
@@ -1927,13 +1931,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             guard item.changeType != .syncResponse, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
             affectedThumbnailPages.insert(annotation.page)
+            // Pending changes of this reader are not reconciled, otherwise they would be reverted to older database values until they are stored.
+            // Changes made meanwhile by another reader are reconciled when this reader's own write is observed. They are not shown in this reader
+            // until the annotation changes again, if that is observed before the write completion, or if no write follows.
+            // The same applies to a change by another reader that is delivered in one notification with its sync response, as it's skipped above.
+            let shouldReconcile = item.changeType == .sync || (shouldReconcileUserChanges && !hasPendingAnnotationChange(key: key.key))
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
                 updatedKeys.append(key)
 
-                if item.changeType == .sync {
-                    // Update text and comment if it's remote sync change
+                if shouldReconcile {
+                    // Update text and comment if it's a remote sync change, or a change that may have been made by another reader
                     DDLogInfo("PDFReaderActionHandler: update text and comment")
 
                     let textCacheTuple: (String, [UIFont: NSAttributedString])?
@@ -1961,7 +1970,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-            guard item.changeType == .sync, let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(annotation.page), with: key.key) else { continue }
+            // Annotations of pages that are not loaded yet will be read from the database when first requested.
+            guard shouldReconcile, let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: key.key) else { continue }
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
         }
