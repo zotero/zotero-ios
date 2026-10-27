@@ -2000,7 +2000,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard let oldAnnotation = PDFDatabaseAnnotation(item: databaseAnnotations[index]) else { continue }
             affectedThumbnailPages.insert(oldAnnotation.page)
 
-            guard let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(oldAnnotation.page), with: oldAnnotation.key) else { continue }
+            // Annotations removed by this reader are already removed from the `Document`, and annotations of pages that are not loaded yet don't need to be removed.
+            guard let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: oldAnnotation.key) else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
         }
