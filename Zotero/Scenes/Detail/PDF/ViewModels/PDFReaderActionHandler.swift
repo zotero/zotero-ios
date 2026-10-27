@@ -989,16 +989,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         func updateProperties() {
             var changes: PdfAnnotationChanges = []
-            if let lineWidth, lineWidth.rounded(to: 3) != annotation.lineWidth {
+            if let lineWidth, let ink = pdfAnnotation as? PSPDFKit.InkAnnotation,
+               lineWidth.rounded(to: 3) != ink.lineWidth.rounded(to: 3) {
                 changes.insert(.lineWidth)
             }
-            if let fontSize, fontSize != annotation.fontSize {
+            if let fontSize, let text = pdfAnnotation as? PSPDFKit.FreeTextAnnotation,
+               fontSize.rounded(to: 3) != text.fontSize.rounded(to: 3) {
                 changes.insert(.fontSize)
             }
-            if let (color, _) = color, color != annotation.color {
+            if let (color, _) = color, color != pdfAnnotation.baseColor {
                 changes.insert(.color)
             }
-            if let contents, contents != annotation.comment {
+            if let contents, contents != (pdfAnnotation.contents ?? "") {
                 changes.insert(.contents)
             }
 
