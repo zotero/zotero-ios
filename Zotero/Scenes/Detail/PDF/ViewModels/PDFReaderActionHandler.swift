@@ -1833,7 +1833,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             func isNotification(_ notification: Notification, from document: PSPDFKit.Document) -> Bool {
                 guard let annotation = (notification.object as? PSPDFKit.Annotation) ?? (notification.object as? [PSPDFKit.Annotation])?.first else { return false }
-                return annotation.document == document
+                return annotation.document === document
             }
         }
     }
