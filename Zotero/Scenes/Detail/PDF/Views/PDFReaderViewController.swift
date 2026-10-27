@@ -436,6 +436,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
+        // Reading mode is presented full screen, so this reader appears again when it's dismissed.
+        viewModel.process(action: .setReadingModePresented(false))
         applyReadingModeToolbarStateIfNeeded()
         let editingEnabled = viewModel.state.library.metadataEditable && !viewModel.state.document.isLocked
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: editingEnabled)
@@ -779,6 +781,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     /// dismissed, either by turning reading mode off there or by closing it.
     private func showReadingMode() {
         guard let coordinatorDelegate, readingModeButton?.isSelected == false else { return }
+        viewModel.process(action: .setReadingModePresented(true))
         coordinatorDelegate.showReadingMode(
             document: viewModel.state.document,
             userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,

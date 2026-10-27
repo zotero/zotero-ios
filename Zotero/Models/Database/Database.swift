@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 54
+    private static let schemaVersion: UInt64 = 55
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(
@@ -101,6 +101,34 @@ struct Database {
                 migrateTagNames(migration: migration)
                 migrateItemSortTitle(migration: migration)
             }
+            if schemaVersion < 55 {
+                extractAnnotationNextPageRects(migration: migration)
+            }
+        }
+    }
+
+    /// `nextPageRects` of annotations spanning a page break used to be stored as an `annotationPosition` sub-field with JSON value. Move them
+    /// to `RItem.nextPageRects`, next to `RItem.rects`.
+    private static func extractAnnotationNextPageRects(migration: Migration) {
+        migration.enumerateObjects(ofType: RItem.className()) { oldObject, newObject in
+            guard let oldObject,
+                  let newObject,
+                  oldObject["rawType"] as? String == ItemTypes.annotation,
+                  let fields = newObject["fields"] as? List<MigrationObject>,
+                  let index = fields.firstIndex(where: {
+                      $0["key"] as? String == FieldKeys.Item.Annotation.Position.nextPageRects && $0["baseKey"] as? String == FieldKeys.Item.Annotation.position
+                  })
+            else { return }
+
+            let rawValue = fields[index]["value"] as? String
+            fields.remove(at: index)
+
+            guard let data = rawValue?.data(using: .utf8),
+                  let rects = (try? JSONSerialization.jsonObject(with: data)) as? [[Double]],
+                  !rects.contains(where: { $0.count != 4 })
+            else { return }
+            let rectData: [[String: Any]] = rects.map({ ["minX": $0[0], "minY": $0[1], "maxX": $0[2], "maxY": $0[3]] })
+            newObject.setValue(rectData, forKey: "nextPageRects")
         }
     }
 

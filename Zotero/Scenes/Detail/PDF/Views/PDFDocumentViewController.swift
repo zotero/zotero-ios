@@ -42,7 +42,8 @@ final class PDFDocumentViewController: UIViewController {
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool?] = []
 
-    private var selectionView: SelectionView?
+    /// Custom highlight/underline selection views. There is one for each visible page of an annotation spanning a page break.
+    private var selectionViews: [SelectionView] = []
     private var readAloudHighlightView: SpeechHighlightView?
     private var currentReadAloudHighlightPage: PageIndex?
     private var annotationPreviewView: SpeechHighlightView?
@@ -482,10 +483,13 @@ final class PDFDocumentViewController: UIViewController {
         guard !(parentDelegate?.isSidebarVisible ?? false),
               let annotation = state.selectedAnnotation,
               annotation.type != .freeText,
-              let pageView = pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
+              let pdfController,
+              let pageView = visiblePageView(showing: annotation, in: pdfController) ?? pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let key = annotation.readerKey
-        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: viewModel.state.document), from: pageView.pdfCoordinateSpace)
+        // An annotation spanning a page break is shown on two pages, point to the part on the chosen page.
+        let boundingBox = annotation.boundingBox(onPage: Int(pageView.pageIndex), boundingBoxConverter: viewModel.state.document) ?? annotation.boundingBox(boundingBoxConverter: viewModel.state.document)
+        var frame = view.convert(boundingBox, from: pageView.pdfCoordinateSpace)
         frame.origin.y += parentDelegate?.documentTopOffset ?? 0
         let observable = coordinatorDelegate?.showAnnotationPopover(
             state: state,
@@ -617,11 +621,23 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter pageIndex: Page index of page where selection should happen.
     /// - parameter document: Active `Document` instance.
     private func select(annotation: PDFAnnotation, pageIndex: PageIndex, document: PSPDFKit.Document) {
-        guard let pdfController,
-              let pageView = updateSelectionOnVisiblePages(of: pdfController, annotation: annotation) ?? pdfController.pageViewForPage(at: pageIndex),
+        guard let pdfController else { return }
+        updateSelectionOnVisiblePages(of: pdfController, annotation: annotation)
+        guard let pageView = visiblePageView(showing: annotation, in: pdfController) ?? pdfController.pageViewForPage(at: pageIndex),
               let pdfAnnotation = document.annotation(at: pageView.pageIndex, with: annotation.key)
         else { return }
         pageView.selectedAnnotations = [pdfAnnotation]
+    }
+
+    /// Returns visible page view showing given annotation. An annotation spanning a page break is shown on two pages. In that case the page view where a part of it
+    /// is already selected (e.g. by tapping it) is preferred, otherwise the first one is returned.
+    private func visiblePageView(showing annotation: PDFAnnotation, in pdfController: PDFViewController) -> PDFPageView? {
+        let pages = annotation.pages.map({ PageIndex($0) })
+        let pageViews = pdfController.visiblePageViews.filter({ pages.contains($0.pageIndex) }).sorted(by: { $0.pageIndex < $1.pageIndex })
+        if pageViews.count > 1, let pageView = pageViews.first(where: { pageView in pageView.selectedAnnotations.contains(where: { $0.key == annotation.key }) }) {
+            return pageView
+        }
+        return pageViews.first
     }
 
     /// Focuses given annotation and selects it if it's not selected yet.
@@ -635,24 +651,21 @@ final class PDFDocumentViewController: UIViewController {
     /// Updates `SelectionView` for visible `PDFPageView`s of `PDFViewController` based on selected annotation.
     /// - parameter pdfController: `PDFViewController` instance for given PDF view controller.
     /// - parameter selectedAnnotation: `PDFAnnotation` Selected annotation or `nil` if there is no selection.
-    /// - returns: Returns the affected`PDFPageView` if a `SelectionView` was added, otherwise `nil`
-    @discardableResult
-    private func updateSelectionOnVisiblePages(of pdfController: PDFViewController, annotation: PDFAnnotation?) -> PDFPageView? {
-        // Delete existing custom highlight/underline selection view
-        if selectionView != nil {
-            selectionView?.removeFromSuperview()
-            selectionView = nil
-        }
+    private func updateSelectionOnVisiblePages(of pdfController: PDFViewController, annotation: PDFAnnotation?) {
+        // Delete existing custom highlight/underline selection views
+        selectionViews.forEach({ $0.removeFromSuperview() })
+        selectionViews = []
 
-        guard let selection = annotation, let pageView = pdfController.visiblePageViews.first(where: { $0.pageIndex == PageIndex(selection.page) }) else { return nil }
-        if selection.type == .highlight || selection.type == .underline {
-            // Add custom highlight/underline selection view if needed
-            let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: viewModel.state.document), from: pageView.pdfCoordinateSpace)
+        guard let selection = annotation, selection.type == .highlight || selection.type == .underline else { return }
+        // Add custom highlight/underline selection view to each visible page with a part of the annotation (annotations spanning a page break are shown on two pages)
+        let pages = selection.pages.map({ PageIndex($0) })
+        for pageView in pdfController.visiblePageViews where pages.contains(pageView.pageIndex) {
+            guard let boundingBox = selection.boundingBox(onPage: Int(pageView.pageIndex), boundingBoxConverter: viewModel.state.document) else { continue }
+            let frame = pageView.convert(boundingBox, from: pageView.pdfCoordinateSpace)
             let selectionView = SelectionView(frame: frame)
             pageView.annotationContainerView.addSubview(selectionView)
-            self.selectionView = selectionView
+            selectionViews.append(selectionView)
         }
-        return pageView
     }
 
     // MARK: - Setups

@@ -44,7 +44,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
             
             guard let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: Array(rects)) else { return }
 
-            for split in splitRects {
+            for (index, split) in splitRects.enumerated() {
                 self.createCopyWithoutPathsAndRects(of: item, database: database, additionalChange: { new in
                     for rect in split {
                         let rRect = RRect()
@@ -53,6 +53,17 @@ struct SplitAnnotationsDbRequest: DbRequest {
                         rRect.maxX = rect.maxX
                         rRect.maxY = rect.maxY
                         new.rects.append(rRect)
+                    }
+                    // Rects are split from the top of the page, so the last split is the one which continues on the next page.
+                    if index == splitRects.count - 1 {
+                        for rect in item.nextPageRects {
+                            let rRect = RRect()
+                            rRect.minX = rect.minX
+                            rRect.minY = rect.minY
+                            rRect.maxX = rect.maxX
+                            rRect.maxY = rect.maxY
+                            new.nextPageRects.append(rRect)
+                        }
                     }
                     new.changes.append(RObjectChange.create(changes: RItemChanges.rects))
                 })

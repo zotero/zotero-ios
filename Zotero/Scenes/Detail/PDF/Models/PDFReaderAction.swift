@@ -55,4 +55,7 @@ enum PDFReaderAction {
     case submitPendingPage(Int)
     case deinitialiseReader
     case unlock(String)
+    /// Reading mode is presented over this reader (or dismissed). While it's presented, annotations changed by the user are changed in reading mode, not in this
+    /// reader's document.
+    case setReadingModePresented(Bool)
 }

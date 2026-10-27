@@ -14,20 +14,31 @@ struct EditAnnotationRectsDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
     let rects: [CGRect]
+    /// `true` if `rects` are the part of an annotation spanning a page break which is on the next page (`RItem.nextPageRects`).
+    let isNextPagePart: Bool
     let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), let annotation = PDFDatabaseAnnotation(item: item) else { return }
-        let page = UInt(annotation.page)
-        let dbRects = rects.map({ boundingBoxConverter.convertToDb(rect: $0, page: page) ?? $0 })
-        guard rects(dbRects, differFrom: item.rects) else { return }
-        sync(rects: dbRects, in: item, database: database)
+    init(key: String, libraryId: LibraryIdentifier, rects: [CGRect], isNextPagePart: Bool = false, boundingBoxConverter: AnnotationBoundingBoxConverter) {
+        self.key = key
+        self.libraryId = libraryId
+        self.rects = rects
+        self.isNextPagePart = isNextPagePart
+        self.boundingBoxConverter = boundingBoxConverter
     }
 
-    private func sync(rects: [CGRect], in item: RItem, database: Realm) {
-        database.delete(item.rects)
+    func process(in database: Realm) throws {
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), let annotation = PDFDatabaseAnnotation(item: item) else { return }
+        let page = UInt(isNextPagePart ? annotation.page + 1 : annotation.page)
+        let itemRects = isNextPagePart ? item.nextPageRects : item.rects
+        let dbRects = rects.map({ boundingBoxConverter.convertToDb(rect: $0, page: page) ?? $0 })
+        guard rects(dbRects, differFrom: itemRects) else { return }
+        sync(rects: dbRects, in: itemRects, item: item, database: database)
+    }
+
+    private func sync(rects: [CGRect], in itemRects: List<RRect>, item: RItem, database: Realm) {
+        database.delete(itemRects)
 
         for rect in rects {
             let rRect = RRect()
@@ -35,7 +46,7 @@ struct EditAnnotationRectsDbRequest: DbRequest {
             rRect.minY = Double(rect.minY)
             rRect.maxX = Double(rect.maxX)
             rRect.maxY = Double(rect.maxY)
-            item.rects.append(rRect)
+            itemRects.append(rRect)
         }
 
         item.changes.append(RObjectChange.create(changes: RItemChanges.rects))

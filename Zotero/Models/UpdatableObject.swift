@@ -250,6 +250,14 @@ extension RItem: Updatable {
                 rectArray.append([rRect.minX, rRect.minY, rRect.maxX, rRect.maxY])
             }
             jsonData[FieldKeys.Item.Annotation.Position.rects] = rectArray
+
+            if !self.nextPageRects.isEmpty {
+                var nextPageRectArray: [[Double]] = []
+                self.nextPageRects.forEach { rRect in
+                    nextPageRectArray.append([rRect.minX, rRect.minY, rRect.maxX, rRect.maxY])
+                }
+                jsonData[FieldKeys.Item.Annotation.Position.nextPageRects] = nextPageRectArray
+            }
         }
 
         return (try? JSONSerialization.dataWithRoundedDecimals(withJSONObject: jsonData)).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
@@ -296,7 +304,7 @@ extension RItem: Updatable {
     var allChanges: RItemChanges {
         if self.rawType == ItemTypes.annotation {
             var changes: RItemChanges = [.parent, .fields, .type, .tags]
-            if !self.rects.isEmpty {
+            if !self.rects.isEmpty || !self.nextPageRects.isEmpty {
                 changes.insert(.rects)
             }
             if !self.paths.isEmpty {

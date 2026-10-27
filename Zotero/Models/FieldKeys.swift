@@ -59,6 +59,8 @@ struct FieldKeys {
             struct Position {
                 static let pageIndex = "pageIndex"
                 static let rects = "rects"
+                /// Rects on the page following `pageIndex`, for highlights and underlines which span a page break.
+                static let nextPageRects = "nextPageRects"
                 static let paths = "paths"
                 static let lineWidth = "width"
                 static let rotation = "rotation"
