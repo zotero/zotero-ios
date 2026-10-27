@@ -276,6 +276,10 @@ private enum EPUBCoverExtractor {
     private static let maxEntrySize: UInt64 = 50 * 1024 * 1024
     private static let minImagePixelSize = 64
 
+    private enum ExtractionError: Swift.Error {
+        case entryTooLarge
+    }
+
     static func extract(url: URL, maxPixelSize: CGFloat) throws -> CGImage? {
         let archive = try Archive(url: url, accessMode: .read, pathEncoding: nil)
         guard let containerData = data(at: "META-INF/container.xml", in: archive),
@@ -366,7 +370,11 @@ private enum EPUBCoverExtractor {
         guard let entry = archive[path], entry.type == .file, entry.uncompressedSize <= maxEntrySize else { return nil }
         var data = Data()
         do {
-            _ = try archive.extract(entry, skipCRC32: true, consumer: { data.append($0) })
+            // Declared size in ZIP header can't be trusted, enforce limit on actually extracted bytes.
+            _ = try archive.extract(entry, skipCRC32: true, consumer: { chunk in
+                guard UInt64(data.count) + UInt64(chunk.count) <= maxEntrySize else { throw ExtractionError.entryTooLarge }
+                data.append(chunk)
+            })
             return data
         } catch let error {
             DDLogWarn("DocumentPreviewController: can't extract epub entry; path=\(path); error=\(error)")
