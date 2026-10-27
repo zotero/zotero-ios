@@ -1758,6 +1758,10 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var debouncedSpeakWorkItem: DispatchWorkItem?
     /// Start of the next segment, delayed by the voice's sentence delay.
     private var nextSegmentWorkItem: DispatchWorkItem?
+    /// Page-text offset where playback starts once the pending work finishes (voice loading, debounce, segment download,
+    /// sentence delay). `nil` while audio of a segment is playing. Pausing while nothing plays keeps it, so that resume
+    /// continues from there.
+    private var pendingStartIndex: Int?
     private var creditPollTimer: Timer?
     /// Background task identifier to keep the app alive during segment transitions
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -1770,7 +1774,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         return voice.flatMap({ .remote($0) })
     }
     var canResume: Bool {
-        return player != nil
+        return player != nil || pendingStartIndex != nil
     }
     var segmentAudioProgress: Float {
         guard let player, player.duration > 0 else { return 0 }
@@ -1833,6 +1837,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         debouncedSpeakWorkItem = nil
         nextSegmentWorkItem?.cancel()
         nextSegmentWorkItem = nil
+        pendingStartIndex = startPageTextOffset
 
         // Start .loading state unless we're already .initializing
         if delegate.state.value != .initializing {
@@ -1868,7 +1873,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 .observe(on: MainScheduler.instance)
                 .subscribe(
                     onSuccess: { [weak processor] voice in
-                        processor?.startSpeaking(startIndex: startIndex, voice: voice)
+                        // Paused while the voice was loading, resume starts speaking.
+                        guard let processor, processor.delegate.state.value != .paused else { return }
+                        processor.startSpeaking(startIndex: startIndex, voice: voice)
                     },
                     onFailure: { [weak processor] error in
                         processor?.handleSpeechFailure(error: error)
@@ -1879,34 +1886,51 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func pause() {
+        let state = delegate.state.value
+        guard state.isSpeaking || state == .loading else { return }
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
-        guard player?.isPlaying == true else { return }
-        player?.pause()
         stopCreditPollTimer()
+        if let player, player.isPlaying {
+            player.pause()
+        } else {
+            // Nothing is playing: the voice or a segment is loading, or it's the delay between sentences. Pending playback
+            // is suspended, so that it doesn't start while paused (e.g. over voice samples in voice settings). Downloads
+            // keep running and their segments are cached, see `handleSpeechSuccess(data:range:)`.
+            nextSegmentWorkItem?.cancel()
+            nextSegmentWorkItem = nil
+            pendingPlaybackRange = nil
+            pendingStartIndex = pendingStartIndex ?? delegate.speechRange?.location
+            endBackgroundTask()
+        }
         delegate.state.accept(.paused)
     }
 
     func resume() {
-        guard let player, delegate.state.value == .paused || delegate.state.value.isOutOfCredits else { return }
+        guard delegate.state.value == .paused || delegate.state.value.isOutOfCredits else { return }
 
-        if shouldReloadOnResume {
-            shouldReloadOnResume = false
-            reloadCurrentSegment()
-        } else {
+        if let player, !shouldReloadOnResume, pendingStartIndex == nil {
             player.play()
             delegate.state.accept(.speaking)
             startCreditPollTimer()
+            return
         }
 
-        func reloadCurrentSegment() {
-            guard !segments.isEmpty, let voice, let speechRange = delegate.speechRange else { return }
-            // Clear cache since voice changed
-            segmentCache.removeAll()
-            loadingSegments.removeAll()
-            player.stop()
-            self.player = nil
-            startSpeaking(startIndex: speechRange.location, voice: voice)
+        // Paused while nothing was playing, or the voice or position changed while paused: playback starts again at the
+        // position where it was supposed to continue, or at the new position.
+        let startIndex = shouldReloadOnResume ? delegate.speechRange?.location : (pendingStartIndex ?? delegate.speechRange?.location)
+        shouldReloadOnResume = false
+        guard !segments.isEmpty, let startIndex else { return }
+        player?.stop()
+        player = nil
+        if let voice {
+            // Leaves the paused state first, segments loaded or failed while paused are handled as paused otherwise.
+            delegate.state.accept(.loading)
+            startCreditPollTimer()
+            startSpeaking(startIndex: startIndex, voice: voice)
+        } else {
+            // Paused before the voice loaded.
+            speak(segments: segments, startPageTextOffset: startIndex)
         }
     }
 
@@ -1991,6 +2015,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             return
         }
 
+        pendingStartIndex = range.location
         // Report the range immediately so the highlight updates without waiting for audio to load
         delegate.speechRangeWillChange(to: range)
 
@@ -2114,12 +2139,19 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func handleSpeechSuccess(data: Data, range: NSRange) {
+        guard delegate.state.value != .paused else {
+            // Loaded while paused, played once reading resumes.
+            segmentCache[range] = data
+            return
+        }
         // Remove this segment from cache since we're now playing it
         segmentCache.removeValue(forKey: range)
         play(data: data)
     }
 
     private func handleSpeechFailure(error: Swift.Error) {
+        // A request which failed while paused is made again on resume.
+        guard delegate.state.value != .paused else { return }
         if case Error.endOfPage = error {
             // Reached end of current page, try to go to next page
             // Background task is still active from audioPlayerDidFinishPlaying, keeping us alive for this transition
@@ -2156,6 +2188,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             audioPlayer.prepareToPlay()
             audioPlayer.play()
             player = audioPlayer
+            pendingStartIndex = nil
             delegate.state.accept(.speaking)
             // Audio is now playing, safe to end the background task
             endBackgroundTask()
@@ -2276,6 +2309,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         debouncedSpeakWorkItem = nil
         nextSegmentWorkItem?.cancel()
         nextSegmentWorkItem = nil
+        pendingStartIndex = nil
         segments = []
         player?.stop()
         player = nil
@@ -2313,6 +2347,7 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
                 startSpeaking(startIndex: nextStartIndex, voice: voice)
             }
             nextSegmentWorkItem = workItem
+            pendingStartIndex = nextStartIndex
             DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
         }
     }
