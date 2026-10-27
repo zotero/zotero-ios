@@ -68,6 +68,9 @@ final class CarPlayCoordinator: NSObject {
     /// Download observing of the logged in user, replaced on login/logout.
     private var downloadDisposeBag = DisposeBag()
     private var readAloudSession: CarPlayReadAloudSession?
+    /// Identifies the current attempt to start reading. Navigation is asynchronous, so its completions check it and do
+    /// nothing once reading was stopped or replaced in the meantime.
+    private var activeSessionId: UUID?
     /// Observing of the current read aloud session.
     private var readAloudDisposeBag = DisposeBag()
     /// Shown while the document of the read aloud session is being processed, replaced by Now Playing once reading starts.
@@ -211,10 +214,25 @@ final class CarPlayCoordinator: NSObject {
         session.onPlaybackTakenOver = { [weak self] in
             self?.readAloudTakenOver()
         }
-        showProcessing(title: session.documentTitle ?? attachment.title, session: session)
-        session.start()
+        observeState(of: session)
+        startReadAloud(session: session)
+    }
 
+    /// Shows the processing screen and starts reading once it's shown. State changes of the session replace or remove the
+    /// processing screen, so they can't arrive before it's pushed.
+    private func startReadAloud(session: CarPlayReadAloudSession) {
+        let sessionId = UUID()
+        activeSessionId = sessionId
+        showProcessing(title: session.documentTitle ?? "", session: session, sessionId: sessionId) { [weak self, weak session] in
+            guard let self, activeSessionId == sessionId, let session else { return }
+            session.start()
+        }
+    }
+
+    private func observeState(of session: CarPlayReadAloudSession) {
         session.state
+            // The current state of a session which wasn't started yet isn't a result of reading.
+            .skip(1)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
                 guard let self else { return }
@@ -288,8 +306,7 @@ final class CarPlayCoordinator: NSObject {
         } else if change != nil, let session = readAloudSession {
             // Reading didn't start (the voice had no credits), so it starts again with the new voice, the same way as when
             // the document was opened.
-            showProcessing(title: session.documentTitle ?? "", session: session)
-            session.start()
+            startReadAloud(session: session)
         }
     }
 
@@ -298,6 +315,9 @@ final class CarPlayCoordinator: NSObject {
         voiceSettings = nil
         wasPlayingBeforeVoiceSettings = false
         didShowNowPlaying = false
+        // Pending navigation of the stopped session is ignored.
+        activeSessionId = nil
+        processingTemplate = nil
         readAloudDisposeBag = DisposeBag()
         readAloudSession?.stop()
         readAloudSession = nil
@@ -313,7 +333,8 @@ final class CarPlayCoordinator: NSObject {
         stopReadAloud()
     }
 
-    private func showProcessing(title: String, session: CarPlayReadAloudSession) {
+    /// Shows the processing screen, `completion` is called once it's pushed (unless reading was stopped or replaced).
+    private func showProcessing(title: String, session: CarPlayReadAloudSession, sessionId: UUID, completion: @escaping () -> Void) {
         // CarPlay audio apps can't show custom views. A list without rows shows its empty view title and subtitle centered on
         // the screen, so it's used to show the processing message with progress below it. The only progress bar CarPlay has is
         // the one of a list row, which isn't centered, so the progress bar is drawn with text characters.
@@ -327,10 +348,11 @@ final class CarPlayCoordinator: NSObject {
         let templates = interfaceController.templates
         if templates.count > 2 {
             interfaceController.pop(to: templates[1], animated: false) { [weak self] _, _ in
-                self?.push(processingTemplate: template)
+                guard let self, activeSessionId == sessionId else { return }
+                push(processingTemplate: template, sessionId: sessionId, completion: completion)
             }
         } else {
-            push(processingTemplate: template)
+            push(processingTemplate: template, sessionId: sessionId, completion: completion)
         }
 
         session.extractionProgress
@@ -355,11 +377,20 @@ final class CarPlayCoordinator: NSObject {
         return ["\(bar)  \(text)", text]
     }
 
-    private func push(processingTemplate template: CPListTemplate) {
-        interfaceController.pushTemplate(template, animated: true) { _, error in
+    private func push(processingTemplate template: CPListTemplate, sessionId: UUID, completion: @escaping () -> Void) {
+        interfaceController.pushTemplate(template, animated: true) { [weak self] _, error in
+            guard let self else { return }
             if let error {
                 DDLogError("CarPlayCoordinator: can't push processing template - \(error)")
             }
+            guard activeSessionId == sessionId, processingTemplate === template else {
+                // Reading was stopped or replaced while the screen was being pushed, nothing else would remove it.
+                if interfaceController.topTemplate === template {
+                    interfaceController.popTemplate(animated: true, completion: nil)
+                }
+                return
+            }
+            completion()
         }
     }
 
@@ -393,17 +424,22 @@ final class CarPlayCoordinator: NSObject {
             interfaceController.pushTemplate(nowPlaying, animated: true, completion: nil)
             return
         }
+        let sessionId = activeSessionId
         interfaceController.popTemplate(animated: false) { [weak self] _, _ in
-            self?.interfaceController.pushTemplate(nowPlaying, animated: true, completion: nil)
+            guard let self, activeSessionId == sessionId else { return }
+            interfaceController.pushTemplate(nowPlaying, animated: true, completion: nil)
         }
     }
 
     private func showAlert(title: String, offersVoiceSettings: Bool = false) {
         var actions: [CPAlertAction] = []
         if offersVoiceSettings {
+            let sessionId = activeSessionId
             actions.append(CPAlertAction(title: L10n.Carplay.voiceSettings, style: .default) { [weak self] _ in
                 self?.interfaceController.dismissTemplate(animated: true) { _, _ in
-                    self?.showVoiceSettings()
+                    // Settings belong to the session which showed the alert.
+                    guard let self, activeSessionId == sessionId else { return }
+                    showVoiceSettings()
                 }
             })
         }
