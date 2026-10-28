@@ -81,6 +81,7 @@
 		61A86CA32FA1C998003E4421 /* DefaultAnnotationPageLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A86CA22FA1C998003E4421 /* DefaultAnnotationPageLabel.swift */; };
 		61A86CA62FA1CDF0003E4421 /* DefaultAnnotationPageLabelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A86CA52FA1CDF0003E4421 /* DefaultAnnotationPageLabelSpec.swift */; };
 		A10C21A10000000000000001 /* PDFReaderAnnotationProviderSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10C21A10000000000000002 /* PDFReaderAnnotationProviderSpec.swift */; };
+		A10C27A10000000000000001 /* PDFAnnotationReconciliationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10C27A10000000000000002 /* PDFAnnotationReconciliationSpec.swift */; };
 		61A86CB32FAA10F2003E4421 /* document_worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 61F0A1B22F9C0F1B00ABCDEF /* document_worker.html */; };
 		61A9B1632F4662BD004FF769 /* document_worker_shim.js in Resources */ = {isa = PBXBuildFile; fileRef = 61F0A1A12F9C0A1B00ABCDEF /* document_worker_shim.js */; };
 		61A9B1652F471F75004FF769 /* cmap.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B1642F471F75004FF769 /* cmap.pdf */; };
@@ -1519,6 +1520,7 @@
 		61A86CA22FA1C998003E4421 /* DefaultAnnotationPageLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAnnotationPageLabel.swift; sourceTree = "<group>"; };
 		61A86CA52FA1CDF0003E4421 /* DefaultAnnotationPageLabelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAnnotationPageLabelSpec.swift; sourceTree = "<group>"; };
 		A10C21A10000000000000002 /* PDFReaderAnnotationProviderSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderAnnotationProviderSpec.swift; sourceTree = "<group>"; };
+		A10C27A10000000000000002 /* PDFAnnotationReconciliationSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFAnnotationReconciliationSpec.swift; sourceTree = "<group>"; };
 		61A9B1642F471F75004FF769 /* cmap.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = cmap.pdf; sourceTree = "<group>"; };
 		61A9B1662F47295D004FF769 /* cmap_pdf_full_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cmap_pdf_full_text.json; sourceTree = "<group>"; };
 		61A9B1682F476D36004FF769 /* font_data.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = font_data.pdf; sourceTree = "<group>"; };
@@ -3497,6 +3499,7 @@
 				61DE1A1C2FBD000100C0DE01 /* DeletableObjectSpec.swift */,
 				61A86CA52FA1CDF0003E4421 /* DefaultAnnotationPageLabelSpec.swift */,
 				A10C21A10000000000000002 /* PDFReaderAnnotationProviderSpec.swift */,
+				A10C27A10000000000000002 /* PDFAnnotationReconciliationSpec.swift */,
 				B3EFC60A2B0F503E00CB71A0 /* EmojiExtractorSpec.swift */,
 				B3243BC72A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift */,
 				B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */,
@@ -6594,6 +6597,7 @@
 				6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */,
 				61A86CA62FA1CDF0003E4421 /* DefaultAnnotationPageLabelSpec.swift in Sources */,
 				A10C21A10000000000000001 /* PDFReaderAnnotationProviderSpec.swift in Sources */,
+				A10C27A10000000000000001 /* PDFAnnotationReconciliationSpec.swift in Sources */,
 				561E08F0D1D341A09184D875 /* ReadAttachmentUploadsDbRequestSpec.swift in Sources */,
 				6144B5D92A4ADEB500914B3C /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */,
 				B3EFC60B2B0F503E00CB71A0 /* EmojiExtractorSpec.swift in Sources */,

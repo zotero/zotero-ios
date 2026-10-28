@@ -36,7 +36,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
 
-    fileprivate struct PdfAnnotationChanges: OptionSet {
+    struct PdfAnnotationChanges: OptionSet {
         typealias RawValue = UInt8
 
         let rawValue: UInt8
@@ -1910,6 +1910,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Modifications are indexed by the previously observed items
         // User changes are made by this reader, unless the document is opened in multiple readers. In that case they are reconciled with the `Document`.
         let shouldReconcileUserChanges = documentHasMultipleReaders
+        // Comment that is being edited is not overwritten by reconciled changes, neither in comments cache nor in `Document`.
+        let editedCommentKey = viewModel.state.selectedAnnotationCommentActive ? viewModel.state.selectedAnnotationKey?.key : nil
         for index in modifications {
             if index >= databaseAnnotations.count {
                 DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(databaseAnnotations.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
@@ -1966,7 +1968,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     case .ink, .freeText:
                         comment = nil
                     }
-                    comments[key.key] = comment
+                    if key.key != editedCommentKey {
+                        comments[key.key] = comment
+                    }
                 }
             }
 
@@ -2096,7 +2100,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             queue: .main
         ) : nil
 
-        // Temporarily disable PDF notifications, because these changes were made by sync and they don't need to be translated back to the database
+        // Temporarily disable PDF notifications, because these changes were made by sync or another reader and they don't need to be translated back to the database.
         pdfDisposeBag = DisposeBag()
         // Update annotations in `Document`
         for (pdfAnnotation, annotation) in updatedPdfAnnotations {
@@ -2106,7 +2110,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 parentKey: viewModel.state.key,
                 libraryId: viewModel.state.library.identifier,
                 appearance: viewModel.state.appearance,
-                boundingBoxConverter: boundingBoxConverter
+                boundingBoxConverter: boundingBoxConverter,
+                includeContents: annotation.key != editedCommentKey
             )
         }
         // Remove annotations from `Document`
@@ -2192,8 +2197,36 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         parentKey: String,
         libraryId: LibraryIdentifier,
         appearance: Appearance,
-        boundingBoxConverter: AnnotationBoundingBoxConverter
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        includeContents: Bool
     ) {
+        let changes = Self.reconcileProperties(
+            of: pdfAnnotation,
+            with: annotation,
+            appearance: appearance,
+            boundingBoxConverter: boundingBoxConverter,
+            includeContents: includeContents
+        )
+
+        guard !changes.isEmpty else { return }
+
+        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, appearance: appearance, notify: true)
+
+        NotificationCenter.default.post(
+            name: NSNotification.Name.PSPDFAnnotationChanged,
+            object: pdfAnnotation,
+            userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
+        )
+    }
+
+    /// Applies only differing persisted properties. It never saves to the database or records an undo command.
+    static func reconcileProperties(
+        of pdfAnnotation: PSPDFKit.Annotation,
+        with annotation: PDFDatabaseAnnotation,
+        appearance: Appearance,
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        includeContents: Bool = true
+    ) -> PdfAnnotationChanges {
         var changes: PdfAnnotationChanges = []
 
         if pdfAnnotation.baseColor != annotation.color {
@@ -2208,6 +2241,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             pdfAnnotation.baseColor = hexColor
 
             changes.insert(.color)
+        }
+
+        if includeContents, (pdfAnnotation.contents ?? "") != annotation.comment {
+            pdfAnnotation.contents = annotation.comment
+            changes.insert(.contents)
         }
 
         switch annotation.type {
@@ -2241,17 +2279,39 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     }
                 }
 
-                if let lineWidth = annotation.lineWidth, lineWidth != inkAnnotation.lineWidth {
+                if let lineWidth = annotation.lineWidth, lineWidth != inkAnnotation.lineWidth.rounded(to: 3) {
                     inkAnnotation.lineWidth = lineWidth
                     changes.insert(.lineWidth)
                 }
             }
 
-        case .image, .freeText:
+        case .image:
             let newBoundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
             if pdfAnnotation.boundingBox.rounded(to: 3) != newBoundingBox {
                 changes.insert(.boundingBox)
                 pdfAnnotation.boundingBox = newBoundingBox
+            }
+
+        case .freeText:
+            if let textAnnotation = pdfAnnotation as? PSPDFKit.FreeTextAnnotation {
+                if let fontSize = annotation.fontSize, AnnotationsConfig.roundFreeTextAnnotationFontSize(textAnnotation.fontSize) != fontSize {
+                    textAnnotation.fontSize = fontSize
+                    changes.insert(.fontSize)
+                }
+
+                // Stored bounding box is not rotated, so it is compared and applied without rotation, same as when converted.
+                let newBoundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
+                let newRotation = annotation.rotation ?? 0
+                let oldBoundingBox = AnnotationConverter.rects(from: textAnnotation)?.first?.rounded(to: 3)
+                if oldBoundingBox != newBoundingBox || textAnnotation.rotation != newRotation {
+                    if textAnnotation.rotation != newRotation {
+                        changes.insert(.rotation)
+                    }
+                    changes.insert(.boundingBox)
+                    textAnnotation.setRotation(0, updateBoundingBox: true)
+                    textAnnotation.setBoundingBox(newBoundingBox, transformSize: false)
+                    textAnnotation.setRotation(newRotation, updateBoundingBox: true)
+                }
             }
 
         case .note:
@@ -2262,15 +2322,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        guard !changes.isEmpty else { return }
-
-        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, appearance: appearance, notify: true)
-
-        NotificationCenter.default.post(
-            name: NSNotification.Name.PSPDFAnnotationChanged,
-            object: pdfAnnotation,
-            userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
-        )
+        return changes
     }
 
     private func updateTextCache(key: String, text: String, font: UIFont, viewModel: ViewModel<PDFReaderActionHandler>, notifyListeners: Bool) {
