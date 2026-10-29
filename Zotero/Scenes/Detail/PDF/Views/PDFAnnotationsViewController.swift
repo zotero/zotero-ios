@@ -73,6 +73,9 @@ final class PDFAnnotationsViewController: UIViewController {
         previewHandler.previewsDidLoad = { [weak self] keys in
             self?.updatePreviewsIfVisible(for: keys)
         }
+        previewHandler.previewsDidDelete = { [weak self] keys in
+            self?.refreshVisibleAndPrefetchPreviews(for: keys)
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -309,9 +312,17 @@ final class PDFAnnotationsViewController: UIViewController {
         }
     }
 
-    private func refreshVisibleAndPrefetchPreviews() {
+    /// - parameter keys: Keys of previews to request, e.g. because they were deleted as outdated, or `nil` for all visible cells.
+    /// Visible cells keep showing their previous preview until then, while other cells request it when configured.
+    private func refreshVisibleAndPrefetchPreviews(for keys: Set<String>? = nil) {
         guard isViewLoaded, view.window != nil, !view.isHidden, parentDelegate?.isSidebarVisible ?? false else { return }
-        let visibleIndexPaths = tableView.indexPathsForVisibleRows ?? []
+        var visibleIndexPaths = tableView.indexPathsForVisibleRows ?? []
+        if let keys {
+            visibleIndexPaths = visibleIndexPaths.filter { indexPath in
+                guard let key = dataSource.itemIdentifier(for: indexPath)?.key else { return false }
+                return keys.contains(key)
+            }
+        }
         guard !visibleIndexPaths.isEmpty else { return }
         requestPreviews(at: visibleIndexPaths, notify: true)
     }

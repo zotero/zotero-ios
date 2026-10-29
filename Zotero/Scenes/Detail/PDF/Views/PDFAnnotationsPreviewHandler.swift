@@ -23,6 +23,7 @@ final class PDFAnnotationsPreviewHandler {
     private var isObserving = false
 
     var previewsDidLoad: ((Set<String>) -> Void)?
+    var previewsDidDelete: ((Set<String>) -> Void)?
 
     init(
         annotationPreviewController: AnnotationPreviewController,
@@ -52,6 +53,18 @@ final class PDFAnnotationsPreviewHandler {
                 guard let self, self.attachmentKey == attachmentKey else { return }
                 previewCache.setObject(image, forKey: annotationKey as NSString)
                 previewsDidLoad?([annotationKey])
+            })
+            .disposed(by: disposeBag)
+
+        annotationPreviewController
+            .deletionObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] annotationKeys, attachmentKey in
+                guard let self, self.attachmentKey == attachmentKey else { return }
+                for key in annotationKeys {
+                    previewCache.removeObject(forKey: key as NSString)
+                }
+                previewsDidDelete?(annotationKeys)
             })
             .disposed(by: disposeBag)
     }

@@ -1903,6 +1903,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var updatedPdfAnnotations: [(PSPDFKit.Annotation, PDFDatabaseAnnotation)] = []
         var deletedPdfAnnotations: [PSPDFKit.Annotation] = []
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
+        var outdatedPreviewKeys: Set<String> = []
         var shouldRecomputeDefaultAnnotationPageLabel = false
         var affectedThumbnailPages: Set<Int> = []
 
@@ -1974,8 +1975,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-            // Annotations of pages that are not loaded yet will be read from the database when first requested.
-            guard shouldReconcile, let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: key.key) else { continue }
+            guard shouldReconcile else { continue }
+            guard let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: key.key) else {
+                // Annotations of pages that are not loaded yet will be read from the database when first requested, but their cached previews are outdated.
+                // Another reader regenerates previews of its own changes, so only previews of sync changes are deleted, to be regenerated when next requested.
+                switch annotation.type {
+                case .ink, .freeText, .image:
+                    if item.changeType == .sync {
+                        outdatedPreviewKeys.insert(key.key)
+                    }
+
+                case .note, .highlight, .underline:
+                    break
+                }
+                continue
+            }
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
         }
@@ -2005,7 +2019,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             affectedThumbnailPages.insert(oldAnnotation.page)
 
             // Annotations removed by this reader are already removed from the `Document`, and annotations of pages that are not loaded yet don't need to be removed.
-            guard let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: oldAnnotation.key) else { continue }
+            guard let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: oldAnnotation.key) else {
+                // Their cached previews still need to be deleted, which is a no-op if the reader that removed them already did.
+                switch oldAnnotation.type {
+                case .ink, .freeText, .image:
+                    outdatedPreviewKeys.insert(oldAnnotation.key)
+
+                case .note, .highlight, .underline:
+                    break
+                }
+                continue
+            }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
         }
@@ -2137,6 +2161,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
         let filterAffectedPageIndices = Set(updatedPdfAnnotations.map({ $0.0.pageIndex }) + insertedPdfAnnotations.map({ $0.pageIndex }))
         annotationProvider?.refreshFilter(on: filterAffectedPageIndices)
+        annotationPreviewController.delete(keys: outdatedPreviewKeys, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         if !affectedThumbnailPages.isEmpty {
             pdfThumbnailController.delete(pages: affectedThumbnailPages, forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         }
