@@ -73,6 +73,9 @@ final class PDFAnnotationsViewController: UIViewController {
         previewHandler.previewsDidLoad = { [weak self] keys in
             self?.updatePreviewsIfVisible(for: keys)
         }
+        previewHandler.previewsDidDelete = { [weak self] keys in
+            self?.refreshVisibleAndPrefetchPreviews(for: keys)
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -309,27 +312,34 @@ final class PDFAnnotationsViewController: UIViewController {
         }
     }
 
-    private func refreshVisibleAndPrefetchPreviews() {
+    /// - parameter keys: Keys of previews to request, e.g. because they were deleted as outdated, or `nil` for all visible cells.
+    /// Visible cells keep showing their previous preview until then, while other cells request it when configured.
+    private func refreshVisibleAndPrefetchPreviews(for keys: Set<String>? = nil) {
         guard isViewLoaded, view.window != nil, !view.isHidden, parentDelegate?.isSidebarVisible ?? false else { return }
-        let visibleIndexPaths = tableView.indexPathsForVisibleRows ?? []
+        var visibleIndexPaths = tableView.indexPathsForVisibleRows ?? []
+        if let keys {
+            visibleIndexPaths = visibleIndexPaths.filter { indexPath in
+                guard let key = dataSource.itemIdentifier(for: indexPath)?.key else { return false }
+                return keys.contains(key)
+            }
+        }
         guard !visibleIndexPaths.isEmpty else { return }
         requestPreviews(at: visibleIndexPaths, notify: true)
     }
 
     private func requestPreviews(at indexPaths: [IndexPath], notify: Bool) {
-        let keys = indexPaths.compactMap({ dataSource.itemIdentifier(for: $0) })
-            .filter({ key in
-                guard let annotation = viewModel.state.annotation(for: key) else { return false }
-                switch annotation.type {
-                case .image, .ink, .freeText:
-                    return true
+        var keysAndPages: [(String, PageIndex)] = []
+        for indexPath in indexPaths {
+            guard let key = dataSource.itemIdentifier(for: indexPath), let annotation = viewModel.state.annotation(for: key) else { continue }
+            switch annotation.type {
+            case .image, .ink, .freeText:
+                keysAndPages.append((key.key, PageIndex(annotation.page)))
 
-                case .note, .highlight, .underline:
-                    return false
-                }
-            })
-            .map({ $0.key })
-        previewHandler.requestPreviews(keys: keys, notify: notify)
+            case .note, .highlight, .underline:
+                continue
+            }
+        }
+        previewHandler.requestPreviews(keysAndPages: keysAndPages, notify: notify)
     }
 
     /// Scrolls to selected cell if it's not visible.
@@ -409,7 +419,7 @@ final class PDFAnnotationsViewController: UIViewController {
         func loadPreview(for annotation: PDFAnnotation) -> UIImage? {
             let preview = previewHandler.image(for: annotation.key)
             if preview == nil {
-                previewHandler.requestPreviews(keys: [annotation.key], notify: true)
+                previewHandler.requestPreviews(keysAndPages: [(annotation.key, PageIndex(annotation.page))], notify: true)
             }
             return preview
         }

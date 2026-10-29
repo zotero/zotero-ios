@@ -187,9 +187,11 @@ struct AnnotationConverter {
 
     /// Converts Zotero annotations to actual document (PSPDFKit) annotations with custom flags.
     /// - parameter zoteroAnnotations: Annotations to convert.
+    /// - parameter source: Reader annotation source, or nil when converting for export.
     /// - returns: Array of PSPDFKit annotations that can be added to document.
     static func annotations(
         from items: Results<RItem>,
+        source: PSPDFKit.Annotation.Source?,
         type: Kind = .zotero,
         appearance: Appearance,
         currentUserId: Int,
@@ -201,6 +203,7 @@ struct AnnotationConverter {
     ) -> [PSPDFKit.Annotation] {
         return annotations(
             from: items,
+            source: source,
             type: type,
             appearance: appearance,
             currentUserId: currentUserId,
@@ -215,6 +218,7 @@ struct AnnotationConverter {
 
     static func annotations(
         from items: Results<RItem>,
+        source: PSPDFKit.Annotation.Source?,
         type: Kind = .zotero,
         appearance: Appearance,
         currentUserId: Int,
@@ -233,6 +237,7 @@ struct AnnotationConverter {
             }
             return annotation(
                 from: dbAnnotation,
+                source: source,
                 type: type,
                 appearance: appearance,
                 currentUserId: currentUserId,
@@ -247,6 +252,7 @@ struct AnnotationConverter {
 
     static func annotation(
         from zoteroAnnotation: PDFDatabaseAnnotation,
+        source: PSPDFKit.Annotation.Source?,
         type: Kind,
         appearance: Appearance,
         currentUserId: Int,
@@ -257,6 +263,7 @@ struct AnnotationConverter {
     ) -> PSPDFKit.Annotation {
         return annotation(
             from: zoteroAnnotation,
+            source: source,
             type: type,
             appearance: appearance,
             currentUserId: currentUserId,
@@ -270,6 +277,7 @@ struct AnnotationConverter {
 
     static func annotation(
         from zoteroAnnotation: PDFDatabaseAnnotation,
+        source: PSPDFKit.Annotation.Source?,
         type: Kind,
         appearance: Appearance,
         currentUserId: Int,
@@ -324,6 +332,8 @@ struct AnnotationConverter {
             annotation.blendMode = blendMode
         }
 
+        // Export callers pass nil so exported annotations retain no internal source metadata.
+        annotation.source = source
         annotation.pageIndex = UInt(zoteroAnnotation.page)
         annotation.contents = zoteroAnnotation.comment
         annotation.user = zoteroAnnotation.author(displayName: displayName, username: username)
@@ -424,6 +434,7 @@ struct AnnotationConverter {
 
     static func annotation(
         from documentAnnotation: PDFDocumentAnnotation,
+        source: PSPDFKit.Annotation.Source,
         appearance: Appearance,
         displayName: String,
         username: String
@@ -492,6 +503,7 @@ struct AnnotationConverter {
             AnnotationsConfig.keyKey: documentAnnotation.key,
             AnnotationsConfig.baseColorKey: documentAnnotation.color
         ]
+        annotation.source = source
         annotation.name = "Zotero-\(documentAnnotation.key)"
 
         return annotation

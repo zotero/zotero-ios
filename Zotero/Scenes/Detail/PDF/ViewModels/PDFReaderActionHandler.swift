@@ -36,7 +36,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
 
-    fileprivate struct PdfAnnotationChanges: OptionSet {
+    struct PdfAnnotationChanges: OptionSet {
         typealias RawValue = UInt8
 
         let rawValue: UInt8
@@ -92,7 +92,28 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
+    private struct OpenedDocument: Hashable {
+        let key: String
+        let libraryId: LibraryIdentifier
+    }
+
+    private struct OpenedDocumentReaders {
+        var count: Int
+        // Remains set until all readers of the document close, so database changes made by a reader that already closed are still reconciled.
+        var hasMultipleReaders: Bool
+
+        static var none: Self {
+            .init(count: 0, hasMultipleReaders: false)
+        }
+    }
+
+    // Accessed only on main thread.
+    private static var openedDocumentReaders: [OpenedDocument: OpenedDocumentReaders] = [:]
+
     private var pdfDisposeBag: DisposeBag
+    private var openedDocument: OpenedDocument?
+    // Count of local document changes per annotation key, from document notification until database write completion. Accessed only on main thread.
+    private var pendingAnnotationChanges: [String: Int] = [:]
     private var pageDebounceDisposeBag: DisposeBag?
     private var freeTextAnnotationRotationDebounceDisposeBagByKey: [String: DisposeBag]
     private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
@@ -249,6 +270,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .deinitialiseReader:
             pdfThumbnailController.stop(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
             lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
+            unregisterOpenedDocument()
 
         case .unlock(let password):
             let result = viewModel.state.document.unlock(withPassword: password)
@@ -378,6 +400,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         } else {
             annotations = AnnotationConverter.annotations(
                 from: viewModel.state.databaseAnnotations,
+                source: nil,
                 type: .export,
                 appearance: .light,
                 currentUserId: viewModel.state.userId,
@@ -988,16 +1011,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         func updateProperties() {
             var changes: PdfAnnotationChanges = []
-            if let lineWidth, lineWidth.rounded(to: 3) != annotation.lineWidth {
+            if let lineWidth, let ink = pdfAnnotation as? PSPDFKit.InkAnnotation,
+               lineWidth.rounded(to: 3) != ink.lineWidth.rounded(to: 3) {
                 changes.insert(.lineWidth)
             }
-            if let fontSize, fontSize != annotation.fontSize {
+            if let fontSize, let text = pdfAnnotation as? PSPDFKit.FreeTextAnnotation,
+               fontSize.rounded(to: 3) != text.fontSize.rounded(to: 3) {
                 changes.insert(.fontSize)
             }
-            if let (color, _) = color, color != annotation.color {
+            if let (color, _) = color, color != pdfAnnotation.baseColor {
                 changes.insert(.color)
             }
-            if let contents, contents != annotation.comment {
+            if let contents, contents != (pdfAnnotation.contents ?? "") {
                 changes.insert(.contents)
             }
 
@@ -1054,6 +1079,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             _ = addUserAndKeyIfNeeded(to: annotation, in: viewModel)
         }
         let finalAnnotations = keptAsIs + toAdd
+        // Local creation, replacements, splits and undo/redo additions bypass database conversion.
+        for annotation in finalAnnotations {
+            annotation.source = .database
+        }
         if !toRemove.isEmpty || !toAdd.isEmpty {
             let document = viewModel.state.document
             let undoController = document.undoController
@@ -1388,7 +1417,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !requests.isEmpty else { return }
 
+        beginAnnotationChange(key: key)
         perform(writeRequests: requests) { [weak self, weak viewModel] error in
+            self?.finishAnnotationChange(key: key)
             guard let error, let self, let viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update changed annotations - \(error)")
@@ -1537,6 +1568,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             timeLog += ", default annotation page label: \(endTime - defaultAnnotationPageLabelStartTime)"
             DDLogInfo(DDLogMessageFormat(stringLiteral: timeLog))
 
+            registerOpenedDocument(key: key, libraryId: library.identifier)
             observeDocument(in: viewModel)
         } catch let error {
             DDLogError("PDFReaderActionHandler: failed to load PDF: \(error)")
@@ -1635,6 +1667,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             return (item, results, page, documentData.lastReadAloudPosition)
         }
+
+        func registerOpenedDocument(key: String, libraryId: LibraryIdentifier) {
+            guard openedDocument == nil else { return }
+            let document = OpenedDocument(key: key, libraryId: libraryId)
+            var readers = Self.openedDocumentReaders[document, default: .none]
+            readers.count += 1
+            readers.hasMultipleReaders = readers.hasMultipleReaders || readers.count > 1
+            Self.openedDocumentReaders[document] = readers
+            openedDocument = document
+        }
     }
 
     @discardableResult
@@ -1714,6 +1756,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         NotificationCenter.default.rx
             .notification(.PSPDFAnnotationChanged)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: nextBlock)
             .disposed(by: pdfDisposeBag)
 
@@ -1731,10 +1774,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         func processAnnotationObserving(handler: PDFReaderActionHandler, notification: Notification, viewModel: ViewModel<PDFReaderActionHandler>) {
             guard isNotification(notification, from: viewModel.state.document) else { return }
+            // Mark document change as pending from now on, so that it isn't reverted by database changes until it is stored.
+            var pendingKey: String?
+            if notification.name == .PSPDFAnnotationChanged,
+               notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] != ["flags"],
+               let key = (notification.object as? PSPDFKit.Annotation)?.key {
+                pendingKey = key
+                handler.beginAnnotationChange(key: key)
+            }
 
             // TODO: Improve this if PSPDFKit allows more control for automatic command recording, e.g. by providing a detached recorder
             // Delay handling of notifications until next main run loop iteration, so they have completely recorded their undo command.
             DispatchQueue.main.async { [weak handler, weak viewModel] in
+                defer {
+                    if let pendingKey { handler?.finishAnnotationChange(key: pendingKey) }
+                }
                 guard let handler, let viewModel else { return }
 
                 switch notification.name {
@@ -1795,9 +1849,40 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             func isNotification(_ notification: Notification, from document: PSPDFKit.Document) -> Bool {
                 guard let annotation = (notification.object as? PSPDFKit.Annotation) ?? (notification.object as? [PSPDFKit.Annotation])?.first else { return false }
-                return annotation.document == document
+                return annotation.document === document
             }
         }
+    }
+
+    private func beginAnnotationChange(key: String) {
+        pendingAnnotationChanges[key, default: 0] += 1
+    }
+
+    private func finishAnnotationChange(key: String) {
+        guard let count = pendingAnnotationChanges[key] else { return }
+        pendingAnnotationChanges[key] = count > 1 ? count - 1 : nil
+    }
+
+    private func hasPendingAnnotationChange(key: String) -> Bool {
+        return pendingAnnotationChanges[key] != nil || debouncedFreeTextAnnotationAndChangesByKey[key] != nil
+    }
+
+    // MARK: - Multiple readers of the same document
+
+    private func unregisterOpenedDocument() {
+        guard let openedDocument else { return }
+        self.openedDocument = nil
+        if let readers = Self.openedDocumentReaders[openedDocument], readers.count > 1 {
+            Self.openedDocumentReaders[openedDocument]?.count -= 1
+        } else {
+            Self.openedDocumentReaders[openedDocument] = nil
+        }
+    }
+
+    /// Whether user changes in database may have been made by another reader of the same document, so they need to be reconciled with this reader's document.
+    private var documentHasMultipleReaders: Bool {
+        guard let openedDocument else { return false }
+        return Self.openedDocumentReaders[openedDocument]?.hasMultipleReaders ?? false
     }
 
     // MARK: - Translate sync (db) changes to PDF document
@@ -1818,11 +1903,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var updatedPdfAnnotations: [(PSPDFKit.Annotation, PDFDatabaseAnnotation)] = []
         var deletedPdfAnnotations: [PSPDFKit.Annotation] = []
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
+        var outdatedPreviewKeys: Set<String> = []
         var shouldRecomputeDefaultAnnotationPageLabel = false
         var affectedThumbnailPages: Set<Int> = []
 
         // Check which annotations changed and update `Document`
         // Modifications are indexed by the previously observed items
+        // User changes are made by this reader, unless the document is opened in multiple readers. In that case they are reconciled with the `Document`.
+        let shouldReconcileUserChanges = documentHasMultipleReaders
+        // Comment that is being edited is not overwritten by reconciled changes, neither in comments cache nor in `Document`.
+        let editedCommentKey = viewModel.state.selectedAnnotationCommentActive ? viewModel.state.selectedAnnotationKey?.key : nil
         for index in modifications {
             if index >= databaseAnnotations.count {
                 DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(databaseAnnotations.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
@@ -1844,13 +1934,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             guard item.changeType != .syncResponse, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
             affectedThumbnailPages.insert(annotation.page)
+            // Pending changes of this reader are not reconciled, otherwise they would be reverted to older database values until they are stored.
+            // Changes made meanwhile by another reader are reconciled when this reader's own write is observed. They are not shown in this reader
+            // until the annotation changes again, if that is observed before the write completion, or if no write follows.
+            // The same applies to a change by another reader that is delivered in one notification with its sync response, as it's skipped above.
+            let shouldReconcile = item.changeType == .sync || (shouldReconcileUserChanges && !hasPendingAnnotationChange(key: key.key))
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
                 updatedKeys.append(key)
 
-                if item.changeType == .sync {
-                    // Update text and comment if it's remote sync change
+                if shouldReconcile {
+                    // Update text and comment if it's a remote sync change, or a change that may have been made by another reader
                     DDLogInfo("PDFReaderActionHandler: update text and comment")
 
                     let textCacheTuple: (String, [UIFont: NSAttributedString])?
@@ -1874,11 +1969,27 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     case .ink, .freeText:
                         comment = nil
                     }
-                    comments[key.key] = comment
+                    if key.key != editedCommentKey {
+                        comments[key.key] = comment
+                    }
                 }
             }
 
-            guard item.changeType == .sync, let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(annotation.page), with: key.key) else { continue }
+            guard shouldReconcile else { continue }
+            guard let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: key.key) else {
+                // Annotations of pages that are not loaded yet will be read from the database when first requested, but their cached previews are outdated.
+                // Another reader regenerates previews of its own changes, so only previews of sync changes are deleted, to be regenerated when next requested.
+                switch annotation.type {
+                case .ink, .freeText, .image:
+                    if item.changeType == .sync {
+                        outdatedPreviewKeys.insert(key.key)
+                    }
+
+                case .note, .highlight, .underline:
+                    break
+                }
+                continue
+            }
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
         }
@@ -1907,7 +2018,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard let oldAnnotation = PDFDatabaseAnnotation(item: databaseAnnotations[index]) else { continue }
             affectedThumbnailPages.insert(oldAnnotation.page)
 
-            guard let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(oldAnnotation.page), with: oldAnnotation.key) else { continue }
+            // Annotations removed by this reader are already removed from the `Document`, and annotations of pages that are not loaded yet don't need to be removed.
+            guard let pdfAnnotation = annotationProvider?.annotationIfLoaded(with: oldAnnotation.key) else {
+                // Their cached previews still need to be deleted, which is a no-op if the reader that removed them already did.
+                switch oldAnnotation.type {
+                case .ink, .freeText, .image:
+                    outdatedPreviewKeys.insert(oldAnnotation.key)
+
+                case .note, .highlight, .underline:
+                    break
+                }
+                continue
+            }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
         }
@@ -1939,8 +2061,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 continue
             }
 
+            // Annotations created by this reader are added to the provider's index before they are stored in the database, regardless of whether their page has been lazily loaded.
+            let existsInDocument = annotationProvider?.annotationIfLoaded(with: item.key) != nil
             switch item.changeType {
-            case .user:
+            case .user where existsInDocument || !shouldReconcileUserChanges:
                 // Select newly created annotation if needed
                 let sidebarVisible = delegate?.isSidebarVisible ?? false
                 let isNote = annotation.type == .note
@@ -1949,9 +2073,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     DDLogInfo("PDFReaderActionHandler: select new annotation")
                 }
 
-            case .sync, .syncResponse:
+            case .user, .sync, .syncResponse:
+                if annotation.pageLabel != viewModel.state.defaultAnnotationPageLabel.label(for: annotation.page) {
+                    shouldRecomputeDefaultAnnotationPageLabel = true
+                }
+                // Annotations of pages that are not loaded yet will be read from the database when first requested.
+                guard !existsInDocument, annotationProvider?.hasLoadedAnnotationsForPage(at: PageIndex(annotation.page)) != false else { continue }
                 let pdfAnnotation = AnnotationConverter.annotation(
                     from: annotation,
+                    source: .database,
                     type: .zotero,
                     appearance: viewModel.state.appearance,
                     currentUserId: viewModel.state.userId,
@@ -1961,10 +2091,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     boundingBoxConverter: boundingBoxConverter
                 )
                 insertedPdfAnnotations.append(pdfAnnotation)
-                if annotation.pageLabel != viewModel.state.defaultAnnotationPageLabel.label(for: annotation.page) {
-                    shouldRecomputeDefaultAnnotationPageLabel = true
-                }
-
                 DDLogInfo("PDFReaderActionHandler: insert PDF annotation")
             }
         }
@@ -1998,7 +2124,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             queue: .main
         ) : nil
 
-        // Temporarily disable PDF notifications, because these changes were made by sync and they don't need to be translated back to the database
+        // Temporarily disable PDF notifications, because these changes were made by sync or another reader and they don't need to be translated back to the database.
         pdfDisposeBag = DisposeBag()
         // Update annotations in `Document`
         for (pdfAnnotation, annotation) in updatedPdfAnnotations {
@@ -2008,7 +2134,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 parentKey: viewModel.state.key,
                 libraryId: viewModel.state.library.identifier,
                 appearance: viewModel.state.appearance,
-                boundingBoxConverter: boundingBoxConverter
+                boundingBoxConverter: boundingBoxConverter,
+                includeContents: annotation.key != editedCommentKey
             )
         }
         // Remove annotations from `Document`
@@ -2034,6 +2161,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
         let filterAffectedPageIndices = Set(updatedPdfAnnotations.map({ $0.0.pageIndex }) + insertedPdfAnnotations.map({ $0.pageIndex }))
         annotationProvider?.refreshFilter(on: filterAffectedPageIndices)
+        annotationPreviewController.delete(keys: outdatedPreviewKeys, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         if !affectedThumbnailPages.isEmpty {
             pdfThumbnailController.delete(pages: affectedThumbnailPages, forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         }
@@ -2094,8 +2222,36 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         parentKey: String,
         libraryId: LibraryIdentifier,
         appearance: Appearance,
-        boundingBoxConverter: AnnotationBoundingBoxConverter
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        includeContents: Bool
     ) {
+        let changes = Self.reconcileProperties(
+            of: pdfAnnotation,
+            with: annotation,
+            appearance: appearance,
+            boundingBoxConverter: boundingBoxConverter,
+            includeContents: includeContents
+        )
+
+        guard !changes.isEmpty else { return }
+
+        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, appearance: appearance, notify: true)
+
+        NotificationCenter.default.post(
+            name: NSNotification.Name.PSPDFAnnotationChanged,
+            object: pdfAnnotation,
+            userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
+        )
+    }
+
+    /// Applies only differing persisted properties. It never saves to the database or records an undo command.
+    static func reconcileProperties(
+        of pdfAnnotation: PSPDFKit.Annotation,
+        with annotation: PDFDatabaseAnnotation,
+        appearance: Appearance,
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        includeContents: Bool = true
+    ) -> PdfAnnotationChanges {
         var changes: PdfAnnotationChanges = []
 
         if pdfAnnotation.baseColor != annotation.color {
@@ -2110,6 +2266,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             pdfAnnotation.baseColor = hexColor
 
             changes.insert(.color)
+        }
+
+        if includeContents, (pdfAnnotation.contents ?? "") != annotation.comment {
+            pdfAnnotation.contents = annotation.comment
+            changes.insert(.contents)
         }
 
         switch annotation.type {
@@ -2143,17 +2304,39 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     }
                 }
 
-                if let lineWidth = annotation.lineWidth, lineWidth != inkAnnotation.lineWidth {
+                if let lineWidth = annotation.lineWidth, lineWidth != inkAnnotation.lineWidth.rounded(to: 3) {
                     inkAnnotation.lineWidth = lineWidth
                     changes.insert(.lineWidth)
                 }
             }
 
-        case .image, .freeText:
+        case .image:
             let newBoundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
             if pdfAnnotation.boundingBox.rounded(to: 3) != newBoundingBox {
                 changes.insert(.boundingBox)
                 pdfAnnotation.boundingBox = newBoundingBox
+            }
+
+        case .freeText:
+            if let textAnnotation = pdfAnnotation as? PSPDFKit.FreeTextAnnotation {
+                if let fontSize = annotation.fontSize, AnnotationsConfig.roundFreeTextAnnotationFontSize(textAnnotation.fontSize) != fontSize {
+                    textAnnotation.fontSize = fontSize
+                    changes.insert(.fontSize)
+                }
+
+                // Stored bounding box is not rotated, so it is compared and applied without rotation, same as when converted.
+                let newBoundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
+                let newRotation = annotation.rotation ?? 0
+                let oldBoundingBox = AnnotationConverter.rects(from: textAnnotation)?.first?.rounded(to: 3)
+                if oldBoundingBox != newBoundingBox || textAnnotation.rotation != newRotation {
+                    if textAnnotation.rotation != newRotation {
+                        changes.insert(.rotation)
+                    }
+                    changes.insert(.boundingBox)
+                    textAnnotation.setRotation(0, updateBoundingBox: true)
+                    textAnnotation.setBoundingBox(newBoundingBox, transformSize: false)
+                    textAnnotation.setRotation(newRotation, updateBoundingBox: true)
+                }
             }
 
         case .note:
@@ -2164,15 +2347,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        guard !changes.isEmpty else { return }
-
-        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, appearance: appearance, notify: true)
-
-        NotificationCenter.default.post(
-            name: NSNotification.Name.PSPDFAnnotationChanged,
-            object: pdfAnnotation,
-            userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
-        )
+        return changes
     }
 
     private func updateTextCache(key: String, text: String, font: UIFont, viewModel: ViewModel<PDFReaderActionHandler>, notifyListeners: Bool) {

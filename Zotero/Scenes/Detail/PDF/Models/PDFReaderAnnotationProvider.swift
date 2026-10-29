@@ -240,9 +240,8 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
             func annotation(from cachedAnnotation: RDocumentAnnotation) -> Annotation? {
                 guard let documentAnnotation = PDFDocumentAnnotation(annotation: cachedAnnotation, displayName: displayName, username: username) else { return nil }
-                let annotation = AnnotationConverter.annotation(from: documentAnnotation, appearance: currentAppearance, displayName: displayName, username: username)
+                let annotation = AnnotationConverter.annotation(from: documentAnnotation, source: .document, appearance: currentAppearance, displayName: displayName, username: username)
                 annotation.flags.update(with: [.locked, .readOnly])
-                annotation.source = .document
                 return annotation
             }
         }
@@ -259,6 +258,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 }
                 annotationsToAdd.append(contentsOf: AnnotationConverter.annotations(
                     from: items,
+                    source: .database,
                     appearance: currentAppearance,
                     currentUserId: userId,
                     libraryId: libraryId,
@@ -271,9 +271,6 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             } catch {
                 DDLogError("PDFReaderAnnotationProvider: failed to read database annotations for page \(pageIndex) - \(error)")
             }
-            for annotation in annotationsToAdd {
-                annotation.source = .database
-            }
             if !annotationsToAdd.isEmpty {
                 _ = add(annotationsToAdd, options: [.suppressNotifications: true])
             }
@@ -283,7 +280,19 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
     override func add(_ annotations: [Annotation], options: [AnnotationManager.ChangeBehaviorKey: Any]? = nil) -> [Annotation]? {
         return performWriteAndWait {
-            let addedAnnotations = super.add(annotations, options: options)
+            // Incoming database changes and lazy page loading can supply different objects for the same key.
+            // Keep the existing instance, which may also be referenced by the document's undo recorder.
+            var keysToAdd = Set<String>()
+            let annotationsToAdd = annotations.filter { annotation in
+                let key = annotation.key ?? annotation.uuid
+                guard loadedAnnotationsByKey[key] == nil, keysToAdd.insert(key).inserted else {
+                    return false
+                }
+                return true
+            }
+            guard !annotationsToAdd.isEmpty else { return [] }
+
+            let addedAnnotations = super.add(annotationsToAdd, options: options)
             for annotation in addedAnnotations ?? [] {
                 index(annotation: annotation)
             }
