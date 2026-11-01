@@ -96,6 +96,7 @@ final class RecognizerController {
     private unowned let dbStorage: DbStorage
     private unowned let dateParser: DateParser
     private unowned let fileStorage: FileStorage
+    private let lookupTiming: WebViewHandler.Timing
     private let dispatchSpecificKey: DispatchSpecificKey<String>
     private let accessQueueLabel: String
     private let accessQueue: DispatchQueue
@@ -125,7 +126,8 @@ final class RecognizerController {
         schemaController: SchemaController,
         dbStorage: DbStorage,
         dateParser: DateParser,
-        fileStorage: FileStorage
+        fileStorage: FileStorage,
+        lookupTiming: WebViewHandler.Timing
     ) {
         self.documentWorkerController = documentWorkerController
         self.apiClient = apiClient
@@ -134,6 +136,7 @@ final class RecognizerController {
         self.dbStorage = dbStorage
         self.dateParser = dateParser
         self.fileStorage = fileStorage
+        self.lookupTiming = lookupTiming
         dispatchSpecificKey = DispatchSpecificKey<String>()
         accessQueueLabel = "org.zotero.RecognizerController.accessQueue"
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
@@ -326,7 +329,7 @@ final class RecognizerController {
                 DispatchQueue.main.sync { [weak self, weak webViewProvider] in
                     guard let self, let webViewProvider else { return }
                     let webView = webViewProvider.addWebView(configuration: nil)
-                    let handler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .search)
+                    let handler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .search, timing: lookupTiming)
                     handler.webViewProvider = webViewProvider
                     lookupWebViewHandler = handler
                 }

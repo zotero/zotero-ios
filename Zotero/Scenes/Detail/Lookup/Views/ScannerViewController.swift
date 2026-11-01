@@ -184,6 +184,9 @@ final class ScannerViewController: UIViewController {
 
 extension ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+        // A sheet presented over the scanner (e.g. a lookup challenge) doesn't stop the capture session, but hides the camera,
+        // so any barcode detected meanwhile is accidental. It's scanned once the sheet is dismissed, if it's still in view.
+        guard presentedViewController == nil, navigationController?.presentedViewController == nil else { return }
         let scanned = metadataObjects.compactMap { ($0 as? AVMetadataMachineReadableCodeObject)?.stringValue }
         let filtered = scanned.filter({ !self.viewModel.state.barcodes.contains($0) })
 
