@@ -108,6 +108,9 @@ final class DocumentWorkerController {
 
         let id = UUID()
         let file: FileData
+        /// File the cached results are stored next to (see `CacheLocation`). Same as `file`, unless `file` is a temporary
+        /// copy of an attachment (e.g. HTML/EPUB reader), in which case it's the attachment, so the cache outlives the copy.
+        let sidecarFile: FileData
         let kind: Kind
         let priority: Priority
         let password: String?
@@ -119,9 +122,13 @@ final class DocumentWorkerController {
         fileprivate lazy var fileURL: URL = {
             file.createUrl()
         }()
+        fileprivate lazy var sidecarFileURL: URL = {
+            sidecarFile.createUrl()
+        }()
 
-        init(file: FileData, kind: Kind = .normal, priority: Priority = .default, password: String? = nil) {
+        init(file: FileData, sidecarFile: FileData? = nil, kind: Kind = .normal, priority: Priority = .default, password: String? = nil) {
             self.file = file
+            self.sidecarFile = sidecarFile ?? file
             self.kind = kind
             self.priority = priority
             self.password = password
@@ -228,11 +235,11 @@ final class DocumentWorkerController {
                         DDLogInfo("DocumentWorkerController: bypassed full text cache for password-protected \(worker)")
                         return nil
                     }
-                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                    guard let sourceHash = cachedMD5(from: worker.sidecarFileURL, using: fileStorage.fileManager) else {
                         DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), source hash unavailable")
                         return nil
                     }
-                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    let directoryURL = location.directoryURL(for: worker.sidecarFileURL, sourceHash: sourceHash)
                     let manifestURL = location.manifestURL(in: directoryURL)
                     let manifest: FullText.Manifest
                     do {
@@ -276,11 +283,11 @@ final class DocumentWorkerController {
                         DDLogInfo("DocumentWorkerController: skipped full text cache write for \(worker), result has unexpected shape")
                         return
                     }
-                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                    guard let sourceHash = cachedMD5(from: worker.sidecarFileURL, using: fileStorage.fileManager) else {
                         DDLogInfo("DocumentWorkerController: skipped full text cache write for \(worker), source hash unavailable")
                         return
                     }
-                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    let directoryURL = location.directoryURL(for: worker.sidecarFileURL, sourceHash: sourceHash)
                     let manifestURL = location.manifestURL(in: directoryURL)
 
                     let requestedPages = FullText.pageIndexes(from: pages, pageCount: fullText.totalPages)
@@ -351,11 +358,11 @@ final class DocumentWorkerController {
                         DDLogInfo("DocumentWorkerController: bypassed structured document text cache for password-protected \(worker)")
                         return nil
                     }
-                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                    guard let sourceHash = cachedMD5(from: worker.sidecarFileURL, using: fileStorage.fileManager) else {
                         DDLogInfo("DocumentWorkerController: structured document text cache miss for \(worker), source hash unavailable")
                         return nil
                     }
-                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    let directoryURL = location.directoryURL(for: worker.sidecarFileURL, sourceHash: sourceHash)
                     let packURL = StructuredDocumentText.packURL(in: directoryURL)
                     do {
                         let data = try Data(contentsOf: packURL)
@@ -377,11 +384,11 @@ final class DocumentWorkerController {
                         DDLogInfo("DocumentWorkerController: skipped structured document text cache write for \(worker), result has unexpected shape")
                         return
                     }
-                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                    guard let sourceHash = cachedMD5(from: worker.sidecarFileURL, using: fileStorage.fileManager) else {
                         DDLogInfo("DocumentWorkerController: skipped structured document text cache write for \(worker), source hash unavailable")
                         return
                     }
-                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    let directoryURL = location.directoryURL(for: worker.sidecarFileURL, sourceHash: sourceHash)
                     do {
                         try fileStorage.fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
                         try structuredDocumentText.data.write(to: StructuredDocumentText.packURL(in: directoryURL), options: .atomic)
@@ -910,7 +917,7 @@ final class DocumentWorkerController {
             documentWorkerHandler.performAction(.getPDFFulltext(pages: pages, password: worker.password), workId: work.id)
 
         case .structuredDocumentText:
-            guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+            guard let sourceHash = cachedMD5(from: worker.sidecarFileURL, using: fileStorage.fileManager) else {
                 DDLogError("DocumentWorkerController: can't create source hash for \(worker)")
                 finishWork(work, in: worker, finalUpdateKind: .failed)
                 return

@@ -964,6 +964,11 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
         return viewModel.state.documentFile as? FileData
     }
 
+    var documentSidecarFile: FileData? {
+        // `documentFile` is a temporary copy deleted when the reader closes, so derived data is stored next to the attachment.
+        return viewModel.state.originalFile as? FileData
+    }
+
     var documentPassword: String? {
         // HTML/EPUB documents are never locked/encrypted.
         return nil

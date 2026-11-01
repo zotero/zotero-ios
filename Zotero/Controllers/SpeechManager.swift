@@ -30,6 +30,9 @@ protocol SpeechManagerDelegate: AnyObject {
     var documentTitle: String? { get }
     /// File of the document being read. Used by `SpeechManager` to extract structured document text for the whole document.
     var documentFile: FileData? { get }
+    /// File derived data (structured document text) is stored next to. Differs from `documentFile` when the reader works on a
+    /// temporary copy of the attachment (HTML/EPUB), so that the cached data outlives the copy. Defaults to `documentFile`.
+    var documentSidecarFile: FileData? { get }
     /// Password for the document, if it is locked/encrypted.
     var documentPassword: String? { get }
     func getCurrentPageIndex() -> Index
@@ -82,6 +85,11 @@ protocol SpeechManagerDelegate: AnyObject {
 }
 
 extension SpeechManagerDelegate {
+    /// Default: the document file itself (PDF opens the attachment directly).
+    var documentSidecarFile: FileData? {
+        return documentFile
+    }
+
     /// Default: no reader segments — use the built-in structured-document-text parser (PDF).
     func readAloudReaderSegments(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int, completion: @escaping ([SpeechReaderSegment]?) -> Void) {
         completion(nil)
@@ -584,7 +592,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 completion(false)
                 return
             }
-            let worker = manager.speechWorker ?? DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high, password: delegate.documentPassword)
+            let sidecarFile = delegate.documentSidecarFile ?? file
+            let worker = manager.speechWorker ?? DocumentWorkerController.Worker(file: file, sidecarFile: sidecarFile, kind: .oneOff, priority: .high, password: delegate.documentPassword)
             manager.speechWorker = worker
             let start = CFAbsoluteTimeGetCurrent()
             manager.documentWorkerController.queue(work: .structuredDocumentText, in: worker)
