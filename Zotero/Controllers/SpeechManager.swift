@@ -2137,19 +2137,21 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func updateRemainingTimeDisplay(credits: (standard: Int, premium: Int)) {
+        let tierCredits: Int
         switch tier {
         case .standard:
-            // Standard tier voice - report nil remaining time (unlimited)
-            delegate.remainingTime.accept(nil)
+            tierCredits = credits.standard
 
         case .premium:
-            if credits.premium == 0 {
-                delegate.remainingTime.accept(0)
-            } else if let voice {
-                // Calculate remaining time from credits (creditsPerMinute means credits per minute of audio)
-                let remainingTime = (TimeInterval(credits.premium) / TimeInterval(voice.creditsPerMinute)) * 60
-                delegate.remainingTime.accept(remainingTime)
-            }
+            tierCredits = credits.premium
+        }
+
+        if tierCredits == 0 {
+            delegate.remainingTime.accept(0)
+        } else if let voice {
+            // Calculate remaining time from credits (creditsPerMinute means credits per minute of audio)
+            let remainingTime = (TimeInterval(tierCredits) / TimeInterval(voice.creditsPerMinute)) * 60
+            delegate.remainingTime.accept(remainingTime)
         }
     }
 
