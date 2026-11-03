@@ -8,6 +8,7 @@
 
 import CryptoKit
 import Foundation
+import os
 
 import CocoaLumberjackSwift
 
@@ -45,7 +46,17 @@ func md5(from url: URL) -> String? {
     }
 }
 
-var cachedMD5AndModificationDateByURL: [URL: (String, Date, NSNumber)] = [:]
+/// MD5 of a file, valid while the file has the same modification date and size.
+private struct CachedMD5: Sendable {
+    let md5: String
+    let modificationDate: Date
+    let size: UInt64
+}
+
+/// MD5s of files keyed by file url. Used from multiple queues, so access is guarded by the lock. The lock guards only access to the
+/// dictionary, nothing else (hashing, file access, calls to functions using this cache) may be done while holding it.
+private let cachedMD5ByURL = OSAllocatedUnfairLock(initialState: [URL: CachedMD5]())
+
 func cachedMD5(from url: URL, using fileManager: FileManager) -> String? {
     var newModificationDate: Date = .distantPast
     var newSize: NSNumber = .init(value: 0)
@@ -59,29 +70,31 @@ func cachedMD5(from url: URL, using fileManager: FileManager) -> String? {
             newSize = size
         }
     }
-    if let (cachedMd5, cachedModificationDate, cachedSize) = cachedMD5AndModificationDateByURL[url], newModificationDate == cachedModificationDate, newSize == cachedSize {
-        return cachedMd5
+    if let cached = cachedMD5ByURL.withLock({ $0[url] }), cached.modificationDate == newModificationDate, cached.size == newSize.uint64Value {
+        return cached.md5
     }
 
     if hasAttributes, let cachedMd5 = sidecarCachedMD5(from: url, modificationDate: newModificationDate, size: newSize) {
-        cachedMD5AndModificationDateByURL[url] = (cachedMd5, newModificationDate, newSize)
+        let cached = CachedMD5(md5: cachedMd5, modificationDate: newModificationDate, size: newSize.uint64Value)
+        cachedMD5ByURL.withLock { $0[url] = cached }
         return cachedMd5
     }
 
     let md5 = md5(from: url)
     if let md5 {
-        cachedMD5AndModificationDateByURL[url] = (md5, newModificationDate, newSize)
+        let cached = CachedMD5(md5: md5, modificationDate: newModificationDate, size: newSize.uint64Value)
+        cachedMD5ByURL.withLock { $0[url] = cached }
         if hasAttributes {
             writeSidecarCachedMD5(md5, for: url, modificationDate: newModificationDate, size: newSize)
         }
     } else {
-        cachedMD5AndModificationDateByURL[url] = nil
+        cachedMD5ByURL.withLock { $0[url] = nil }
     }
     return md5
 }
 
 func removeDerivedSidecars(for url: URL, using fileManager: FileManager) {
-    cachedMD5AndModificationDateByURL[url] = nil
+    cachedMD5ByURL.withLock { $0[url] = nil }
     for sidecarUrl in derivedSidecarURLs(for: url) {
         do {
             if fileManager.fileExists(atPath: sidecarUrl.path) {
