@@ -444,7 +444,7 @@ final class CarPlayCoordinator: NSObject {
         if offersVoiceSettings {
             let sessionId = activeSessionId
             actions.append(CPAlertAction(title: L10n.Carplay.voiceSettings, style: .default) { [weak self] _ in
-                self?.interfaceController.dismissTemplate(animated: true) { _, _ in
+                self?.interfaceController.dismissTemplate(animated: true) { [weak self] _, _ in
                     // Settings belong to the session which showed the alert.
                     guard let self, activeSessionId == sessionId else { return }
                     showVoiceSettings()

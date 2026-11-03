@@ -125,7 +125,7 @@ final class CarPlayReadAloudSession {
 
         // Set up the same way as in the readers: the document's stored language and the selected voice tier.
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        speechManager = SpeechManager(
+        speechManager = SpeechManager<CarPlayReadAloudSession>(
             delegate: self,
             key: key,
             libraryId: libraryId,
@@ -193,8 +193,8 @@ final class CarPlayReadAloudSession {
         speechManager.onSpeakingPositionChanged = { [weak positionStore] position in
             positionStore?.schedule(position: position)
         }
-        let key = key
-        let libraryId = libraryId
+        let key = self.key
+        let libraryId = self.libraryId
         // Only reading which actually started counts, not a document which couldn't be processed or had no credits.
         var didSpeak = false
         speechManager.state
