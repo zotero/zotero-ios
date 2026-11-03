@@ -119,9 +119,6 @@ final class DocumentWorkerController {
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
         fileprivate var handlersByRuntime: [HandlerRuntime: DocumentWorkerHandling] = [:]
         fileprivate var workStartTimes: [Work: CFAbsoluteTime] = [:]
-        fileprivate lazy var fileURL: URL = {
-            file.createUrl()
-        }()
         fileprivate lazy var sidecarFileURL: URL = {
             sidecarFile.createUrl()
         }()
@@ -486,7 +483,8 @@ final class DocumentWorkerController {
         let workerId: UUID?
         let work: Work
         let fileName: String?
-        let fileURL: URL?
+        /// URL of the worker's sidecar file, which its cached results are stored next to (see `Worker.sidecarFile`).
+        let sidecarFileURL: URL?
         let priority: Priority?
         let runtime: HandlerRuntime?
         let kind: Kind
@@ -501,7 +499,7 @@ final class DocumentWorkerController {
             workerId: UUID? = nil,
             work: Work,
             fileName: String? = nil,
-            fileURL: URL? = nil,
+            sidecarFileURL: URL? = nil,
             priority: Priority? = nil,
             runtime: HandlerRuntime? = nil,
             kind: Kind,
@@ -511,7 +509,7 @@ final class DocumentWorkerController {
             self.workerId = workerId
             self.work = work
             self.fileName = fileName
-            self.fileURL = fileURL
+            self.sidecarFileURL = sidecarFileURL
             self.priority = priority
             self.runtime = runtime
             self.kind = kind
@@ -746,10 +744,10 @@ final class DocumentWorkerController {
         }
     }
 
-    func cachedWorkFileURLs(for work: Work, fileURL: URL, completion: @escaping ([URL]) -> Void) {
+    func cachedWorkFileURLs(for work: Work, sidecarFileURL: URL, completion: @escaping ([URL]) -> Void) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
-            let urls = work.cache?.location.fileURLs(for: fileURL, fileStorage: fileStorage) ?? []
+            let urls = work.cache?.location.fileURLs(for: sidecarFileURL, fileStorage: fileStorage) ?? []
             DispatchQueue.main.async {
                 completion(urls)
             }
@@ -1288,7 +1286,7 @@ private extension PublishSubject where Element == DocumentWorkerController.Updat
             workerId: worker.id,
             work: work,
             fileName: worker.file.fileName,
-            fileURL: worker.fileURL,
+            sidecarFileURL: worker.sidecarFileURL,
             priority: worker.priority,
             runtime: runtime,
             kind: kind,
