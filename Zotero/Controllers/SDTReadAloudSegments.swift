@@ -43,6 +43,8 @@ enum SDTReadAloudSegments {
     /// Drop a bracket/parenthesis group when at least this fraction of its non-whitespace content is linked text, so citation
     /// and note marker groups drop, while prose asides that merely contain a link survive.
     private static let linkGroupCoverageThreshold = 0.25
+    /// Opening and closing characters of the groups checked for links: `[` `]` and `(` `)`.
+    private static let groupDelimiters: [(open: UInt16, close: UInt16)] = [(0x5B, 0x5D), (0x28, 0x29)]
 
     static func segments(from structure: SDTContent.Node) -> [SDTSpeechSegment] {
         var segments: [SDTSpeechSegment] = []
@@ -88,7 +90,7 @@ enum SDTReadAloudSegments {
         for (index, part) in chain.enumerated() {
             if index > 0 {
                 let previousBlock = chain[index - 1].block
-                if SDTContent.shouldDropHardHyphenAtPartBoundary(previousBlock: previousBlock, nextBlock: part.block) && text.last == 0x2D {
+                if SDTContent.shouldDropHardHyphenAtPartBoundary(previousBlock: previousBlock, nextBlock: part.block) && text.last == SDTContent.hyphen {
                     text.removeLast()
                     if var last = mappings.popLast() {
                         last.absEnd -= 1
@@ -131,7 +133,7 @@ enum SDTReadAloudSegments {
     /// Ranges read aloud skips: bracket/parenthesis groups that are mostly linked text, and superscript link markers.
     private static func elidedRanges(in text: [UInt16], mappings: [Mapping]) -> [TextRange] {
         var ranges: [TextRange] = []
-        for (open, close) in [(UInt16(0x5B), UInt16(0x5D)), (UInt16(0x28), UInt16(0x29))] {
+        for (open, close) in groupDelimiters {
             var stack: [Int] = []
             for index in 0..<text.count {
                 if text[index] == open {

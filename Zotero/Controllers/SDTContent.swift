@@ -274,7 +274,7 @@ enum SDTContent {
     // MARK: - Characters
 
     static let space: UInt16 = 0x20
-    private static let hyphen: UInt16 = 0x2D
+    static let hyphen: UInt16 = 0x2D
     private static let lowercaseA: UInt16 = 0x61
     private static let lowercaseZ: UInt16 = 0x7A
 

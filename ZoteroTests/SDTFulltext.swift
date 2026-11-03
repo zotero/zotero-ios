@@ -66,7 +66,7 @@ enum SDTFulltext {
                 } else if SDTContent.sameRef(chain[index - 1].ref, part.ref) {
                     blockTexts.append(entrySeparator(previous: chain[index - 1], current: part))
                 } else {
-                    if SDTContent.shouldDropHardHyphenAtPartBoundary(previousBlock: chain[index - 1].block, nextBlock: part.block), blockTexts.last?.last == 0x2D {
+                    if SDTContent.shouldDropHardHyphenAtPartBoundary(previousBlock: chain[index - 1].block, nextBlock: part.block), blockTexts.last?.last == SDTContent.hyphen {
                         blockTexts[blockTexts.count - 1].removeLast()
                     }
                     blockTexts.append(SDTContent.partBoundarySeparator(previousBlock: chain[index - 1].block, nextBlock: part.block))
