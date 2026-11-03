@@ -1012,9 +1012,13 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
     }
 
     func readAloudLoaded(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int) {
+        guard let documentController else {
+            DDLogError("HtmlEpubReaderViewController: can't hand SDT pack to reader, document controller missing")
+            return
+        }
         // Segments are built natively from the same pack (`SDTReadAloudSegments`), but the reader needs it too, to map
         // selections and resume positions to SDT positions and to create annotations from them.
-        documentController?.setSDTPack(bytes: sdtPackData, packVersion: packVersion, schemaMajorVersion: schemaMajorVersion)
+        documentController.setSDTPack(bytes: sdtPackData, packVersion: packVersion, schemaMajorVersion: schemaMajorVersion)
     }
 
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
