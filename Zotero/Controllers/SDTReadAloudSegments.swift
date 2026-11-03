@@ -62,18 +62,18 @@ enum SDTReadAloudSegments {
     private static func chainTexts(in structure: SDTContent.Node) -> [ChainText] {
         let content = (structure["content"] as? [Any]) ?? []
         var chains: [ChainText] = []
-        var emitted: Set<String> = []
+        var emitted: Set<SDTContent.Ref> = []
         let include: (SDTContent.Ref) -> Bool = { ref in
             guard let index = ref.first, index < content.count else { return true }
             return ((content[index] as? SDTContent.Node)?["flowClass"] as? String) != "excluded"
         }
 
         SDTContent.walkContentRangeLeafBlocks(content: content, range: ([0], [content.count])) { leaf in
-            guard include(leaf.ref), !emitted.contains(SDTContent.refKey(leaf.ref)) else { return }
+            guard include(leaf.ref), !emitted.contains(leaf.ref) else { return }
             let chain = SDTContent.partChain(in: structure, ref: leaf.ref, include: { ref, _ in include(ref) })
-            guard !chain.contains(where: { emitted.contains(SDTContent.refKey($0.ref)) }) else { return }
+            guard !chain.contains(where: { emitted.contains($0.ref) }) else { return }
             for part in chain {
-                emitted.insert(SDTContent.refKey(part.ref))
+                emitted.insert(part.ref)
             }
             let text = chainText(of: chain)
             if SDTContent.containsNonWhitespace(text.text) {

@@ -50,10 +50,6 @@ enum SDTContent {
         return lhs == rhs
     }
 
-    static func refKey(_ ref: Ref) -> String {
-        return ref.map(String.init).joined(separator: ",")
-    }
-
     // MARK: - Nodes
 
     static func isTextNode(_ node: Any?) -> Bool {
@@ -203,10 +199,10 @@ enum SDTContent {
     static func partChain(in structure: Node, ref: Ref, include: ((Ref, Node) -> Bool)? = nil) -> [Part] {
         guard let root = partRoot(in: structure, ref: ref) else { return [] }
         var chain: [Part] = []
-        var seen: Set<String> = []
+        var seen: Set<Ref> = []
         var currentRef: Ref? = root
         while let ref = currentRef {
-            guard seen.insert(refKey(ref)).inserted, let block = node(at: ref, in: structure) else { break }
+            guard seen.insert(ref).inserted, let block = node(at: ref, in: structure) else { break }
             if let include, !include(ref, block) {
                 break
             }
@@ -217,9 +213,9 @@ enum SDTContent {
 
         func partRoot(in structure: Node, ref: Ref) -> Ref? {
             var currentRef = ref
-            var seen: Set<String> = []
+            var seen: Set<Ref> = []
             while true {
-                guard seen.insert(refKey(currentRef)).inserted else { return currentRef }
+                guard seen.insert(currentRef).inserted else { return currentRef }
                 guard let link = node(at: currentRef, in: structure)?["previousPart"] as? [Any] else { return currentRef }
                 // A malformed link can't be resolved to a node, which JavaScript turns into an empty chain.
                 guard let previous = contentBoundary(fromPartLink: link) else { return nil }

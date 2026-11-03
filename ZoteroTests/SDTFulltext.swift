@@ -42,7 +42,7 @@ enum SDTFulltext {
         let content = (structure["content"] as? [Any]) ?? []
         let pages = ((structure["catalog"] as? SDTContent.Node)?["pages"] as? [Any]) ?? []
         var entries: [Entry] = []
-        var entryIndexesByRef: [String: [Int]] = [:]
+        var entryIndexesByRef: [SDTContent.Ref: [Int]] = [:]
         var blockTexts: [[UInt16]] = []
         var previous: Entry?
 
@@ -51,7 +51,7 @@ enum SDTFulltext {
             for var entry in rangeBlockTexts(content: content, rangeValue: page["contentRange"]) where !entry.text.isEmpty {
                 entry.index = entries.count
                 entries.append(entry)
-                entryIndexesByRef[SDTContent.refKey(entry.ref), default: []].append(entry.index)
+                entryIndexesByRef[entry.ref, default: []].append(entry.index)
             }
         }
 
@@ -82,19 +82,18 @@ enum SDTFulltext {
 
     // MARK: - Chains
 
-    private static func selectedPartChain(from entry: Entry, entries: [Entry], entryIndexesByRef: [String: [Int]], emittedIndexes: Set<Int>) -> [Entry] {
+    private static func selectedPartChain(from entry: Entry, entries: [Entry], entryIndexesByRef: [SDTContent.Ref: [Int]], emittedIndexes: Set<Int>) -> [Entry] {
         var chain: [Entry] = []
-        var seenRefs: Set<String> = []
+        var seenRefs: Set<SDTContent.Ref> = []
         var current: Entry? = entry
         while let entry = current, !emittedIndexes.contains(entry.index) {
-            let key = SDTContent.refKey(entry.ref)
-            guard seenRefs.insert(key).inserted else { break }
+            guard seenRefs.insert(entry.ref).inserted else { break }
             // A block split by page boundaries yields one slice per page; keep them all together before following the part link.
-            for index in entryIndexesByRef[key] ?? [] where !emittedIndexes.contains(index) {
+            for index in entryIndexesByRef[entry.ref] ?? [] where !emittedIndexes.contains(index) {
                 chain.append(entries[index])
             }
             guard let nextPart = link(entry.block["nextPart"]) else { break }
-            current = entryIndexesByRef[SDTContent.refKey(nextPart)]?.first.map({ entries[$0] })
+            current = entryIndexesByRef[nextPart]?.first.map({ entries[$0] })
         }
         return chain
     }
