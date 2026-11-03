@@ -63,10 +63,10 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
         var storageData: [LibraryIdentifier: DirectoryData] = [:]
         for library in libraries {
             let libraryId = library.identifier
-            let data = self.fileStorage.directoryData(for: [Files.downloads(for: libraryId), Files.annotationPreviews(for: libraryId), Files.pageThumbnails(for: libraryId), Files.documentPreviews(for: libraryId)])
+            let data = self.fileStorage.directoryData(for: [Files.downloads(for: libraryId), Files.annotationPreviews(for: libraryId), Files.pageThumbnails(for: libraryId)])
             storageData[library.identifier] = data
         }
-        let totalData = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews, Files.pageThumbnails, Files.documentPreviews])
+        let totalData = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews, Files.pageThumbnails])
         return (storageData, totalData)
     }
 
@@ -86,7 +86,7 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
         self.fileCleanupController.delete(.library(libraryId)) { [weak viewModel] deleted in
             guard deleted, let viewModel = viewModel else { return }
 
-            let newTotal = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews, Files.pageThumbnails, Files.documentPreviews])
+            let newTotal = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews, Files.pageThumbnails])
 
             self.update(viewModel: viewModel) { state in
                 state.storageData[libraryId] = DirectoryData(fileCount: 0, mbSize: 0)

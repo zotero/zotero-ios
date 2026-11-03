@@ -15,22 +15,47 @@ import RxSwift
 import ZIPFoundation
 
 /// Creates and stores cover/preview images of documents (PDF, EPUB). Used as artwork for Now Playing and CarPlay.
+///
+/// Previews are stored in derived sidecars of attachment file, keyed by its MD5, so that a new version of attachment file
+/// invalidates old preview and deleting attachment (or its file) removes the preview as well:
+/// `{attachment directory}/.zotero-derived/{md5}/preview/{version}/`
+///
+/// The directory contains `manifest.json`, which lists generated preview files stored in the same directory. When document doesn't
+/// have a suitable preview, or preview generation fails, manifest with no previews is stored, so that generation is not retried
+/// for the same file version.
 final class DocumentPreviewController {
     enum Error: Swift.Error {
         case unsupportedContentType
+        case sourceHashUnavailable
         case cantCreateImageData
+    }
+
+    private struct Manifest: Codable {
+        struct Preview: Codable {
+            /// Name of preview image file in the same directory as manifest.
+            let fileName: String
+            let width: Int
+            let height: Int
+        }
+
+        /// Empty if document doesn't have a suitable preview or preview generation failed.
+        let previews: [Preview]
     }
 
     /// Longest side of stored preview, in pixels.
     private static let maxPixelSize: CGFloat = 1024
     private static let jpegQuality: CGFloat = 0.85
+    /// Increment when preview generation changes, so that existing previews (and recorded failures) are regenerated.
+    private static let cacheVersion = 1
+    private static let cacheDirectoryName = "preview"
+    private static let manifestFileName = "manifest.json"
+    private static let coverFileName = "cover.jpg"
 
-    private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
     private let fileStorage: FileStorage
 
     init(fileStorage: FileStorage) {
-        queue = DispatchQueue(label: "org.zotero.DocumentPreviewController.queue", qos: .utility)
+        let queue = DispatchQueue(label: "org.zotero.DocumentPreviewController.queue", qos: .utility)
         scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.DocumentPreviewController.scheduler")
         self.fileStorage = fileStorage
     }
@@ -45,57 +70,30 @@ final class DocumentPreviewController {
         }
     }
 
-    /// Returns already stored preview for given attachment, if available.
-    func storedPreview(key: String, libraryId: LibraryIdentifier) -> File? {
-        let file = Files.documentPreview(key: key, libraryId: libraryId)
-        return fileStorage.has(file) ? file : nil
+    /// Returns already stored preview for given attachment file, if available. Calculates MD5 of file if it's not cached yet.
+    /// - parameter url: Url of attachment file.
+    /// - returns: Url of stored preview image.
+    func storedPreview(for url: URL) -> URL? {
+        guard let directoryURL = cacheDirectoryURL(for: url), let manifest = manifest(in: directoryURL) else { return nil }
+        return previewURL(from: manifest, in: directoryURL)
     }
 
-    /// Returns stored preview for given attachment, or creates and stores a new one. Requests are processed serially.
-    /// - parameter url: Url of attachment file.
+    /// Returns stored preview for given attachment file, or creates and stores a new one. Requests are processed serially.
+    /// - parameter url: Url of attachment file. Preview is stored in its derived sidecars, so it should be a file in attachment directory.
     /// - parameter contentType: Content type of attachment file.
-    /// - parameter key: Attachment item key.
-    /// - parameter libraryId: Library identifier of item.
-    /// - parameter overwrite: If `true`, existing preview is regenerated.
-    /// - returns: File with stored preview image, or `nil` if document doesn't have a suitable preview.
-    func preview(for url: URL, contentType: String, key: String, libraryId: LibraryIdentifier, overwrite: Bool = false) -> Single<File?> {
+    /// - parameter overwrite: If `true`, existing preview (or recorded failure) is ignored and preview is regenerated.
+    /// - returns: Url of stored preview image, or `nil` if document doesn't have a suitable preview or it can't be created.
+    func preview(for url: URL, contentType: String, overwrite: Bool = false) -> Single<URL?> {
         return Single.create { [weak self] subscriber in
             guard let self else {
                 subscriber(.success(nil))
                 return Disposables.create()
             }
 
-            let file = Files.documentPreview(key: key, libraryId: libraryId)
-            if !overwrite && fileStorage.has(file) {
-                subscriber(.success(file))
-                return Disposables.create()
-            }
-
             do {
-                let image: CGImage?
-                switch contentType {
-                case "application/pdf":
-                    image = try autoreleasepool { try PDFPreviewRenderer.render(url: url, maxPixelSize: Self.maxPixelSize) }
-
-                case "application/epub+zip":
-                    image = try autoreleasepool { try EPUBCoverExtractor.extract(url: url, maxPixelSize: Self.maxPixelSize) }
-
-                default:
-                    throw Error.unsupportedContentType
-                }
-
-                guard let image else {
-                    DDLogInfo("DocumentPreviewController: no preview available; key=\(key); library=\(libraryId)")
-                    try? fileStorage.remove(file)
-                    subscriber(.success(nil))
-                    return Disposables.create()
-                }
-
-                guard let data = autoreleasepool(invoking: { Self.jpegData(from: image) }) else { throw Error.cantCreateImageData }
-                try fileStorage.write(data, to: file, options: .atomicWrite)
-                subscriber(.success(file))
+                subscriber(.success(try storedOrCreatedPreview(for: url, contentType: contentType, overwrite: overwrite)))
             } catch let error {
-                DDLogError("DocumentPreviewController: can't create preview; key=\(key); library=\(libraryId); contentType=\(contentType); error=\(error)")
+                DDLogError("DocumentPreviewController: can't store preview; file=\(url.lastPathComponent); contentType=\(contentType); error=\(error)")
                 subscriber(.failure(error))
             }
 
@@ -104,10 +102,82 @@ final class DocumentPreviewController {
         .subscribe(on: scheduler)
     }
 
-    func delete(key: String, libraryId: LibraryIdentifier) {
-        queue.async { [weak self] in
-            try? self?.fileStorage.remove(Files.documentPreview(key: key, libraryId: libraryId))
+    private func storedOrCreatedPreview(for url: URL, contentType: String, overwrite: Bool) throws -> URL? {
+        guard Self.supports(contentType: contentType) else { throw Error.unsupportedContentType }
+        guard let directoryURL = cacheDirectoryURL(for: url) else { throw Error.sourceHashUnavailable }
+
+        if !overwrite, let manifest = manifest(in: directoryURL) {
+            if manifest.previews.isEmpty {
+                // Previous attempt didn't find a preview for this file version, don't retry.
+                return nil
+            }
+            if let previewURL = previewURL(from: manifest, in: directoryURL) {
+                return previewURL
+            }
+            DDLogWarn("DocumentPreviewController: stored preview missing, regenerating; file=\(url.lastPathComponent)")
         }
+
+        let fileManager = fileStorage.fileManager
+        if fileManager.fileExists(atPath: directoryURL.path) {
+            try fileManager.removeItem(at: directoryURL)
+        }
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+
+        let previews: [Manifest.Preview]
+        do {
+            previews = try createPreviews(for: url, contentType: contentType, in: directoryURL)
+        } catch let error {
+            // Record failure in manifest, so that generation isn't retried for the same file version.
+            DDLogError("DocumentPreviewController: can't create preview; file=\(url.lastPathComponent); contentType=\(contentType); error=\(error)")
+            previews = []
+        }
+
+        // Manifest is written last, so that it only exists when preview files are complete.
+        let manifest = Manifest(previews: previews)
+        try JSONEncoder().encode(manifest).write(to: directoryURL.appendingPathComponent(Self.manifestFileName), options: .atomic)
+        return previewURL(from: manifest, in: directoryURL)
+    }
+
+    private func createPreviews(for url: URL, contentType: String, in directoryURL: URL) throws -> [Manifest.Preview] {
+        let image: CGImage?
+        switch contentType {
+        case "application/pdf":
+            image = try autoreleasepool { try PDFPreviewRenderer.render(url: url, maxPixelSize: Self.maxPixelSize) }
+
+        case "application/epub+zip":
+            image = try autoreleasepool { try EPUBCoverExtractor.extract(url: url, maxPixelSize: Self.maxPixelSize) }
+
+        default:
+            throw Error.unsupportedContentType
+        }
+
+        guard let image else {
+            DDLogInfo("DocumentPreviewController: no preview available; file=\(url.lastPathComponent)")
+            return []
+        }
+
+        guard let data = autoreleasepool(invoking: { Self.jpegData(from: image) }) else { throw Error.cantCreateImageData }
+        try data.write(to: directoryURL.appendingPathComponent(Self.coverFileName), options: .atomic)
+        return [Manifest.Preview(fileName: Self.coverFileName, width: image.width, height: image.height)]
+    }
+
+    private func cacheDirectoryURL(for url: URL) -> URL? {
+        guard let sourceHash = cachedMD5(from: url, using: fileStorage.fileManager) else { return nil }
+        return derivedSidecarsDirectoryURL(for: url)
+            .appendingPathComponent(sourceHash)
+            .appendingPathComponent(Self.cacheDirectoryName)
+            .appendingPathComponent(String(Self.cacheVersion))
+    }
+
+    private func manifest(in directoryURL: URL) -> Manifest? {
+        guard let data = try? Data(contentsOf: directoryURL.appendingPathComponent(Self.manifestFileName)) else { return nil }
+        return try? JSONDecoder().decode(Manifest.self, from: data)
+    }
+
+    private func previewURL(from manifest: Manifest, in directoryURL: URL) -> URL? {
+        guard let preview = manifest.previews.first else { return nil }
+        let url = directoryURL.appendingPathComponent((preview.fileName as NSString).lastPathComponent)
+        return fileStorage.fileManager.fileExists(atPath: url.path) ? url : nil
     }
 
     /// Draws image into an opaque white context, so that transparent images don't end up with black background, and encodes it as JPEG.

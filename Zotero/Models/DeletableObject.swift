@@ -156,8 +156,6 @@ extension RItem: Deletable {
 
             // Delete attachment directory
             NotificationCenter.default.post(name: .attachmentDeleted, object: Files.attachmentDirectory(in: libraryId, key: self.key))
-            // Delete document preview
-            NotificationCenter.default.post(name: .attachmentDeleted, object: Files.documentPreview(key: self.key, libraryId: libraryId))
 
             #if MAINAPP
             if contentType == "application/pdf" {

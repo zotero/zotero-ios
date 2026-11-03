@@ -126,8 +126,6 @@ final class AttachmentFileCleanupController {
                 try? fileStorage.remove(Files.annotationPreviews)
                 // Remove page thumbnails
                 try? fileStorage.remove(Files.pageThumbnails)
-                // Remove document previews
-                try? fileStorage.remove(Files.documentPreviews)
                 // When removing all local files clear cache as well.
                 try? fileStorage.remove(Files.cache)
 
@@ -218,8 +216,6 @@ final class AttachmentFileCleanupController {
                 try? fileStorage.remove(Files.annotationPreviews(for: libraryId))
                 // Cleanup page thumbnails
                 try? fileStorage.remove(Files.pageThumbnails(for: libraryId))
-                // Cleanup document previews
-                try? fileStorage.remove(Files.documentPreviews(for: libraryId))
 
                 if let keys = deletedIndividually[libraryId], !keys.isEmpty {
                     return .allForItems(keys, libraryId)
@@ -319,8 +315,6 @@ final class AttachmentFileCleanupController {
             try? fileStorage.remove(Files.annotationPreviews(for: key, libraryId: libraryId))
             // Cleanup page thumbnails
             try? fileStorage.remove(Files.pageThumbnails(for: key, libraryId: libraryId))
-            // Cleanup document preview
-            try? fileStorage.remove(Files.documentPreview(key: key, libraryId: libraryId))
         }
     }
 }
