@@ -126,7 +126,7 @@ struct SDTPosition {
 /// An HTML/EPUB read-aloud segment built from structured document text (`SDTReadAloudSegments`), in the shape the reader
 /// uses: the spoken `text`, its reader SDT position (`start`/`end` child-index paths into the content tree), and whether it
 /// begins a new paragraph. Used to build the read-aloud paragraph model and to create annotations from a selected text range.
-struct SpeechReaderSegment {
+struct SDTSpeechSegment {
     let text: String
     let start: [Int]
     let end: [Int]
@@ -391,7 +391,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     /// Position of `highlightRange` (character offsets within `paragraph.text`) for the delegate: reader SDT positions
-    /// when the paragraph model was built from reader segments (HTML/EPUB), PDF geometry otherwise.
+    /// when the paragraph model was built from SDT segments (HTML/EPUB), PDF geometry otherwise.
     private func highlightPosition(paragraph: SpeechParagraph, highlightRange: NSRange) -> ReadAloudPosition {
         let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
         let segments = segments(forPage: paragraph.page)
@@ -846,7 +846,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// each segment's character range within that text plus its reader SDT position is recorded as an `SDTSpan` so a
     /// selected text range can be turned into an annotation. All content lives on structured-document-text page 0
     /// (HTML/EPUB has no page geometry).
-    private func store(segments: [SpeechReaderSegment], language: String?) {
+    private func store(segments: [SDTSpeechSegment], language: String?) {
         guard let delegate, let page = delegate.pageIndex(forStructuredDocumentTextPage: 0) else {
             paragraphs = []
             paragraphIndicesByPage = [:]

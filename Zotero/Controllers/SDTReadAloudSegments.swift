@@ -44,8 +44,8 @@ enum SDTReadAloudSegments {
     /// and note marker groups drop, while prose asides that merely contain a link survive.
     private static let linkGroupCoverageThreshold = 0.25
 
-    static func segments(from structure: SDTContent.Node) -> [SpeechReaderSegment] {
-        var segments: [SpeechReaderSegment] = []
+    static func segments(from structure: SDTContent.Node) -> [SDTSpeechSegment] {
+        var segments: [SDTSpeechSegment] = []
         // One tokenizer for the whole document, set up once and reused for every paragraph.
         let tokenizer = NLTokenizer(unit: .sentence)
         for chain in chainTexts(in: structure) {
@@ -212,7 +212,7 @@ enum SDTReadAloudSegments {
     // MARK: - Segments
 
     /// Splits the chain into sentences and appends a segment for each, the first one starting the paragraph.
-    private static func appendSegments(of chain: ChainText, tokenizer: NLTokenizer, to segments: inout [SpeechReaderSegment]) {
+    private static func appendSegments(of chain: ChainText, tokenizer: NLTokenizer, to segments: inout [SDTSpeechSegment]) {
         let firstIndex = segments.count
         // Decoding keeps the UTF-16 length (an unpaired surrogate becomes a single replacement character), so the string's
         // UTF-16 offsets are the chain's.
@@ -234,7 +234,7 @@ enum SDTReadAloudSegments {
         func appendSegment(chain: ChainText, rawStart: Int, rawEnd: Int) {
             let text = normalized(chain.text[rawStart..<rawEnd])
             guard !text.isEmpty, let sdtPosition = position(in: chain, rawStart: rawStart, rawEnd: rawEnd) else { return }
-            segments.append(SpeechReaderSegment(text: text, start: sdtPosition.start, end: sdtPosition.end, isParagraphStart: segments.count == firstIndex))
+            segments.append(SDTSpeechSegment(text: text, start: sdtPosition.start, end: sdtPosition.end, isParagraphStart: segments.count == firstIndex))
         }
     }
 
