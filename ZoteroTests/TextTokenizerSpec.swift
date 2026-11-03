@@ -27,15 +27,37 @@ final class TextTokenizerSpec: QuickSpec {
                         "  Leading whitespace. Trailing whitespace.  ",
                         longSentence + " After the long one.",
                         "No punctuation at all",
-                        "Emoji 👨‍👩‍👧 in text. Second one."
+                        "Emoji 👨‍👩‍👧 in text. Second one.",
+                        String(repeating: "word ", count: 200) + "end.",
+                        "   " + longSentence
                     ]
                     for text in texts {
                         expect(TextTokenizer.sentenceRanges(in: text)).to(equal(sentenceRangesBySearching(in: text)))
                     }
                 }
+
+                it("splits sentences over the length limit between words") {
+                    // Over twice the limit, so that a split starts on the space left by the previous one, and over the limit
+                    // after leading whitespace.
+                    for text in [String(repeating: "word ", count: 200) + "end.", "   " + String(repeating: "word ", count: 90) + "end."] {
+                        let ranges = TextTokenizer.sentenceRanges(in: text)
+
+                        expect(ranges.count).to(beGreaterThan(1))
+                        expect(joinedSentences(at: ranges, in: text)).to(equal(text.trimmingCharacters(in: .whitespaces)))
+                    }
+                }
             }
 
             describe("findSentence") {
+                it("splits sentences over the length limit between words") {
+                    for text in [String(repeating: "word ", count: 200) + "end.", "   " + String(repeating: "word ", count: 90) + "end."] {
+                        let ranges = sentenceRangesBySearching(in: text)
+
+                        expect(ranges.count).to(beGreaterThan(1))
+                        expect(joinedSentences(at: ranges, in: text)).to(equal(text.trimmingCharacters(in: .whitespaces)))
+                    }
+                }
+
                 it("finds first sentence from start") {
                     let text = "First sentence. Second sentence."
                     let result = TextTokenizer.findSentence(startingAt: 0, in: text)
@@ -367,6 +389,14 @@ final class TextTokenizerSpec: QuickSpec {
                     }
                 }
             }
+        }
+
+        /// Sentence texts at `ranges`, trimmed and joined by a space, as read aloud joins segments.
+        func joinedSentences(at ranges: [NSRange], in text: String) -> String {
+            let characters = Array(text)
+            return ranges
+                .map({ String(characters[$0.location..<NSMaxRange($0)]).trimmingCharacters(in: .whitespacesAndNewlines) })
+                .joined(separator: " ")
         }
 
         func sentenceRangesBySearching(in text: String) -> [NSRange] {

@@ -101,9 +101,14 @@ enum TextTokenizer {
 
     /// Extracts substring from original text using an NSRange, then trims whitespace.
     private static func extractOriginalText(from text: String, range: NSRange) -> String {
+        return untrimmedOriginalText(from: text, range: range).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Extracts substring from original text using an NSRange.
+    private static func untrimmedOriginalText(from text: String, range: NSRange) -> String {
         let start = text.index(text.startIndex, offsetBy: range.location)
         let end = text.index(start, offsetBy: range.length)
-        return String(text[start..<end]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return String(text[start..<end])
     }
 
     /// Splits text at the last space before `maxSentenceLength` if it exceeds the limit.
@@ -120,6 +125,15 @@ enum TextTokenizer {
         }
 
         return (truncated.trimmingCharacters(in: .whitespacesAndNewlines), maxSentenceLength)
+    }
+
+    /// Splits a sentence over `maxSentenceLength`, like `enforceMaxLength(in:)`, given as found in the text (`rawText` may start
+    /// and end with whitespace, which the limit doesn't count). The returned length is measured from the start of `rawText`,
+    /// leading whitespace included, so that it can be applied from the start of the sentence's range.
+    private static func enforceMaxLength(inUntrimmed rawText: String) -> (text: String, length: Int)? {
+        guard let (splitText, splitLength) = enforceMaxLength(in: rawText.trimmingCharacters(in: .whitespacesAndNewlines)) else { return nil }
+        let leadingWhitespaceCount = rawText.prefix(while: { $0.unicodeScalars.allSatisfy({ CharacterSet.whitespacesAndNewlines.contains($0) }) }).count
+        return (splitText, leadingWhitespaceCount + splitLength)
     }
 
     // MARK: - Sentence Methods
@@ -150,24 +164,24 @@ enum TextTokenizer {
             let normLocation = normStartIndex + remainingNormText.distance(from: remainingNormText.startIndex, to: trimmedRange.lowerBound)
             let normLength = trimmedRemaining.count
             let originalRange = normalized.originalRange(from: NSRange(location: normLocation, length: normLength))
-            let resultText = extractOriginalText(from: text, range: originalRange)
+            let rawText = untrimmedOriginalText(from: text, range: originalRange)
 
-            if let (splitText, splitLength) = enforceMaxLength(in: resultText) {
+            if let (splitText, splitLength) = enforceMaxLength(inUntrimmed: rawText) {
                 return (splitText, NSRange(location: originalRange.location, length: splitLength))
             }
-            return (resultText, originalRange)
+            return (rawText.trimmingCharacters(in: .whitespacesAndNewlines), originalRange)
         }
 
         let normLocation = normStartIndex + remainingNormText.distance(from: remainingNormText.startIndex, to: tokenRange.lowerBound)
         let normLength = remainingNormText.distance(from: tokenRange.lowerBound, to: tokenRange.upperBound)
         let originalRange = normalized.originalRange(from: NSRange(location: normLocation, length: normLength))
-        let resultText = extractOriginalText(from: text, range: originalRange)
+        let rawText = untrimmedOriginalText(from: text, range: originalRange)
 
-        if let (splitText, splitLength) = enforceMaxLength(in: resultText) {
+        if let (splitText, splitLength) = enforceMaxLength(inUntrimmed: rawText) {
             return (splitText, NSRange(location: originalRange.location, length: splitLength))
         }
 
-        return (resultText, originalRange)
+        return (rawText.trimmingCharacters(in: .whitespacesAndNewlines), originalRange)
     }
 
     /// Ranges of the sentences of `text`, in order, as successive `findSentence(startingAt:)` calls return them (each starting
@@ -217,8 +231,7 @@ enum TextTokenizer {
             }
 
             var range = normalized.originalRange(from: normalizedRange)
-            let sentenceText = String(characters[range.location..<NSMaxRange(range)]).trimmingCharacters(in: .whitespacesAndNewlines)
-            if let (_, splitLength) = enforceMaxLength(in: sentenceText) {
+            if let (_, splitLength) = enforceMaxLength(inUntrimmed: String(characters[range.location..<NSMaxRange(range)])) {
                 range = NSRange(location: range.location, length: splitLength)
             }
             let end = NSMaxRange(range)
