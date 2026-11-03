@@ -250,18 +250,20 @@ enum SDTReadAloudSegments {
     private static func point(in chain: ChainText, offset: Int, isEnd: Bool) -> [Int]? {
         let mappings = chain.mappings
         guard let first = mappings.first, let last = mappings.last else { return nil }
+        // Points are offsets in the node's text. A mapping may cover only part of its node (from `start`), when another part was
+        // elided (see `compact(text:mappings:removing:)`).
         if isEnd {
             // Last mapping that starts before the offset.
             if let mapping = mappings.last(where: { $0.absStart < offset }) {
-                return mapping.ref + [min(offset, mapping.absEnd) - mapping.absStart]
+                return mapping.ref + [mapping.start + min(offset, mapping.absEnd) - mapping.absStart]
             }
-            return first.ref + [0]
+            return first.ref + [first.start]
         }
         // First mapping that ends past the offset.
         if let mapping = mappings.first(where: { $0.absEnd > offset }) {
-            return mapping.ref + [max(offset, mapping.absStart) - mapping.absStart]
+            return mapping.ref + [mapping.start + max(offset, mapping.absStart) - mapping.absStart]
         }
-        return last.ref + [last.absEnd - last.absStart]
+        return last.ref + [last.end]
     }
 
     /// Collapses whitespace runs to a single space and trims, as the text sent to the TTS server.

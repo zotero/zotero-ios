@@ -51,6 +51,20 @@ final class SDTReadAloudSegmentsSpec: QuickSpec {
                 expect(segments.first?.end).to(equal([0, 2, 7]))
             }
 
+            it("positions text after a group that was left out partway through its node") {
+                // The group "(see Smith 2020)" starts partway through the first node and ends partway through the third, so the
+                // third node's text is read from its second character on.
+                let structure = document([
+                    paragraph([["text": "Claim (see "], ["text": "Smith 2020", "refs": [["type": "reference"]]], ["text": ") holds. Next sentence."]])
+                ])
+
+                let segments = SDTReadAloudSegments.segments(from: structure)
+
+                expect(segments.map(\.text)).to(equal(["Claim holds.", "Next sentence."]))
+                expect(segments.last?.start).to(equal([0, 2, 9]))
+                expect(segments.last?.end).to(equal([0, 2, 23]))
+            }
+
             it("keeps a parenthesized aside without links") {
                 let structure = document([paragraph([["text": "Text (see above) here."]])])
 
