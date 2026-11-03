@@ -340,7 +340,7 @@ private enum PDFPreviewRenderer {
 /// Looks for cover in following order:
 /// 1. EPUB 3 manifest item with `cover-image` property.
 /// 2. EPUB 2 `<meta name="cover" content="{item id}"/>`.
-/// 3. First image in cover page XHTML referenced by `<guide>` reference with type "cover".
+/// 3. `<guide>` reference with type "cover": the referenced image itself, or first image in the referenced cover page XHTML.
 /// 4. Manifest image item with "cover" in its id or href.
 /// 5. First image in manifest XHTML item with "cover" in its id.
 private enum EPUBCoverExtractor {
@@ -372,13 +372,24 @@ private enum EPUBCoverExtractor {
             return nil
         }
 
+        let imagePaths = Set(imageItems(in: package).compactMap({ resolve(href: $0.href, relativeTo: packageDirectory) }))
+
         func firstImage(fromPageHrefs hrefs: [String]) -> CGImage? {
             for href in hrefs {
-                guard let pagePath = resolve(href: href, relativeTo: packageDirectory),
-                      let pageData = data(at: pagePath, in: archive),
-                      let imageHref = CoverPageParser.firstImageHref(from: pageData),
-                      let imagePath = resolve(href: imageHref, relativeTo: (pagePath as NSString).deletingLastPathComponent)
-                else { continue }
+                guard let pagePath = resolve(href: href, relativeTo: packageDirectory), let pageData = data(at: pagePath, in: archive) else { continue }
+                // Some EPUB 2 guides reference the cover image directly instead of a cover page. If it can't be decoded, it may be a page
+                // with wrong media type in manifest, so continue with parsing it as a page.
+                if imagePaths.contains(pagePath), let image = image(from: pageData, maxPixelSize: maxPixelSize) {
+                    return image
+                }
+                guard let imageHref = CoverPageParser.firstImageHref(from: pageData) else {
+                    // Referenced file may be an image which is missing in manifest or has wrong media type. Listed images were already tried above.
+                    if !imagePaths.contains(pagePath), let image = image(from: pageData, maxPixelSize: maxPixelSize) {
+                        return image
+                    }
+                    continue
+                }
+                guard let imagePath = resolve(href: imageHref, relativeTo: (pagePath as NSString).deletingLastPathComponent) else { continue }
                 if let image = image(at: imagePath, in: archive, maxPixelSize: maxPixelSize) {
                     return image
                 }
@@ -426,7 +437,12 @@ private enum EPUBCoverExtractor {
     }
 
     private static func image(at path: String, in archive: Archive, maxPixelSize: CGFloat) -> CGImage? {
-        guard let data = data(at: path, in: archive), let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        guard let data = data(at: path, in: archive) else { return nil }
+        return image(from: data, maxPixelSize: maxPixelSize)
+    }
+
+    private static func image(from data: Data, maxPixelSize: CGFloat) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
