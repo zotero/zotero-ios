@@ -1773,7 +1773,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var segmentCache: [NSRange: Data] = [:]
     /// Set of ranges currently being loaded
     private var loadingSegments: Set<NSRange> = []
-    /// Range that should start playing as soon as it's loaded (when waiting for an in-progress preload)
+    /// Range that should start playing as soon as it's loaded (its own download or an in-progress preload). A download
+    /// finishing for any other range (e.g. one skipped while paused) is only cached.
     private var pendingPlaybackRange: NSRange?
     private var shouldReloadOnResume = false
     private var debouncedSpeakWorkItem: DispatchWorkItem?
@@ -1854,6 +1855,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
         player = nil
         disposeBag = DisposeBag()
+        // Disposing cancels the downloads, so they mustn't be waited for.
+        loadingSegments.removeAll()
+        pendingPlaybackRange = nil
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
         nextSegmentWorkItem?.cancel()
@@ -2042,6 +2046,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
         // Check if we already have the segment cached
         if let cachedData = segmentCache[range] {
+            pendingPlaybackRange = nil
             handleSpeechSuccess(data: cachedData, range: range)
             ensureSegmentsPreloaded(after: range, voice: voice)
             return
@@ -2056,6 +2061,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
 
         // Load segment and start playing as soon as it's ready, while preloading others
+        pendingPlaybackRange = range
         delegate.state.accept(.loading)
         startCreditPollTimer()
         loadAndPlaySegment(range: range, voice: voice)
@@ -2071,13 +2077,23 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                     onSuccess: { [weak self] data in
                         guard let self else { return }
                         loadingSegments.remove(range)
+                        guard pendingPlaybackRange == range else {
+                            // Another segment was requested in the meantime (e.g. skipped while paused), keep this one for later.
+                            segmentCache[range] = data
+                            return
+                        }
+                        pendingPlaybackRange = nil
                         // Play immediately
                         handleSpeechSuccess(data: data, range: range)
                         ensureSegmentsPreloaded(after: range, voice: voice)
                     },
                     onFailure: { [weak self] error in
-                        self?.loadingSegments.remove(range)
-                        self?.handleSpeechFailure(error: error)
+                        guard let self else { return }
+                        loadingSegments.remove(range)
+                        // A failure of a segment which isn't requested anymore doesn't affect playback.
+                        guard pendingPlaybackRange == range else { return }
+                        pendingPlaybackRange = nil
+                        handleSpeechFailure(error: error)
                     }
                 )
                 .disposed(by: disposeBag)
