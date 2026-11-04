@@ -47,6 +47,10 @@ final class Controllers {
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
     private(set) var didInitialize: Bool
+    /// Whether session initialization waits for the device to be unlocked, since the keychain can't be read before that
+    /// (e.g. when the app is launched by CarPlay while locked).
+    @Published private(set) var isWaitingForDeviceUnlock = false
+    private var protectedDataObserver: NSObjectProtocol?
     @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
     fileprivate var needsBaseKeyMigration: Bool
     fileprivate static let childItemCollectionsFixVersion: Int = 1
@@ -164,6 +168,17 @@ final class Controllers {
                 return
             }
 
+            if let sessionError = error as? SessionController.Error,
+               case .keychainNotAccessible(let protectedDataAvailable, _) = sessionError,
+               !protectedDataAvailable {
+                // The device is locked, so the user isn't reported as logged out, the session is initialized once it's unlocked.
+                DDLogInfo("Controllers: waiting for device unlock to initialize session - \(sessionError)")
+                waitForDeviceUnlock { [weak self] in
+                    self?.initializeSessionIfPossible(failOnError: failOnError, completion: completion)
+                }
+                return
+            }
+
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
                 debugLogging.start(type: .immediate)
@@ -189,6 +204,27 @@ final class Controllers {
             update(with: data, isLogin: false, debugLogging: debugLogging)
             startObservingSession()
             completion(completed)
+        }
+    }
+
+    private func waitForDeviceUnlock(completed: @escaping () -> Void) {
+        isWaitingForDeviceUnlock = true
+        let finish: () -> Void = { [weak self] in
+            // Called only once, by the notification or by the check below.
+            guard let self, let observer = protectedDataObserver else { return }
+            NotificationCenter.default.removeObserver(observer)
+            protectedDataObserver = nil
+            isWaitingForDeviceUnlock = false
+            completed()
+        }
+        protectedDataObserver = NotificationCenter.default.addObserver(forName: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil, queue: .main) { _ in
+            finish()
+        }
+        // The device may have been unlocked since the keychain was read.
+        if UIApplication.shared.isProtectedDataAvailable {
+            DispatchQueue.main.async {
+                finish()
+            }
         }
     }
 

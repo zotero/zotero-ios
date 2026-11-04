@@ -85,6 +85,7 @@ final class CarPlayCoordinator: NSObject {
     private unowned let controllers: Controllers
     private var userInitializedCancellable: AnyCancellable?
     private var userWillLogOutCancellable: AnyCancellable?
+    private var deviceUnlockCancellable: AnyCancellable?
     /// Database observations of templates in the stack. Removed when their template leaves the stack.
     private var observations: [ObjectIdentifier: TemplateObservation] = [:]
     /// Rows showing attachments, keyed by attachment key.
@@ -137,6 +138,19 @@ final class CarPlayCoordinator: NSObject {
             // Session is still being initialized, `userInitialized` reports the result.
             setRoot(createMessageTemplate(title: L10n.Carplay.loading, subtitle: nil))
         }
+
+        // Received on the main queue, so the current value is handled after the initial root above.
+        deviceUnlockCancellable = controllers.$isWaitingForDeviceUnlock
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isWaiting in
+                guard let self, !controllers.didInitialize, controllers.userControllers == nil else { return }
+                if isWaiting {
+                    setRoot(createMessageTemplate(title: L10n.Carplay.Locked.title, subtitle: L10n.Carplay.Locked.subtitle))
+                } else {
+                    setRoot(createMessageTemplate(title: L10n.Carplay.loading, subtitle: nil))
+                }
+            }
     }
 
     // MARK: - Navigation

@@ -640,6 +640,8 @@
 "carplay.loading" = "Loading…";
 "carplay.logged_out.title" = "Not Logged In";
 "carplay.logged_out.subtitle" = "Log in to Zotero on your iPhone.";
+"carplay.locked.title" = "Unlock Your iPhone";
+"carplay.locked.subtitle" = "Zotero can load your library once your iPhone has been unlocked.";
 "carplay.no_items.title" = "No Readable Items";
 "carplay.no_items.subtitle" = "Items with PDF files appear here.";
 "carplay.download_failed" = "Couldn't download the file.";

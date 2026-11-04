@@ -28,6 +28,9 @@ final class Defaults {
     @OptionalUserDefault(key: "sessionId")
     var sessionId: String?
 
+    @UserDefault(key: "didUpdateKeychainAccessibility", defaultValue: false)
+    var didUpdateKeychainAccessibility: Bool
+
     // MARK: - WebDav Session
 
     @UserDefault(key: "webDavEnabled", defaultValue: false)
