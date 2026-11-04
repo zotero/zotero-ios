@@ -328,10 +328,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private unowned let documentWorkerController: DocumentWorkerController
     private unowned let documentPreviewController: DocumentPreviewController
     private let nowPlayingManager: NowPlayingManager
-    /// Key of the attachment being read. Used to find its cover image for Now Playing.
-    private let key: String
-    /// Library of the attachment being read. Used to find its cover image for Now Playing.
-    private let libraryId: LibraryIdentifier
     /// Cover image of the document, shown as Now Playing artwork. Loaded once, then reused across playback restarts.
     private var coverImage: UIImage?
     /// Loading (or generation) of the cover image.
@@ -492,8 +488,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     init(
         delegate: Delegate,
-        key: String,
-        libraryId: LibraryIdentifier,
         voiceLanguage: String?,
         remoteVoiceTier: RemoteVoice.Tier?,
         speechPlaybackOwnership: SpeechPlaybackOwnership,
@@ -502,8 +496,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         documentPreviewController: DocumentPreviewController
     ) {
         self.delegate = delegate
-        self.key = key
-        self.libraryId = libraryId
         self.speechPlaybackOwnership = speechPlaybackOwnership
         self.remoteVoicesController = remoteVoicesController
         self.documentWorkerController = documentWorkerController

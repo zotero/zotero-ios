@@ -127,8 +127,6 @@ final class CarPlayReadAloudSession {
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
         speechManager = SpeechManager<CarPlayReadAloudSession>(
             delegate: self,
-            key: key,
-            libraryId: libraryId,
             voiceLanguage: language,
             remoteVoiceTier: Defaults.shared.remoteVoiceTier,
             speechPlaybackOwnership: speechPlaybackOwnership,

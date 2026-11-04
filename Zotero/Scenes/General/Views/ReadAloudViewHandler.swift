@@ -122,8 +122,6 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
         speechManager = SpeechManager(
             delegate: delegate,
-            key: key,
-            libraryId: libraryId,
             voiceLanguage: language,
             remoteVoiceTier: Defaults.shared.remoteVoiceTier,
             speechPlaybackOwnership: speechPlaybackOwnership,
