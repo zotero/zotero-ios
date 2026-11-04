@@ -47,22 +47,14 @@ protocol SpeechManagerDelegate: AnyObject {
     func focusPage(_ pageIndex: Index)
     /// Whether read-aloud paragraphs are built from SDT segments carrying reader SDT positions (`SDTReadAloudSegments`,
     /// HTML/EPUB), which are needed to create annotations, instead of `SpeechDocumentParser` with page geometry (PDF).
-    /// False by default.
+    /// Their positions are mapped to and from reader source positions by `SDTPositionMapper`. False by default.
     var readAloudUsesSDTSegments: Bool { get }
-    /// Hands the structured-document-text pack to the reader, if it needs it to map positions and create annotations
-    /// (HTML/EPUB). Does nothing by default.
+    /// Hands the structured-document-text pack to the reader, if it needs it (HTML/EPUB, to spotlight the text being read
+    /// and to create annotations). Does nothing by default.
     func readAloudLoaded(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int)
     /// The structured-document-text block index currently in view, so playback starts where the reader is. Read fresh at
     /// each play (not cached), reflecting the current scroll position. Nil (the default) means "start at the beginning".
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void)
-    /// Maps a reader source position to a reader SDT position. Asked for once the document has loaded, because the reader
-    /// can only map after it's been handed the structured-document-text pack. Nil (the default) means the reader can't
-    /// map positions.
-    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void)
-    /// Maps a reader SDT position back to the reader's own source position — the inverse of
-    /// `mapSDTPosition(forSourcePosition:)`. Used to store the sentence being read in the format the reader and sync
-    /// speak. Nil (the default) means the reader has no source positions (PDF stores page rects instead).
-    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void)
     /// The 0-based structured-document-text page index for one of the delegate's page indices — the inverse of
     /// `pageIndex(forStructuredDocumentTextPage:)`. Used to store a resume position, whose page index is in
     /// structured-document-text space. Returns nil if the page has no structured-document-text counterpart.
@@ -109,16 +101,6 @@ extension SpeechManagerDelegate {
 
     /// Default: no in-view block (PDF picks its start page from `getCurrentPageIndex`).
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
-        completion(nil)
-    }
-
-    /// Default: no position mapping (PDF resolves its text selection to a page-text offset instead).
-    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
-        completion(nil)
-    }
-
-    /// Default: no source positions (PDF stores the sentence's page rects instead).
-    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
         completion(nil)
     }
 }
@@ -296,10 +278,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         /// PDF reader's long-press menu, where the press lands on empty space rather than on a text selection.
         case closestSentence(point: CGPoint, page: Delegate.Index)
         /// Start at the reader's text selection, given as the source position the reader reported for it. Mapped to an
-        /// SDT position once the document has loaded (see `SpeechManagerDelegate.mapSDTPosition(forSourcePosition:)`),
-        /// because only then does the reader have the structured-document-text pack it needs to map. Used by the
-        /// HTML/EPUB reader's selection menu; falls back to starting where the reader is when the position can't be
-        /// mapped or covers no read-aloud segment.
+        /// SDT position (`SDTPositionMapper`) once the document has loaded, because the mapper is created from its
+        /// structured document text. Used by the HTML/EPUB reader's selection menu; falls back to starting where the reader
+        /// is when the position can't be mapped or covers no read-aloud segment.
         case readerSelection(ReaderSourcePosition)
         /// Resume at a previously reported sentence anchor (see `ReadAloudResumePosition`), looking that sentence up
         /// again in the current document. Falls back to starting where the reader is when it can't be found.
@@ -350,6 +331,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var paragraphIndicesByPage: [Delegate.Index: [Int]]
     /// Whether the whole document has already been extracted and cached.
     private var documentLoaded: Bool
+    /// Maps SDT positions of HTML/EPUB to and from reader source positions (the format resume positions are stored and synced
+    /// in). Created with the paragraphs when the document is loaded.
+    private var positionMapper: SDTPositionMapper?
     /// Document language (BCP-47 tag) read from the structured document text metadata, if any.
     private var documentLanguage: String?
     /// Worker used to extract structured document text for the whole document.
@@ -463,10 +447,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             onSpeakingPositionChanged(.pdf(pageIndex: pageIndex, rects: rects))
 
         case .htmlEpub(let sdtStart, let sdtEnd):
-            delegate?.mapSourcePosition(forSDTPosition: SDTPosition(start: sdtStart, end: sdtEnd)) { source in
-                guard let source else { return }
-                onSpeakingPositionChanged(.reader(source: source))
-            }
+            guard let source = positionMapper?.sourcePosition(for: SDTPosition(start: sdtStart, end: sdtEnd)) else { return }
+            onSpeakingPositionChanged(.reader(source: source))
         }
     }
 
@@ -770,8 +752,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                                     // HTML/EPUB segments carry the SDT positions needed to create annotations.
                                     let segments = SDTReadAloudSegments.segments(from: materialized)
                                     let language = SpeechDocumentParser.language(from: materialized)
+                                    let positionMapper = SDTPositionMapper(structure: materialized)
                                     DispatchQueue.main.async { [weak manager] in
                                         guard let manager, manager.documentLoadingGeneration == generation else { return }
+                                        manager.positionMapper = positionMapper
                                         manager.store(segments: segments, language: language)
                                         manager.documentLoaded = true
                                         DDLogInfo("SpeechManager: built \(manager.paragraphs.count) paragraph(s) from \(segments.count) SDT segment(s) in \(CFAbsoluteTimeGetCurrent() - start)")
@@ -862,17 +846,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             switch target {
             case .readerSelection(let source), .resume(.reader(let source)):
                 // A text selection (or a stored reader position, which is the same kind of source position) is mapped
-                // here, and not when the user picked the action, because the reader can only map a source position once
-                // it has the structured-document-text pack — which it was handed while the document loaded, just above.
-                delegate.mapSDTPosition(forSourcePosition: source) { [weak manager] position in
-                    guard let manager, manager.state.value == .initializing else { return }
-                    guard let position, let offset = pageTextOffset(forSDTPosition: position, onPage: page, manager: manager) else {
-                        // The selection couldn't be mapped, or covers no read-aloud segment (an image, say).
-                        beginPlaybackAtReaderPosition(page: page, manager: manager)
-                        return
-                    }
-                    beginPlayback(page: page, startOffset: sentenceStartOffset(for: offset, in: manager.segments(forPage: page)), manager: manager)
+                // here, and not when the user picked the action, because the position mapper is created with the paragraphs
+                // while the document loads, just above.
+                guard let position = manager.positionMapper?.sdtPosition(for: source),
+                      let offset = pageTextOffset(forSDTPosition: position, onPage: page, manager: manager)
+                else {
+                    // The selection couldn't be mapped, or covers no read-aloud segment (an image, say).
+                    beginPlaybackAtReaderPosition(page: page, manager: manager)
+                    return
                 }
+                beginPlayback(page: page, startOffset: sentenceStartOffset(for: offset, in: manager.segments(forPage: page)), manager: manager)
 
             case .currentPage, .pageTextOffset, .closestSentence, .resume, .documentStart:
                 beginPlaybackAtReaderPosition(page: page, manager: manager)

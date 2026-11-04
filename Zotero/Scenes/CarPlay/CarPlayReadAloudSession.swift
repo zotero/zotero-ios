@@ -55,13 +55,17 @@ final class CarPlayReadAloudPositionStore {
     }
 }
 
-/// Read aloud of a PDF without a reader. Playback is controlled through the Now Playing controls.
+/// Read aloud of a document (PDF, EPUB or HTML snapshot) without a reader. Playback is controlled through the Now Playing
+/// controls.
 final class CarPlayReadAloudSession {
     let key: String
     let libraryId: LibraryIdentifier
     let documentTitle: String?
     let documentAuthors: String?
     let documentFile: FileData?
+    /// Whether the document is an EPUB or an HTML snapshot, whose paragraphs are built from SDT segments, like in the reader.
+    private let isStructuredDocument: Bool
+    /// PDF pages. EPUB and HTML snapshots are read as a single structured document text page, like in the reader.
     private let pageCount: UInt
     private let dbStorage: DbStorage
     let remoteVoicesController: RemoteVoicesController
@@ -102,6 +106,7 @@ final class CarPlayReadAloudSession {
         key: String,
         libraryId: LibraryIdentifier,
         file: FileData,
+        contentType: String,
         title: String?,
         authors: String?,
         dbStorage: DbStorage,
@@ -117,7 +122,8 @@ final class CarPlayReadAloudSession {
         documentFile = file
         documentTitle = title
         documentAuthors = authors
-        pageCount = Document(url: file.createUrl()).pageCount
+        isStructuredDocument = contentType != "application/pdf"
+        pageCount = isStructuredDocument ? 1 : Document(url: file.createUrl()).pageCount
         currentPage = 0
         remoteVoicesController = RemoteVoicesController(apiClient: apiClient)
         positionStore = CarPlayReadAloudPositionStore(key: key, libraryId: libraryId, dbStorage: dbStorage)
@@ -146,6 +152,7 @@ final class CarPlayReadAloudSession {
             DDLogError("CarPlayReadAloudSession: can't read document data - \(error)")
             documentData = nil
         }
+        // EPUB and HTML snapshot pages are reader locations (e.g. a CFI), which don't parse and are ignored.
         if let page = documentData.flatMap({ UInt($0.page) }), page < pageCount {
             currentPage = page
         }
@@ -253,6 +260,10 @@ extension CarPlayReadAloudSession: SpeechManagerDelegate {
 
     func focusPage(_ pageIndex: UInt) {
         currentPage = pageIndex
+    }
+
+    var readAloudUsesSDTSegments: Bool {
+        return isStructuredDocument
     }
 
     // There is no document to highlight in and highlight sessions can't be started without a reader.

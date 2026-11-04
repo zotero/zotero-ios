@@ -21,10 +21,12 @@
 		B3AA3001000000000000000E /* 1_epub_fulltext.txt in Resources */ = {isa = PBXBuildFile; fileRef = B3AA3001000000000000000D /* 1_epub_fulltext.txt */; };
 		B3AA3001000000000000000C /* 1_advanced_epub_fulltext.txt in Resources */ = {isa = PBXBuildFile; fileRef = B3AA3001000000000000000B /* 1_advanced_epub_fulltext.txt */; };
 		B3AA3001000000000000000A /* SDTReadAloudSegmentsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA30010000000000000009 /* SDTReadAloudSegmentsSpec.swift */; };
+		B3AA30020000000000000004 /* SDTPositionMapperSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA30020000000000000003 /* SDTPositionMapperSpec.swift */; };
 		B3AA30010000000000000008 /* SDTFulltext.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA30010000000000000007 /* SDTFulltext.swift */; };
 		B3AA30010000000000000006 /* SDTContentSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA30010000000000000005 /* SDTContentSpec.swift */; };
 		B3AA30010000000000000004 /* SDTReadAloudSegments.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA30010000000000000003 /* SDTReadAloudSegments.swift */; };
 		B3AA30010000000000000002 /* SDTContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA30010000000000000001 /* SDTContent.swift */; };
+		B3AA30020000000000000002 /* SDTPositionMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AA30020000000000000001 /* SDTPositionMapper.swift */; };
 		2AEE7232A20C0644A40513F1 /* SpeechHighlightSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42AA9D784B9E233A7F57AC5 /* SpeechHighlightSessionManager.swift */; };
 		2E2BF2EF2B40911DF4BCEDA4 /* RDocumentAnnotationsCacheInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BFF736AADBBF8C2FEBD348 /* RDocumentAnnotationsCacheInfo.swift */; };
 		332BEB24FB6B2752AB8847E8 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A205AF67B01BE4DC986DAA5 /* CarPlaySceneDelegate.swift */; };
@@ -1506,10 +1508,12 @@
 		B3AA3001000000000000000D /* 1_epub_fulltext.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = 1_epub_fulltext.txt; sourceTree = "<group>"; };
 		B3AA3001000000000000000B /* 1_advanced_epub_fulltext.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = 1_advanced_epub_fulltext.txt; sourceTree = "<group>"; };
 		B3AA30010000000000000009 /* SDTReadAloudSegmentsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTReadAloudSegmentsSpec.swift; sourceTree = "<group>"; };
+		B3AA30020000000000000003 /* SDTPositionMapperSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTPositionMapperSpec.swift; sourceTree = "<group>"; };
 		B3AA30010000000000000007 /* SDTFulltext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTFulltext.swift; sourceTree = "<group>"; };
 		B3AA30010000000000000005 /* SDTContentSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTContentSpec.swift; sourceTree = "<group>"; };
 		B3AA30010000000000000003 /* SDTReadAloudSegments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTReadAloudSegments.swift; sourceTree = "<group>"; };
 		B3AA30010000000000000001 /* SDTContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTContent.swift; sourceTree = "<group>"; };
+		B3AA30020000000000000001 /* SDTPositionMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTPositionMapper.swift; sourceTree = "<group>"; };
 		0EE4C604B8B948E2B8820E31 /* ManageAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageAccountView.swift; sourceTree = "<group>"; };
 		17E83150004BDA76942E1350 /* RDocumentAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDocumentAnnotation.swift; sourceTree = "<group>"; };
 		1FA2F2A8ADAA23B7B81ADE02 /* SpeechHighlightSessionManagerSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechHighlightSessionManagerSpec.swift; sourceTree = "<group>"; };
@@ -2985,6 +2989,7 @@
 				C42AA9D784B9E233A7F57AC5 /* SpeechHighlightSessionManager.swift */,
 				B39DBFF52D80369C00454486 /* SpeechManager.swift */,
 				B3AA30010000000000000001 /* SDTContent.swift */,
+				B3AA30020000000000000001 /* SDTPositionMapper.swift */,
 				B3AA30010000000000000003 /* SDTReadAloudSegments.swift */,
 				B3D0C9A12F3A16A6002FFA01 /* SpeechDocumentParser.swift */,
 				B3593F172668E6A700FA4BB2 /* StyleParserDelegate.swift */,
@@ -3586,6 +3591,7 @@
 				B3AA30010000000000000005 /* SDTContentSpec.swift */,
 				B3AA30010000000000000007 /* SDTFulltext.swift */,
 				B3AA30010000000000000009 /* SDTReadAloudSegmentsSpec.swift */,
+				B3AA30020000000000000003 /* SDTPositionMapperSpec.swift */,
 				B3D0C9A32F3A16A6002FFA03 /* SpeechDocumentParserSpec.swift */,
 				1FA2F2A8ADAA23B7B81ADE02 /* SpeechHighlightSessionManagerSpec.swift */,
 			);
@@ -6319,6 +6325,7 @@
 				B3325F6F27B41D69007C7137 /* CollectionTree.swift in Sources */,
 				B39DBFF62D8036A000454486 /* SpeechManager.swift in Sources */,
 				B3AA30010000000000000002 /* SDTContent.swift in Sources */,
+				B3AA30020000000000000002 /* SDTPositionMapper.swift in Sources */,
 				B3AA30010000000000000004 /* SDTReadAloudSegments.swift in Sources */,
 				B3D0C9A22F3A16A6002FFA02 /* SpeechDocumentParser.swift in Sources */,
 				39B480FDABABBF2D3FB95CC8 /* DocumentKeyCommandsHandler.swift in Sources */,
@@ -6699,6 +6706,7 @@
 				B3AA30010000000000000006 /* SDTContentSpec.swift in Sources */,
 				B3AA30010000000000000008 /* SDTFulltext.swift in Sources */,
 				B3AA3001000000000000000A /* SDTReadAloudSegmentsSpec.swift in Sources */,
+				B3AA30020000000000000004 /* SDTPositionMapperSpec.swift in Sources */,
 				B3D0C9A42F3A16A6002FFA04 /* SpeechDocumentParserSpec.swift in Sources */,
 				B3F4E4EC2A4DAA7D00820718 /* UpdatableObjectSpec.swift in Sources */,
 				6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */,

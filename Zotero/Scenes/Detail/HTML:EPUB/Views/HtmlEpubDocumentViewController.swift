@@ -53,8 +53,6 @@ class HtmlEpubDocumentViewController: UIViewController {
     /// Pending read-aloud bridge requests, keyed by the `requestID` sent to the reader and resolved on the matching
     /// response event (e.g. `onReadAloudStartBlockIndex`).
     private var readAloudStartBlockIndexRequests: [Int: (Int?) -> Void] = [:]
-    private var sourceSDTPositionRequests: [Int: (SDTPosition?) -> Void] = [:]
-    private var sdtSourcePositionRequests: [Int: (ReaderSourcePosition?) -> Void] = [:]
     private var nextReadAloudRequestID = 0
     private var readAloudAnnotationSession: ReadAloudAnnotationSession?
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
@@ -181,40 +179,6 @@ class HtmlEpubDocumentViewController: UIViewController {
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("HtmlEpubDocumentViewController: getting read aloud start block index failed - \(error)")
                 self?.readAloudStartBlockIndexRequests.removeValue(forKey: requestID)?(nil)
-            })
-            .disposed(by: disposeBag)
-    }
-
-    /// Maps a reader source position (from a text selection) to a reader SDT position, so read aloud can start at the
-    /// selected sentence. Needs the SDT pack, so it's only called once `setSDTPack` has run. Resolved asynchronously via
-    /// the `onSourceSDTPosition` event, keyed by `requestID`.
-    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
-        sourceSDTPositionRequests[requestID] = completion
-        webViewHandler.call(javascript: "sourceToSDTPosition({ position: \(WebViewEncoder.encodeAsJSONForJavascript(source)), requestID: \(requestID) });")
-            .observe(on: MainScheduler.instance)
-            .subscribe(onFailure: { [weak self] error in
-                DDLogError("HtmlEpubDocumentViewController: mapping source position to SDT position failed - \(error)")
-                self?.sourceSDTPositionRequests.removeValue(forKey: requestID)?(nil)
-            })
-            .disposed(by: disposeBag)
-    }
-
-    /// Maps a reader SDT position back to the reader's own source position (an EPUB CFI `FragmentSelector`, a snapshot
-    /// `CssSelector`) — the inverse of `mapSDTPosition(forSourcePosition:)`. Used to store the sentence read aloud in the
-    /// format the reader and sync speak. Resolved asynchronously via the `onSDTPosition` event, keyed by `requestID`.
-    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
-        let requestID = nextReadAloudRequestID
-        nextReadAloudRequestID += 1
-        sdtSourcePositionRequests[requestID] = completion
-        let anchor: [String: Any] = ["start": position.start, "end": position.end]
-        webViewHandler.call(javascript: "sdtAnchorToPosition({ anchor: \(WebViewEncoder.encodeAsJSONForJavascript(anchor)), requestID: \(requestID) });")
-            .observe(on: MainScheduler.instance)
-            .subscribe(onFailure: { [weak self] error in
-                DDLogError("HtmlEpubDocumentViewController: mapping SDT position to source position failed - \(error)")
-                self?.sdtSourcePositionRequests.removeValue(forKey: requestID)
-                completion(nil)
             })
             .disposed(by: disposeBag)
     }
@@ -356,16 +320,6 @@ class HtmlEpubDocumentViewController: UIViewController {
                 DDLogError("HtmlEpubDocumentViewController: clearing read aloud spotlight failed - \(error)")
             })
             .disposed(by: disposeBag)
-    }
-
-    /// Coerces a JS number array (bridged as `[NSNumber]`) into `[Int]`.
-    private static func intArray(_ value: Any?) -> [Int]? {
-        return (value as? [Any])?.compactMap { ($0 as? NSNumber)?.intValue }
-    }
-
-    private static func parseSDTPosition(_ value: Any?) -> SDTPosition? {
-        guard let position = value as? [String: Any], let start = intArray(position["start"]), let end = intArray(position["end"]) else { return nil }
-        return SDTPosition(start: start, end: end)
     }
 
     private func process(state: HtmlEpubReaderState) {
@@ -661,24 +615,6 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 let completion = readAloudStartBlockIndexRequests.removeValue(forKey: requestID)
                 completion?((params["blockIndex"] as? NSNumber)?.intValue)
-
-            case "onSDTPosition":
-                // Reader responded to a `sdtAnchorToPosition` request; resolve the matching pending completion.
-                guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {
-                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing requestID - \(message)")
-                    return
-                }
-                let sdtSourceCompletion = sdtSourcePositionRequests.removeValue(forKey: requestID)
-                sdtSourceCompletion?(params["position"] as? ReaderSourcePosition)
-
-            case "onSourceSDTPosition":
-                // Reader responded to a `sourceToSDTPosition` request; resolve the matching pending completion.
-                guard let params = data["params"] as? [String: Any], let requestID = params["requestID"] as? Int else {
-                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing requestID - \(message)")
-                    return
-                }
-                let sourcePositionCompletion = sourceSDTPositionRequests.removeValue(forKey: requestID)
-                sourcePositionCompletion?(Self.parseSDTPosition(params["position"]))
 
             default:
                 break

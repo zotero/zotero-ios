@@ -65,8 +65,8 @@ final class CarPlayCoordinator: NSObject {
         }
     }
 
-    /// Content types which can be read aloud.
-    private static let readableContentTypes: Set<String> = ["application/pdf"]
+    /// Content types which can be read aloud, the same as the readers open.
+    private static let readableContentTypes: Set<String> = ["application/pdf", "application/epub+zip", "text/html"]
     /// Delay of rebuilding a list after the database changes, see `TemplateObservation`.
     private static let listRebuildDelay: DispatchTimeInterval = .seconds(1)
     /// Maximum depth of the template stack for audio apps. Pushing past it raises an exception.
@@ -241,6 +241,7 @@ final class CarPlayCoordinator: NSObject {
             key: attachment.key,
             libraryId: attachment.libraryId,
             file: file,
+            contentType: contentType,
             title: title,
             authors: authors,
             dbStorage: userControllers.dbStorage,
