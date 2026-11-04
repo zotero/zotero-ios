@@ -310,8 +310,11 @@ final class Controllers {
         fileStorage.clearCache()
         // Report user logged out and show login screen
         userInitialized.send(.success(false))
-        // Remove database
-        dbStorage?.clear()
+        // Remove database. `userInitialized` subscribers receive the logout on the main queue, so the files are removed after
+        // they tore down their screens and released their results.
+        DispatchQueue.main.async {
+            dbStorage?.clear()
+        }
     }
 }
 
