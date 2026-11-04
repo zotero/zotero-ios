@@ -19,7 +19,7 @@ struct ReadAloudAudioRequest: ApiRequest {
     }
 
     var encoding: ApiParameterEncoding {
-        return .url
+        return .json
     }
 
     var parameters: [String: Any]? {
