@@ -600,9 +600,10 @@ final class CarPlayCoordinator: NSObject {
 
         return candidates
             .compactMap { child -> Attachment? in
-                guard let attachment = AttachmentCreator.attachment(for: child, fileStorage: controllers.fileStorage, urlDetector: nil),
-                      case .file(_, let contentType, _, let linkType, _) = attachment.type,
+                guard let contentType = AttachmentCreator.contentType(for: child),
                       Self.readableContentTypes.contains(contentType),
+                      let attachment = AttachmentCreator.attachment(for: child, fileStorage: controllers.fileStorage, urlDetector: nil),
+                      case .file(_, _, _, let linkType, _) = attachment.type,
                       linkType == .importedFile || linkType == .importedUrl
                 else { return nil }
                 return attachment
