@@ -16,6 +16,12 @@ import CocoaLumberjackSwift
 /// This enables media key support (play/pause, forward, backward) on devices with external keyboards,
 /// headphones, and the lock screen controls.
 final class NowPlayingManager {
+    enum PlaybackCommand {
+        case play
+        case pause
+        case togglePlayPause
+    }
+
     struct NowPlayingInfo {
         let title: String
         let artist: String?
@@ -38,7 +44,8 @@ final class NowPlayingManager {
     /// Cover of the document, shown as artwork on the lock screen, in Control Center and in CarPlay.
     private var artwork: MPMediaItemArtwork?
 
-    var playPauseHandler: (() -> Void)?
+    /// Handles play, pause and toggle commands. Returns `false` when the command can't be performed in the current state.
+    var playbackCommandHandler: ((PlaybackCommand) -> Bool)?
     var forwardHandler: (() -> Void)?
     var backwardHandler: (() -> Void)?
 
@@ -166,24 +173,21 @@ final class NowPlayingManager {
         // Play command
         playCommandTarget = commandCenter.playCommand.addTarget { [weak self] _ in
             DDLogInfo("NowPlayingManager: play command received")
-            self?.playPauseHandler?()
-            return .success
+            return self?.handle(command: .play) ?? .commandFailed
         }
         commandCenter.playCommand.isEnabled = true
 
         // Pause command
         pauseCommandTarget = commandCenter.pauseCommand.addTarget { [weak self] _ in
             DDLogInfo("NowPlayingManager: pause command received")
-            self?.playPauseHandler?()
-            return .success
+            return self?.handle(command: .pause) ?? .commandFailed
         }
         commandCenter.pauseCommand.isEnabled = true
 
         // Toggle play/pause command (for media keys)
         togglePlayPauseCommandTarget = commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
             DDLogInfo("NowPlayingManager: toggle play/pause command received")
-            self?.playPauseHandler?()
-            return .success
+            return self?.handle(command: .togglePlayPause) ?? .commandFailed
         }
         commandCenter.togglePlayPauseCommand.isEnabled = true
 
@@ -208,6 +212,25 @@ final class NowPlayingManager {
         commandCenter.changePlaybackPositionCommand.isEnabled = false
         commandCenter.skipForwardCommand.isEnabled = false
         commandCenter.skipBackwardCommand.isEnabled = false
+    }
+
+    private func handle(command: PlaybackCommand) -> MPRemoteCommandHandlerStatus {
+        let handled = playbackCommandHandler?(command) ?? false
+        if !handled {
+            DDLogInfo("NowPlayingManager: \(command) command can't be performed")
+        }
+        // The system updates its play/pause button right away, assuming the command changes playback. When it didn't (or
+        // the actual state differs otherwise), the button would stay wrong, since unchanged state isn't written again. The
+        // actual state is written once the command was processed.
+        DispatchQueue.main.async { [weak self] in
+            self?.republishPlaybackState()
+        }
+        return handled ? .success : .commandFailed
+    }
+
+    private func republishPlaybackState() {
+        guard isActive else { return }
+        updateNowPlayingInfo(isPlaying: isPlaying)
     }
 
     private func removeRemoteCommandHandlers() {

@@ -572,17 +572,52 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             .disposed(by: disposeBag)
 
         func setupNowPlayingManager() {
-            nowPlayingManager.playPauseHandler = { [weak self] in
-                guard let self else { return }
-                switch state.value {
-                case .paused, .outOfCredits:
-                    resume()
+            // Play and pause are handled separately from toggle, so that a command which couldn't be performed doesn't invert
+            // the following ones. Loading of the next segment is part of playing, so it can be paused. While the document is
+            // being loaded playback can't be paused, so the command fails and the system keeps its button.
+            nowPlayingManager.playbackCommandHandler = { [weak self] command in
+                guard let self else { return false }
+                let currentState = state.value
+                switch command {
+                case .play:
+                    switch currentState {
+                    case .paused, .outOfCredits:
+                        resume()
+                        return true
 
-                case .speaking:
-                    pause()
+                    case .speaking, .loading:
+                        return true
 
-                case .initializing, .loading, .stopped:
-                    break
+                    case .initializing, .stopped:
+                        return false
+                    }
+
+                case .pause:
+                    switch currentState {
+                    case .speaking, .loading:
+                        pause()
+                        return true
+
+                    case .paused, .outOfCredits:
+                        return true
+
+                    case .initializing, .stopped:
+                        return false
+                    }
+
+                case .togglePlayPause:
+                    switch currentState {
+                    case .paused, .outOfCredits:
+                        resume()
+                        return true
+
+                    case .speaking, .loading:
+                        pause()
+                        return true
+
+                    case .initializing, .stopped:
+                        return false
+                    }
                 }
             }
             nowPlayingManager.forwardHandler = { [weak self] in
