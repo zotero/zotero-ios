@@ -41,8 +41,34 @@ final class CarPlayCoordinator: NSObject {
         }
     }
 
+    /// Database observing of a template. Changes are coalesced, so that a burst of writes (e.g. during sync) rebuilds the list
+    /// once instead of after every write. Deallocating it stops observing and cancels a pending rebuild.
+    private final class TemplateObservation {
+        var tokens: [NotificationToken] = []
+        private var pendingRebuild: DispatchWorkItem?
+
+        deinit {
+            pendingRebuild?.cancel()
+        }
+
+        /// Rebuilds after `delay` unless a rebuild is already pending, which then includes this change as well. Unlike a
+        /// debounce, continuous changes don't postpone the rebuild indefinitely.
+        func scheduleRebuild(after delay: DispatchTimeInterval, rebuild: @escaping () -> Void) {
+            guard pendingRebuild == nil else { return }
+            let workItem = DispatchWorkItem { [weak self] in
+                // Cleared first, so that changes made while rebuilding schedule another rebuild.
+                self?.pendingRebuild = nil
+                rebuild()
+            }
+            pendingRebuild = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+        }
+    }
+
     /// Content types which can be read aloud.
     private static let readableContentTypes: Set<String> = ["application/pdf"]
+    /// Delay of rebuilding a list after the database changes, see `TemplateObservation`.
+    private static let listRebuildDelay: DispatchTimeInterval = .seconds(1)
     /// Maximum depth of the template stack for audio apps. Pushing past it raises an exception.
     private static let maximumTemplateDepth = 5
 
@@ -60,7 +86,7 @@ final class CarPlayCoordinator: NSObject {
     private var userInitializedCancellable: AnyCancellable?
     private var userWillLogOutCancellable: AnyCancellable?
     /// Database observations of templates in the stack. Removed when their template leaves the stack.
-    private var observations: [ObjectIdentifier: [NotificationToken]] = [:]
+    private var observations: [ObjectIdentifier: TemplateObservation] = [:]
     /// Rows showing attachments, keyed by attachment key.
     private var attachmentRows: [String: [AttachmentRow]] = [:]
     /// Attachment which is opened once its download finishes.
@@ -471,7 +497,7 @@ final class CarPlayCoordinator: NSObject {
 
         do {
             let collections = try dbStorage.perform(request: ReadCarPlayCollectionsDbRequest(libraryId: Self.libraryId), on: .main)
-            bind(template, to: [token(for: collections)]) { [weak self] in
+            bind(template, to: [token(for: collections, keyPaths: RCollection.observableKeypathsForList)]) { [weak self] in
                 guard let self else { return [] }
                 // Collections marked to be shown in CarPlay are listed without hierarchy, between the custom collections
                 // in the same order as in the app.
@@ -506,7 +532,7 @@ final class CarPlayCoordinator: NSObject {
                 items = try dbStorage.perform(request: request, on: .main)
             }
 
-            bind(template, to: [token(for: items)]) { [weak self] in
+            bind(template, to: [token(for: items, keyPaths: RItem.observableKeypathsForItemList)]) { [weak self] in
                 guard let self else { return [] }
                 let rows = itemRows(for: items, limit: CPListTemplate.maximumItemCount)
                 return rows.isEmpty ? [] : [CPListSection(items: rows)]
@@ -752,19 +778,24 @@ final class CarPlayCoordinator: NSObject {
 
     // MARK: - Observing
 
-    /// Fills `template` with `sections` and refills it whenever any of the observed results change.
+    /// Fills `template` with `sections` and refills it once observed results change, see `TemplateObservation`.
     private func bind(_ template: CPListTemplate, to tokens: [(@escaping () -> Void) -> NotificationToken], sections: @escaping () -> [CPListSection]) {
         template.updateSections(sections())
-        observations[ObjectIdentifier(template)] = tokens.map { observe in
-            observe { [weak template] in
-                template?.updateSections(sections())
+        let observation = TemplateObservation()
+        observation.tokens = tokens.map { observe in
+            observe { [weak observation, weak template] in
+                observation?.scheduleRebuild(after: Self.listRebuildDelay) {
+                    template?.updateSections(sections())
+                }
             }
         }
+        observations[ObjectIdentifier(template)] = observation
     }
 
-    private func token<Element: RealmCollectionValue>(for results: Results<Element>) -> (@escaping () -> Void) -> NotificationToken {
+    /// Observes only `keyPaths` (the same as the lists in the app), so that changes the rows don't depend on don't rebuild them.
+    private func token<Element: RealmCollectionValue>(for results: Results<Element>, keyPaths: [String]) -> (@escaping () -> Void) -> NotificationToken {
         return { update in
-            results.observe { changes in
+            results.observe(keyPaths: keyPaths) { changes in
                 switch changes {
                 case .update:
                     update()

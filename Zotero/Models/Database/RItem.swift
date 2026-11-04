@@ -52,6 +52,10 @@ final class RItem: Object {
         "publicationTitle",
         "hasPublicationTitle",
         "children.backendMd5",
+        // Local changes of attachments which decide the main attachment (synced changes rewrite `backendMd5` above).
+        "children.trash",
+        "children.deleted",
+        "children.syncState",
         "tags"
     ]
     static let observableKeypathsForItemDetail: [String] = ["version", "changeType", "children.version"]
