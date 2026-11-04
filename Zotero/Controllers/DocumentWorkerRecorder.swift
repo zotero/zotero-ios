@@ -54,7 +54,7 @@ final class DocumentWorkerRecorder {
         let workerId: UUID
         let work: DocumentWorkerController.Work
         let fileName: String
-        let fileURL: URL
+        let sidecarFileURL: URL
         let priority: DocumentWorkerController.Priority
         let runtime: DocumentWorkerController.HandlerRuntime
         let createdAt: Date
@@ -116,7 +116,7 @@ final class DocumentWorkerRecorder {
             guard let self else { return }
             guard let workerId = update.workerId,
                   let fileName = update.fileName,
-                  let fileURL = update.fileURL,
+                  let sidecarFileURL = update.sidecarFileURL,
                   let priority = update.priority,
                   let runtime = update.runtime,
                   let status = Record.Status(kind: update.kind)
@@ -148,7 +148,7 @@ final class DocumentWorkerRecorder {
                     workerId: workerId,
                     work: update.work,
                     fileName: fileName,
-                    fileURL: fileURL,
+                    sidecarFileURL: sidecarFileURL,
                     priority: priority,
                     runtime: runtime,
                     createdAt: Date(),

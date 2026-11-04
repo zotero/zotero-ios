@@ -162,14 +162,14 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
     }
 
     func shareCacheFiles(for record: DocumentWorkerRecorder.Record) {
-        documentWorkerController.cachedWorkFileURLs(for: record.work, fileURL: record.fileURL) { [weak self] urls in
+        documentWorkerController.cachedWorkFileURLs(for: record.work, sidecarFileURL: record.sidecarFileURL) { [weak self] urls in
             guard !urls.isEmpty else { return }
             self?.shareSheet = ShareSheet(urls: urls)
         }
     }
 
     func shareCacheAsMaterializedJSON(for record: DocumentWorkerRecorder.Record) {
-        documentWorkerController.cachedWorkFileURLs(for: record.work, fileURL: record.fileURL) { [weak self] urls in
+        documentWorkerController.cachedWorkFileURLs(for: record.work, sidecarFileURL: record.sidecarFileURL) { [weak self] urls in
             guard let self else { return }
             guard let url = urls.first(where: { $0.pathExtension == "sdt" }) else { return }
             DispatchQueue.global(qos: .userInitiated).async {

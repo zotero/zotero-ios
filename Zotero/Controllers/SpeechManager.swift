@@ -30,6 +30,9 @@ protocol SpeechManagerDelegate: AnyObject {
     var documentTitle: String? { get }
     /// File of the document being read. Used by `SpeechManager` to extract structured document text for the whole document.
     var documentFile: FileData? { get }
+    /// File derived data (structured document text) is stored next to. Differs from `documentFile` when the reader works on a
+    /// temporary copy of the attachment (HTML/EPUB), so that the cached data outlives the copy. Defaults to `documentFile`.
+    var documentSidecarFile: FileData? { get }
     /// Password for the document, if it is locked/encrypted.
     var documentPassword: String? { get }
     func getCurrentPageIndex() -> Index
@@ -40,11 +43,13 @@ protocol SpeechManagerDelegate: AnyObject {
     func pageIndex(forStructuredDocumentTextPage page: Int) -> Index?
     func moved(to pageIndex: Index, from previousPageIndex: Index)
     func focusPage(_ pageIndex: Index)
-    /// Sends the structured-document-text pack to the reader (if the reader needs it) and returns the reader's own
-    /// read-aloud segments — the source of truth for HTML/EPUB, whose `sdtStart`/`sdtEnd` positions are needed to create
-    /// annotations. Returns nil to fall back to the built-in `SpeechDocumentParser` (PDF); a default nil implementation
-    /// is provided, so only readers that use reader segments override it.
-    func readAloudReaderSegments(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int, completion: @escaping ([SpeechReaderSegment]?) -> Void)
+    /// Whether read-aloud paragraphs are built from SDT segments carrying reader SDT positions (`SDTReadAloudSegments`,
+    /// HTML/EPUB), which are needed to create annotations, instead of `SpeechDocumentParser` with page geometry (PDF).
+    /// False by default.
+    var readAloudUsesSDTSegments: Bool { get }
+    /// Hands the structured-document-text pack to the reader, if it needs it to map positions and create annotations
+    /// (HTML/EPUB). Does nothing by default.
+    func readAloudLoaded(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int)
     /// The structured-document-text block index currently in view, so playback starts where the reader is. Read fresh at
     /// each play (not cached), reflecting the current scroll position. Nil (the default) means "start at the beginning".
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void)
@@ -82,10 +87,18 @@ protocol SpeechManagerDelegate: AnyObject {
 }
 
 extension SpeechManagerDelegate {
-    /// Default: no reader segments — use the built-in structured-document-text parser (PDF).
-    func readAloudReaderSegments(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int, completion: @escaping ([SpeechReaderSegment]?) -> Void) {
-        completion(nil)
+    /// Default: the document file itself (PDF opens the attachment directly).
+    var documentSidecarFile: FileData? {
+        return documentFile
     }
+
+    /// Default: use the built-in structured-document-text parser (PDF).
+    var readAloudUsesSDTSegments: Bool {
+        return false
+    }
+
+    /// Default: the reader doesn't need the pack (PDF).
+    func readAloudLoaded(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int) {}
 
     /// Default: no in-view block (PDF picks its start page from `getCurrentPageIndex`).
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
@@ -110,10 +123,10 @@ struct SDTPosition {
     let end: [Int]
 }
 
-/// A read-aloud segment produced by the HTML/EPUB reader (`getReadAloudSegments`): the spoken `text`, its reader SDT
-/// position (`start`/`end` child-index paths into the content tree), and whether it begins a new paragraph. Used to
-/// build the read-aloud paragraph model and to create annotations from a selected text range.
-struct SpeechReaderSegment {
+/// An HTML/EPUB read-aloud segment built from structured document text (`SDTReadAloudSegments`), in the shape the reader
+/// uses: the spoken `text`, its reader SDT position (`start`/`end` child-index paths into the content tree), and whether it
+/// begins a new paragraph. Used to build the read-aloud paragraph model and to create annotations from a selected text range.
+struct SDTSpeechSegment {
     let text: String
     let start: [Int]
     let end: [Int]
@@ -378,7 +391,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     /// Position of `highlightRange` (character offsets within `paragraph.text`) for the delegate: reader SDT positions
-    /// when the paragraph model was built from reader segments (HTML/EPUB), PDF geometry otherwise.
+    /// when the paragraph model was built from SDT segments (HTML/EPUB), PDF geometry otherwise.
     private func highlightPosition(paragraph: SpeechParagraph, highlightRange: NSRange) -> ReadAloudPosition {
         let pageTextRange = NSRange(location: paragraph.pageOffset + highlightRange.location, length: highlightRange.length)
         let segments = segments(forPage: paragraph.page)
@@ -584,7 +597,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 completion(false)
                 return
             }
-            let worker = manager.speechWorker ?? DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high, password: delegate.documentPassword)
+            let sidecarFile = delegate.documentSidecarFile ?? file
+            let worker = manager.speechWorker ?? DocumentWorkerController.Worker(file: file, sidecarFile: sidecarFile, kind: .oneOff, priority: .high, password: delegate.documentPassword)
             manager.speechWorker = worker
             let start = CFAbsoluteTimeGetCurrent()
             manager.documentWorkerController.queue(work: .structuredDocumentText, in: worker)
@@ -620,39 +634,42 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                                 return
                             }
                             // Deref the delegate weakly (don't capture it in this long-lived subscription — that would
-                            // retain the reader). Readers that provide their own segments (HTML/EPUB) are the source of
-                            // truth — they carry the SDT positions needed to create annotations. Others (PDF) return nil
-                            // and use the parser.
+                            // retain the reader).
                             guard let delegate = manager.delegate else {
                                 completion(false)
                                 return
                             }
-                            delegate.readAloudReaderSegments(sdtPackData: pack.data, packVersion: pack.header.packVersion, schemaMajorVersion: pack.header.schemaMajorVersion) { [weak manager] readerSegments in
-                                guard let manager else { return }
-                                if let readerSegments {
-                                    let language = (try? pack.metadataResult.get()).flatMap { SpeechDocumentParser.language(from: ["metadata": $0]) }
-                                    manager.store(readerSegments: readerSegments, language: language)
-                                    manager.documentLoaded = true
-                                    DDLogInfo("SpeechManager: loaded \(manager.paragraphs.count) reader paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
-                                    completion(true)
-                                    return
+                            delegate.readAloudLoaded(sdtPackData: pack.data, packVersion: pack.header.packVersion, schemaMajorVersion: pack.header.schemaMajorVersion)
+                            let usesSDTSegments = delegate.readAloudUsesSDTSegments
+                            // Building the paragraphs of the whole document can be heavy, so do it off the main thread.
+                            manager.parsingQueue.async { [weak manager] in
+                                let materialized: [String: Any]
+                                do {
+                                    materialized = try pack.materialize()
+                                } catch {
+                                    DDLogError("SpeechManager: could not materialize structured document text - \(error)")
+                                    materialized = [:]
                                 }
-                                // Parsing the whole document can be heavy, so do it off the main thread.
-                                manager.parsingQueue.async { [weak manager] in
-                                    let parsed: SpeechDocumentParser.ParsedDocument
-                                    do {
-                                        parsed = SpeechDocumentParser.parse(materialized: try pack.materialize())
-                                    } catch {
-                                        DDLogError("SpeechManager: could not parse structured document text - \(error)")
-                                        parsed = SpeechDocumentParser.ParsedDocument(paragraphs: [], language: nil)
-                                    }
+                                if usesSDTSegments {
+                                    // HTML/EPUB segments carry the SDT positions needed to create annotations.
+                                    let segments = SDTReadAloudSegments.segments(from: materialized)
+                                    let language = SpeechDocumentParser.language(from: materialized)
                                     DispatchQueue.main.async { [weak manager] in
                                         guard let manager else { return }
-                                        manager.store(parsed)
+                                        manager.store(segments: segments, language: language)
                                         manager.documentLoaded = true
-                                        DDLogInfo("SpeechManager: extracted \(manager.paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
+                                        DDLogInfo("SpeechManager: built \(manager.paragraphs.count) paragraph(s) from \(segments.count) SDT segment(s) in \(CFAbsoluteTimeGetCurrent() - start)")
                                         completion(true)
                                     }
+                                    return
+                                }
+                                let parsed = SpeechDocumentParser.parse(materialized: materialized)
+                                DispatchQueue.main.async { [weak manager] in
+                                    guard let manager else { return }
+                                    manager.store(parsed)
+                                    manager.documentLoaded = true
+                                    DDLogInfo("SpeechManager: extracted \(manager.paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
+                                    completion(true)
                                 }
                             }
 
@@ -824,12 +841,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         documentLanguage = parsed.language
     }
 
-    /// Stores paragraphs built from the reader's own read-aloud segments (HTML/EPUB). Consecutive segments are grouped
-    /// into a paragraph at each `isParagraphStart`; a paragraph's text is its segments joined by a space, and each
-    /// segment's character range within that text plus its reader SDT position is recorded as an `SDTSpan` so a selected
-    /// text range can be turned into an annotation. All content lives on structured-document-text page 0 (HTML/EPUB has
-    /// no page geometry).
-    private func store(readerSegments segments: [SpeechReaderSegment], language: String?) {
+    /// Stores paragraphs built from SDT read-aloud segments (HTML/EPUB, see `SDTReadAloudSegments`). Consecutive segments
+    /// are grouped into a paragraph at each `isParagraphStart`; a paragraph's text is its segments joined by a space, and
+    /// each segment's character range within that text plus its reader SDT position is recorded as an `SDTSpan` so a
+    /// selected text range can be turned into an annotation. All content lives on structured-document-text page 0
+    /// (HTML/EPUB has no page geometry).
+    private func store(segments: [SDTSpeechSegment], language: String?) {
         guard let delegate, let page = delegate.pageIndex(forStructuredDocumentTextPage: 0) else {
             paragraphs = []
             paragraphIndicesByPage = [:]
