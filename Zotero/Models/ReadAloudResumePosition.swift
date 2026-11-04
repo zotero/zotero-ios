@@ -10,7 +10,7 @@ import CoreGraphics
 import Foundation
 
 /// An opaque reader source position (an EPUB CFI `FragmentSelector`, a snapshot `CssSelector`) as the reader reports it
-/// for a text selection. Never interpreted here — it's handed back to the reader to be mapped to an `SDTPosition`.
+/// for a text selection. Mapped to and from an `SDTPosition` by `SDTPositionMapper`.
 typealias ReaderSourcePosition = [String: Any]
 
 /// The sentence where read-aloud playback left off, in the representation that is stored and synced as
@@ -20,7 +20,7 @@ enum ReadAloudResumePosition {
     /// PDF: rects of the sentence (PDF coordinate space) on the structured-document-text page it lies on.
     case pdf(pageIndex: Int, rects: [CGRect])
     /// HTML/EPUB: the reader's own source position for the sentence (an EPUB CFI `FragmentSelector`, a snapshot
-    /// `CssSelector`). Opaque here — it's handed back to the reader to be mapped to an `SDTPosition`.
+    /// `CssSelector`). Mapped to an `SDTPosition` by `SDTPositionMapper`.
     case reader(source: ReaderSourcePosition)
 }
 

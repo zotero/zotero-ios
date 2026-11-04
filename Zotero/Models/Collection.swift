@@ -15,6 +15,7 @@ struct Collection: Identifiable, Equatable, Hashable {
     let name: String
     var itemCount: Int
     let isAvailable: Bool
+    let showsInCarPlay: Bool
 
     var id: CollectionIdentifier {
         return identifier
@@ -50,6 +51,7 @@ struct Collection: Identifiable, Equatable, Hashable {
         name = object.name
         self.itemCount = itemCount
         self.isAvailable = isAvailable
+        showsInCarPlay = object.showsInCarPlay
     }
 
     init(object: RSearch) {
@@ -57,12 +59,14 @@ struct Collection: Identifiable, Equatable, Hashable {
         name = object.name
         itemCount = 0
         isAvailable = true
+        showsInCarPlay = false
     }
 
     init(custom type: CollectionIdentifier.CustomType, itemCount: Int = 0) {
         self.itemCount = itemCount
         identifier = .custom(type)
         isAvailable = true
+        showsInCarPlay = false
 
         switch type {
         case .all:
@@ -82,11 +86,12 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
-    private init(identifier: CollectionIdentifier, name: String, itemCount: Int, isAvailable: Bool) {
+    private init(identifier: CollectionIdentifier, name: String, itemCount: Int, isAvailable: Bool, showsInCarPlay: Bool) {
         self.identifier = identifier
         self.name = name
         self.itemCount = itemCount
         self.isAvailable = isAvailable
+        self.showsInCarPlay = showsInCarPlay
     }
 
     func isCustom(type: CollectionIdentifier.CustomType) -> Bool {
@@ -110,6 +115,6 @@ struct Collection: Identifiable, Equatable, Hashable {
     }
 
     func copy(with itemCount: Int) -> Collection {
-        return Collection(identifier: identifier, name: name, itemCount: itemCount, isAvailable: isAvailable)
+        return Collection(identifier: identifier, name: name, itemCount: itemCount, isAvailable: isAvailable, showsInCarPlay: showsInCarPlay)
     }
 }

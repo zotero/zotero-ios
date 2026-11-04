@@ -28,6 +28,8 @@ protocol SpeechManagerDelegate: AnyObject {
     associatedtype Index: Hashable
 
     var documentTitle: String? { get }
+    /// Authors of the document, shown with the title in Now Playing.
+    var documentAuthors: String? { get }
     /// File of the document being read. Used by `SpeechManager` to extract structured document text for the whole document.
     var documentFile: FileData? { get }
     /// File derived data (structured document text) is stored next to. Differs from `documentFile` when the reader works on a
@@ -45,22 +47,14 @@ protocol SpeechManagerDelegate: AnyObject {
     func focusPage(_ pageIndex: Index)
     /// Whether read-aloud paragraphs are built from SDT segments carrying reader SDT positions (`SDTReadAloudSegments`,
     /// HTML/EPUB), which are needed to create annotations, instead of `SpeechDocumentParser` with page geometry (PDF).
-    /// False by default.
+    /// Their positions are mapped to and from reader source positions by `SDTPositionMapper`. False by default.
     var readAloudUsesSDTSegments: Bool { get }
-    /// Hands the structured-document-text pack to the reader, if it needs it to map positions and create annotations
-    /// (HTML/EPUB). Does nothing by default.
+    /// Hands the structured-document-text pack to the reader, if it needs it (HTML/EPUB, to spotlight the text being read
+    /// and to create annotations). Does nothing by default.
     func readAloudLoaded(sdtPackData: Data, packVersion: Int, schemaMajorVersion: Int)
     /// The structured-document-text block index currently in view, so playback starts where the reader is. Read fresh at
     /// each play (not cached), reflecting the current scroll position. Nil (the default) means "start at the beginning".
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void)
-    /// Maps a reader source position to a reader SDT position. Asked for once the document has loaded, because the reader
-    /// can only map after it's been handed the structured-document-text pack. Nil (the default) means the reader can't
-    /// map positions.
-    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void)
-    /// Maps a reader SDT position back to the reader's own source position — the inverse of
-    /// `mapSDTPosition(forSourcePosition:)`. Used to store the sentence being read in the format the reader and sync
-    /// speak. Nil (the default) means the reader has no source positions (PDF stores page rects instead).
-    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void)
     /// The 0-based structured-document-text page index for one of the delegate's page indices — the inverse of
     /// `pageIndex(forStructuredDocumentTextPage:)`. Used to store a resume position, whose page index is in
     /// structured-document-text space. Returns nil if the page has no structured-document-text counterpart.
@@ -87,6 +81,11 @@ protocol SpeechManagerDelegate: AnyObject {
 }
 
 extension SpeechManagerDelegate {
+    /// Default: Now Playing shows only the title.
+    var documentAuthors: String? {
+        return nil
+    }
+
     /// Default: the document file itself (PDF opens the attachment directly).
     var documentSidecarFile: FileData? {
         return documentFile
@@ -102,16 +101,6 @@ extension SpeechManagerDelegate {
 
     /// Default: no in-view block (PDF picks its start page from `getCurrentPageIndex`).
     func readAloudVisibleStartBlockIndex(completion: @escaping (Int?) -> Void) {
-        completion(nil)
-    }
-
-    /// Default: no position mapping (PDF resolves its text selection to a page-text offset instead).
-    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
-        completion(nil)
-    }
-
-    /// Default: no source positions (PDF stores the sentence's page rects instead).
-    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
         completion(nil)
     }
 }
@@ -208,6 +197,27 @@ enum SpeechState: Equatable {
     }
 }
 
+/// Read aloud session which can own playback, see `SpeechPlaybackOwnership`.
+protocol SpeechPlaybackOwner: AnyObject {
+    /// Called when another session starts playback. The owner has to stop and release Now Playing right away.
+    func playbackTakenOver()
+}
+
+/// Makes sure that only one read aloud session plays at a time. Sessions are started from readers (there can be more of them
+/// in multiple windows) and from CarPlay, and all of them share the audio session, remote commands and Now Playing info,
+/// which are app-wide. Starting a session stops the previous one. Used on the main queue only.
+final class SpeechPlaybackOwnership {
+    private weak var owner: SpeechPlaybackOwner?
+
+    func claim(by newOwner: SpeechPlaybackOwner) {
+        guard owner !== newOwner else { return }
+        // Kept strongly while it stops, since whoever holds the previous session can release it in the meantime.
+        let previousOwner = owner
+        owner = newOwner
+        previousOwner?.playbackTakenOver()
+    }
+}
+
 enum SpeechVoice: Equatable {
     case local(AVSpeechSynthesisVoice)
     case remote(RemoteVoice)
@@ -268,14 +278,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         /// PDF reader's long-press menu, where the press lands on empty space rather than on a text selection.
         case closestSentence(point: CGPoint, page: Delegate.Index)
         /// Start at the reader's text selection, given as the source position the reader reported for it. Mapped to an
-        /// SDT position once the document has loaded (see `SpeechManagerDelegate.mapSDTPosition(forSourcePosition:)`),
-        /// because only then does the reader have the structured-document-text pack it needs to map. Used by the
-        /// HTML/EPUB reader's selection menu; falls back to starting where the reader is when the position can't be
-        /// mapped or covers no read-aloud segment.
+        /// SDT position (`SDTPositionMapper`) once the document has loaded, because the mapper is created from its
+        /// structured document text. Used by the HTML/EPUB reader's selection menu; falls back to starting where the reader
+        /// is when the position can't be mapped or covers no read-aloud segment.
         case readerSelection(ReaderSourcePosition)
         /// Resume at a previously reported sentence anchor (see `ReadAloudResumePosition`), looking that sentence up
         /// again in the current document. Falls back to starting where the reader is when it can't be found.
         case resume(ReadAloudResumePosition)
+        /// The first readable paragraph of the document, regardless of where the reader is.
+        case documentStart
     }
 
     /// Time window within which a second forward/backward call upgrades the pending sentence skip to a paragraph skip.
@@ -287,9 +298,21 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// progress is not yet known (indeterminate). Reset to `nil` once extraction finishes.
     let extractionProgress: BehaviorRelay<Double?>
     private let disposeBag: DisposeBag
+    /// Work of the current playback session which outlives a state change: document extraction and parsing, voice
+    /// downgrade. Replaced when playback is taken over, see `stopCompletely()`.
+    private var playbackDisposeBag: DisposeBag
+    /// Incremented when document loading is cancelled, so that a parse which already finished (it can't be cancelled) or a
+    /// reader segments callback doesn't continue a session which was stopped.
+    private var documentLoadingGeneration: Int
+    private unowned let speechPlaybackOwnership: SpeechPlaybackOwnership
     private unowned let remoteVoicesController: RemoteVoicesController
     private unowned let documentWorkerController: DocumentWorkerController
+    private unowned let documentPreviewController: DocumentPreviewController
     private let nowPlayingManager: NowPlayingManager
+    /// Cover image of the document, shown as Now Playing artwork. Loaded once, then reused across playback restarts.
+    private var coverImage: UIImage?
+    /// Loading (or generation) of the cover image.
+    private var coverDisposable: Disposable?
 
     private var processor: VoiceProcessor!
     private var position: Position? {
@@ -308,6 +331,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var paragraphIndicesByPage: [Delegate.Index: [Int]]
     /// Whether the whole document has already been extracted and cached.
     private var documentLoaded: Bool
+    /// Maps SDT positions of HTML/EPUB to and from reader source positions (the format resume positions are stored and synced
+    /// in). Created with the paragraphs when the document is loaded.
+    private var positionMapper: SDTPositionMapper?
     /// Document language (BCP-47 tag) read from the structured document text metadata, if any.
     private var documentLanguage: String?
     /// Worker used to extract structured document text for the whole document.
@@ -318,6 +344,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     var onHighlightSessionTimedOut: (() -> Void)?
     var onSpeakingPositionChanged: ((ReadAloudResumePosition) -> Void)?
+    /// Called when playback is stopped because another session started, before the session stops.
+    var onPlaybackTakenOver: (() -> Void)?
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -419,10 +447,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             onSpeakingPositionChanged(.pdf(pageIndex: pageIndex, rects: rects))
 
         case .htmlEpub(let sdtStart, let sdtEnd):
-            delegate?.mapSourcePosition(forSDTPosition: SDTPosition(start: sdtStart, end: sdtEnd)) { source in
-                guard let source else { return }
-                onSpeakingPositionChanged(.reader(source: source))
-            }
+            guard let source = positionMapper?.sourcePosition(for: SDTPosition(start: sdtStart, end: sdtEnd)) else { return }
+            onSpeakingPositionChanged(.reader(source: source))
         }
     }
 
@@ -442,10 +468,20 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return (chosen, max(0, min(offset - paragraph.pageOffset, paragraph.text.count)))
     }
 
-    init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController, documentWorkerController: DocumentWorkerController) {
+    init(
+        delegate: Delegate,
+        voiceLanguage: String?,
+        remoteVoiceTier: RemoteVoice.Tier?,
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
+        remoteVoicesController: RemoteVoicesController,
+        documentWorkerController: DocumentWorkerController,
+        documentPreviewController: DocumentPreviewController
+    ) {
         self.delegate = delegate
+        self.speechPlaybackOwnership = speechPlaybackOwnership
         self.remoteVoicesController = remoteVoicesController
         self.documentWorkerController = documentWorkerController
+        self.documentPreviewController = documentPreviewController
         paragraphs = []
         paragraphIndicesByPage = [:]
         documentLoaded = false
@@ -454,6 +490,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         remainingTime = BehaviorRelay(value: nil)
         extractionProgress = BehaviorRelay(value: nil)
         disposeBag = DisposeBag()
+        playbackDisposeBag = DisposeBag()
+        documentLoadingGeneration = 0
         nowPlayingManager = NowPlayingManager()
         parsingQueue = DispatchQueue(label: "SpeechManager.ParsingQueue", qos: .userInteractive, attributes: .concurrent)
         super.init()
@@ -483,10 +521,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             .subscribe(onNext: { [weak self] state in
                 guard let self else { return }
                 switch state {
-                case .speaking:
+                case .speaking, .initializing, .loading:
+                    // Loading of the next segment (or a restart) is part of playing, so that Now Playing doesn't flip to paused
+                    // between sentences. Before the first start Now Playing isn't active yet, so this is ignored.
                     nowPlayingManager.updatePlaybackState(isPlaying: true)
 
-                case .paused, .initializing, .loading:
+                case .paused:
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
 
                 case .outOfCredits:
@@ -506,17 +546,52 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             .disposed(by: disposeBag)
 
         func setupNowPlayingManager() {
-            nowPlayingManager.playPauseHandler = { [weak self] in
-                guard let self else { return }
-                switch state.value {
-                case .paused, .outOfCredits:
-                    resume()
+            // Play and pause are handled separately from toggle, so that a command which couldn't be performed doesn't invert
+            // the following ones. Loading of the next segment is part of playing, so it can be paused. While the document is
+            // being loaded playback can't be paused, so the command fails and the system keeps its button.
+            nowPlayingManager.playbackCommandHandler = { [weak self] command in
+                guard let self else { return false }
+                let currentState = state.value
+                switch command {
+                case .play:
+                    switch currentState {
+                    case .paused, .outOfCredits:
+                        resume()
+                        return true
 
-                case .speaking:
-                    pause()
+                    case .speaking, .loading:
+                        return true
 
-                case .initializing, .loading, .stopped:
-                    break
+                    case .initializing, .stopped:
+                        return false
+                    }
+
+                case .pause:
+                    switch currentState {
+                    case .speaking, .loading:
+                        pause()
+                        return true
+
+                    case .paused, .outOfCredits:
+                        return true
+
+                    case .initializing, .stopped:
+                        return false
+                    }
+
+                case .togglePlayPause:
+                    switch currentState {
+                    case .paused, .outOfCredits:
+                        resume()
+                        return true
+
+                    case .speaking, .loading:
+                        pause()
+                        return true
+
+                    case .initializing, .stopped:
+                        return false
+                    }
                 }
             }
             nowPlayingManager.forwardHandler = { [weak self] in
@@ -529,6 +604,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     deinit {
+        coverDisposable?.dispose()
         if let speechWorker {
             documentWorkerController.cleanupWorker(speechWorker)
         }
@@ -538,6 +614,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     // MARK: - Actions
 
     func start(_ target: StartTarget) {
+        // Stop whatever else is reading right away, so that two sessions don't read over each other while this document loads.
+        speechPlaybackOwnership.claim(by: self)
         state.accept(.initializing)
         // Ask the processor whether playback may start at all (remote voices need credits) before extracting the
         // document, so that an out-of-credits session fails right away instead of after the whole document has been
@@ -564,7 +642,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     return
                 }
                 // Playback is possible, so the audio session can be taken over from whatever else is playing.
-                nowPlayingManager.activate(title: delegate.documentTitle)
+                // The cover (once a reused session loaded it) is shown right away, otherwise Now Playing is updated once it's loaded or generated.
+                nowPlayingManager.activate(title: delegate.documentTitle, artist: delegate.documentAuthors, artwork: coverImage)
+                generateCoverIfNeeded(manager: self, file: delegate.documentFile)
                 // Set the session language from the document metadata before playback starts, so that the voice stays
                 // constant for the whole session. No-op when the user has already picked a language or it was already set.
                 applySessionLanguageIfNeeded(manager: self)
@@ -574,6 +654,23 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         // Everything below runs from inside the callbacks above (or from a callback of its own), so each function takes
         // the manager rather than capturing it — a callback then holds only its own weak reference.
+
+        /// Loads the stored document cover, or generates and stores it, then shows it in Now Playing. Done on the preview queue,
+        /// since finding the stored cover needs the MD5 of the document, which may not be cached yet.
+        func generateCoverIfNeeded(manager: SpeechManager<Delegate>, file: FileData?) {
+            guard manager.coverImage == nil, manager.coverDisposable == nil, let file, DocumentPreviewController.supports(contentType: file.mimeType) else { return }
+            manager.coverDisposable = manager.documentPreviewController
+                .preview(for: file.createUrl(), contentType: file.mimeType)
+                .observe(on: MainScheduler.instance)
+                // `coverDisposable` is kept after completion, so that a document without a suitable cover (or a failed
+                // generation, logged by `DocumentPreviewController`) isn't retried on each playback start.
+                .subscribe(onSuccess: { [weak manager] previewURL in
+                    guard let manager, let previewURL, let image = UIImage(contentsOfFile: previewURL.path) else { return }
+                    manager.coverImage = image
+                    // Shown right away if Now Playing is active, otherwise with its next activation.
+                    manager.nowPlayingManager.update(artwork: image)
+                })
+        }
 
         /// Sets the session language from the document metadata (defaulting to English when absent), so that the voice
         /// stays constant for the whole session. No-op when the user has chosen a language explicitly or it was already
@@ -600,6 +697,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             let sidecarFile = delegate.documentSidecarFile ?? file
             let worker = manager.speechWorker ?? DocumentWorkerController.Worker(file: file, sidecarFile: sidecarFile, kind: .oneOff, priority: .high, password: delegate.documentPassword)
             manager.speechWorker = worker
+            let generation = manager.documentLoadingGeneration
             let start = CFAbsoluteTimeGetCurrent()
             manager.documentWorkerController.queue(work: .structuredDocumentText, in: worker)
                 .observe(on: MainScheduler.instance)
@@ -654,8 +752,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                                     // HTML/EPUB segments carry the SDT positions needed to create annotations.
                                     let segments = SDTReadAloudSegments.segments(from: materialized)
                                     let language = SpeechDocumentParser.language(from: materialized)
+                                    let positionMapper = SDTPositionMapper(structure: materialized)
                                     DispatchQueue.main.async { [weak manager] in
-                                        guard let manager else { return }
+                                        guard let manager, manager.documentLoadingGeneration == generation else { return }
+                                        manager.positionMapper = positionMapper
                                         manager.store(segments: segments, language: language)
                                         manager.documentLoaded = true
                                         DDLogInfo("SpeechManager: built \(manager.paragraphs.count) paragraph(s) from \(segments.count) SDT segment(s) in \(CFAbsoluteTimeGetCurrent() - start)")
@@ -665,7 +765,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                                 }
                                 let parsed = SpeechDocumentParser.parse(materialized: materialized)
                                 DispatchQueue.main.async { [weak manager] in
-                                    guard let manager else { return }
+                                    guard let manager, manager.documentLoadingGeneration == generation else { return }
                                     manager.store(parsed)
                                     manager.documentLoaded = true
                                     DDLogInfo("SpeechManager: extracted \(manager.paragraphs.count) paragraph(s) in \(CFAbsoluteTimeGetCurrent() - start)")
@@ -680,7 +780,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                         }
                     }
                 })
-                .disposed(by: manager.disposeBag)
+                .disposed(by: manager.playbackDisposeBag)
         }
 
         func startPlayback(target: StartTarget, manager: SpeechManager<Delegate>) {
@@ -723,6 +823,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 beginPlayback(page: selectedPage, startOffset: sentenceStartOffset(for: selectionOffset, in: selectedSegments), manager: manager)
                 return
 
+            case .documentStart:
+                // Paragraphs are in reading order. Without any, there is nothing to read and the default below stops.
+                guard let paragraph = manager.paragraphs.first else { break }
+                if paragraph.page != delegate.getCurrentPageIndex() {
+                    delegate.focusPage(paragraph.page)
+                }
+                beginPlayback(page: paragraph.page, startOffset: paragraph.pageOffset, manager: manager)
+                return
+
             case .currentPage, .pageTextOffset, .readerSelection, .resume:
                 break
             }
@@ -737,19 +846,18 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             switch target {
             case .readerSelection(let source), .resume(.reader(let source)):
                 // A text selection (or a stored reader position, which is the same kind of source position) is mapped
-                // here, and not when the user picked the action, because the reader can only map a source position once
-                // it has the structured-document-text pack — which it was handed while the document loaded, just above.
-                delegate.mapSDTPosition(forSourcePosition: source) { [weak manager] position in
-                    guard let manager, manager.state.value == .initializing else { return }
-                    guard let position, let offset = pageTextOffset(forSDTPosition: position, onPage: page, manager: manager) else {
-                        // The selection couldn't be mapped, or covers no read-aloud segment (an image, say).
-                        beginPlaybackAtReaderPosition(page: page, manager: manager)
-                        return
-                    }
-                    beginPlayback(page: page, startOffset: sentenceStartOffset(for: offset, in: manager.segments(forPage: page)), manager: manager)
+                // here, and not when the user picked the action, because the position mapper is created with the paragraphs
+                // while the document loads, just above.
+                guard let position = manager.positionMapper?.sdtPosition(for: source),
+                      let offset = pageTextOffset(forSDTPosition: position, onPage: page, manager: manager)
+                else {
+                    // The selection couldn't be mapped, or covers no read-aloud segment (an image, say).
+                    beginPlaybackAtReaderPosition(page: page, manager: manager)
+                    return
                 }
+                beginPlayback(page: page, startOffset: sentenceStartOffset(for: offset, in: manager.segments(forPage: page)), manager: manager)
 
-            case .currentPage, .pageTextOffset, .closestSentence, .resume:
+            case .currentPage, .pageTextOffset, .closestSentence, .resume, .documentStart:
                 beginPlaybackAtReaderPosition(page: page, manager: manager)
             }
 
@@ -1112,7 +1220,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                             DDLogError("SpeechManager: can't load standard voice for downgrade - \(error)")
                         }
                     )
-                    .disposed(by: disposeBag)
+                    .disposed(by: playbackDisposeBag)
 
             case .standard:
                 // Downgrade from standard to local voice
@@ -1520,15 +1628,12 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func stop() {
-        guard synthesizer.isSpeaking || synthesizer.isPaused || delegate.state.value == .initializing else { return }
-        if delegate.state.value == .initializing {
-            finishSpeaking()
-        } else {
-            // Clearing the current utterance ignores its cancel/finish callbacks, which would move us to another paragraph
-            currentUtterance = nil
-            synthesizer.stopSpeaking(at: .immediate)
-            finishSpeaking()
-        }
+        // Stops regardless of the synthesizer state, which doesn't cover the transition between paragraphs. Clearing the
+        // current utterance ignores its cancel/finish callbacks, which would move us to another paragraph.
+        currentUtterance = nil
+        // Stops the current utterance and drops queued ones.
+        synthesizer.stopSpeaking(at: .immediate)
+        finishSpeaking()
     }
 
     func invalidateCurrentPlayback() {
@@ -1571,6 +1676,8 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         shouldReloadUtteranceOnResume = false
         currentUtterance = nil
         endBackgroundTask()
+        // Stopping an already stopped session doesn't report the stop again.
+        guard delegate.state.value != .stopped else { return }
         delegate.state.accept(.stopped)
     }
 
@@ -1666,10 +1773,17 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var segmentCache: [NSRange: Data] = [:]
     /// Set of ranges currently being loaded
     private var loadingSegments: Set<NSRange> = []
-    /// Range that should start playing as soon as it's loaded (when waiting for an in-progress preload)
+    /// Range that should start playing as soon as it's loaded (its own download or an in-progress preload). A download
+    /// finishing for any other range (e.g. one skipped while paused) is only cached.
     private var pendingPlaybackRange: NSRange?
     private var shouldReloadOnResume = false
     private var debouncedSpeakWorkItem: DispatchWorkItem?
+    /// Start of the next segment, delayed by the voice's sentence delay.
+    private var nextSegmentWorkItem: DispatchWorkItem?
+    /// Page-text offset where playback starts once the pending work finishes (voice loading, debounce, segment download,
+    /// sentence delay). `nil` while audio of a segment is playing. Pausing while nothing plays keeps it, so that resume
+    /// continues from there.
+    private var pendingStartIndex: Int?
     private var creditPollTimer: Timer?
     /// Background task identifier to keep the app alive during segment transitions
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -1682,7 +1796,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         return voice.flatMap({ .remote($0) })
     }
     var canResume: Bool {
-        return player != nil
+        return player != nil || pendingStartIndex != nil
     }
     var segmentAudioProgress: Float {
         guard let player, player.duration > 0 else { return 0 }
@@ -1741,8 +1855,14 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
         player = nil
         disposeBag = DisposeBag()
+        // Disposing cancels the downloads, so they mustn't be waited for.
+        loadingSegments.removeAll()
+        pendingPlaybackRange = nil
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
+        nextSegmentWorkItem?.cancel()
+        nextSegmentWorkItem = nil
+        pendingStartIndex = startPageTextOffset
 
         // Start .loading state unless we're already .initializing
         if delegate.state.value != .initializing {
@@ -1778,7 +1898,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 .observe(on: MainScheduler.instance)
                 .subscribe(
                     onSuccess: { [weak processor] voice in
-                        processor?.startSpeaking(startIndex: startIndex, voice: voice)
+                        // Paused while the voice was loading, resume starts speaking.
+                        guard let processor, processor.delegate.state.value != .paused else { return }
+                        processor.startSpeaking(startIndex: startIndex, voice: voice)
                     },
                     onFailure: { [weak processor] error in
                         processor?.handleSpeechFailure(error: error)
@@ -1789,40 +1911,58 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func pause() {
+        let state = delegate.state.value
+        guard state.isSpeaking || state == .loading else { return }
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
-        guard player?.isPlaying == true else { return }
-        player?.pause()
         stopCreditPollTimer()
+        if let player, player.isPlaying {
+            player.pause()
+        } else {
+            // Nothing is playing: the voice or a segment is loading, or it's the delay between sentences. Pending playback
+            // is suspended, so that it doesn't start while paused (e.g. over voice samples in voice settings). Downloads
+            // keep running and their segments are cached, see `handleSpeechSuccess(data:range:)`.
+            nextSegmentWorkItem?.cancel()
+            nextSegmentWorkItem = nil
+            pendingPlaybackRange = nil
+            pendingStartIndex = pendingStartIndex ?? delegate.speechRange?.location
+            endBackgroundTask()
+        }
         delegate.state.accept(.paused)
     }
 
     func resume() {
-        guard let player, delegate.state.value == .paused || delegate.state.value.isOutOfCredits else { return }
+        guard delegate.state.value == .paused || delegate.state.value.isOutOfCredits else { return }
 
-        if shouldReloadOnResume {
-            shouldReloadOnResume = false
-            reloadCurrentSegment()
-        } else {
+        if let player, !shouldReloadOnResume, pendingStartIndex == nil {
             player.play()
             delegate.state.accept(.speaking)
             startCreditPollTimer()
+            return
         }
 
-        func reloadCurrentSegment() {
-            guard !segments.isEmpty, let voice, let speechRange = delegate.speechRange else { return }
-            // Clear cache since voice changed
-            segmentCache.removeAll()
-            loadingSegments.removeAll()
-            player.stop()
-            self.player = nil
-            startSpeaking(startIndex: speechRange.location, voice: voice)
+        // Paused while nothing was playing, or the voice or position changed while paused: playback starts again at the
+        // position where it was supposed to continue, or at the new position.
+        let startIndex = shouldReloadOnResume ? delegate.speechRange?.location : (pendingStartIndex ?? delegate.speechRange?.location)
+        shouldReloadOnResume = false
+        guard !segments.isEmpty, let startIndex else { return }
+        player?.stop()
+        player = nil
+        if let voice {
+            // Leaves the paused state first, segments loaded or failed while paused are handled as paused otherwise.
+            delegate.state.accept(.loading)
+            startCreditPollTimer()
+            startSpeaking(startIndex: startIndex, voice: voice)
+        } else {
+            // Paused before the voice loaded.
+            speak(segments: segments, startPageTextOffset: startIndex)
         }
     }
 
     func stop() {
-        finishSpeaking()
+        // Cancels voice, credit and segment requests (including preloading) before the stop is reported.
         disposeBag = DisposeBag()
+        finishSpeaking()
     }
 
     func invalidateCurrentPlayback() {
@@ -1900,11 +2040,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             return
         }
 
+        pendingStartIndex = range.location
         // Report the range immediately so the highlight updates without waiting for audio to load
         delegate.speechRangeWillChange(to: range)
 
         // Check if we already have the segment cached
         if let cachedData = segmentCache[range] {
+            pendingPlaybackRange = nil
             handleSpeechSuccess(data: cachedData, range: range)
             ensureSegmentsPreloaded(after: range, voice: voice)
             return
@@ -1919,6 +2061,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
 
         // Load segment and start playing as soon as it's ready, while preloading others
+        pendingPlaybackRange = range
         delegate.state.accept(.loading)
         startCreditPollTimer()
         loadAndPlaySegment(range: range, voice: voice)
@@ -1934,13 +2077,23 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                     onSuccess: { [weak self] data in
                         guard let self else { return }
                         loadingSegments.remove(range)
+                        guard pendingPlaybackRange == range else {
+                            // Another segment was requested in the meantime (e.g. skipped while paused), keep this one for later.
+                            segmentCache[range] = data
+                            return
+                        }
+                        pendingPlaybackRange = nil
                         // Play immediately
                         handleSpeechSuccess(data: data, range: range)
                         ensureSegmentsPreloaded(after: range, voice: voice)
                     },
                     onFailure: { [weak self] error in
-                        self?.loadingSegments.remove(range)
-                        self?.handleSpeechFailure(error: error)
+                        guard let self else { return }
+                        loadingSegments.remove(range)
+                        // A failure of a segment which isn't requested anymore doesn't affect playback.
+                        guard pendingPlaybackRange == range else { return }
+                        pendingPlaybackRange = nil
+                        handleSpeechFailure(error: error)
                     }
                 )
                 .disposed(by: disposeBag)
@@ -2023,12 +2176,19 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func handleSpeechSuccess(data: Data, range: NSRange) {
+        guard delegate.state.value != .paused else {
+            // Loaded while paused, played once reading resumes.
+            segmentCache[range] = data
+            return
+        }
         // Remove this segment from cache since we're now playing it
         segmentCache.removeValue(forKey: range)
         play(data: data)
     }
 
     private func handleSpeechFailure(error: Swift.Error) {
+        // A request which failed while paused is made again on resume.
+        guard delegate.state.value != .paused else { return }
         if case Error.endOfPage = error {
             // Reached end of current page, try to go to next page
             // Background task is still active from audioPlayerDidFinishPlaying, keeping us alive for this transition
@@ -2065,6 +2225,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             audioPlayer.prepareToPlay()
             audioPlayer.play()
             player = audioPlayer
+            pendingStartIndex = nil
             delegate.state.accept(.speaking)
             // Audio is now playing, safe to end the background task
             endBackgroundTask()
@@ -2185,6 +2346,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private func finishSpeaking() {
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
+        nextSegmentWorkItem?.cancel()
+        nextSegmentWorkItem = nil
+        pendingStartIndex = nil
         segments = []
         player?.stop()
         player = nil
@@ -2194,6 +2358,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         shouldReloadOnResume = false
         stopCreditPollTimer()
         endBackgroundTask()
+        // Stopping an already stopped session doesn't report the stop again.
+        guard delegate.state.value != .stopped else { return }
         delegate.state.accept(.stopped)
     }
 }
@@ -2213,16 +2379,57 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
         if delay == 0 {
             startSpeaking(startIndex: nextStartIndex, voice: voice)
         } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                guard let self, self.delegate.state.value.isSpeaking || self.delegate.state.value == .loading else { return }
-                self.startSpeaking(startIndex: nextStartIndex, voice: voice)
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                nextSegmentWorkItem = nil
+                guard delegate.state.value.isSpeaking || delegate.state.value == .loading else { return }
+                startSpeaking(startIndex: nextStartIndex, voice: voice)
             }
+            nextSegmentWorkItem = workItem
+            pendingStartIndex = nextStartIndex
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
         }
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
         DDLogError("RemoteVoiceProcessor: decode error - \(String(describing: error))")
         finishSpeaking()
+    }
+}
+
+// MARK: - SpeechPlaybackOwner
+
+extension SpeechManager: SpeechPlaybackOwner {
+    func playbackTakenOver() {
+        DDLogInfo("SpeechManager: playback taken over by another session")
+        // Reported first, so that the owner can tell the stop apart from a failure.
+        onPlaybackTakenOver?()
+        stopCompletely()
+    }
+
+    /// Stops playback together with everything working towards it, so that nothing of this session can produce audio or
+    /// update Now Playing once another session plays: pending navigation, document extraction and parsing, voice
+    /// downgrade, segment downloads and preloading, queued utterances.
+    private func stopCompletely() {
+        pendingNavigation?.workItem.cancel()
+        pendingNavigation = nil
+        cancelDocumentLoading()
+        playbackDisposeBag = DisposeBag()
+        processor.stop()
+        // Released right away rather than once the stopped state is observed, so that it can't clear Now Playing of the new
+        // session afterwards.
+        nowPlayingManager.deactivate()
+
+        func cancelDocumentLoading() {
+            // Already loaded paragraphs are kept, so that this session can restart without extracting the document again.
+            guard !documentLoaded else { return }
+            documentLoadingGeneration += 1
+            extractionProgress.accept(nil)
+            if let speechWorker {
+                documentWorkerController.cleanupWorker(speechWorker)
+                self.speechWorker = nil
+            }
+        }
     }
 }
 

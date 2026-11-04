@@ -35,13 +35,22 @@ final class Controllers {
     let backgroundTaskController: BackgroundTaskController
     let lowPowerModeController: LowPowerModeController
     let uriConverter: ZoteroURIConverter
+    let speechPlaybackOwnership: SpeechPlaybackOwnership
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
+    /// Reports that the user is being logged out while `userControllers` still exist. It's sent synchronously and
+    /// `userControllers` are released right after, so subscribers have to tear down anything depending on them without
+    /// switching queues.
+    let userWillLogOut: PassthroughSubject<Void, Never>
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
-    private var didInitialize: Bool
+    private(set) var didInitialize: Bool
+    /// Whether session initialization waits for the device to be unlocked, since the keychain can't be read before that
+    /// (e.g. when the app is launched by CarPlay while locked).
+    @Published private(set) var isWaitingForDeviceUnlock = false
+    private var protectedDataObserver: NSObjectProtocol?
     @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
     fileprivate var needsBaseKeyMigration: Bool
     fileprivate static let childItemCollectionsFixVersion: Int = 1
@@ -97,11 +106,13 @@ final class Controllers {
         dateParser = DateParser()
         htmlAttributedStringConverter = HtmlAttributedStringConverter()
         userInitialized = PassthroughSubject()
+        userWillLogOut = PassthroughSubject()
         lastBuildNumber = Defaults.shared.lastBuildNumber
         idleTimerController = IdleTimerController()
         backgroundTaskController = BackgroundTaskController()
         lowPowerModeController = LowPowerModeController()
         uriConverter = ZoteroURIConverter()
+        speechPlaybackOwnership = SpeechPlaybackOwnership()
         didInitialize = false
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
@@ -157,6 +168,17 @@ final class Controllers {
                 return
             }
 
+            if let sessionError = error as? SessionController.Error,
+               case .keychainNotAccessible(let protectedDataAvailable, _) = sessionError,
+               !protectedDataAvailable {
+                // The device is locked, so the user isn't reported as logged out, the session is initialized once it's unlocked.
+                DDLogInfo("Controllers: waiting for device unlock to initialize session - \(sessionError)")
+                waitForDeviceUnlock { [weak self] in
+                    self?.initializeSessionIfPossible(failOnError: failOnError, completion: completion)
+                }
+                return
+            }
+
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
                 debugLogging.start(type: .immediate)
@@ -182,6 +204,27 @@ final class Controllers {
             update(with: data, isLogin: false, debugLogging: debugLogging)
             startObservingSession()
             completion(completed)
+        }
+    }
+
+    private func waitForDeviceUnlock(completed: @escaping () -> Void) {
+        isWaitingForDeviceUnlock = true
+        let finish: () -> Void = { [weak self] in
+            // Called only once, by the notification or by the check below.
+            guard let self, let observer = protectedDataObserver else { return }
+            NotificationCenter.default.removeObserver(observer)
+            protectedDataObserver = nil
+            isWaitingForDeviceUnlock = false
+            completed()
+        }
+        protectedDataObserver = NotificationCenter.default.addObserver(forName: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil, queue: .main) { _ in
+            finish()
+        }
+        // The device may have been unlocked since the keychain was read.
+        if UIApplication.shared.isProtectedDataAvailable {
+            DispatchQueue.main.async {
+                finish()
+            }
         }
     }
 
@@ -276,6 +319,10 @@ final class Controllers {
 
     private func clearSession() {
         // `controllers.logout()` is called last so that the user is first redirected to login screen and then the DB is cleared. Otherwise the user would briefly see all data gone before being redirected.
+        // Stop everything which depends on user controllers (e.g. CarPlay read aloud) while they still exist
+        if userControllers != nil {
+            userWillLogOut.send()
+        }
         // Disable ongoing sync and unsubscribe from websocket
         userControllers?.disableSync(apiKey: apiKey)
         // Cancel all downloads
@@ -299,8 +346,11 @@ final class Controllers {
         fileStorage.clearCache()
         // Report user logged out and show login screen
         userInitialized.send(.success(false))
-        // Remove database
-        dbStorage?.clear()
+        // Remove database. `userInitialized` subscribers receive the logout on the main queue, so the files are removed after
+        // they tore down their screens and released their results.
+        DispatchQueue.main.async {
+            dbStorage?.clear()
+        }
     }
 }
 

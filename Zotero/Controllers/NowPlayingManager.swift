@@ -16,8 +16,15 @@ import CocoaLumberjackSwift
 /// This enables media key support (play/pause, forward, backward) on devices with external keyboards,
 /// headphones, and the lock screen controls.
 final class NowPlayingManager {
+    enum PlaybackCommand {
+        case play
+        case pause
+        case togglePlayPause
+    }
+
     struct NowPlayingInfo {
         let title: String
+        let artist: String?
         let currentText: String?
     }
 
@@ -30,9 +37,15 @@ final class NowPlayingManager {
     private var skipBackwardCommandTarget: Any?
 
     private var isActive = false
+    private var isPlaying = false
+    /// Keeps audio output running between sentences, see `SilentAudioPlayer`.
+    private let silentAudioPlayer = SilentAudioPlayer()
     private var nowPlayingInfo: NowPlayingInfo?
+    /// Cover of the document, shown as artwork on the lock screen, in Control Center and in CarPlay.
+    private var artwork: MPMediaItemArtwork?
 
-    var playPauseHandler: (() -> Void)?
+    /// Handles play, pause and toggle commands. Returns `false` when the command can't be performed in the current state.
+    var playbackCommandHandler: ((PlaybackCommand) -> Bool)?
     var forwardHandler: (() -> Void)?
     var backwardHandler: (() -> Void)?
 
@@ -47,13 +60,17 @@ final class NowPlayingManager {
     /// Activates the Now Playing session and registers for remote command events.
     /// Call this when speech playback starts.
     /// - Parameter title: The document title to display on the lock screen.
-    func activate(title: String? = nil) {
+    /// - Parameter artist: The document authors to display with the title.
+    /// - Parameter artwork: The document cover to display with the title.
+    func activate(title: String? = nil, artist: String? = nil, artwork: UIImage? = nil) {
         guard !isActive else { return }
         isActive = true
+        isPlaying = false
 
         if let title {
-            nowPlayingInfo = NowPlayingInfo(title: title, currentText: nil)
+            nowPlayingInfo = NowPlayingInfo(title: title, artist: artist, currentText: nil)
         }
+        self.artwork = artwork.flatMap(Self.createArtwork(from:))
 
         setupAudioSession()
         setupRemoteCommandCenter()
@@ -71,6 +88,8 @@ final class NowPlayingManager {
         guard isActive else { return }
         isActive = false
 
+        isPlaying = false
+        silentAudioPlayer.stop()
         UIApplication.shared.endReceivingRemoteControlEvents()
         removeRemoteCommandHandlers()
         clearNowPlayingInfo()
@@ -91,8 +110,25 @@ final class NowPlayingManager {
     /// Updates the Now Playing state to reflect current playback status.
     /// - Parameter isPlaying: Whether speech is currently playing
     func updatePlaybackState(isPlaying: Bool) {
-        guard isActive else { return }
+        // Speech reports its state with each sentence. Unchanged state isn't written again, so that the system doesn't
+        // refresh the controls with each sentence.
+        guard isActive, isPlaying != self.isPlaying else { return }
+        self.isPlaying = isPlaying
+        if isPlaying {
+            silentAudioPlayer.start()
+        } else {
+            silentAudioPlayer.stop()
+        }
         updateNowPlayingInfo(isPlaying: isPlaying)
+    }
+
+    /// Updates the displayed artwork, e.g. once the document cover has been generated.
+    /// - Parameter artwork: The document cover to display with the title.
+    func update(artwork: UIImage?) {
+        self.artwork = artwork.flatMap(Self.createArtwork(from:))
+        if isActive {
+            updateNowPlayingInfo(isPlaying: isPlaying)
+        }
     }
 
     /// Updates the displayed info with new content details.
@@ -100,7 +136,7 @@ final class NowPlayingManager {
     func update(info: NowPlayingInfo) {
         nowPlayingInfo = info
         if isActive {
-            updateNowPlayingInfo(isPlaying: true)
+            updateNowPlayingInfo(isPlaying: isPlaying)
         }
     }
 
@@ -109,6 +145,9 @@ final class NowPlayingManager {
     func reconfigureAudioSession() {
         guard isActive else { return }
         setupAudioSession()
+        if isPlaying {
+            silentAudioPlayer.start()
+        }
         DDLogInfo("NowPlayingManager: audio session reconfigured")
     }
 
@@ -134,24 +173,21 @@ final class NowPlayingManager {
         // Play command
         playCommandTarget = commandCenter.playCommand.addTarget { [weak self] _ in
             DDLogInfo("NowPlayingManager: play command received")
-            self?.playPauseHandler?()
-            return .success
+            return self?.handle(command: .play) ?? .commandFailed
         }
         commandCenter.playCommand.isEnabled = true
 
         // Pause command
         pauseCommandTarget = commandCenter.pauseCommand.addTarget { [weak self] _ in
             DDLogInfo("NowPlayingManager: pause command received")
-            self?.playPauseHandler?()
-            return .success
+            return self?.handle(command: .pause) ?? .commandFailed
         }
         commandCenter.pauseCommand.isEnabled = true
 
         // Toggle play/pause command (for media keys)
         togglePlayPauseCommandTarget = commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
             DDLogInfo("NowPlayingManager: toggle play/pause command received")
-            self?.playPauseHandler?()
-            return .success
+            return self?.handle(command: .togglePlayPause) ?? .commandFailed
         }
         commandCenter.togglePlayPauseCommand.isEnabled = true
 
@@ -176,6 +212,25 @@ final class NowPlayingManager {
         commandCenter.changePlaybackPositionCommand.isEnabled = false
         commandCenter.skipForwardCommand.isEnabled = false
         commandCenter.skipBackwardCommand.isEnabled = false
+    }
+
+    private func handle(command: PlaybackCommand) -> MPRemoteCommandHandlerStatus {
+        let handled = playbackCommandHandler?(command) ?? false
+        if !handled {
+            DDLogInfo("NowPlayingManager: \(command) command can't be performed")
+        }
+        // The system updates its play/pause button right away, assuming the command changes playback. When it didn't (or
+        // the actual state differs otherwise), the button would stay wrong, since unchanged state isn't written again. The
+        // actual state is written once the command was processed.
+        DispatchQueue.main.async { [weak self] in
+            self?.republishPlaybackState()
+        }
+        return handled ? .success : .commandFailed
+    }
+
+    private func republishPlaybackState() {
+        guard isActive else { return }
+        updateNowPlayingInfo(isPlaying: isPlaying)
     }
 
     private func removeRemoteCommandHandlers() {
@@ -221,14 +276,113 @@ final class NowPlayingManager {
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue
         ]
 
-        if let currentText = nowPlayingInfo?.currentText {
-            info[MPMediaItemPropertyArtist] = currentText
+        if let artist = nowPlayingInfo?.currentText ?? nowPlayingInfo?.artist {
+            info[MPMediaItemPropertyArtist] = artist
+        }
+
+        if let artwork {
+            info[MPMediaItemPropertyArtwork] = artwork
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        // Set explicitly, so that the system (e.g. CarPlay) doesn't derive the state from audio session activity, which doesn't
+        // match speech playback.
+        MPNowPlayingInfoCenter.default().playbackState = isPlaying ? .playing : .paused
+    }
+
+    /// The request handler can be called on a background queue, so it only captures the image.
+    private static func createArtwork(from image: UIImage) -> MPMediaItemArtwork {
+        return MPMediaItemArtwork(boundsSize: image.size) { _ in image }
     }
 
     private func clearNowPlayingInfo() {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        MPNowPlayingInfoCenter.default().playbackState = .stopped
+    }
+}
+
+/// Plays silence while speech is playing.
+///
+/// On iOS the system (lock screen, Control Center, CarPlay) derives the play/pause state of Now Playing from whether the app
+/// actually outputs audio, `MPNowPlayingInfoCenter.playbackState` isn't respected. Speech is played sentence by sentence
+/// (a new `AVAudioPlayer` for each remote voice segment, a new utterance for each paragraph of local voice), with short
+/// silent gaps (voice sentence delay, segment loading) in between. During these gaps no audio is output and the system
+/// briefly shows the paused state. Silence played continuously keeps the output running, so the state stays "playing".
+private final class SilentAudioPlayer {
+    private let engine: AVAudioEngine
+    private let player: AVAudioPlayerNode
+    private let format: AVAudioFormat?
+    private var buffer: AVAudioPCMBuffer?
+    private var isConfigured: Bool
+    private var shouldPlay: Bool
+    private var configurationObserver: NSObjectProtocol?
+
+    init() {
+        engine = AVAudioEngine()
+        player = AVAudioPlayerNode()
+        format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)
+        isConfigured = false
+        shouldPlay = false
+    }
+
+    deinit {
+        if let configurationObserver {
+            NotificationCenter.default.removeObserver(configurationObserver)
+        }
+        player.stop()
+        engine.stop()
+    }
+
+    func start() {
+        shouldPlay = true
+        play()
+    }
+
+    func stop() {
+        shouldPlay = false
+        player.stop()
+        engine.stop()
+    }
+
+    private func play() {
+        guard configureIfNeeded(), let buffer else { return }
+        do {
+            if !engine.isRunning {
+                try engine.start()
+            }
+            if !player.isPlaying {
+                player.scheduleBuffer(buffer, at: nil, options: .loops)
+                player.play()
+            }
+        } catch let error {
+            DDLogError("SilentAudioPlayer: can't start - \(error)")
+        }
+    }
+
+    private func configureIfNeeded() -> Bool {
+        guard !isConfigured else { return true }
+        guard let format, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(format.sampleRate)) else {
+            DDLogError("SilentAudioPlayer: can't create buffer")
+            return false
+        }
+        // Buffer contents aren't guaranteed to be zeroed.
+        buffer.frameLength = buffer.frameCapacity
+        if let channels = buffer.floatChannelData {
+            for channel in 0..<Int(format.channelCount) {
+                channels[channel].update(repeating: 0, count: Int(buffer.frameLength))
+            }
+        }
+        self.buffer = buffer
+
+        engine.attach(player)
+        engine.connect(player, to: engine.mainMixerNode, format: format)
+        // The engine stops itself when the audio route changes (e.g. connecting to CarPlay or headphones).
+        configurationObserver = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
+            guard let self, shouldPlay else { return }
+            player.stop()
+            play()
+        }
+        isConfigured = true
+        return true
     }
 }

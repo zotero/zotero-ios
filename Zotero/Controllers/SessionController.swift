@@ -70,6 +70,7 @@ final class SessionController: ObservableObject {
         self.isInitialized = true
 
         if let token = apiToken, userId > 0 {
+            secureStorage.updateAccessibilityIfNeeded()
             sessionData = (userId, token, sessionId)
         } else {
             self.sessionData = nil

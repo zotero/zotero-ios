@@ -35,7 +35,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
     private unowned let dbStorage: DbStorage
     private unowned let documentWorkerController: DocumentWorkerController
+    private unowned let speechPlaybackOwnership: SpeechPlaybackOwnership
     private unowned let remoteVoicesController: RemoteVoicesController
+    private unowned let documentPreviewController: DocumentPreviewController
     private var readAloudHandler: ReadAloudViewHandler<HtmlEpubReaderViewController>?
     private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     let disposeBag: DisposeBag
@@ -170,12 +172,16 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         compactSize: Bool,
         dbStorage: DbStorage,
         documentWorkerController: DocumentWorkerController,
-        remoteVoicesController: RemoteVoicesController
+        speechPlaybackOwnership: SpeechPlaybackOwnership,
+        remoteVoicesController: RemoteVoicesController,
+        documentPreviewController: DocumentPreviewController
     ) {
         self.viewModel = viewModel
         self.dbStorage = dbStorage
         self.documentWorkerController = documentWorkerController
+        self.speechPlaybackOwnership = speechPlaybackOwnership
         self.remoteVoicesController = remoteVoicesController
+        self.documentPreviewController = documentPreviewController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         isChangingInterfaceVisibility = false
@@ -221,8 +227,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                 documentContainer: documentController.view,
                 delegate: self,
                 dbStorage: dbStorage,
+                speechPlaybackOwnership: speechPlaybackOwnership,
                 remoteVoicesController: remoteVoicesController,
-                documentWorkerController: documentWorkerController
+                documentWorkerController: documentWorkerController,
+                documentPreviewController: documentPreviewController
             )
             handler.delegate = self
             handler.menuWillPresent = { [weak self] in self?.readerMenuWillPresent() }
@@ -1016,8 +1024,8 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
             DDLogError("HtmlEpubReaderViewController: can't hand SDT pack to reader, document controller missing")
             return
         }
-        // Segments are built natively from the same pack (`SDTReadAloudSegments`), but the reader needs it too, to map
-        // selections and resume positions to SDT positions and to create annotations from them.
+        // Segments and positions are built and mapped natively from the same pack (`SDTReadAloudSegments`,
+        // `SDTPositionMapper`), but the reader needs it too, to spotlight the text being read and to create annotations.
         documentController.setSDTPack(bytes: sdtPackData, packVersion: packVersion, schemaMajorVersion: schemaMajorVersion)
     }
 
@@ -1027,22 +1035,6 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
             return
         }
         documentController.getReadAloudStartBlockIndex(completion: completion)
-    }
-
-    func mapSDTPosition(forSourcePosition source: ReaderSourcePosition, completion: @escaping (SDTPosition?) -> Void) {
-        guard let documentController else {
-            completion(nil)
-            return
-        }
-        documentController.mapSDTPosition(forSourcePosition: source, completion: completion)
-    }
-
-    func mapSourcePosition(forSDTPosition position: SDTPosition, completion: @escaping (ReaderSourcePosition?) -> Void) {
-        guard let documentController else {
-            completion(nil)
-            return
-        }
-        documentController.mapSourcePosition(forSDTPosition: position, completion: completion)
     }
 
     func readAloudHighlightChanged(position: ReadAloudPosition, pageIndex: Int) {
