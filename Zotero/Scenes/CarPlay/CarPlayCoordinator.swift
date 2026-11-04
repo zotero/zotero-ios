@@ -347,6 +347,8 @@ final class CarPlayCoordinator: NSObject {
         readAloudDisposeBag = DisposeBag()
         readAloudSession?.stop()
         readAloudSession = nil
+        // Now Playing is shared with read aloud started on the phone, which these buttons can't control.
+        CPNowPlayingTemplate.shared.updateNowPlayingButtons([])
     }
 
     /// Reading was started elsewhere (e.g. in the reader on the phone). That session takes over Now Playing, so only the UI
@@ -354,8 +356,6 @@ final class CarPlayCoordinator: NSObject {
     private func readAloudTakenOver() {
         DDLogInfo("CarPlayCoordinator: read aloud taken over")
         hideProcessing()
-        // Custom Now Playing buttons control this session.
-        CPNowPlayingTemplate.shared.updateNowPlayingButtons([])
         stopReadAloud()
     }
 
