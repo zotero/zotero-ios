@@ -37,6 +37,8 @@ final class ReadingModeHandler {
 
     let mode: Mode
     private let file: FileData
+    /// Password of an encrypted source document, needed to extract its text.
+    private let password: String?
     private unowned let documentWorkerController: DocumentWorkerController
     private weak var documentController: HtmlEpubDocumentViewController?
 
@@ -64,9 +66,10 @@ final class ReadingModeHandler {
     /// is replaced by the switch, so anything drawn on top of the document has to be drawn again.
     var onDidSwitchView: (() -> Void)?
 
-    init(mode: Mode, file: FileData, documentController: HtmlEpubDocumentViewController, documentWorkerController: DocumentWorkerController) {
+    init(mode: Mode, file: FileData, password: String?, documentController: HtmlEpubDocumentViewController, documentWorkerController: DocumentWorkerController) {
         self.mode = mode
         self.file = file
+        self.password = password
         self.documentController = documentController
         self.documentWorkerController = documentWorkerController
         // In standalone mode the structured text is the whole content of the reader, so it's loaded right away and
@@ -197,7 +200,7 @@ final class ReadingModeHandler {
         if let worker {
             documentWorkerController.cleanupWorker(worker)
         }
-        let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high)
+        let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .high, password: password)
         self.worker = worker
         let extractionDisposeBag = DisposeBag()
         self.extractionDisposeBag = extractionDisposeBag
