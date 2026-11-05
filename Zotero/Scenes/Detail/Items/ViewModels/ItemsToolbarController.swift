@@ -100,6 +100,10 @@ final class ItemsToolbarController {
                 }
                 let downloadText = L10n.Items.toolbarDownloaded(combinedDownloadBatchData.downloaded, combinedDownloadBatchData.total)
                 progressText.append(AttributedString(downloadText, attributes: defaultAttributes))
+                if #available(iOS 26.0, *) {
+                    let percentage = combinedDownloadBatchData.fraction.formatted(.percent.precision(.fractionLength(0)))
+                    progressText.append(AttributedString(" (\(percentage))", attributes: defaultAttributes))
+                }
                 progress = Float(combinedDownloadBatchData.fraction)
             }
 
