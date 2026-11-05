@@ -41,6 +41,10 @@ extension EditItemFieldsBaseRequest {
             case (FieldKeys.Item.Annotation.comment, _):
                 item.htmlFreeContent = data.value.isEmpty ? nil : data.value.strippedRichTextTags
 
+            case (FieldKeys.Item.Annotation.type, nil) where item.rawType == ItemTypes.annotation:
+                // Annotations are read and filtered by type, which is kept in the item.
+                item.annotationType = data.value
+
             case (FieldKeys.Item.title, _), (_, FieldKeys.Item.title):
                 item.set(title: field.value)
 
