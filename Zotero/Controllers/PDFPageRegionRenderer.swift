@@ -19,6 +19,7 @@ protocol PDFPageRegionRenderer: AnyObject {
     /// - parameter scale: Requested resolution, in image pixels per PDF point.
     /// - parameter completion: Called with one image data URL per requested region, in the same order. A region which
     ///                         couldn't be rendered is reported as an empty string, so that the order is preserved.
+    ///                         Called on a background queue, the images can be large and shouldn't be processed on the main thread.
     func renderPageRegions(pageIndex: Int, rects: [[Double]], scale: Double, completion: @escaping ([String]) -> Void)
 }
 
@@ -27,9 +28,11 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
     /// Cap on a rendered region, so that a huge region or resolution can't produce an unreasonable image.
     private static let maximumPixelsPerSide: CGFloat = 3000
     /// Render tasks which were scheduled and haven't finished yet. They run on PSPDFKit's shared render queue, which outlives the reader, so they're
-    /// cancelled when the renderer is released. Completion handlers run on arbitrary threads, so access is guarded by `tasksLock`.
+    /// cancelled when the renderer is released. Access is guarded by `tasksLock`, since `cancelRendering()` can be called from any thread.
     private var tasks: [ObjectIdentifier: RenderTask] = [:]
     private let tasksLock = NSLock()
+    /// Render tasks report their results on the main thread. Encoding a large image takes long enough to block scrolling, so it's moved to this queue.
+    private let encodingQueue = DispatchQueue(label: "org.zotero.PSPDFKitPageRegionRenderer.encoding", qos: .userInitiated, attributes: .concurrent)
 
     init(document: PSPDFKit.Document) {
         self.document = document
@@ -72,15 +75,22 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
                 group.enter()
                 let taskId = ObjectIdentifier(task)
                 task.completionHandler = { [weak self] image, error in
-                    self?.unregisterTask(with: taskId)
-                    if let data = image?.pngData() {
-                        lock.lock()
-                        images[index] = "data:image/png;base64,\(data.base64EncodedString())"
-                        lock.unlock()
-                    } else {
-                        DDLogError("PSPDFKitPageRegionRenderer: could not render region \(index) of page \(pageIndex) - \(String(describing: error))")
+                    guard let self else {
+                        group.leave()
+                        return
                     }
-                    group.leave()
+                    unregisterTask(with: taskId)
+                    encodingQueue.async {
+                        if let data = image?.pngData() {
+                            let url = "data:image/png;base64,\(data.base64EncodedString())"
+                            lock.lock()
+                            images[index] = url
+                            lock.unlock()
+                        } else {
+                            DDLogError("PSPDFKitPageRegionRenderer: could not render region \(index) of page \(pageIndex) - \(String(describing: error))")
+                        }
+                        group.leave()
+                    }
                 }
                 registerTask(task, with: taskId)
                 PSPDFKit.SDK.shared.renderManager.renderQueue.schedule(task)
@@ -89,7 +99,7 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
             }
         }
 
-        group.notify(queue: .main) {
+        group.notify(queue: encodingQueue) {
             lock.lock()
             let result = images
             lock.unlock()

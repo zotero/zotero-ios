@@ -296,14 +296,26 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         pageRegionRenderer.renderPageRegions(pageIndex: pageIndex, rects: rects, scale: scale) { [weak self] images in
-            self?.send(pageRegionImages: images, requestID: requestID)
+            // Images are reported on a background queue. They're encoded there too, since the payload can be several MB.
+            let script = Self.pageRegionImagesScript(images: images, requestID: requestID)
+            DispatchQueue.main.async {
+                self?.call(pageRegionImagesScript: script)
+            }
         }
     }
 
     private func send(pageRegionImages images: [String], requestID: Int) {
+        call(pageRegionImagesScript: Self.pageRegionImagesScript(images: images, requestID: requestID))
+    }
+
+    private static func pageRegionImagesScript(images: [String], requestID: Int) -> String {
         // The reader hands these straight to the view instead of decoding them, so they're inlined as a JSON array.
         let payload = WebViewEncoder.encodeAsInlineJSONForJavascript(images)
-        webViewHandler.call(javascript: "setPageRegionImages({ requestID: \(requestID), images: \(payload) });")
+        return "setPageRegionImages({ requestID: \(requestID), images: \(payload) });"
+    }
+
+    private func call(pageRegionImagesScript script: String) {
+        webViewHandler.call(javascript: script)
             .observe(on: MainScheduler.instance)
             .subscribe(onFailure: { error in
                 DDLogError("HtmlEpubDocumentViewController: setting page region images failed - \(error)")
