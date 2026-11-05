@@ -26,9 +26,30 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
     private let document: PSPDFKit.Document
     /// Cap on a rendered region, so that a huge region or resolution can't produce an unreasonable image.
     private static let maximumPixelsPerSide: CGFloat = 3000
+    /// Render tasks which were scheduled and haven't finished yet. They run on PSPDFKit's shared render queue, which outlives the reader, so they're
+    /// cancelled when the renderer is released. Completion handlers run on arbitrary threads, so access is guarded by `tasksLock`.
+    private var tasks: [ObjectIdentifier: RenderTask] = [:]
+    private let tasksLock = NSLock()
 
     init(document: PSPDFKit.Document) {
         self.document = document
+    }
+
+    deinit {
+        cancelRendering()
+    }
+
+    /// Cancels all scheduled render tasks. Their completions aren't reported.
+    func cancelRendering() {
+        tasksLock.lock()
+        let tasks = Array(self.tasks.values)
+        self.tasks.removeAll()
+        tasksLock.unlock()
+        guard !tasks.isEmpty else { return }
+        DDLogInfo("PSPDFKitPageRegionRenderer: cancelling \(tasks.count) render tasks")
+        for task in tasks {
+            task.cancel()
+        }
     }
 
     func renderPageRegions(pageIndex: Int, rects: [[Double]], scale: Double, completion: @escaping ([String]) -> Void) {
@@ -49,7 +70,9 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
                 let task = try RenderTask(request: request)
                 task.priority = .userInitiated
                 group.enter()
-                task.completionHandler = { image, error in
+                let taskId = ObjectIdentifier(task)
+                task.completionHandler = { [weak self] image, error in
+                    self?.unregisterTask(with: taskId)
                     if let data = image?.pngData() {
                         lock.lock()
                         images[index] = "data:image/png;base64,\(data.base64EncodedString())"
@@ -59,6 +82,7 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
                     }
                     group.leave()
                 }
+                registerTask(task, with: taskId)
                 PSPDFKit.SDK.shared.renderManager.renderQueue.schedule(task)
             } catch let error {
                 DDLogError("PSPDFKitPageRegionRenderer: can't create render task for region \(index) of page \(pageIndex) - \(error)")
@@ -71,6 +95,18 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
             lock.unlock()
             completion(result)
         }
+    }
+
+    private func registerTask(_ task: RenderTask, with id: ObjectIdentifier) {
+        tasksLock.lock()
+        tasks[id] = task
+        tasksLock.unlock()
+    }
+
+    private func unregisterTask(with id: ObjectIdentifier) {
+        tasksLock.lock()
+        tasks[id] = nil
+        tasksLock.unlock()
     }
 
     private func createRequest(pageIndex: Int, rect: [Double], scale: Double) -> MutableRenderRequest? {

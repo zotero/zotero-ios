@@ -1016,6 +1016,8 @@ final class DocumentWorkerController {
 
     private func release(_ handler: DocumentWorkerHandling) {
         (handler as? DocumentWorkerWebViewHandler)?.removeFromSuperviewAsynchronously()
+        // Work already running in a JS context continues on its own queue unless it's stopped, even after the handler is released.
+        (handler as? DocumentWorkerJSHandler)?.stop()
     }
 
     private func releaseHandlers(for worker: Worker) {
