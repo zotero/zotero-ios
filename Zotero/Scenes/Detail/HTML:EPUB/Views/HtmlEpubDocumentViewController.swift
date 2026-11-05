@@ -12,6 +12,24 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
+/// State of handing the structured-document-text pack over to the reader's view.
+private enum SDTPackState {
+    /// Not handed over.
+    case none
+    /// Requested before the view was created, handed over once it is.
+    case waitingForView(ReaderSDTPack)
+    /// Being handed over.
+    case sending(ReaderSDTPack)
+    /// Handed over, the reader's view has the pack.
+    case set
+}
+
+private struct ReaderSDTPack {
+    let bytes: Data
+    let packVersion: Int
+    let schemaMajorVersion: Int
+}
+
 class HtmlEpubDocumentViewController: UIViewController {
     enum JSHandlers: String, CaseIterable {
         case text = "textHandler"
@@ -57,14 +75,16 @@ class HtmlEpubDocumentViewController: UIViewController {
     private var readingModeRequests: [Int: (Bool) -> Void] = [:]
     private var nextReaderRequestID = 0
     private var readAloudAnnotationSession: ReadAloudAnnotationSession?
-    /// Indicates whether the structured-document-text pack was already handed to the reader for the loaded document.
-    /// The reader resets its SDT session on every `setSDTPack`, discarding the materialized document, so the pack is
-    /// pushed only once and shared by all its consumers (read aloud, reading mode).
-    private var didSetSDTPack: Bool = false
+    /// Handover of the structured-document-text pack to the reader's current view. The reader resets its SDT session on
+    /// every `setSDTPack`, discarding the materialized document, so the pack is handed over only once per view and shared
+    /// by all its consumers (read aloud, reading mode).
+    private var sdtPackState: SDTPackState = .none
+    /// Completions waiting for the current handover, all called with its result.
+    private var sdtPackCompletions: [(Bool) -> Void] = []
+    /// Incremented whenever the view is created, so that results of handovers to a previous view are ignored.
+    private var viewGeneration: Int = 0
     /// Indicates whether `createView` was already called, so that calls which need the view aren't made before it.
     private var didCreateView: Bool = false
-    /// SDT pack requested before the view was created, sent as soon as it is.
-    private var pendingSDTPack: (bytes: Data, packVersion: Int, schemaMajorVersion: Int, completion: ((Bool) -> Void)?)?
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
     /// Renders regions of the source document for standalone reading mode, `nil` for other documents.
     weak var pageRegionRenderer: PDFPageRegionRenderer?
@@ -169,44 +189,99 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     // MARK: - Structured document text
 
-    /// Indicates whether the reader was already handed the structured-document-text pack for the loaded document, so a
-    /// consumer can skip extracting it again.
-    var hasSDTPack: Bool {
-        return didSetSDTPack
+    /// Waits for the structured-document-text pack which was already handed over, or is being handed over, to the reader.
+    /// - parameter completion: Called with whether the reader has the pack. Not called if this returns `false`.
+    /// - returns: `false` if the pack wasn't handed over, so the caller has to provide it with `setSDTPack`.
+    func waitForSDTPack(completion: @escaping (Bool) -> Void) -> Bool {
+        switch sdtPackState {
+        case .none:
+            return false
+
+        case .set:
+            completion(true)
+
+        case .waitingForView, .sending:
+            sdtPackCompletions.append(completion)
+        }
+        return true
     }
 
     /// Hands the structured-document-text pack to the reader so it can map positions, create annotations from SDT
     /// positions and render reading mode.
     ///
-    /// The reader resets its SDT session on every `setSDTPack`, discarding the document it already materialized, so the
-    /// pack is pushed only for the first consumer which asks for it and reused by the rest. `completion` reports whether
-    /// the reader has the pack, so a consumer can wait for it before making a call which needs it.
+    /// The pack is handed over only for the first consumer which asks for it, the rest wait for the same handover.
+    /// `completion` reports whether the reader has the pack, so a consumer can wait for it before making a call which
+    /// needs it.
     func setSDTPack(bytes: Data, packVersion: Int, schemaMajorVersion: Int, completion: ((Bool) -> Void)? = nil) {
-        guard !didSetSDTPack else {
+        switch sdtPackState {
+        case .set:
             completion?(true)
-            return
+
+        case .waitingForView, .sending:
+            if let completion {
+                sdtPackCompletions.append(completion)
+            }
+
+        case .none:
+            if let completion {
+                sdtPackCompletions.append(completion)
+            }
+            let pack = ReaderSDTPack(bytes: bytes, packVersion: packVersion, schemaMajorVersion: schemaMajorVersion)
+            if didCreateView {
+                send(pack: pack)
+            } else {
+                // The reader has no view to store the pack in yet. In standalone reading mode the pack is what creates
+                // it, so the extraction can finish before the view is requested.
+                sdtPackState = .waitingForView(pack)
+            }
         }
-        guard didCreateView else {
-            // The reader has no view to store the pack in yet. In standalone reading mode the pack is what creates it,
-            // so the extraction can finish before the view is requested.
-            pendingSDTPack = (bytes, packVersion, schemaMajorVersion, completion)
-            return
-        }
-        didSetSDTPack = true
-        webViewHandler.call(javascript: "setSDTPack({ bytes: \(WebViewEncoder.encodeForJavascript(bytes)), packVersion: \(packVersion), schemaMajorVersion: \(schemaMajorVersion) });")
+    }
+
+    private func send(pack: ReaderSDTPack) {
+        sdtPackState = .sending(pack)
+        let generation = viewGeneration
+        webViewHandler.call(javascript: "setSDTPack({ bytes: \(WebViewEncoder.encodeForJavascript(pack.bytes)), packVersion: \(pack.packVersion), schemaMajorVersion: \(pack.schemaMajorVersion) });")
             .observe(on: MainScheduler.instance)
             .subscribe(
-                onSuccess: { _ in
-                    completion?(true)
+                onSuccess: { [weak self] _ in
+                    self?.finishSending(generation: generation, didSet: true)
                 },
                 onFailure: { [weak self] error in
                     DDLogError("HtmlEpubDocumentViewController: setting SDT pack failed - \(error)")
-                    // Allow a retry, the reader has no pack.
-                    self?.didSetSDTPack = false
-                    completion?(false)
+                    self?.finishSending(generation: generation, didSet: false)
                 }
             )
             .disposed(by: disposeBag)
+    }
+
+    private func finishSending(generation: Int, didSet: Bool) {
+        // The view was created again in the meantime, the pack is handed over to the new view.
+        guard generation == viewGeneration else { return }
+        // A failed handover can be retried, the reader has no pack.
+        sdtPackState = didSet ? .set : .none
+        let completions = sdtPackCompletions
+        sdtPackCompletions = []
+        for completion in completions {
+            completion(didSet)
+        }
+    }
+
+    /// Hands the pack over to a newly created view. A new view starts with a fresh SDT session, so a pack which is set
+    /// is handed over again only when its consumers ask for it. A pack which wasn't set yet is handed over to the new view,
+    /// so that its waiting consumers get the result for it.
+    private func viewCreated() {
+        viewGeneration += 1
+        didCreateView = true
+        switch sdtPackState {
+        case .none:
+            break
+
+        case .set:
+            sdtPackState = .none
+
+        case .waitingForView(let pack), .sending(let pack):
+            send(pack: pack)
+        }
     }
 
     // MARK: - Reading Mode
@@ -500,8 +575,6 @@ class HtmlEpubDocumentViewController: UIViewController {
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
             DDLogInfo("URL: \(data.url?.absoluteString ?? "none")")
-            // A new view starts with a fresh SDT session, so the pack has to be handed over again.
-            didSetSDTPack = false
             didCreateView = false
             let appearance = Appearance.from(appearanceMode: state.settings.appearance, interfaceStyle: state.interfaceStyle)
             setWebViewInterfaceStyle(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
@@ -535,18 +608,13 @@ class HtmlEpubDocumentViewController: UIViewController {
             }
             javascript += "});"
 
-            didCreateView = true
             webViewHandler.call(javascript: javascript)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onFailure: { error in
                     DDLogError("HtmlEpubDocumentViewController: loading document failed - \(error)")
                 })
                 .disposed(by: disposeBag)
-
-            if let pending = pendingSDTPack {
-                pendingSDTPack = nil
-                setSDTPack(bytes: pending.bytes, packVersion: pending.packVersion, schemaMajorVersion: pending.schemaMajorVersion, completion: pending.completion)
-            }
+            viewCreated()
         }
     }
 

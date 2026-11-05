@@ -137,20 +137,31 @@ final class ReadingModeHandler {
     private func enable() {
         guard let documentController else { return }
         state = .loading
-        // Read aloud may have handed the pack over already, in which case the reader can switch right away.
-        guard !documentController.hasSDTPack else {
-            setReadingModeEnabled(true)
-            return
-        }
-        loadSDTPack { [weak self] didLoad in
+        // Read aloud may have handed the pack over already, or may be handing it over, in which case reading mode switches
+        // once the reader has it. If that handover fails, the pack is extracted again.
+        let isHandedOver = documentController.waitForSDTPack { [weak self] didSet in
             guard let self else { return }
-            guard didLoad else {
-                DDLogError("ReadingModeHandler: could not load structured document text")
-                state = .disabled
-                onEnableFailed?()
-                return
+            if didSet {
+                setReadingModeEnabled(true)
+            } else {
+                loadAndEnable()
             }
-            setReadingModeEnabled(true)
+        }
+        if !isHandedOver {
+            loadAndEnable()
+        }
+
+        func loadAndEnable() {
+            loadSDTPack { [weak self] didLoad in
+                guard let self else { return }
+                guard didLoad else {
+                    DDLogError("ReadingModeHandler: could not load structured document text")
+                    state = .disabled
+                    onEnableFailed?()
+                    return
+                }
+                setReadingModeEnabled(true)
+            }
         }
     }
 
