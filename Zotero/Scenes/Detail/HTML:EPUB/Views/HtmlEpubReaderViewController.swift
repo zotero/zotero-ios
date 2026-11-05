@@ -37,12 +37,15 @@ struct ReadingModeSourceContext {
     let initialPageIndex: Int?
     /// Password which unlocked the source document, `nil` if it's not encrypted. Reading mode opens the document again to extract its text.
     let documentPassword: String?
+    /// Appearance of the reader which opened reading mode. Reading mode shows the same document, so it shares the setting instead of using its own.
+    let appearance: ReaderSettingsState.Appearance
     /// Closes the reader which opened reading mode, and reading mode with it.
     let close: () -> Void
     /// Report changes made in reading mode, so that the reader which opened it is in the same state when it's shown
     /// again.
     let sidebarVisibilityChanged: (Bool) -> Void
     let toolbarStateChanged: (AnnotationToolbarHandler.State) -> Void
+    let appearanceChanged: (ReaderSettingsState.Appearance) -> Void
     /// Reports the page of the source document which reading mode shows, so that the reading position isn't lost when reading mode is left.
     let pageChanged: (Int) -> Void
     /// Read aloud session (sentence and whether it was paused) when reading mode was opened, `nil` when there was none.
@@ -760,6 +763,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                     self.viewModel.process(action: .userInterfaceStyleChanged(currentSystemUserInterfaceStyle))
                 }
                 self.viewModel.process(action: .setSettings(settings))
+                sourceContext?.appearanceChanged(settings.appearance)
             })
             .disposed(by: disposeBag)
     }

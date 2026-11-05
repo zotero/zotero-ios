@@ -763,6 +763,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 toolbarState: toolbarState,
                 initialPageIndex: (documentController?.pdfController?.pageIndex).map({ Int($0) }),
                 documentPassword: viewModel.state.unlockPassword,
+                appearance: viewModel.state.settings.appearanceMode,
                 // Closing the document in reading mode leaves this reader as well, which also dismisses reading mode
                 // presented on top of it. Turning reading mode off instead returns here.
                 close: { [weak self] in self?.close() },
@@ -773,6 +774,13 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                     // layout waits until this reader is shown again.
                     toolbarState = state
                     readingModeToolbarChanged = true
+                },
+                // Appearance is shared with reading mode, so a change there is applied (and stored) here as well.
+                appearanceChanged: { [weak self] appearance in
+                    guard let self, viewModel.state.settings.appearanceMode != appearance else { return }
+                    var settings = viewModel.state.settings
+                    settings.appearanceMode = appearance
+                    viewModel.process(action: .setSettings(settings: settings))
                 },
                 // Reading position in reading mode is the reading position of this document. It's stored like a page change in this reader, which moves to
                 // that page when it's shown again.

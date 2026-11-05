@@ -91,7 +91,8 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         else { return }
 
         let dbStorage = userControllers.dbStorage
-        let settings = Defaults.shared.htmlEpubSettings
+        // Reading mode shares the settings of the reader which opened it.
+        let settings = sourceContext.map({ HtmlEpubSettings(appearance: $0.appearance) }) ?? Defaults.shared.htmlEpubSettings
         let handler = HtmlEpubReaderActionHandler(
             dbStorage: dbStorage,
             schemaController: controllers.schemaController,
@@ -110,7 +111,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             parentKey: parentKey,
             title: try? dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
             preselectedAnnotationKey: preselectedAnnotationKey,
-            settings: Defaults.shared.htmlEpubSettings,
+            settings: settings,
             libraryId: libraryId,
             userId: userId,
             username: username,
