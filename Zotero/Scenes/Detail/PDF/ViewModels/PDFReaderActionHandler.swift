@@ -98,8 +98,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
     weak var delegate: PDFReaderContainerDelegate?
     private(set) var annotationProvider: PDFReaderAnnotationProvider?
-    /// `true` while reading mode is presented over this reader. User changes of annotations come from reading mode then, so they are not in the document yet.
+    /// `true` while reading mode is presented over this reader.
     private var isReadingModePresented = false
+    /// Number of document changes per annotation key which were not written to the database yet. While an annotation has pending writes, the document
+    /// is ahead of the database, so database changes of that annotation are not applied to the document.
+    private var pendingDocumentWriteCountByKey: [String: Int] = [:]
 
     init(
         dbStorage: DbStorage,
@@ -747,6 +750,36 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard page == annotation.page || pdfAnnotation.crossPagePart == .next else { return nil }
             return pdfAnnotation
         })
+    }
+
+    // MARK: - Pending document writes
+
+    /// Marks annotations changed in the document, whose changes will be written to the database.
+    private func beginDocumentWrites(keys: [String]) {
+        for key in keys {
+            pendingDocumentWriteCountByKey[key, default: 0] += 1
+        }
+    }
+
+    /// Marks database writes of document changes as done, once they were enqueued. Database requests are performed serially on `backgroundQueue`,
+    /// so they are written once a block enqueued after them runs.
+    private func finishDocumentWrites(keys: [String]) {
+        guard !keys.isEmpty else { return }
+        // Database writes run serially on `backgroundQueue`, so this block runs only after the writes enqueued before it are done. The count is
+        // main thread state, so it's updated back on main.
+        backgroundQueue.async { [weak self] in
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                for key in keys {
+                    let count = (pendingDocumentWriteCountByKey[key] ?? 0) - 1
+                    pendingDocumentWriteCountByKey[key] = count > 0 ? count : nil
+                }
+            }
+        }
+    }
+
+    private func hasPendingDocumentWrites(key: String) -> Bool {
+        return pendingDocumentWriteCountByKey[key] != nil
     }
 
     /// Finds the other part of an annotation spanning a page break, either in given annotations, or in the document.
@@ -1938,11 +1971,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             // Notification is observed synchronously, so it's possible to check whether it was caused by undo/redo.
             let undoManager = viewModel.state.document.undoController.undoManager
             let isUndoOrRedo = undoManager.isUndoing || undoManager.isRedoing
+            // The document is ahead of the database from now until the change is written, so that database changes don't overwrite it in the meantime.
+            let keys = ((notification.object as? PSPDFKit.Annotation).map({ [$0] }) ?? (notification.object as? [PSPDFKit.Annotation]) ?? []).compactMap({ $0.key })
+            handler.beginDocumentWrites(keys: keys)
 
             // TODO: Improve this if PSPDFKit allows more control for automatic command recording, e.g. by providing a detached recorder
             // Delay handling of notifications until next main run loop iteration, so they have completely recorded their undo command.
             DispatchQueue.main.async { [weak handler, weak viewModel] in
                 guard let handler, let viewModel else { return }
+                // Writes of debounced changes are finished when they are written.
+                var finishWrites = true
+                defer {
+                    if finishWrites {
+                        handler.finishDocumentWrites(keys: keys)
+                    }
+                }
 
                 switch notification.name {
                 case .PSPDFAnnotationChanged:
@@ -1953,6 +1996,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                             if changes.contains("rotation") {
                                 // Debounce these notifications because FreeTextAnnotation rotation change spams these annotations in milliseconds
                                 // and it looks bad in sidebar while it's also unnecessary cpu burden.
+                                finishWrites = false
+                                if handler.debouncedFreeTextAnnotationAndChangesByKey[key] != nil {
+                                    // Replaced change is written together with this one.
+                                    handler.finishDocumentWrites(keys: [key])
+                                }
                                 let disposeBag = DisposeBag()
                                 handler.freeTextAnnotationRotationDebounceDisposeBagByKey[key] = disposeBag
                                 handler.debouncedFreeTextAnnotationAndChangesByKey[key] = (changes, freeTextAnnotation)
@@ -1963,6 +2011,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                         if let (changes, annotation) = handler.debouncedFreeTextAnnotationAndChangesByKey[key] {
                                             handler.debouncedFreeTextAnnotationAndChangesByKey[key] = nil
                                             handler.change(annotation: annotation, with: changes, in: viewModel)
+                                            handler.finishDocumentWrites(keys: [key])
                                         }
                                     })
                                     .disposed(by: disposeBag)
@@ -1971,6 +2020,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                 if let (changes, annotation) = handler.debouncedFreeTextAnnotationAndChangesByKey[key] {
                                     handler.debouncedFreeTextAnnotationAndChangesByKey[key] = nil
                                     handler.change(annotation: annotation, with: changes, in: viewModel)
+                                    handler.finishDocumentWrites(keys: [key])
                                 }
                                 handler.change(annotation: annotation, with: changes, in: viewModel)
                             }
@@ -2013,21 +2063,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         guard let databaseAnnotations = viewModel.state.databaseAnnotations else { return }
         let boundingBoxConverter = viewModel.state.document
         let pageCount = viewModel.state.document.pageCount
-        // Changes which are not in the document yet and need to be applied to it. Those are remote changes, and user changes made in reading mode, which is presented
-        // over this reader. Other user changes were made in the document itself.
-        let readingModePresented = isReadingModePresented
-        let changeNeedsDocumentUpdate: (RItem) -> Bool = { item in
-            switch item.changeType {
-            case .sync:
-                return true
-
-            case .user:
-                return readingModePresented
-
-            case .syncResponse:
-                return false
-            }
-        }
 
         DDLogInfo("PDFReaderActionHandler: database annotation changed")
 
@@ -2038,7 +2073,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Update database keys based on realm notification
         var updatedKeys: [PDFReaderAnnotationKey] = []
         // Collect modified, deleted and inserted annotations to update the `Document`
-        var updatedPdfAnnotations: [(PSPDFKit.Annotation, PDFDatabaseAnnotation)] = []
+        // Document annotations with their database annotation, and whether geometry should be updated as well.
+        var updatedPdfAnnotations: [(PSPDFKit.Annotation, PDFDatabaseAnnotation, Bool)] = []
         var deletedPdfAnnotations: [PSPDFKit.Annotation] = []
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
         var shouldRecomputeDefaultAnnotationPageLabel = false
@@ -2068,41 +2104,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             guard item.changeType != .syncResponse, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
             affectedThumbnailPages.formUnion(annotation.pages)
+            // User changes made in this document are written while the document is already ahead of the database, so they are not applied back.
+            // Other user changes (e.g. made in reading mode) are applied, as far as they differ from the document.
+            let isWrittenFromDocument = item.changeType == .user && hasPendingDocumentWrites(key: key.key)
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
                 updatedKeys.append(key)
 
-                if changeNeedsDocumentUpdate(item) {
-                    // Update text and comment if it's remote sync change, or a change made in reading mode
-                    DDLogInfo("PDFReaderActionHandler: update text and comment")
-
-                    let textCacheTuple: (String, [UIFont: NSAttributedString])?
-                    let comment: NSAttributedString?
-                    // Annotation text
-                    switch annotation.type {
-                    case .highlight, .underline:
-                        textCacheTuple = annotation.text.flatMap({
-                            ($0, [viewModel.state.textFont: htmlAttributedStringConverter.convert(text: $0, baseAttributes: [.font: viewModel.state.textFont])])
-                        })
-
-                    case .note, .image, .ink, .freeText:
-                        textCacheTuple = nil
-                    }
-                    texts[key.key] = textCacheTuple
-                    // Annotation comment
-                    switch annotation.type {
-                    case .note, .highlight, .image, .underline:
-                        comment = htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
-
-                    case .ink, .freeText:
-                        comment = nil
-                    }
-                    comments[key.key] = comment
+                if !isWrittenFromDocument {
+                    updateTextAndCommentCacheIfNeeded(annotation: annotation, oldAnnotation: oldAnnotation, isRemoteChange: item.changeType == .sync)
                 }
             }
 
-            guard changeNeedsDocumentUpdate(item) else { continue }
+            guard !isWrittenFromDocument else { continue }
             let oldPages = oldAnnotation?.pages ?? [annotation.page]
             let partAnnotations = pdfAnnotations(for: oldAnnotation ?? annotation, pageCount: pageCount)
             if oldPages != annotation.pages {
@@ -2124,7 +2139,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             for pdfAnnotation in partAnnotations {
-                updatedPdfAnnotations.append((pdfAnnotation, annotation))
+                updatedPdfAnnotations.append((pdfAnnotation, annotation, item.changeType == .sync))
             }
         }
 
@@ -2185,36 +2200,47 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 continue
             }
 
-            switch item.changeType {
-            case .user where !readingModePresented:
-                // Select newly created annotation if needed
-                let sidebarVisible = delegate?.isSidebarVisible ?? false
-                let isNote = annotation.type == .note
-                if !viewModel.state.sidebarEditingEnabled && (sidebarVisible || isNote) {
-                    selectKey = PDFReaderAnnotationKey(key: item.key, type: .database)
-                    DDLogInfo("PDFReaderActionHandler: select new annotation")
-                }
+            // An annotation which is being written from this document (created, or re-added by undo) is in the document already, or was removed from it
+            // again in the meantime.
+            guard !hasPendingDocumentWrites(key: item.key) else { continue }
 
-            case .user, .sync, .syncResponse:
-                // Remote changes and annotations created in reading mode are not in the document yet.
-                let partAnnotations = AnnotationConverter.annotations(
-                    from: annotation,
-                    type: .zotero,
-                    appearance: viewModel.state.appearance,
-                    currentUserId: viewModel.state.userId,
-                    library: viewModel.state.library,
-                    displayName: viewModel.state.displayName,
-                    username: viewModel.state.username,
-                    documentPageCount: pageCount,
-                    boundingBoxConverter: boundingBoxConverter
-                )
-                insertedPdfAnnotations.append(contentsOf: partAnnotations)
-                if annotation.pageLabel != viewModel.state.defaultAnnotationPageLabel.label(for: annotation.page) {
-                    shouldRecomputeDefaultAnnotationPageLabel = true
+            // Annotations created in this document are in it already. Others (remote changes, annotations created in reading mode) are added, also
+            // only the parts which are missing, in case a page loaded them from the database already. Checked before looking the annotation up, which
+            // loads its pages from the database.
+            let wasCreatedInDocument = annotationProvider?.annotationIfLoaded(at: PageIndex(annotation.page), with: item.key) != nil
+            let existingPages = Set(pdfAnnotations(for: annotation, pageCount: pageCount).map({ Int($0.pageIndex) }))
+            if !existingPages.isEmpty {
+                if item.changeType == .user && wasCreatedInDocument {
+                    // Select newly created annotation if needed
+                    let sidebarVisible = delegate?.isSidebarVisible ?? false
+                    let isNote = annotation.type == .note
+                    if !viewModel.state.sidebarEditingEnabled && (sidebarVisible || isNote) {
+                        selectKey = PDFReaderAnnotationKey(key: item.key, type: .database)
+                        DDLogInfo("PDFReaderActionHandler: select new annotation")
+                    }
                 }
-
-                DDLogInfo("PDFReaderActionHandler: insert PDF annotation")
+                if existingPages.count == annotation.pages.filter({ $0 < Int(pageCount) }).count {
+                    continue
+                }
             }
+
+            let partAnnotations = AnnotationConverter.annotations(
+                from: annotation,
+                type: .zotero,
+                appearance: viewModel.state.appearance,
+                currentUserId: viewModel.state.userId,
+                library: viewModel.state.library,
+                displayName: viewModel.state.displayName,
+                username: viewModel.state.username,
+                documentPageCount: pageCount,
+                boundingBoxConverter: boundingBoxConverter
+            )
+            insertedPdfAnnotations.append(contentsOf: partAnnotations.filter({ !existingPages.contains(Int($0.pageIndex)) }))
+            if annotation.pageLabel != viewModel.state.defaultAnnotationPageLabel.label(for: annotation.page) {
+                shouldRecomputeDefaultAnnotationPageLabel = true
+            }
+
+            DDLogInfo("PDFReaderActionHandler: insert PDF annotation")
         }
 
         if shouldCancelUpdate {
@@ -2249,10 +2275,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Temporarily disable PDF notifications, because these changes were made by sync and they don't need to be translated back to the database
         pdfDisposeBag = DisposeBag()
         // Update annotations in `Document`
-        for (pdfAnnotation, annotation) in updatedPdfAnnotations {
+        for (pdfAnnotation, annotation, includeGeometry) in updatedPdfAnnotations {
             update(
                 pdfAnnotation: pdfAnnotation,
                 with: annotation,
+                includeGeometry: includeGeometry,
                 parentKey: viewModel.state.key,
                 libraryId: viewModel.state.library.identifier,
                 appearance: viewModel.state.appearance,
@@ -2316,6 +2343,38 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
+        /// Updates cached text and comment of annotation. Remote changes are always applied. Other changes only when the value changed in the database,
+        /// a change made in this reader has its cache updated already.
+        func updateTextAndCommentCacheIfNeeded(annotation: PDFDatabaseAnnotation, oldAnnotation: PDFDatabaseAnnotation?, isRemoteChange: Bool) {
+            switch annotation.type {
+            case .highlight, .underline:
+                if isRemoteChange || annotation.text != oldAnnotation?.text {
+                    DDLogInfo("PDFReaderActionHandler: update text")
+                    texts[annotation.key] = annotation.text.flatMap({
+                        ($0, [viewModel.state.textFont: htmlAttributedStringConverter.convert(text: $0, baseAttributes: [.font: viewModel.state.textFont])])
+                    })
+                }
+
+            case .note, .image, .ink, .freeText:
+                if isRemoteChange {
+                    texts[annotation.key] = nil
+                }
+            }
+
+            switch annotation.type {
+            case .note, .highlight, .image, .underline:
+                if isRemoteChange || annotation.comment != oldAnnotation?.comment {
+                    DDLogInfo("PDFReaderActionHandler: update comment")
+                    comments[annotation.key] = htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
+                }
+
+            case .ink, .freeText:
+                if isRemoteChange {
+                    comments[annotation.key] = nil
+                }
+            }
+        }
+
         func canUpdate(key: PDFReaderAnnotationKey, item: RItem, at index: Int, viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
             // If there was a sync type change, always update item
             switch item.changeType {
@@ -2340,15 +2399,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
+    /// Applies properties of database annotation to document annotation, those which differ.
+    /// - parameter includeGeometry: Whether rects, paths, bounding box and line width are applied as well. They are only changed in this document,
+    ///                              or remotely, other readers (reading mode) change other properties only.
     private func update(
         pdfAnnotation: PSPDFKit.Annotation,
         with annotation: PDFDatabaseAnnotation,
+        includeGeometry: Bool,
         parentKey: String,
         libraryId: LibraryIdentifier,
         appearance: Appearance,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) {
         var changes: PdfAnnotationChanges = []
+
+        // Free text annotations show their comment as the text, which is changed in this document only.
+        if annotation.type != .freeText && (pdfAnnotation.contents ?? "") != annotation.comment {
+            pdfAnnotation.contents = annotation.comment
+            changes.insert(.contents)
+        }
 
         if pdfAnnotation.baseColor != annotation.color {
             let hexColor = annotation.color
@@ -2365,6 +2434,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         switch annotation.type {
+        case _ where !includeGeometry:
+            break
+
         case .highlight, .underline:
             // Document annotation can be either part of an annotation spanning a page break.
             let newRects = pdfAnnotation.crossPagePart == .next ? annotation.nextPageRects(boundingBoxConverter: boundingBoxConverter) : annotation.rects(boundingBoxConverter: boundingBoxConverter)
