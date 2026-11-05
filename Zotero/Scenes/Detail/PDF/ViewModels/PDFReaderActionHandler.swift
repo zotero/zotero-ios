@@ -2120,8 +2120,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard !isWrittenFromDocument else { continue }
             let oldPages = oldAnnotation?.pages ?? [annotation.page]
             let partAnnotations = pdfAnnotations(for: oldAnnotation ?? annotation, pageCount: pageCount)
-            if oldPages != annotation.pages {
-                // Annotation moved to different pages, or started or stopped spanning a page break. Its document annotations need to be replaced.
+            if oldPages != annotation.pages || (oldAnnotation.map({ $0.type != annotation.type }) ?? false) {
+                // Annotation moved to different pages, started or stopped spanning a page break, or changed type (e.g. highlight to underline, which
+                // is a different document annotation class). Its document annotations need to be replaced.
                 DDLogInfo("PDFReaderActionHandler: replace PDF annotation")
                 deletedPdfAnnotations.append(contentsOf: partAnnotations)
                 insertedPdfAnnotations.append(contentsOf: AnnotationConverter.annotations(
