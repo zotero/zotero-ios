@@ -338,6 +338,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             state.settings = settings
             state.changes.insert(.settings)
         }
+        // Standalone reading mode uses the settings of the source document reader, which stores them.
+        guard !viewModel.state.kind.isStandaloneReadingMode else { return }
         Defaults.shared.htmlEpubSettings = settings
     }
 
