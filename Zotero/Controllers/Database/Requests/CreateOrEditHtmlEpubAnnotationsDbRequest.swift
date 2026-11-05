@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 class CreateOrEditHtmlEpubAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbRequest<HtmlEpubAnnotation> {
@@ -58,22 +59,44 @@ class CreateOrEditHtmlEpubAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbR
 
     /// Stores the `rects` and `nextPageRects` of a PDF source position (standalone reading mode) in the item's rect lists, where
     /// the rest of the app and the sync expect them. A highlight or underline which continues on the next page has its rects on the
-    /// next page in `nextPageRects`. Annotations of HTML/EPUB documents are anchored by selectors and have no rects, so this is a no-op
-    /// for them.
+    /// next page in `nextPageRects`.
+    ///
+    /// Stored geometry is kept when the reader's position can't be trusted: when it saved the annotation because only its text or comment changed,
+    /// or when its rects can't be parsed. Annotations of HTML/EPUB documents are anchored by selectors and have no rects, so their geometry
+    /// isn't touched. A PDF position describes the whole geometry, so a missing `nextPageRects` means the annotation lies on one page.
     override func addAdditionalProperties(for annotation: HtmlEpubAnnotation, to item: RItem, changes: inout RItemChanges, database: Realm) {
-        store(rects: annotation.position[FieldKeys.Item.Annotation.Position.rects], in: item.rects)
-        store(rects: annotation.position[FieldKeys.Item.Annotation.Position.nextPageRects], in: item.nextPageRects)
-
-        func store(rects value: Any?, in itemRects: List<RRect>) {
-            if !itemRects.isEmpty {
-                database.delete(itemRects)
-                changes.insert(.rects)
+        guard !annotation.onlyTextOrComment, let rawRects = annotation.position[FieldKeys.Item.Annotation.Position.rects] else { return }
+        guard let rects = parse(rects: rawRects) else {
+            DDLogError("CreateOrEditHtmlEpubAnnotationsDbRequest: \(annotation.key) has invalid rects, keeping stored geometry")
+            return
+        }
+        let nextPageRects: [[Double]]
+        if let rawNextPageRects = annotation.position[FieldKeys.Item.Annotation.Position.nextPageRects] {
+            guard let parsed = parse(rects: rawNextPageRects) else {
+                DDLogError("CreateOrEditHtmlEpubAnnotationsDbRequest: \(annotation.key) has invalid next page rects, keeping stored geometry")
+                return
             }
+            nextPageRects = parsed
+        } else {
+            nextPageRects = []
+        }
 
-            guard let rects = value as? [[Double]], !rects.isEmpty else { return }
+        let didChangeRects = store(rects: rects, in: item.rects)
+        let didChangeNextPageRects = store(rects: nextPageRects, in: item.nextPageRects)
+        if didChangeRects || didChangeNextPageRects {
+            changes.insert(.rects)
+        }
 
+        func parse(rects value: Any) -> [[Double]]? {
+            guard let rects = value as? [[Double]], !rects.contains(where: { $0.count != 4 }) else { return nil }
+            return rects
+        }
+
+        /// Replaces stored rects if they differ. Returns `true` if they were replaced.
+        func store(rects: [[Double]], in itemRects: List<RRect>) -> Bool {
+            guard Array(itemRects.map({ [$0.minX, $0.minY, $0.maxX, $0.maxY] })) != rects else { return false }
+            database.delete(itemRects)
             for rect in rects {
-                guard rect.count == 4 else { continue }
                 let rRect = RRect()
                 rRect.minX = rect[0]
                 rRect.minY = rect[1]
@@ -81,7 +104,7 @@ class CreateOrEditHtmlEpubAnnotationsDbRequest: CreateOrEditReaderAnnotationsDbR
                 rRect.maxY = rect[3]
                 itemRects.append(rRect)
             }
-            changes.insert(.rects)
+            return true
         }
     }
 

@@ -892,7 +892,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 sortIndex: sortIndex,
                 dateAdded: dateAdded,
                 dateModified: dateModified,
-                tags: tags
+                tags: tags,
+                onlyTextOrComment: (data["onlyTextOrComment"] as? Bool) ?? false
             )
         }
     }
