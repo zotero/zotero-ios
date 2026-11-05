@@ -26,6 +26,9 @@ struct PDFDocumentAnnotation {
     let sortIndex: String
     let dateAdded: Date
     let dateModified: Date
+    /// Rects on the page following `page` for highlights and underlines spanning a page break. `nil` if unknown (e.g. only one part of
+    /// such annotation is available in the document), in which case the stored value is kept as is when the annotation is saved.
+    var nextPageRects: [CGRect]?
 }
 
 extension PDFDocumentAnnotation: PDFAnnotation {
@@ -47,6 +50,14 @@ extension PDFDocumentAnnotation: PDFAnnotation {
 
     func rects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect] {
         return self.rects
+    }
+
+    var hasNextPagePart: Bool {
+        return !(self.nextPageRects ?? []).isEmpty
+    }
+
+    func nextPageRects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect] {
+        return self.nextPageRects ?? []
     }
 
     func paths(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]] {

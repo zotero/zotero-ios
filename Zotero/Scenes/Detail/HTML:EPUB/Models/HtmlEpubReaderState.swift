@@ -53,6 +53,46 @@ struct HtmlEpubReaderState: ViewModelState {
         static let lastReadAloudPosition = Changes(rawValue: 1 << 20)
     }
 
+    /// What the reader displays.
+    enum Kind {
+        /// The document file itself - an HTML snapshot or an EPUB. Reading mode, where it's available, is an overlay
+        /// rendered on top of the document inside the same web view.
+        case document
+        /// Only the structured text of a source document which this reader can't display itself, currently a PDF
+        /// (`sourceType`). There is no document file for the web view - the structured document text pack is the
+        /// document - and annotations are still read and written in the source document's format.
+        case standaloneReadingMode(sourceType: String)
+
+        var isStandaloneReadingMode: Bool {
+            switch self {
+            case .document:
+                return false
+
+            case .standaloneReadingMode:
+                return true
+            }
+        }
+
+        /// Indicates whether an annotation of given type can be shown. The structured text can only anchor text
+        /// annotations, so image and ink annotations of a source document are not listed in standalone reading mode.
+        /// They stay untouched in the database and are shown again by the reader of the source document.
+        func supports(annotationType: AnnotationType) -> Bool {
+            switch self {
+            case .document:
+                return true
+
+            case .standaloneReadingMode:
+                switch annotationType {
+                case .note, .highlight, .underline:
+                    return true
+
+                case .image, .ink, .freeText:
+                    return false
+                }
+            }
+        }
+    }
+
     struct DocumentData {
         enum Page {
             case html(scrollYPercent: Double)
@@ -60,9 +100,15 @@ struct HtmlEpubReaderState: ViewModelState {
         }
 
         let type: String
-        let url: URL
+        /// Source document type in standalone reading mode, `nil` otherwise.
+        let sourceType: String?
+        /// Document file for the web view. `nil` in standalone reading mode, where the reader displays the structured
+        /// document text pack instead of a file.
+        let url: URL?
         let annotationsJson: String
         let page: Page?
+        /// Page of the source document to open at in standalone reading mode, `nil` otherwise.
+        let initialPageIndex: Int?
         let scale: Double
         let selectedAnnotationKey: String?
     }
@@ -90,11 +136,14 @@ struct HtmlEpubReaderState: ViewModelState {
         case cantAddAnnotations
         case cantUpdateAnnotation
         case incompatibleDocument
+        case cantEnableReadingMode
+        /// Reading mode is all the reader shows and it couldn't be shown, so there is nothing left to display.
+        case cantShowReadingMode
         case unknown
 
         var title: String {
             switch self {
-            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .incompatibleDocument, .unknown:
+            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .incompatibleDocument, .cantEnableReadingMode, .cantShowReadingMode, .unknown:
                 return L10n.error
             }
         }
@@ -113,17 +162,30 @@ struct HtmlEpubReaderState: ViewModelState {
             case .incompatibleDocument:
                 return L10n.Errors.Pdf.incompatibleDocument
 
+            case .cantEnableReadingMode, .cantShowReadingMode:
+                return L10n.Errors.Reader.cantEnableReadingMode
+
             case .unknown:
                 return L10n.Errors.unknown
             }
         }
         
         var documentShouldClose: Bool {
-            return false
+            switch self {
+            case .cantShowReadingMode:
+                // Reading mode is the whole content of the reader, so closing it is the only thing left to do.
+                return true
+
+            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .incompatibleDocument, .cantEnableReadingMode, .unknown:
+                return false
+            }
         }
     }
 
     let readerURL: URL?
+    let kind: Kind
+    /// Page of the source document to open at in standalone reading mode, `nil` otherwise.
+    let initialPageIndex: Int?
     let originalFile: File
     let readerDirectory: File
     let documentFile: File
@@ -195,6 +257,8 @@ struct HtmlEpubReaderState: ViewModelState {
 
     init(
         readerURL: URL?,
+        kind: Kind = .document,
+        initialPageIndex: Int? = nil,
         url: URL,
         key: String,
         parentKey: String?,
@@ -207,10 +271,16 @@ struct HtmlEpubReaderState: ViewModelState {
         interfaceStyle: UIUserInterfaceStyle
     ) {
         self.readerURL = readerURL ?? Bundle.main.url(forResource: "reader", withExtension: nil, subdirectory: "Bundled")
+        self.kind = kind
+        self.initialPageIndex = initialPageIndex
         let originalFile = Files.file(from: url)
         self.originalFile = originalFile
         readerDirectory = Files.temporaryDirectory
-        documentFile = readerDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
+        // In standalone reading mode the web view never reads the document, so it isn't copied next to the reader.
+        // Everything which works with the document itself (structured text extraction, read aloud) uses the original.
+        documentFile = kind.isStandaloneReadingMode
+            ? originalFile
+            : readerDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
         self.key = key
         self.parentKey = parentKey
         self.title = title
