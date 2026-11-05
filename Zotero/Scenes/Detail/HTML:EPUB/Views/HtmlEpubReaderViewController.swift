@@ -35,6 +35,8 @@ struct ReadingModeSourceContext {
     /// Page of the source document the reader which opened reading mode was showing, so that reading mode starts at
     /// roughly the same place in the text.
     let initialPageIndex: Int?
+    /// Password which unlocked the source document, `nil` if it's not encrypted. Reading mode opens the document again to extract its text.
+    let documentPassword: String?
     /// Closes the reader which opened reading mode, and reading mode with it.
     let close: () -> Void
     /// Report changes made in reading mode, so that the reader which opened it is in the same state when it's shown
@@ -309,7 +311,13 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             case .standaloneReadingMode:
                 mode = .standalone
             }
-            let handler = ReadingModeHandler(mode: mode, file: file, documentController: documentController, documentWorkerController: documentWorkerController)
+            let handler = ReadingModeHandler(
+                mode: mode,
+                file: file,
+                password: sourceContext?.documentPassword,
+                documentController: documentController,
+                documentWorkerController: documentWorkerController
+            )
             handler.onEnableFailed = { [weak self] in
                 guard let self else { return }
                 // In standalone reading mode there is nothing else to show, so the reported error closes the reader.
@@ -1104,8 +1112,8 @@ extension HtmlEpubReaderViewController: SpeechManagerDelegate {
     }
 
     var documentPassword: String? {
-        // HTML/EPUB documents are never locked/encrypted.
-        return nil
+        // HTML/EPUB documents are never locked/encrypted. The source document of standalone reading mode (a PDF) can be.
+        return sourceContext?.documentPassword
     }
 
     // Read-aloud treats the whole HTML/EPUB document as a single structured-document-text page (index 0): its content
