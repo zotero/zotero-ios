@@ -1252,6 +1252,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.sortedKeys = filteredKeys(from: keys, term: state.annotationSearchTerm, filter: state.annotationFilter, state: state)
             }
             state.annotations = annotations
+            // The document saves annotations with a delay, so a save scheduled before an annotation was deleted (e.g. by sync) could recreate it.
+            // An annotation which sync brought back to the database can be saved again.
+            state.ignoredAnnotationKeys.formUnion(deletedPdfAnnotations)
+            state.ignoredAnnotationKeys.subtract(insertions.map({ objects[$0] }).filter({ $0.changeType != .user }).map({ $0.key }))
             state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: deletedPdfAnnotations, insertions: insertedPdfAnnotations, modifications: updatedPdfAnnotations)
             state.comments = comments
             state.texts = texts
