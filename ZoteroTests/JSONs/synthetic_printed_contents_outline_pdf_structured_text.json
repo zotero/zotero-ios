@@ -5,7 +5,7 @@
 		"dateCreated": "2000-01-01T00:00:00.000Z",
 		"source": {
 			"contentType": "application/pdf",
-			"hash": "8eee12b7e397bd027ac144da78eee721",
+			"hash": "c2eabe8d5cb9cf5686c0faf885cc7092",
 			"properties": {
 				"PDFFormatVersion": "1.4",
 				"Title": "Printed contents outline regression fixture",
@@ -26,7 +26,7 @@
 			{"viewRect": [0, 0, 612, 792], "contentRange": [[53], [64]], "label": "8"}
 		],
 		"outline": [
-			{"title": "Orbit Manual Quiet Signals", "ref": [6]},
+			{"title": "İnceleme Rehberi Quiet Signals", "ref": [6]},
 			{"title": "Harbor Ledger Blue Measures", "ref": [15]},
 			{"title": "Field Atlas Small Coordinates", "ref": [26]},
 			{"title": "Archive Compass Paper Roads", "ref": [35]},
@@ -36,7 +36,7 @@
 	},
 	"content": [
 		{
-			"type": "heading",
+			"type": "paragraph",
 			"anchor": {"pageRects": [[0, 72, 725, 143.12, 745]]},
 			"content": [
 				{
@@ -45,7 +45,7 @@
 					"anchor": {"textMap": "[[0,0,72,725,143,745,13.3,10,10,5.6,9,10,5.4,8]]"}
 				}
 			],
-			"flowClass": "auxiliary"
+			"flowClass": "excluded"
 		},
 		{
 			"type": "list",
@@ -66,9 +66,9 @@
 					"anchor": {"pageRects": [[0, 84, 672, 516, 684]]},
 					"content": [
 						{
-							"text": "Orbit Manual: Quiet Signals 3",
+							"text": "İnceleme Rehberi: Quiet Signals 3",
 							"anchor": {
-								"textMap": "[[0,0,84,672,516,684,8.7,4,6,3.3,2,[4.3,10.7],5.3,6,6,5.4,3.3,2,[4.3,8.7],6,3.3,5.4,2,[4.3,6.7],3.3,6,6,5.3,3.4,3,[291.3,6]]]"
+								"textMap": "[[0,0,84,672,516,684,4,0,6,5.3,5.4,3.3,5.3,9.4,3.5,[5,8],5,6,6,5.4,4,3.4,2,[4.3,8.7],6,3.3,5.3,2.3,[4,6.7],3.4,6,6,5.3,3.3,3,[271.4,6]]]"
 							}
 						}
 					]
@@ -230,13 +230,13 @@
 		},
 		{
 			"type": "heading",
-			"anchor": {"pageRects": [[2, 72, 704, 215.35, 728]]},
+			"anchor": {"pageRects": [[2, 72, 704, 252.62, 728]]},
 			"content": [
 				{
-					"text": "Orbit Manual",
+					"text": "İnceleme Rehberi",
 					"style": {"bold": true},
 					"anchor": {
-						"textMap": "[[0,2,72,704,215.4,728,18.7,10.6,13.4,6.6,5.4,[8.6,22.7],12,13.3,13.4,12,6.7]]"
+						"textMap": "[[0,2,72,704,252.6,728,9.3,0,13.4,10.6,10.7,6.7,10.6,20,7,[9.7,17.3],10.7,13.3,13.3,10.7,10.7,6.6]]"
 					}
 				}
 			]

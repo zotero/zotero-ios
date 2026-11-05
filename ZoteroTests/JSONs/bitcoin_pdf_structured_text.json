@@ -939,8 +939,7 @@
 				{"text": "q", "style": {"italic": true}, "anchor": {"textMap": "[[0,5,214.6,146,220,158]]"}},
 				{"text": "}", "anchor": {"textMap": "[[0,5,220.6,141,226.4,178]]"}}
 			],
-			"flowClass": "auxiliary",
-			"rightMostWords": []
+			"flowClass": "auxiliary"
 		},
 		{
 			"type": "paragraph",
@@ -1043,8 +1042,7 @@
 					}
 				}
 			],
-			"flowClass": "auxiliary",
-			"rightMostWords": []
+			"flowClass": "auxiliary"
 		},
 		{
 			"type": "paragraph",
@@ -1141,8 +1139,7 @@
 				},
 				{"text": "}", "anchor": {"textMap": "[[0,6,260.4,393.5,266,430.3]]"}}
 			],
-			"flowClass": "auxiliary",
-			"rightMostWords": []
+			"flowClass": "auxiliary"
 		},
 		{
 			"type": "paragraph",
@@ -1224,8 +1221,7 @@
 				{"text": "", "style": {"sup": true}, "anchor": {"textMap": "[[0,6,242,347,244.3,355]]"}},
 				{"text": "", "anchor": {"textMap": "[[0,6,244.5,338.3,247,356.3]]"}}
 			],
-			"flowClass": "auxiliary",
-			"rightMostWords": []
+			"flowClass": "auxiliary"
 		},
 		{
 			"type": "paragraph",

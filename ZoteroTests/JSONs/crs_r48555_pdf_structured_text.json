@@ -64,6 +64,7 @@
 			{"title": "Executive Branch AI Actions", "ref": [91]},
 			{"title": "U.S. Approaches to Regulating AI", "ref": [105]},
 			{"title": "Regulating the AI Technologies", "ref": [108]},
+			{"title": "Regulating the Use of AI Technologies Across Sectors", "ref": [116]},
 			{"title": "Regulating the Use of AI Technologies Within Sectors", "ref": [123]},
 			{"title": "Selected International Approaches to AI Governance and Regulation", "ref": [125]},
 			{"title": "United Kingdom", "ref": [127]},
@@ -682,14 +683,14 @@
 					"anchor": {"pageRects": [[2, 90, 333.04, 521.59, 343.03]]},
 					"content": [
 						{
-							"text": "Figure 1.",
-							"anchor": {"textMap": "[[0,2,90,333,394.5,343,6,3,5.6,5.6,3.6,3.3,[4.4,5.5],2]]"},
+							"text": "Figure 1",
+							"anchor": {"textMap": "[[0,2,90,333,394.5,343,6,3,5.6,5.6,3.6,3.3,[4.4,5.5]]]"},
 							"refs": [[164]]
 						},
 						{
-							"text": " European Union AI Act’s Risk-Based Regulatory Approach......................................... 17",
+							"text": ". European Union AI Act’s Risk-Based Regulatory Approach......................................... 17",
 							"anchor": {
-								"textMap": "[[0,2,90,333,394.5,343,[42.5,6.7],5.5,3.6,5.5,5.5,5,5,3.4,[4.6,8],5.4,3,5.6,3.7,[4,8],2.3,[3.4,8],5,3,3.5,[-0.6,3],[4,7.3],3,4.4,5.5,4,7,5,4,5,3.7,[4.6,7.4],5,5.4,5.5,3,5,3,5.5,3.6,3.7,[4,8],5.4,5.5,3.7,5.5,5,4.7,5.5],[0,2,394.7,333,508,343,3,2.5,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,1.6],[0,2,510.6,333,521.6,343,5.5,5.5]]"
+								"textMap": "[[0,2,90,333,394.5,343,[37,2],[3.5,6.7],5.5,3.6,5.5,5.5,5,5,3.4,[4.6,8],5.4,3,5.6,3.7,[4,8],2.3,[3.4,8],5,3,3.5,[-0.6,3],[4,7.3],3,4.4,5.5,4,7,5,4,5,3.7,[4.6,7.4],5,5.4,5.5,3,5,3,5.5,3.6,3.7,[4,8],5.4,5.5,3.7,5.5,5,4.7,5.5],[0,2,394.7,333,508,343,3,2.5,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,2.6,2.7,3,2.5,3,1.6],[0,2,510.6,333,521.6,343,5.5,5.5]]"
 							}
 						}
 					]
@@ -1251,12 +1252,13 @@
 							}
 						},
 						{
-							"text": "https://legalinstruments.oecd.org/en/instruments/oecd-legal-0449.",
+							"text": "https://legalinstruments.oecd.org/en/instruments/oecd-legal-0449",
 							"anchor": {
-								"textMap": "[[0,4,90,143,418.7,151,[92,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,2.4,4,4.5,4,2.5,2.5,4.5,3.5,2.5,3,4.5,7,4,4.5,2.4,3.5,2.3,4.5,4,4,4.5,2,[0.3,4.5],3,4.5,2.4,4,4.6,2.5,2.5,4.5,3.5,2.5,3,4.4,7,4,4.6,2.5,3.5,2.5,4.5,4,4,4.5,3,2.5,4,4.4,4,2.5,3,4.5,4.5,4.5,4.5,2.3]]"
+								"textMap": "[[0,4,90,143,418.7,151,[92,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,2.4,4,4.5,4,2.5,2.5,4.5,3.5,2.5,3,4.5,7,4,4.5,2.4,3.5,2.3,4.5,4,4,4.5,2,[0.3,4.5],3,4.5,2.4,4,4.6,2.5,2.5,4.5,3.5,2.5,3,4.4,7,4,4.6,2.5,3.5,2.5,4.5,4,4,4.5,3,2.5,4,4.4,4,2.5,3,4.5,4.5,4.5,4.5]]"
 							},
-							"target": {"url": "https://legalinstruments.oecd.org/en/instruments/oecd-legal-0449.6"}
-						}
+							"target": {"url": "https://legalinstruments.oecd.org/en/instruments/oecd-legal-0449"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,4,90,143,418.7,151,[326.4,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[36, 4]]
@@ -1265,12 +1267,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[4, 90, 109.02, 509.92, 138.82]]},
 					"content": [
-						{
-							"text": "6",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,4,90,133.4,93,139]]"},
-							"target": {"url": "https://legalinstruments.oecd.org/en/instruments/oecd-legal-0449.6"}
-						},
+						{"text": "6", "style": {"sup": true}, "anchor": {"textMap": "[[0,4,90,133.4,93,139]]"}},
 						{"text": " "},
 						{
 							"text": "OECD, “Explanatory Memorandum on the Updated OECD Definition of an AI System,” March 2024, ",
@@ -1279,14 +1276,15 @@
 							}
 						},
 						{
-							"text": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/03/explanatory-memorandum-on-the-updatedoecd-definition-of-an-ai-system_3c815e51/623da898-en.pdf.",
+							"text": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/03/explanatory-memorandum-on-the-updatedoecd-definition-of-an-ai-system_3c815e51/623da898-en.pdf",
 							"anchor": {
-								"textMap": "[[1,4,90,119.3,510,127.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,4,4.4,2.3,4.5,3,4.5,2.5,4,4.5,4.5,2.5,4,4.5,2.5,2.5,4.5,4,7,2.5,4.5,4,4,4.5,2.5,4,4.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,3,4,4.5,4.5,3,2.5,3.5,2.5,4.6,4.4,4.5,4.5,2.5,4.5,4.5,2.5,4,4.5,4.5,2.5,4,4.5,4,2.5,4.5,3,4.5,3,7,4,7,4.5,3,4,4.5,4.5,4.5,7,3,4.4,4.5,3,2.5,4.5,4,3,4.6,4.5,4.5,4,2.4,4,4.5,3],[0,4,90,109,310,117,4.5,4,4,4.5,3,4.6,4,3,2.4,4.5,2.5,2.6,2.4,4.5,4.5,3,4.5,3,3,4,4.5,3,4,2.5,3,3.5,4.5,3.5,2.5,4,7,4.5,4.4,4,4.5,4.5,4.5,4,4.6,4.5,2.5,4.5,4.5,4.5,4.5,4,4.4,4.5,4.5,3,4,4.5,2,[0.3,4.5],4.5,3,2]]"
+								"textMap": "[[1,4,90,119.3,510,127.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,4,4.4,2.3,4.5,3,4.5,2.5,4,4.5,4.5,2.5,4,4.5,2.5,2.5,4.5,4,7,2.5,4.5,4,4,4.5,2.5,4,4.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,3,4,4.5,4.5,3,2.5,3.5,2.5,4.6,4.4,4.5,4.5,2.5,4.5,4.5,2.5,4,4.5,4.5,2.5,4,4.5,4,2.5,4.5,3,4.5,3,7,4,7,4.5,3,4,4.5,4.5,4.5,7,3,4.4,4.5,3,2.5,4.5,4,3,4.6,4.5,4.5,4,2.4,4,4.5,3],[0,4,90,109,310,117,4.5,4,4,4.5,3,4.6,4,3,2.4,4.5,2.5,2.6,2.4,4.5,4.5,3,4.5,3,3,4,4.5,3,4,2.5,3,3.5,4.5,3.5,2.5,4,7,4.5,4.4,4,4.5,4.5,4.5,4,4.6,4.5,2.5,4.5,4.5,4.5,4.5,4,4.4,4.5,4.5,3,4,4.5,2,[0.3,4.5],4.5,3]]"
 							},
 							"target": {
-								"url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/03/explanatory-memorandum-on-the-updatedoecd-definition-of-an-ai-system_3c815e51/623da898-en.pdf.7"
+								"url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/03/explanatory-memorandum-on-the-updatedoecd-definition-of-an-ai-system_3c815e51/623da898-en.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,4,90,109,310,117,[217.7,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[38, 1]]
@@ -1295,14 +1293,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[4, 90, 74.92, 507.96, 104.72]]},
 					"content": [
-						{
-							"text": "7",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,4,90,99.3,93,104.7]]"},
-							"target": {
-								"url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/03/explanatory-memorandum-on-the-updatedoecd-definition-of-an-ai-system_3c815e51/623da898-en.pdf.7"
-							}
-						},
+						{"text": "7", "style": {"sup": true}, "anchor": {"textMap": "[[0,4,90,99.3,93,104.7]]"}},
 						{"text": " "},
 						{
 							"text": "United States–European Union Trade and Technology Council,",
@@ -1557,14 +1548,15 @@
 							}
 						},
 						{
-							"text": "https://www.csis.org/blogs/perspectives-innovation/moving-beyond-regulationderegulation-trap.",
+							"text": "https://www.csis.org/blogs/perspectives-innovation/moving-beyond-regulationderegulation-trap",
 							"anchor": {
-								"textMap": "[[0,5,90,190.4,509,198.6,[70.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4,3.7,2.5,3.5,2,[0.3,4.5],3,4.5,2.5,4.5,2.5,4.5,4.5,3.5,2.5,4.5,4,3,3.4,4.5,4,4,2.5,2.5,4.6,4,3.4,3,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.5,4.5,2.5,7,4.5,4.5,2.5,4.6,4.5,3,4.5,4,4.4,4.5,4.5,4.5,3,3,4,4.5,4.5,2.5,4,2.5,2.5,4.5,4.5,4.4,4,3,4,4.5,4.5,2.5,4,2.5,2.5,4.6,4.5,3,2.4,3,4,4.5,2.3]]"
+								"textMap": "[[0,5,90,190.4,509,198.6,[70.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4,3.7,2.5,3.5,2,[0.3,4.5],3,4.5,2.5,4.5,2.5,4.5,4.5,3.5,2.5,4.5,4,3,3.4,4.5,4,4,2.5,2.5,4.6,4,3.4,3,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.5,4.5,2.5,7,4.5,4.5,2.5,4.6,4.5,3,4.5,4,4.4,4.5,4.5,4.5,3,3,4,4.5,4.5,2.5,4,2.5,2.5,4.5,4.5,4.4,4,3,4,4.5,4.5,2.5,4,2.5,2.5,4.6,4.5,3,2.4,3,4,4.5]]"
 							},
 							"target": {
-								"url": "https://www.csis.org/blogs/perspectives-innovation/moving-beyond-regulationderegulation-trap.10"
+								"url": "https://www.csis.org/blogs/perspectives-innovation/moving-beyond-regulationderegulation-trap"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,5,90,190.4,509,198.6,[416.6,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[48, 4]]
@@ -1573,14 +1565,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[5, 90, 166.74, 504.76, 186.22]]},
 					"content": [
-						{
-							"text": "10",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,5,90,181,96,186,3,2]]"},
-							"target": {
-								"url": "https://www.csis.org/blogs/perspectives-innovation/moving-beyond-regulationderegulation-trap.10"
-							}
-						},
+						{"text": "10", "style": {"sup": true}, "anchor": {"textMap": "[[0,5,90,181,96,186,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "See, for example, Daniel Castro, “Ten Principles for Regulation That Does Not Harm AI Innovation,” Center for Data Innovation, February 8, 2023, ",
@@ -1589,12 +1574,13 @@
 							}
 						},
 						{
-							"text": "https://www2.datainnovation.org/2023-ten-principles-ai-regulation.pdf.",
+							"text": "https://www2.datainnovation.org/2023-ten-principles-ai-regulation.pdf",
 							"anchor": {
-								"textMap": "[[0,5,90,166.7,476.4,175,[129,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,4.5,2,4.7,4,2.5,4,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.5,4.5,2,[0.3,4.5],3,4.4,2.5,4.6,4.5,4.5,4.5,3,2.5,4,4.5,3,4.5,3,2.5,4.5,4,2.4,4.6,2.5,4,3.4,3,4,2.5,3,3,4,4.6,4.5,2.4,4,2.5,2.5,4.5,4.5,2,4.7,4.5,3,2.3]]"
+								"textMap": "[[0,5,90,166.7,476.4,175,[129,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,4.5,2,4.7,4,2.5,4,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.5,4.5,2,[0.3,4.5],3,4.4,2.5,4.6,4.5,4.5,4.5,3,2.5,4,4.5,3,4.5,3,2.5,4.5,4,2.4,4.6,2.5,4,3.4,3,4,2.5,3,3,4,4.6,4.5,2.4,4,2.5,2.5,4.5,4.5,2,4.7,4.5,3]]"
 							},
-							"target": {"url": "https://www2.datainnovation.org/2023-ten-principles-ai-regulation.pdf.11"}
-						}
+							"target": {"url": "https://www2.datainnovation.org/2023-ten-principles-ai-regulation.pdf"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,5,90,166.7,476.4,175,[384,2.4]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[49, 1]]
@@ -1603,12 +1589,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[5, 90, 132.72, 520.55, 162.52]]},
 					"content": [
-						{
-							"text": "11",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,5,90,157,96,162.5,3,2]]"},
-							"target": {"url": "https://www2.datainnovation.org/2023-ten-principles-ai-regulation.pdf.11"}
-						},
+						{"text": "11", "style": {"sup": true}, "anchor": {"textMap": "[[0,5,90,157,96,162.5,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Kevin A. Bryan and Florenta Teodoridis, “Balancing Market Innovation Incentives and Regulation in AI: Challenges and Opportunities,” Brookings Institution, September 24, 2024, ",
@@ -1617,14 +1598,15 @@
 							}
 						},
 						{
-							"text": "https://www.brookings.edu/articles/balancing-marketinnovation-incentives-and-regulation-in-ai-challenges-and-opportunities/.",
+							"text": "https://www.brookings.edu/articles/balancing-marketinnovation-incentives-and-regulation-in-ai-challenges-and-opportunities/",
 							"anchor": {
-								"textMap": "[[1,5,163.3,143,516,151,[158,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4.5,3,4.5,4.5,4.5,2.5,4.5,4.5,3.5,2,4,4.7,4.5,2.5,4,3,2.5,2.5,4,2.5,4,3.6,2.5,4.4,4,2.5,4,4.5,4,2.5,4.5,4.5,3,7,4,3,4.5,4,2.5,3],[0,5,90,132.7,355,141,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.6,4.5,3,2.4,4.5,4,4,4.5,2.5,2.5,4.5,4,3.5,3,4,4.5,4.5,3,3,4,4.5,4.5,2.5,4,2.5,2.4,4.5,4.5,3,2.6,4.5,3,4,2.4,3,4,4.6,4,2.5,2.5,4,4.5,4.4,4,3.5,3,4,4.5,4.5,3,4.5,4.5,4.5,4.5,3,2.5,4.5,4.5,2.5,2.5,2.5,4,3.5,2.5,2]]"
+								"textMap": "[[1,5,163.3,143,516,151,[158,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4.5,3,4.5,4.5,4.5,2.5,4.5,4.5,3.5,2,4,4.7,4.5,2.5,4,3,2.5,2.5,4,2.5,4,3.6,2.5,4.4,4,2.5,4,4.5,4,2.5,4.5,4.5,3,7,4,3,4.5,4,2.5,3],[0,5,90,132.7,355,141,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.6,4.5,3,2.4,4.5,4,4,4.5,2.5,2.5,4.5,4,3.5,3,4,4.5,4.5,3,3,4,4.5,4.5,2.5,4,2.5,2.4,4.5,4.5,3,2.6,4.5,3,4,2.4,3,4,4.6,4,2.5,2.5,4,4.5,4.4,4,3.5,3,4,4.5,4.5,3,4.5,4.5,4.5,4.5,3,2.5,4.5,4.5,2.5,2.5,2.5,4,3.5,2.5]]"
 							},
 							"target": {
-								"url": "https://www.brookings.edu/articles/balancing-marketinnovation-incentives-and-regulation-in-ai-challenges-and-opportunities/.12"
+								"url": "https://www.brookings.edu/articles/balancing-marketinnovation-incentives-and-regulation-in-ai-challenges-and-opportunities/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,5,90,132.7,355,141,[263,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[49, 4]]
@@ -1633,14 +1615,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[5, 90, 109.02, 517.9, 128.44]]},
 					"content": [
-						{
-							"text": "12",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,5,90,123,96,128.4,3,2]]"},
-							"target": {
-								"url": "https://www.brookings.edu/articles/balancing-marketinnovation-incentives-and-regulation-in-ai-challenges-and-opportunities/.12"
-							}
-						},
+						{"text": "12", "style": {"sup": true}, "anchor": {"textMap": "[[0,5,90,123,96,128.4,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Institute for Human-Centered AI, Stanford University, “AI Index 2025 Annual Report,” April 2025, p. 3, ",
@@ -1649,14 +1624,15 @@
 							}
 						},
 						{
-							"text": "https://haiproduction.s3.amazonaws.com/files/hai_ai_index_report_2025.pdf.",
+							"text": "https://haiproduction.s3.amazonaws.com/files/hai_ai_index_report_2025.pdf",
 							"anchor": {
-								"textMap": "[[1,5,417,119.3,518,127.5,[62,4.5],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4.5,4,2.4,3],[0,5,90,109,333,117,4.5,3,4.5,4.5,4.5,4,2.5,2.5,4.5,4.5,2,3.7,4.5,2.3,4,7,4,4,4.5,4.5,4,6.5,3.5,2,4,4.7,7,2.5,3,2.5,2.5,4,3.6,2.5,4.5,4,2.4,4.5,4,2.5,4.5,2.5,4.5,4.5,4,4.5,4.5,3,4,4.5,4.5,3,2.5,4.5,4.5,4.5,4.5,4.5,2.3,4.5,4.5,3,2]]"
+								"textMap": "[[1,5,417,119.3,518,127.5,[62,4.5],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4.5,4,2.4,3],[0,5,90,109,333,117,4.5,3,4.5,4.5,4.5,4,2.5,2.5,4.5,4.5,2,3.7,4.5,2.3,4,7,4,4,4.5,4.5,4,6.5,3.5,2,4,4.7,7,2.5,3,2.5,2.5,4,3.6,2.5,4.5,4,2.4,4.5,4,2.5,4.5,2.5,4.5,4.5,4,4.5,4.5,3,4,4.5,4.5,3,2.5,4.5,4.5,4.5,4.5,4.5,2.3,4.5,4.5,3]]"
 							},
 							"target": {
-								"url": "https://haiproduction.s3.amazonaws.com/files/hai_ai_index_report_2025.pdf.13"
+								"url": "https://haiproduction.s3.amazonaws.com/files/hai_ai_index_report_2025.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,5,90,109,333,117,[241,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[49, 7]]
@@ -1665,14 +1641,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[5, 90, 74.92, 505.61, 104.72]]},
 					"content": [
-						{
-							"text": "13",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,5,90,99.3,96,104.7,3,2]]"},
-							"target": {
-								"url": "https://haiproduction.s3.amazonaws.com/files/hai_ai_index_report_2025.pdf.13"
-							}
-						},
+						{"text": "13", "style": {"sup": true}, "anchor": {"textMap": "[[0,5,90,99.3,96,104.7,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "World Economic Forum, “AI Value Alignment: How We Can Align Artificial Intelligence with Human Values,” October 17, 2024, ",
@@ -2015,14 +1984,15 @@
 							}
 						},
 						{
-							"text": "https://www.speaker.gov/wp-content/uploads/2024/12/AI-Task-ForceReport-FINAL.pdf.",
+							"text": "https://www.speaker.gov/wp-content/uploads/2024/12/AI-Task-ForceReport-FINAL.pdf",
 							"anchor": {
-								"textMap": "[[1,6,155.5,163.7,498,172,[88,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.4,6.5,6.5,2.3,3.5,4.5,4,4,4.5,4,3,2,[0.3,4.5],4.5,4.4,2.5,6.6,4.5,3,4,4.5,4.5,2.5,4,4.5,2.5,2.5,4.5,4.5,2.4,4.5,4,4.6,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,6.5,3,3,5.4,4,3.6,4.5,3,5,4.5,3,4,4,3],[0,6,90,153.4,160.5,161.6,6,4,4.5,4.5,3,2.5,3,5,3,6.6,6.4,5.5,2.3,4.5,4.4,3,2.3]]"
+								"textMap": "[[1,6,155.5,163.7,498,172,[88,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.4,6.5,6.5,2.3,3.5,4.5,4,4,4.5,4,3,2,[0.3,4.5],4.5,4.4,2.5,6.6,4.5,3,4,4.5,4.5,2.5,4,4.5,2.5,2.5,4.5,4.5,2.4,4.5,4,4.6,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,6.5,3,3,5.4,4,3.6,4.5,3,5,4.5,3,4,4,3],[0,6,90,153.4,160.5,161.6,6,4,4.5,4.5,3,2.5,3,5,3,6.6,6.4,5.5,2.3,4.5,4.4,3]]"
 							},
 							"target": {
-								"url": "https://www.speaker.gov/wp-content/uploads/2024/12/AI-Task-ForceReport-FINAL.pdf.17"
+								"url": "https://www.speaker.gov/wp-content/uploads/2024/12/AI-Task-ForceReport-FINAL.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,6,90,153.4,160.5,161.6,[68,2.5]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[56, 3]]
@@ -2031,14 +2001,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[6, 90, 74.92, 512.57, 149.14]]},
 					"content": [
-						{
-							"text": "17",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,6,90,143.7,96,149,3,2]]"},
-							"target": {
-								"url": "https://www.speaker.gov/wp-content/uploads/2024/12/AI-Task-ForceReport-FINAL.pdf.17"
-							}
-						},
+						{"text": "17", "style": {"sup": true}, "anchor": {"textMap": "[[0,6,90,143.7,96,149,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Office of Management and Budget (OMB),",
@@ -2351,14 +2314,15 @@
 							}
 						},
 						{
-							"text": "https://trumpwhitehouse.archives.gov/briefings-statements/white-house-launches-national-artificial-intelligenceinitiative-office/.",
+							"text": "https://trumpwhitehouse.archives.gov/briefings-statements/white-house-launches-national-artificial-intelligenceinitiative-office/",
 							"anchor": {
-								"textMap": "[[1,7,90,279,518,287.4,[22.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,2.4,3,4.5,7,4.5,6.5,4.5,2.5,2.5,4,4.5,4.5,4.5,3.5,4,2,4,3,4,4.7,2.5,4.5,4,3.6,2,4.7,4.5,4.5,2.5,4.5,3,2.5,4,3,2.4,4.5,4.5,3.5,3,3.5,2.5,4,2.5,4,7,4,4.6,2.5,3.5,2.5,6.5,4.5,2.5,2.5,4,3,4.5,4.5,4.5,3.5,4,3,2.5,4,4.5,4.4,4,4.5,4,3.5,3,4.5,4,2.5,2.5,4.5,4.5,4,2.5,3,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4,3],[0,7,90,269,151,277,2.5,4.5,2.5,2.5,2.5,4,2.5,2.5,4.6,4,3,4.5,3,3,2.5,4,4,2.5,2]]"
+								"textMap": "[[1,7,90,279,518,287.4,[22.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,2.4,3,4.5,7,4.5,6.5,4.5,2.5,2.5,4,4.5,4.5,4.5,3.5,4,2,4,3,4,4.7,2.5,4.5,4,3.6,2,4.7,4.5,4.5,2.5,4.5,3,2.5,4,3,2.4,4.5,4.5,3.5,3,3.5,2.5,4,2.5,4,7,4,4.6,2.5,3.5,2.5,6.5,4.5,2.5,2.5,4,3,4.5,4.5,4.5,3.5,4,3,2.5,4,4.5,4.4,4,4.5,4,3.5,3,4.5,4,2.5,2.5,4.5,4.5,4,2.5,3,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4,3],[0,7,90,269,151,277,2.5,4.5,2.5,2.5,2.5,4,2.5,2.5,4.6,4,3,4.5,3,3,2.5,4,4,2.5]]"
 							},
 							"target": {
-								"url": "https://trumpwhitehouse.archives.gov/briefings-statements/white-house-launches-national-artificial-intelligenceinitiative-office/.20"
+								"url": "https://trumpwhitehouse.archives.gov/briefings-statements/white-house-launches-national-artificial-intelligenceinitiative-office/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,7,90,269,151,277,[58.6,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[65, 1, 1]]
@@ -2367,14 +2331,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[7, 90, 221.52, 521.42, 264.64]]},
 					"content": [
-						{
-							"text": "20",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,7,90,259,96,264.6,3,2]]"},
-							"target": {
-								"url": "https://trumpwhitehouse.archives.gov/briefings-statements/white-house-launches-national-artificial-intelligenceinitiative-office/.20"
-							}
-						},
+						{"text": "20", "style": {"sup": true}, "anchor": {"textMap": "[[0,7,90,259,96,264.6,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "“National AI Advisory Committee,” archived at ",
@@ -2766,14 +2723,15 @@
 							}
 						},
 						{
-							"text": "https://www.whitehouse.gov/wp-content/uploads/2025/02/M-25-22-Driving-Efficient-Acquisition-of-ArtificialIntelligence-in-Government.pdf.",
+							"text": "https://www.whitehouse.gov/wp-content/uploads/2025/02/M-25-22-Driving-Efficient-Acquisition-of-ArtificialIntelligence-in-Government.pdf",
 							"anchor": {
-								"textMap": "[[1,8,90,261.5,493.5,269.7,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,6.5,4.5,2.5,2.4,4,4.6,4.5,4.5,3.5,4,2,4.7,4.5,4.5,2.5,6.5,4.5,3,4,4.5,4.5,2.5,4,4.6,2.4,2.5,4.6,4.5,2.5,4.5,4,4.4,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,8,3,4.5,4.5,3,4.5,4.5,3,6.5,3,2.5,4.5,2.5,4.5,4.5,3,5.5,3,3,2.6,4,2.4,4,4.5,2.5,3,6.5,4,4.5,4.5,2.5,3.5,2.5,2.5,2.5,4.5,4.5,3,4.5,3,3,6.5,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3],[0,8,90,251,207,259.4,3,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4,3,2.6,4.5,3,6.4,4.5,4.5,4,3,4.5,7,4,4.5,2.5,2.3,4.5,4.5,3,2]]"
+								"textMap": "[[1,8,90,261.5,493.5,269.7,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,6.5,4.5,2.5,2.4,4,4.6,4.5,4.5,3.5,4,2,4.7,4.5,4.5,2.5,6.5,4.5,3,4,4.5,4.5,2.5,4,4.6,2.4,2.5,4.6,4.5,2.5,4.5,4,4.4,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,8,3,4.5,4.5,3,4.5,4.5,3,6.5,3,2.5,4.5,2.5,4.5,4.5,3,5.5,3,3,2.6,4,2.4,4,4.5,2.5,3,6.5,4,4.5,4.5,2.5,3.5,2.5,2.5,2.5,4.5,4.5,3,4.5,3,3,6.5,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3],[0,8,90,251,207,259.4,3,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4,3,2.6,4.5,3,6.4,4.5,4.5,4,3,4.5,7,4,4.5,2.5,2.3,4.5,4.5,3]]"
 							},
 							"target": {
-								"url": "https://www.whitehouse.gov/wp-content/uploads/2025/02/M-25-22-Driving-Efficient-Acquisition-of-ArtificialIntelligence-in-Government.pdf.28"
+								"url": "https://www.whitehouse.gov/wp-content/uploads/2025/02/M-25-22-Driving-Efficient-Acquisition-of-ArtificialIntelligence-in-Government.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,8,90,251,207,259.4,[115,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[72, 7]]
@@ -2782,14 +2740,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[8, 90, 227.51, 517.53, 246.94]]},
 					"content": [
-						{
-							"text": "28",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,8,90,241.5,96,247,3,2]]"},
-							"target": {
-								"url": "https://www.whitehouse.gov/wp-content/uploads/2025/02/M-25-22-Driving-Efficient-Acquisition-of-ArtificialIntelligence-in-Government.pdf.28"
-							}
-						},
+						{"text": "28", "style": {"sup": true}, "anchor": {"textMap": "[[0,8,90,241.5,96,247,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Federal agency reported AI use cases for 2025 are available at ",
@@ -2852,14 +2803,15 @@
 							}
 						},
 						{
-							"text": "https://www.ncsl.org/technology-and-communication/artificial-intelligence-2025-legislation.",
+							"text": "https://www.ncsl.org/technology-and-communication/artificial-intelligence-2025-legislation",
 							"anchor": {
-								"textMap": "[[0,8,90,166.7,425,175,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,3.5,2.5,2,4.7,3,4.5,2.5,2.6,4,4,4.5,4.5,4.5,2.5,4.5,4.5,4.5,3,4,4.4,4.5,3,4,4.6,7,7,4.5,4.5,2.5,4,4,2.5,2.4,4.5,4.5,2.5,4,3,2.6,2.5,3,2.5,4,2.4,4,2.5,3,2.6,4.5,2.5,4,2.4,2.5,2.5,4.5,4,4.6,4,4,3,4.5,4.5,4.5,4.5,3,2.4,4,4.5,2.5,3.5,2.5,4,2.5,2.5,4.5,4.5,2]]"
+								"textMap": "[[0,8,90,166.7,425,175,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,3.5,2.5,2,4.7,3,4.5,2.5,2.6,4,4,4.5,4.5,4.5,2.5,4.5,4.5,4.5,3,4,4.4,4.5,3,4,4.6,7,7,4.5,4.5,2.5,4,4,2.5,2.4,4.5,4.5,2.5,4,3,2.6,2.5,3,2.5,4,2.4,4,2.5,3,2.6,4.5,2.5,4,2.4,2.5,2.5,4.5,4,4.6,4,4,3,4.5,4.5,4.5,4.5,3,2.4,4,4.5,2.5,3.5,2.5,4,2.5,2.5,4.5,4.5]]"
 							},
 							"target": {
-								"url": "https://www.ncsl.org/technology-and-communication/artificial-intelligence-2025-legislation.32"
+								"url": "https://www.ncsl.org/technology-and-communication/artificial-intelligence-2025-legislation"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,8,90,166.7,425,175,[332.5,2]]]"}}
 					],
 					"reference": true
 				},
@@ -2867,14 +2819,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[8, 90, 132.72, 511, 162.52]]},
 					"content": [
-						{
-							"text": "32",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,8,90,157,96,162.5,3,2]]"},
-							"target": {
-								"url": "https://www.ncsl.org/technology-and-communication/artificial-intelligence-2025-legislation.32"
-							}
-						},
+						{"text": "32", "style": {"sup": true}, "anchor": {"textMap": "[[0,8,90,157,96,162.5,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "S.B. 942, the California AI Transparency Act, ",
@@ -2896,14 +2841,15 @@
 							}
 						},
 						{
-							"text": "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2013.",
+							"text": "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2013",
 							"anchor": {
-								"textMap": "[[0,8,90,132.7,408,141,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,2.5,4,4.5,2.5,4.5,3,4.5,2.3,2.5,4,4.4,2.5,3.5,2.5,4,2.5,4.5,3,4,2,[0.3,4],4,2,4.7,4.5,4.5,2.5,3,4,4,4,3.5,2.5,4.6,2.4,2.5,2.5,6.5,4,4.5,6,2.5,2.5,4,4.5,2.5,2,[0.3,4.5],4.5,2.4,7,2.5,4,4.6,2.5,2.5,2.5,4.5,2.5,4.4,5,4.6,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,6.5,6,4.5,4.5,4.5,4.5,2.3]]"
+								"textMap": "[[0,8,90,132.7,408,141,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,2.5,4,4.5,2.5,4.5,3,4.5,2.3,2.5,4,4.4,2.5,3.5,2.5,4,2.5,4.5,3,4,2,[0.3,4],4,2,4.7,4.5,4.5,2.5,3,4,4,4,3.5,2.5,4.6,2.4,2.5,2.5,6.5,4,4.5,6,2.5,2.5,4,4.5,2.5,2,[0.3,4.5],4.5,2.4,7,2.5,4,4.6,2.5,2.5,2.5,4.5,2.5,4.4,5,4.6,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,6.5,6,4.5,4.5,4.5,4.5]]"
 							},
 							"target": {
-								"url": "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2013.33"
+								"url": "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2013"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,8,90,132.7,408,141,[315.5,2.3]]]"}}
 					],
 					"reference": true
 				},
@@ -2911,14 +2857,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[8, 90, 88.3, 487.24, 128.44]]},
 					"content": [
-						{
-							"text": "33",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,8,90,123,96,128.4,3,2]]"},
-							"target": {
-								"url": "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2013.33"
-							}
-						},
+						{"text": "33", "style": {"sup": true}, "anchor": {"textMap": "[[0,8,90,123,96,128.4,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Legislative text for S.B. 1047, Safe and Secure Innovation for Frontier Artificial Intelligence Models Act, is available at ",
@@ -2942,14 +2881,15 @@
 							}
 						},
 						{
-							"text": "https://www.gov.ca.gov/wp-content/uploads/2024/09/SB-1047-VetoMessage.pdf.",
+							"text": "https://www.gov.ca.gov/wp-content/uploads/2024/09/SB-1047-VetoMessage.pdf",
 							"anchor": {
-								"textMap": "[[1,8,233,98.6,482.7,107,4.6,2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2,4.7,4.5,4.5,2.3,4,4,2,4.7,4.5,4.5,2.5,6.6,4.4,3,4,4.5,4.5,2.5,4,4.6,2.5,2.5,4.5,4.5,2.5,4.5,4,4.4,3.5,2.5,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.5,5,6,3,4.4,4.5,4.5,4.5,3,6.5,4,2.5,4.5,3],[0,8,90,88.3,138,96.5,8,4,3.5,3.5,4,4.5,4,2,[0.3,4.5],4.5,3,2]]"
+								"textMap": "[[1,8,233,98.6,482.7,107,4.6,2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2,4.7,4.5,4.5,2.3,4,4,2,4.7,4.5,4.5,2.5,6.6,4.4,3,4,4.5,4.5,2.5,4,4.6,2.5,2.5,4.5,4.5,2.5,4.5,4,4.4,3.5,2.5,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.5,5,6,3,4.4,4.5,4.5,4.5,3,6.5,4,2.5,4.5,3],[0,8,90,88.3,138,96.5,8,4,3.5,3.5,4,4.5,4,2,[0.3,4.5],4.5,3]]"
 							},
 							"target": {
-								"url": "https://www.gov.ca.gov/wp-content/uploads/2024/09/SB-1047-VetoMessage.pdf.34"
+								"url": "https://www.gov.ca.gov/wp-content/uploads/2024/09/SB-1047-VetoMessage.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,8,90,88.3,138,96.5,[46,2]]]"}}
 					],
 					"reference": true
 				},
@@ -2957,14 +2897,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[8, 90, 74.92, 437.23, 84.02]]},
 					"content": [
-						{
-							"text": "34",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,8,90,78.6,96,84,3,2]]"},
-							"target": {
-								"url": "https://www.gov.ca.gov/wp-content/uploads/2024/09/SB-1047-VetoMessage.pdf.34"
-							}
-						},
+						{"text": "34", "style": {"sup": true}, "anchor": {"textMap": "[[0,8,90,78.6,96,84,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Legislative text and summary information available at ",
@@ -3282,28 +3215,22 @@
 							}
 						},
 						{
-							"text": "https://leg.colorado.gov/sites/default/files/images/report_and_recommendations_0.pdf.",
+							"text": "https://leg.colorado.gov/sites/default/files/images/report_and_recommendations_0.pdf",
 							"anchor": {
-								"textMap": "[[0,9,90,285,403,293.4,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,2.5,4,4.5,2,4,4.7,2.5,4.6,3,4,4.4,4.5,2,[0.3,4.5],4.5,4.5,2.5,3.5,2.5,2.5,4,3.5,2.5,4.5,4,3,4,4.5,2.5,2.5,2.5,3,2.6,2.4,4,3.6,2.4,2.6,7,4,4.5,4,3.4,2.5,3,4,4.5,4.5,3,2.5,4.5,4,4.5,4.5,4.5,3,4,4,4.5,7,7,4,4.4,4.5,4,2.5,2.5,4.5,4.5,3.5,4.5,4.5,2.3,4.5,4.5,3,2.3]]"
+								"textMap": "[[0,9,90,285,403,293.4,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,2.5,4,4.5,2,4,4.7,2.5,4.6,3,4,4.4,4.5,2,[0.3,4.5],4.5,4.5,2.5,3.5,2.5,2.5,4,3.5,2.5,4.5,4,3,4,4.5,2.5,2.5,2.5,3,2.6,2.4,4,3.6,2.4,2.6,7,4,4.5,4,3.4,2.5,3,4,4.5,4.5,3,2.5,4.5,4,4.5,4.5,4.5,3,4,4,4.5,7,7,4,4.4,4.5,4,2.5,2.5,4.5,4.5,3.5,4.5,4.5,2.3,4.5,4.5,3]]"
 							},
 							"target": {
-								"url": "https://leg.colorado.gov/sites/default/files/images/report_and_recommendations_0.pdf.36"
+								"url": "https://leg.colorado.gov/sites/default/files/images/report_and_recommendations_0.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,9,90,285,403,293.4,[310.7,2.3]]]"}}
 					]
 				},
 				{
 					"type": "listitem",
 					"anchor": {"pageRects": [[9, 90, 271.91, 439.69, 281.02]]},
 					"content": [
-						{
-							"text": "36",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,9,90,275.6,96,281,3,2]]"},
-							"target": {
-								"url": "https://leg.colorado.gov/sites/default/files/images/report_and_recommendations_0.pdf.36"
-							}
-						},
+						{"text": "36", "style": {"sup": true}, "anchor": {"textMap": "[[0,9,90,275.6,96,281,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Legislative text and the task force’s report are available at ",
@@ -3312,24 +3239,20 @@
 							}
 						},
 						{
-							"text": "https://www.atg.wa.gov/aitaskforce.",
+							"text": "https://www.atg.wa.gov/aitaskforce",
 							"anchor": {
-								"textMap": "[[0,9,309,272,439.7,280,4.7,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.4,6.5,6.5,2.3,4,2.5,4.5,2,[0.3,6.5],4,2,4.7,4.5,4.5,2.5,4,2.6,2.5,4,3.4,4.5,3,4.5,3,4,4,2.3]]"
+								"textMap": "[[0,9,309,272,439.7,280,4.7,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.4,6.5,6.5,2.3,4,2.5,4.5,2,[0.3,6.5],4,2,4.7,4.5,4.5,2.5,4,2.6,2.5,4,3.4,4.5,3,4.5,3,4,4]]"
 							},
-							"target": {"url": "https://www.atg.wa.gov/aitaskforce.37"}
-						}
+							"target": {"url": "https://www.atg.wa.gov/aitaskforce"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,9,309,272,439.7,280,[128.4,2.3]]]"}}
 					]
 				},
 				{
 					"type": "listitem",
 					"anchor": {"pageRects": [[9, 90, 227.52, 521.16, 267.64]]},
 					"content": [
-						{
-							"text": "37",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,9,90,262,96,267.6,3,2]]"},
-							"target": {"url": "https://www.atg.wa.gov/aitaskforce.37"}
-						},
+						{"text": "37", "style": {"sup": true}, "anchor": {"textMap": "[[0,9,90,262,96,267.6,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Information and current membership list for the Senate AI caucus is available at ",
@@ -3423,12 +3346,13 @@
 							}
 						},
 						{
-							"text": "https://www.techpolicy.press/us-senate-ai-insight-forumtracker/.",
+							"text": "https://www.techpolicy.press/us-senate-ai-insight-forumtracker/",
 							"anchor": {
-								"textMap": "[[1,9,90,146,511.7,154,[215.6,4.7],2.5,2.4,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,2.7,4,4,4.6,4.5,4.5,2.4,2.5,4,4.5,2.3,4.5,3,4,3.5,3.5,2.4,4.7,3.5,3,3.4,4,4.5,4,2.6,4,3,4,2.5,3,2.5,4.5,3.5,2.5,4.5,4.5,2.5,3,3,4.5,3,4.5,7,3],[0,9,90,135.7,120,144,2.5,3,4,4,4.5,4,3,2.5,2]]"
+								"textMap": "[[1,9,90,146,511.7,154,[215.6,4.7],2.5,2.4,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,2.7,4,4,4.6,4.5,4.5,2.4,2.5,4,4.5,2.3,4.5,3,4,3.5,3.5,2.4,4.7,3.5,3,3.4,4,4.5,4,2.6,4,3,4,2.5,3,2.5,4.5,3.5,2.5,4.5,4.5,2.5,3,3,4.5,3,4.5,7,3],[0,9,90,135.7,120,144,2.5,3,4,4,4.5,4,3,2.5]]"
 							},
-							"target": {"url": "https://www.techpolicy.press/us-senate-ai-insight-forumtracker/.41"}
-						}
+							"target": {"url": "https://www.techpolicy.press/us-senate-ai-insight-forumtracker/"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,9,90,135.7,120,144,[27.5,2]]]"}}
 					],
 					"backRefs": [[84, 7]]
 				},
@@ -3436,12 +3360,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[9, 90, 122.33, 454.27, 131.44]]},
 					"content": [
-						{
-							"text": "41",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,9,90,126,96,131.4,3,2]]"},
-							"target": {"url": "https://www.techpolicy.press/us-senate-ai-insight-forumtracker/.41"}
-						},
+						{"text": "41", "style": {"sup": true}, "anchor": {"textMap": "[[0,9,90,126,96,131.4,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Bipartisan Senate AI Working Group, “Driving U.S. Innovation in Artificial Intelligence,” pp. 2-3.",
@@ -3719,14 +3638,15 @@
 							}
 						},
 						{
-							"text": "https://www.speaker.gov/2024/02/20/house-launches-bipartisan-task-force-onartificial-intelligence/.",
+							"text": "https://www.speaker.gov/2024/02/20/house-launches-bipartisan-task-force-onartificial-intelligence/",
 							"anchor": {
-								"textMap": "[[1,10,90,289.6,495,298,[121,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3.7,4.5,4,4,4.5,4,3,2.3,4.5,4.5,4.5,2.4,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,4.5,3.5,4,3,2.5,4,4.5,4.5,4,4.4,4,3.6,3,4.5,2.5,4.5,4,3,2.4,2.5,3.6,4,4.5,3,2.5,4,3.4,4.5,3,3,4.5,3,4,4,3,4.6,4.5,3],[0,10,90,279,170.3,287.4,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.6,4.5,2.4,4,2.6,2.4,2.5,4.5,4,4.5,4,4,2.5,2.3]]"
+								"textMap": "[[1,10,90,289.6,495,298,[121,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3.7,4.5,4,4,4.5,4,3,2.3,4.5,4.5,4.5,2.4,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,4.5,3.5,4,3,2.5,4,4.5,4.5,4,4.4,4,3.6,3,4.5,2.5,4.5,4,3,2.4,2.5,3.6,4,4.5,3,2.5,4,3.4,4.5,3,3,4.5,3,4,4,3,4.6,4.5,3],[0,10,90,279,170.3,287.4,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.6,4.5,2.4,4,2.6,2.4,2.5,4.5,4,4.5,4,4,2.5]]"
 							},
 							"target": {
-								"url": "https://www.speaker.gov/2024/02/20/house-launches-bipartisan-task-force-onartificial-intelligence/.45"
+								"url": "https://www.speaker.gov/2024/02/20/house-launches-bipartisan-task-force-onartificial-intelligence/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,10,90,279,170.3,287.4,[78,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[90, 1]]
@@ -3735,14 +3655,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[10, 90, 245.22, 518.11, 275.02]]},
 					"content": [
-						{
-							"text": "45",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,10,90,269.6,96,275,3,2]]"},
-							"target": {
-								"url": "https://www.speaker.gov/2024/02/20/house-launches-bipartisan-task-force-onartificial-intelligence/.45"
-							}
-						},
+						{"text": "45", "style": {"sup": true}, "anchor": {"textMap": "[[0,10,90,269.6,96,275,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Bipartisan House Task Force on AI,",
@@ -3818,12 +3731,13 @@
 							}
 						},
 						{
-							"text": "https://bidenwhitehouse.archives.gov/ostp/ai-bill-of-rights/.",
+							"text": "https://bidenwhitehouse.archives.gov/ostp/ai-bill-of-rights/",
 							"anchor": {
-								"textMap": "[[0,10,90,180,304.3,188.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,2.4,4.5,4,4.5,6.5,4.5,2.5,2.5,4,4.5,4.5,4.5,3.5,4,2.3,4,3,4,4.4,2.5,4.6,4,3.4,2,4.7,4.5,4.5,2.5,4.6,3.5,2.5,4.5,2.5,4,2.6,3,4.5,2.4,2.5,2.6,3,4.4,3,3,3,2.5,4.5,4.5,2.5,3.5,2.6,2]]"
+								"textMap": "[[0,10,90,180,304.3,188.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,2.4,4.5,4,4.5,6.5,4.5,2.5,2.5,4,4.5,4.5,4.5,3.5,4,2.3,4,3,4,4.4,2.5,4.6,4,3.4,2,4.7,4.5,4.5,2.5,4.6,3.5,2.5,4.5,2.5,4,2.6,3,4.5,2.4,2.5,2.6,3,4.4,3,3,3,2.5,4.5,4.5,2.5,3.5,2.6]]"
 							},
-							"target": {"url": "https://bidenwhitehouse.archives.gov/ostp/ai-bill-of-rights/.47"}
-						}
+							"target": {"url": "https://bidenwhitehouse.archives.gov/ostp/ai-bill-of-rights/"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,10,90,180,304.3,188.3,[212,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[92, 1]]
@@ -3832,12 +3746,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[10, 90, 166.74, 234.47, 175.84]]},
 					"content": [
-						{
-							"text": "47",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,10,90,170.4,96,176,3,2]]"},
-							"target": {"url": "https://bidenwhitehouse.archives.gov/ostp/ai-bill-of-rights/.47"}
-						},
+						{"text": "47", "style": {"sup": true}, "anchor": {"textMap": "[[0,10,90,170.4,96,176,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "OMB, M-24-10; and OMB, M-25-21.",
@@ -3877,14 +3786,15 @@
 							}
 						},
 						{
-							"text": "https://www.federalregister.gov/documents/2025/01/31/2025-02172/removingbarriers-to-american-leadership-in-artificial-intelligence.",
+							"text": "https://www.federalregister.gov/documents/2025/01/31/2025-02172/removingbarriers-to-american-leadership-in-artificial-intelligence",
 							"anchor": {
-								"textMap": "[[1,10,122.3,143,496.5,151,[88.7,4.5],2.5,2.5,4.6,3.5,2.5,2.5,2.4,6.5,6.5,6.5,2,[0.3,3],4,4.5,4,3,4,2.5,3,4,4.4,2.5,3.5,2.6,4,3,2,4.7,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.4,4.5,2.5,3,4,7,4.6,4.5,2.5,4.5,4.5,3],[0,10,90,132.7,294,141,4.5,4,3,3,2.5,4,3,3.5,3,2.6,4.5,3,4,7,4,3,2.4,4,4,4.5,3,2.5,4,4,4.5,4,3,3.4,4.5,2.5,4.5,3,2.6,4.4,3,4,3,2.5,2.6,3,2.4,4,2.6,4,2.4,3,2.6,4.5,2.4,4,2.5,2.5,2.5,4.5,4,4.5,4,4,2.3]]"
+								"textMap": "[[1,10,122.3,143,496.5,151,[88.7,4.5],2.5,2.5,4.6,3.5,2.5,2.5,2.4,6.5,6.5,6.5,2,[0.3,3],4,4.5,4,3,4,2.5,3,4,4.4,2.5,3.5,2.6,4,3,2,4.7,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.4,4.5,2.5,3,4,7,4.6,4.5,2.5,4.5,4.5,3],[0,10,90,132.7,294,141,4.5,4,3,3,2.5,4,3,3.5,3,2.6,4.5,3,4,7,4,3,2.4,4,4,4.5,3,2.5,4,4,4.5,4,3,3.4,4.5,2.5,4.5,3,2.6,4.4,3,4,3,2.5,2.6,3,2.4,4,2.6,4,2.4,3,2.6,4.5,2.4,4,2.5,2.5,2.5,4.5,4,4.5,4,4]]"
 							},
 							"target": {
-								"url": "https://www.federalregister.gov/documents/2025/01/31/2025-02172/removingbarriers-to-american-leadership-in-artificial-intelligence.49"
+								"url": "https://www.federalregister.gov/documents/2025/01/31/2025-02172/removingbarriers-to-american-leadership-in-artificial-intelligence"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,10,90,132.7,294,141,[202,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[93, 6]]
@@ -3893,14 +3803,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[10, 90, 98.62, 521.37, 128.44]]},
 					"content": [
-						{
-							"text": "49",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,10,90,123,96,128.4,3,2]]"},
-							"target": {
-								"url": "https://www.federalregister.gov/documents/2025/01/31/2025-02172/removingbarriers-to-american-leadership-in-artificial-intelligence.49"
-							}
-						},
+						{"text": "49", "style": {"sup": true}, "anchor": {"textMap": "[[0,10,90,123,96,128.4,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "E.O. 14110 of October 30, 2023, “Safe, Secure, and Trustworthy Development and Use of Artificial Intelligence,” 88",
@@ -3924,14 +3827,15 @@
 							}
 						},
 						{
-							"text": "https://www.federalregister.gov/documents/2023/11/01/2023-24283/safesecure-and-trustworthy-development-and-use-of-artificial-intelligence.",
+							"text": "https://www.federalregister.gov/documents/2023/11/01/2023-24283/safesecure-and-trustworthy-development-and-use-of-artificial-intelligence",
 							"anchor": {
-								"textMap": "[[1,10,153,109,517,117,[99,4.3],2.5,2.4,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3,4,[0.3,4.5],4,3,4,2.4,3,4,4.5,2.5,3.5,2.5,4,3,2.3,4.5,4.5,4.5,2.4,4.6,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.4,4.5,4.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,3.5,4,3,4,3],[0,10,90,98.6,345,107,3.5,4,4,4.5,3,4,3,4,4.6,4.5,3,2.4,3,4.5,3.5,2.5,6.5,4.5,3,2.5,4.5,4.5,3,4.5,4,4.5,4,2.5,4.5,4.5,7,4,4.5,2.5,3,4,4.5,4.5,3,4.5,3.5,4,3,4.5,3,3,4,3,2.4,2.6,3,2.4,4,2.6,4,2.4,3,2.6,4.5,2.4,4,2.5,2.5,2.5,4.5,4,4.5,4,4,2.3]]"
+								"textMap": "[[1,10,153,109,517,117,[99,4.3],2.5,2.4,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3,4,[0.3,4.5],4,3,4,2.4,3,4,4.5,2.5,3.5,2.5,4,3,2.3,4.5,4.5,4.5,2.4,4.6,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.4,4.5,4.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,3.5,4,3,4,3],[0,10,90,98.6,345,107,3.5,4,4,4.5,3,4,3,4,4.6,4.5,3,2.4,3,4.5,3.5,2.5,6.5,4.5,3,2.5,4.5,4.5,3,4.5,4,4.5,4,2.5,4.5,4.5,7,4,4.5,2.5,3,4,4.5,4.5,3,4.5,3.5,4,3,4.5,3,3,4,3,2.4,2.6,3,2.4,4,2.6,4,2.4,3,2.6,4.5,2.4,4,2.5,2.5,2.5,4.5,4,4.5,4,4]]"
 							},
 							"target": {
-								"url": "https://www.federalregister.gov/documents/2023/11/01/2023-24283/safesecure-and-trustworthy-development-and-use-of-artificial-intelligence.50"
+								"url": "https://www.federalregister.gov/documents/2023/11/01/2023-24283/safesecure-and-trustworthy-development-and-use-of-artificial-intelligence"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,10,90,98.6,345,107,[253,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[93, 11]]
@@ -3940,14 +3844,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[10, 90, 74.92, 517.36, 94.4]]},
 					"content": [
-						{
-							"text": "50",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,10,90,89,96,94.4,3,2]]"},
-							"target": {
-								"url": "https://www.federalregister.gov/documents/2023/11/01/2023-24283/safesecure-and-trustworthy-development-and-use-of-artificial-intelligence.50"
-							}
-						},
+						{"text": "50", "style": {"sup": true}, "anchor": {"textMap": "[[0,10,90,89,96,94.4,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "E.O. 14148 of January 20, 2025, “Initial Recissions of Harmful Executive Orders and Actions,” 90",
@@ -4217,14 +4114,15 @@
 							}
 						},
 						{
-							"text": "https://www.federalregister.gov/documents/2025/01/28/2025-01901/initial-rescissions-ofharmful-executive-orders-and-actions.",
+							"text": "https://www.federalregister.gov/documents/2025/01/28/2025-01901/initial-rescissions-ofharmful-executive-orders-and-actions",
 							"anchor": {
-								"textMap": "[[1,11,90,356.3,503.3,364.5,[88.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,3,4,4.5,4,3,4,2.5,3,4,4.5,2.5,3.5,2.4,4,3,2.3,4.6,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.4,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,2.5,4.5,2.5,2.6,2.4,4,2.5,3,3,4,3.5,4,2.5,3.5,3.5,2.5,4.5,4.5,3.5,3,4.5,3,3],[0,11,90,346,228,354,4.5,4,3,7,3,4.5,2.5,3,4,4.5,4,4,4.5,2.5,2.5,4.5,4,3,4.5,3,4.5,4,3,3.5,3,4,4.5,4.5,3,4,4,2.5,2.5,4.5,4.5,3.5,2]]"
+								"textMap": "[[1,11,90,356.3,503.3,364.5,[88.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,3,4,4.5,4,3,4,2.5,3,4,4.5,2.5,3.5,2.4,4,3,2.3,4.6,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.4,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,2.5,4.5,2.5,2.6,2.4,4,2.5,3,3,4,3.5,4,2.5,3.5,3.5,2.5,4.5,4.5,3.5,3,4.5,3,3],[0,11,90,346,228,354,4.5,4,3,7,3,4.5,2.5,3,4,4.5,4,4,4.5,2.5,2.5,4.5,4,3,4.5,3,4.5,4,3,3.5,3,4,4.5,4.5,3,4,4,2.5,2.5,4.5,4.5,3.5]]"
 							},
 							"target": {
-								"url": "https://www.federalregister.gov/documents/2025/01/28/2025-01901/initial-rescissions-ofharmful-executive-orders-and-actions.51"
+								"url": "https://www.federalregister.gov/documents/2025/01/28/2025-01901/initial-rescissions-ofharmful-executive-orders-and-actions"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,11,90,346,228,354,[136,2]]]"}}
 					]
 				},
 				{
@@ -4234,10 +4132,7 @@
 						{
 							"text": "51",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,11,90,336.3,96,341.7,3,2]]"},
-							"target": {
-								"url": "https://www.federalregister.gov/documents/2025/01/28/2025-01901/initial-rescissions-ofharmful-executive-orders-and-actions.51"
-							}
+							"anchor": {"textMap": "[[0,11,90,336.3,96,341.7,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -4309,14 +4204,15 @@
 							}
 						},
 						{
-							"text": "https://www.federalregister.gov/documents/2019/02/14/2019-02544/maintaining-americanleadership-in-artificial-intelligence.",
+							"text": "https://www.federalregister.gov/documents/2019/02/14/2019-02544/maintaining-americanleadership-in-artificial-intelligence",
 							"anchor": {
-								"textMap": "[[1,11,90,288,513.3,296.4,[93,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,3,4,4.5,4,3,4,2.5,3,4,4.5,2.5,3.5,2.4,4,3,2.3,4.6,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.4,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,7,4,2.6,4.5,2.4,4,2.5,4.5,2.5,4.6,4.5,3,4,7,4,3,2.4,4,4,4.5,3],[0,11,90,278,217.7,286,2.5,4,4,4.5,4,3,3.5,4.5,2.5,4.5,3,2.5,4.6,3,4,3,2.4,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4,2]]"
+								"textMap": "[[1,11,90,288,513.3,296.4,[93,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,3,4,4.5,4,3,4,2.5,3,4,4.5,2.5,3.5,2.4,4,3,2.3,4.6,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.4,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,7,4,2.6,4.5,2.4,4,2.5,4.5,2.5,4.6,4.5,3,4,7,4,3,2.4,4,4,4.5,3],[0,11,90,278,217.7,286,2.5,4,4,4.5,4,3,3.5,4.5,2.5,4.5,3,2.5,4.6,3,4,3,2.4,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4]]"
 							},
 							"target": {
-								"url": "https://www.federalregister.gov/documents/2019/02/14/2019-02544/maintaining-americanleadership-in-artificial-intelligence.53"
+								"url": "https://www.federalregister.gov/documents/2019/02/14/2019-02544/maintaining-americanleadership-in-artificial-intelligence"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,11,90,278,217.7,286,[125.5,2]]]"}}
 					],
 					"backRefs": [[97, 6]]
 				},
@@ -4324,14 +4220,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[11, 90, 243.84, 510.92, 273.64]]},
 					"content": [
-						{
-							"text": "53",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,11,90,268,96,273.6,3,2]]"},
-							"target": {
-								"url": "https://www.federalregister.gov/documents/2019/02/14/2019-02544/maintaining-americanleadership-in-artificial-intelligence.53"
-							}
-						},
+						{"text": "53", "style": {"sup": true}, "anchor": {"textMap": "[[0,11,90,268,96,273.6,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "For more information summarizing the requirements and timelines for deliverables from E.O. 14110, see CRS Report R47843,",
@@ -4444,14 +4333,15 @@
 							}
 						},
 						{
-							"text": "https://www.federalregister.gov/documents/2025/02/06/2025-02305/request-forinformation-on-the-development-of-an-artificial-intelligence-ai-action-plan.",
+							"text": "https://www.federalregister.gov/documents/2025/02/06/2025-02305/request-forinformation-on-the-development-of-an-artificial-intelligence-ai-action-plan",
 							"anchor": {
-								"textMap": "[[1,11,122.3,166.7,501.6,175,[88.7,4.5],2.5,2.5,4.6,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3,4,4.7,4,3,4,2.5,3,4,4.5,2.5,3.5,2.5,4,3,2,4.7,4.5,4.5,2.5,4.6,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,3,4,4.5,4.5,4,3.5,2.5,3,3,4.5,3,3],[0,11,90,156.4,363.7,164.6,2.5,4.5,3,4.5,3,7,4,2.5,2.5,4.5,4.5,3,4.6,4.5,3,2.5,4.4,4,3,4.5,4,4.5,4,2.5,4.5,4.5,7,4,4.6,2.4,3,4.5,3,3,4,4.5,3,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.4,2.5,4,2.6,2.5,2.5,4.5,4,4.5,4,4,3,4,2.4,3,4,4,2.5,2.5,4.5,4.5,3,4.5,2.5,4,4.6,2]]"
+								"textMap": "[[1,11,122.3,166.7,501.6,175,[88.7,4.5],2.5,2.5,4.6,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3,4,4.7,4,3,4,2.5,3,4,4.5,2.5,3.5,2.5,4,3,2,4.7,4.5,4.5,2.5,4.6,4.5,4,4.5,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.5,4.5,2.5,3,4,4.5,4.5,4,3.5,2.5,3,3,4.5,3,3],[0,11,90,156.4,363.7,164.6,2.5,4.5,3,4.5,3,7,4,2.5,2.5,4.5,4.5,3,4.6,4.5,3,2.5,4.4,4,3,4.5,4,4.5,4,2.5,4.5,4.5,7,4,4.6,2.4,3,4.5,3,3,4,4.5,3,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.4,2.5,4,2.6,2.5,2.5,4.5,4,4.5,4,4,3,4,2.4,3,4,4,2.5,2.5,4.5,4.5,3,4.5,2.5,4,4.6]]"
 							},
 							"target": {
-								"url": "https://www.federalregister.gov/documents/2025/02/06/2025-02305/request-forinformation-on-the-development-of-an-artificial-intelligence-ai-action-plan.59"
+								"url": "https://www.federalregister.gov/documents/2025/02/06/2025-02305/request-forinformation-on-the-development-of-an-artificial-intelligence-ai-action-plan"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,11,90,156.4,363.7,164.6,[271.5,2]]]"}}
 					],
 					"backRefs": [[99, 4]]
 				},
@@ -4459,14 +4349,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[11, 90, 109.02, 510.49, 152.14]]},
 					"content": [
-						{
-							"text": "59",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,11,90,146.7,96,152,3,2]]"},
-							"target": {
-								"url": "https://www.federalregister.gov/documents/2025/02/06/2025-02305/request-forinformation-on-the-development-of-an-artificial-intelligence-ai-action-plan.59"
-							}
-						},
+						{"text": "59", "style": {"sup": true}, "anchor": {"textMap": "[[0,11,90,146.7,96,152,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Per the RFI notice and comment information at ",
@@ -4817,12 +4700,13 @@
 							}
 						},
 						{
-							"text": "https://www.gao.gov/products/gao-24-105980.",
+							"text": "https://www.gao.gov/products/gao-24-105980",
 							"anchor": {
-								"textMap": "[[0,12,197,109,507,117,[141,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4.5,4,4.5,2,[0.3,4.5],4.5,4.5,2.5,4.5,3,4.5,4.5,4.5,4,2.4,3.5,2.5,4.5,4,4.5,3,4.6,4.5,3,4.5,4.5,4.5,4.5,4.4,4.5,2]]"
+								"textMap": "[[0,12,197,109,507,117,[141,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4.5,4,4.5,2,[0.3,4.5],4.5,4.5,2.5,4.5,3,4.5,4.5,4.5,4,2.4,3.5,2.5,4.5,4,4.5,3,4.6,4.5,3,4.5,4.5,4.5,4.5,4.4,4.5]]"
 							},
-							"target": {"url": "https://www.gao.gov/products/gao-24-105980.65"}
-						}
+							"target": {"url": "https://www.gao.gov/products/gao-24-105980"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,12,197,109,507,117,[307.7,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[104, 7]]
@@ -4834,8 +4718,7 @@
 						{
 							"text": "65",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,12,90,99.3,96,104.7,3,2]]"},
-							"target": {"url": "https://www.gao.gov/products/gao-24-105980.65"}
+							"anchor": {"textMap": "[[0,12,90,99.3,96,104.7,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -5148,14 +5031,15 @@
 							}
 						},
 						{
-							"text": "https://hai.stanford.edu/news/decoding-white-house-ai-executive-orders-achievements.",
+							"text": "https://hai.stanford.edu/news/decoding-white-house-ai-executive-orders-achievements",
 							"anchor": {
-								"textMap": "[[0,13,90,156.4,403,164.6,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,4,2.4,2,4,2.3,4,4.5,3,4.5,3,4.4,2.3,4,4.5,4.5,2.5,4.6,4,6.4,3.5,2.5,4.5,4,4,4.5,4.5,2.5,4.5,4.5,3,6.5,4.5,2.5,2.5,4,3,4.6,4.5,4.5,3.4,4,3,4,2.5,3,4,4.5,4,4,4.5,2.5,2.5,4.5,4,3,4.5,3,4.5,4,3,3.5,3,4,4,4.5,2.5,4,4.5,4,7,4,4.4,2.5,3.6,2]]"
+								"textMap": "[[0,13,90,156.4,403,164.6,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,4,2.4,2,4,2.3,4,4.5,3,4.5,3,4.4,2.3,4,4.5,4.5,2.5,4.6,4,6.4,3.5,2.5,4.5,4,4,4.5,4.5,2.5,4.5,4.5,3,6.5,4.5,2.5,2.5,4,3,4.6,4.5,4.5,3.4,4,3,4,2.5,3,4,4.5,4,4,4.5,2.5,2.5,4.5,4,3,4.5,3,4.5,4,3,3.5,3,4,4,4.5,2.5,4,4.5,4,7,4,4.4,2.5,3.6]]"
 							},
 							"target": {
-								"url": "https://hai.stanford.edu/news/decoding-white-house-ai-executive-orders-achievements.68"
+								"url": "https://hai.stanford.edu/news/decoding-white-house-ai-executive-orders-achievements"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,13,90,156.4,403,164.6,[311,2]]]"}}
 					],
 					"backRefs": [[114, 4]]
 				},
@@ -5163,14 +5047,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[13, 90, 143.03, 496.45, 152.14]]},
 					"content": [
-						{
-							"text": "68",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,13,90,146.7,96,152,3,2]]"},
-							"target": {
-								"url": "https://hai.stanford.edu/news/decoding-white-house-ai-executive-orders-achievements.68"
-							}
-						},
+						{"text": "68", "style": {"sup": true}, "anchor": {"textMap": "[[0,13,90,146.7,96,152,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Epoch AI, “AI Benchmarking Hub,” updated May 28, 2025, ",
@@ -5179,12 +5056,13 @@
 							}
 						},
 						{
-							"text": "https://epoch.ai/data/ai-benchmarking-dashboard.",
+							"text": "https://epoch.ai/data/ai-benchmarking-dashboard",
 							"anchor": {
-								"textMap": "[[0,13,263,143,496.5,151,[55,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,4.5,4.5,4,4.5,2,4,2.7,2.5,4.6,4,2.4,4,2.5,4,2.5,3,4.6,4,4.4,4,4.5,7,4,3,4.4,2.5,4.5,4.5,3,4.6,4,3.5,4.5,4.5,4.5,4,3,4.5,2]]"
+								"textMap": "[[0,13,263,143,496.5,151,[55,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,4.5,4.5,4,4.5,2,4,2.7,2.5,4.6,4,2.4,4,2.5,4,2.5,3,4.6,4,4.4,4,4.5,7,4,3,4.4,2.5,4.5,4.5,3,4.6,4,3.5,4.5,4.5,4.5,4,3,4.5]]"
 							},
-							"target": {"url": "https://epoch.ai/data/ai-benchmarking-dashboard.69"}
-						}
+							"target": {"url": "https://epoch.ai/data/ai-benchmarking-dashboard"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,13,263,143,496.5,151,[231,2]]]"}}
 					],
 					"backRefs": [[114, 7]]
 				},
@@ -5192,12 +5070,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[13, 90, 98.62, 520.01, 138.82]]},
 					"content": [
-						{
-							"text": "69",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,13,90,133.4,96,139,3,2]]"},
-							"target": {"url": "https://epoch.ai/data/ai-benchmarking-dashboard.69"}
-						},
+						{"text": "69", "style": {"sup": true}, "anchor": {"textMap": "[[0,13,90,133.4,96,139,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "As defined in the bill, the term",
@@ -5920,14 +5793,15 @@
 							}
 						},
 						{
-							"text": "https://www.gov.uk/government/publications/ai-regulation-a-proinnovation-approach/white-paper.",
+							"text": "https://www.gov.uk/government/publications/ai-regulation-a-proinnovation-approach/white-paper",
 							"anchor": {
-								"textMap": "[[1,15,159,204,486.5,212,[90.5,4.6],2.4,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4.7,4.5,4.5,2.3,4.5,4.5,2.5,4.6,4.4,4.5,4,3,4.5,7,4,4.5,2.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.4,4.5,4.5,3.5,2.5,4,2.6,3,3,4,4.5,4.5,2.5,4,2.4,2.5,4.5,4.5,3,4,3,4.6,3,4.5,3],[0,15,90,193.4,212,201.6,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.6,4.5,3,4,4.4,4.5,3,4.5,4,4,4.5,2.5,6.6,4.5,2.5,2.4,4,3,4.5,4,4.5,4,3,2]]"
+								"textMap": "[[1,15,159,204,486.5,212,[90.5,4.6],2.4,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4.7,4.5,4.5,2.3,4.5,4.5,2.5,4.6,4.4,4.5,4,3,4.5,7,4,4.5,2.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.4,4.5,4.5,3.5,2.5,4,2.6,3,3,4,4.5,4.5,2.5,4,2.4,2.5,4.5,4.5,3,4,3,4.6,3,4.5,3],[0,15,90,193.4,212,201.6,2.5,4.5,4.5,4.5,4.5,4,2.5,2.5,4.6,4.5,3,4,4.4,4.5,3,4.5,4,4,4.5,2.5,6.6,4.5,2.5,2.4,4,3,4.5,4,4.5,4,3]]"
 							},
 							"target": {
-								"url": "https://www.gov.uk/government/publications/ai-regulation-a-proinnovation-approach/white-paper.78"
+								"url": "https://www.gov.uk/government/publications/ai-regulation-a-proinnovation-approach/white-paper"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,15,90,193.4,212,201.6,[120,2]]]"}}
 					],
 					"backRefs": [[134, 4]]
 				},
@@ -5935,14 +5809,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[15, 90, 180.11, 404.12, 189.22]]},
 					"content": [
-						{
-							"text": "78",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,15,90,184,96,189,3,2]]"},
-							"target": {
-								"url": "https://www.gov.uk/government/publications/ai-regulation-a-proinnovation-approach/white-paper.78"
-							}
-						},
+						{"text": "78", "style": {"sup": true}, "anchor": {"textMap": "[[0,15,90,184,96,189,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "DSIT, “A Pro-Innovation Approach to AI Regulation,” Executive Summary, point 8.",
@@ -6297,14 +6164,13 @@
 							}
 						},
 						{
-							"text": "https://www.gov.uk/government/publications/aiopportunities-action-plan.",
+							"text": "https://www.gov.uk/government/publications/aiopportunities-action-plan",
 							"anchor": {
-								"textMap": "[[1,16,257,319.3,514,327.5,[81.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2.3,4.5,4.5,4.4,2.3,4.5,4.5,2.5,4.5,4.5,4.5,4,3,4.6,7,4,4.4,2.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,4,2.5,3],[0,16,90,309,183,317,4.5,4.5,4.5,4.5,3,2.5,4.5,4.5,2.5,2.5,2.5,4,3.5,3,4,4,2.5,2.5,4.5,4.5,3,4.5,2.5,4,4.5,2]]"
+								"textMap": "[[1,16,257,319.3,514,327.5,[81.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2.3,4.5,4.5,4.4,2.3,4.5,4.5,2.5,4.5,4.5,4.5,4,3,4.6,7,4,4.4,2.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,4,2.5,3],[0,16,90,309,183,317,4.5,4.5,4.5,4.5,3,2.5,4.5,4.5,2.5,2.5,2.5,4,3.5,3,4,4,2.5,2.5,4.5,4.5,3,4.5,2.5,4,4.5]]"
 							},
-							"target": {
-								"url": "https://www.gov.uk/government/publications/aiopportunities-action-plan.84"
-							}
-						}
+							"target": {"url": "https://www.gov.uk/government/publications/aiopportunities-action-plan"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,16,90,309,183,317,[91,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[141, 1]]
@@ -6316,10 +6182,7 @@
 						{
 							"text": "84",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,16,90,299.3,96,304.7,3,2]]"},
-							"target": {
-								"url": "https://www.gov.uk/government/publications/aiopportunities-action-plan.84"
-							}
+							"anchor": {"textMap": "[[0,16,90,299.3,96,304.7,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -6380,12 +6243,13 @@
 							}
 						},
 						{
-							"text": "https://bills.parliament.uk/bills/3942.",
+							"text": "https://bills.parliament.uk/bills/3942",
 							"anchor": {
-								"textMap": "[[0,16,90,238,288.5,246,[65,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,2.5,2.5,3.5,2,4.7,4,3,2.5,2.5,4,7,4,4.5,2.5,2.3,4.5,4.5,2.4,4.6,2.5,2.5,2.5,3.5,2.5,4.5,4.4,4.5,4.5,2.3]]"
+								"textMap": "[[0,16,90,238,288.5,246,[65,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,2.5,2.5,3.5,2,4.7,4,3,2.5,2.5,4,7,4,4.5,2.5,2.3,4.5,4.5,2.4,4.6,2.5,2.5,2.5,3.5,2.5,4.5,4.4,4.5,4.5]]"
 							},
-							"target": {"url": "https://bills.parliament.uk/bills/3942.87"}
-						}
+							"target": {"url": "https://bills.parliament.uk/bills/3942"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,16,90,238,288.5,246,[196,2.5]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[141, 10]]
@@ -6394,12 +6258,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[16, 90, 203.82, 498.62, 233.62]]},
 					"content": [
-						{
-							"text": "87",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,16,90,228,96,233.6,3,2]]"},
-							"target": {"url": "https://bills.parliament.uk/bills/3942.87"}
-						},
+						{"text": "87", "style": {"sup": true}, "anchor": {"textMap": "[[0,16,90,228,96,233.6,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "Valeria Gallo and Suchitra Nair, “The UK’s Framework for AI Regulation: Agility Is Prioritized, but Future Legislation Is Likely to Be Needed,” Deloitte UK, February 21, 2024, ",
@@ -6437,14 +6296,15 @@
 							}
 						},
 						{
-							"text": "https://www.dacbeachcroft.com/The-approach-to-the-regulation-of-AI-in-the-UK.",
+							"text": "https://www.dacbeachcroft.com/The-approach-to-the-regulation-of-AI-in-the-UK",
 							"anchor": {
-								"textMap": "[[0,16,90,180,386,188.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,4,4.4,4,4,4,4.6,4,3,4.4,3,2.5,2,[0.3,4],4.5,7,2.5,5.4,4.5,4,3,4,4.6,4.5,3,4.5,4,4,4.5,3,2.4,4.5,3,2.5,4.5,4,3,3,4,4.5,4.5,2.5,4,2.5,2.5,4.5,4.5,3,4.5,3,3,6.5,3,3,2.4,4.6,3,2.5,4.5,4,3,6.5,6.5,2]]"
+								"textMap": "[[0,16,90,180,386,188.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,4,4.4,4,4,4,4.6,4,3,4.4,3,2.5,2,[0.3,4],4.5,7,2.5,5.4,4.5,4,3,4,4.6,4.5,3,4.5,4,4,4.5,3,2.4,4.5,3,2.5,4.5,4,3,3,4,4.5,4.5,2.5,4,2.5,2.5,4.5,4.5,3,4.5,3,3,6.5,3,3,2.4,4.6,3,2.5,4.5,4,3,6.5,6.5]]"
 							},
 							"target": {
-								"url": "https://www.dacbeachcroft.com/The-approach-to-the-regulation-of-AI-in-the-UK.89"
+								"url": "https://www.dacbeachcroft.com/The-approach-to-the-regulation-of-AI-in-the-UK"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,16,90,180,386,188.3,[294,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[142, 4]]
@@ -6453,14 +6313,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[16, 90, 146.03, 517.75, 175.84]]},
 					"content": [
-						{
-							"text": "89",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,16,90,170.4,96,176,3,2]]"},
-							"target": {
-								"url": "https://www.dacbeachcroft.com/The-approach-to-the-regulation-of-AI-in-the-UK.89"
-							}
-						},
+						{"text": "89", "style": {"sup": true}, "anchor": {"textMap": "[[0,16,90,170.4,96,176,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "The King’s Speech is read by the king on the occasion of the State Opening of Parliament, and it sets forth the scope of legislation that the UK government intends to pursue in the forthcoming parliamentary session. See UK Parliament, “King’s Speech,” ",
@@ -6469,12 +6322,13 @@
 							}
 						},
 						{
-							"text": "https://www.parliament.uk/site-information/glossary/kings-speech/.",
+							"text": "https://www.parliament.uk/site-information/glossary/kings-speech/",
 							"anchor": {
-								"textMap": "[[0,16,155.3,146,399,154,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4.7,4,3,2.5,2.5,4,7,4,4.5,2.4,2.3,4.5,4.5,2.5,3.6,2.5,2.4,4,3,2.5,4.5,3,4.5,3,7,4,2.5,2.5,4.5,4.5,2.5,4.6,2.4,4.5,3.5,3.5,4,3,4.4,2.5,4.6,2.5,4.5,4.5,3.5,3,3.5,4.5,4,4,4,4.5,2.5,2]]"
+								"textMap": "[[0,16,155.3,146,399,154,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4.7,4,3,2.5,2.5,4,7,4,4.5,2.4,2.3,4.5,4.5,2.5,3.6,2.5,2.4,4,3,2.5,4.5,3,4.5,3,7,4,2.5,2.5,4.5,4.5,2.5,4.6,2.4,4.5,3.5,3.5,4,3,4.4,2.5,4.6,2.5,4.5,4.5,3.5,3,3.5,4.5,4,4,4,4.5,2.5]]"
 							},
-							"target": {"url": "https://www.parliament.uk/site-information/glossary/kings-speech/.90"}
-						}
+							"target": {"url": "https://www.parliament.uk/site-information/glossary/kings-speech/"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,16,155.3,146,399,154,[241.4,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[142, 7]]
@@ -6483,12 +6337,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[16, 90, 112.01, 505.68, 141.82]]},
 					"content": [
-						{
-							"text": "90",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,16,90,136.4,96,142,3,2]]"},
-							"target": {"url": "https://www.parliament.uk/site-information/glossary/kings-speech/.90"}
-						},
+						{"text": "90", "style": {"sup": true}, "anchor": {"textMap": "[[0,16,90,136.4,96,142,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "European Commission, “Proposal for a Regulation of the European Parliament and of the Council: Laying Down Harmonised Rules on Artificial Intelligence (Artificial Intelligence Act) and Amending Certain Union Legislative Acts,” April 21, 2021, ",
@@ -6497,12 +6346,13 @@
 							}
 						},
 						{
-							"text": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52021PC0206.",
+							"text": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52021PC0206",
 							"anchor": {
-								"textMap": "[[0,16,115,112,451,120,[57.3,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,4.5,3,3,2.5,4,4.5,2,4,4.7,3,4.5,4.5,4,2,[0.3,4],4.5,2.5,2.5,4,4.5,4,2.5,3,4,4.5,4.5,2.4,4,4.6,2.5,2.4,5.6,6.5,2.5,5.4,6.5,5.5,2.5,4,4.6,3,2.4,5,6,5.7,5.4,5.5,6.5,2.5,4.5,4.5,4.5,4.5,4.5,5,6,4.5,4.5,4.5,4.5,2]]"
+								"textMap": "[[0,16,115,112,451,120,[57.3,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,4.5,3,3,2.5,4,4.5,2,4,4.7,3,4.5,4.5,4,2,[0.3,4],4.5,2.5,2.5,4,4.5,4,2.5,3,4,4.5,4.5,2.4,4,4.6,2.5,2.4,5.6,6.5,2.5,5.4,6.5,5.5,2.5,4,4.6,3,2.4,5,6,5.7,5.4,5.5,6.5,2.5,4.5,4.5,4.5,4.5,4.5,5,6,4.5,4.5,4.5,4.5]]"
 							},
-							"target": {"url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52021PC0206.91"}
-						}
+							"target": {"url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52021PC0206"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,16,115,112,451,120,[334,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[144, 1]]
@@ -6514,8 +6364,7 @@
 						{
 							"text": "91",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,16,90,102.3,96,107.7,3,2]]"},
-							"target": {"url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52021PC0206.91"}
+							"anchor": {"textMap": "[[0,16,90,102.3,96,107.7,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -6672,14 +6521,14 @@
 					"anchor": {"textMap": "[[0,17,386.4,552.5,425.7,562.4,6.7,3,5.6,[0,6],5,[0,3],[4.5,5.5]]]"},
 					"refs": [[164]]
 				},
-				{"text": ")", "anchor": {"textMap": "[[0,17,425.7,552.5,429.3,562.5]]"}, "refs": [[164]]},
+				{"text": ")", "anchor": {"textMap": "[[0,17,425.7,552.5,429.3,562.5]]"}},
 				{
 					"text": "95",
 					"style": {"sup": true},
 					"anchor": {"textMap": "[[0,17,429.3,558,436.4,564.3,3.5,[0,3.6]]]"},
-					"refs": [[164]]
+					"refs": [[154, 2]]
 				},
-				{"text": ":", "anchor": {"textMap": "[[0,17,436.4,552.5,439.5,562.5]]"}, "refs": [[164]]}
+				{"text": ":", "anchor": {"textMap": "[[0,17,436.4,552.5,439.5,562.5]]"}}
 			]
 		},
 		{
@@ -6878,7 +6727,8 @@
 								"textMap": "[[0,17,98.3,112,501.5,120,6,4,3,2.5,4,2.5,3,[3.7,6.5],2,[3.3,3.5],4.5,3.5,[0,2.4],4,7,2.4,[3.4,4],[0,3],2.7,[3.5,4.5],4.5,2.5,3.5,2.5,4.5,[0,2.7],[3.6,4.5],[0,2],[3,2.7],4.5,2.7,[3.5,3.5],4,4.5,4.5,2.7,[3.6,4.5],2,[3,2.7],4.5,[0,2.6],[3.7,6.5],2,[3,6.7],4,[0,2.5],1.5,[3,2.5],[0,4.5],4,[0,2.5],4.5,4.5,2.5,4.5,3,[3.7,2.5],4.5,4.5,3.5,2.7,[3.6,4.5],3.5,4,3,[3.7,3],4.5,[0,2],[3,7],2.7,2.5,2.5,2.5,[0,4],3,4.5,[0,1.5],[3,4.5],4,3,[0,4],4.5,[0,3.4],4,1.5,[3,4.6],2,[3,4.7],4,2.5,2.5,4.5,4.5,4,2.5],[0,17,90,101.6,305,110,3.5,4,4,[0,4.5],3,2.5,2.5,[0,3],[3.7,4.5],4.5,3,4.5,4.5,3.5,4,[0,2.3],[3.4,4.5],2,[3.3,3],4.5,2,[3.3,2.5],4.5,2.6,[3.6,3.5],4.5,2.5,2.7,[3.5,4.5],4.5,3,4.5,4.5,3.5,[0,2.7],[3.6,4.5],2,[3.3,3.5],4,[0,2.4],4,[0,4.5],[0,2.5],2.5,[0,3],2.5,2.7,[3.6,6],7,[0,6.5],2]]"
 							}
 						}
-					]
+					],
+					"backRefs": [[152, 4]]
 				},
 				{
 					"type": "listitem",
@@ -6893,14 +6743,15 @@
 							}
 						},
 						{
-							"text": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai.",
+							"text": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
 							"anchor": {
-								"textMap": "[[0,17,222.3,88.3,484.7,96.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.4,4,2.6,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2,4,4,2.4,4,4.6,3,4.4,4.5,4,2,[0.3,4],4.5,2.4,4,4.6,2.5,4.5,4.5,2.5,2.5,4,2.5,4,3.5,2.4,3,4,4.6,4.5,2.5,4,2.4,4.6,3,4.5,3,3,3,4,7,4,6.4,4.5,3,4.5,3,4,2.5,2.3]]"
+								"textMap": "[[0,17,222.3,88.3,484.7,96.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.4,4,2.6,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2,4,4,2.4,4,4.6,3,4.4,4.5,4,2,[0.3,4],4.5,2.4,4,4.6,2.5,4.5,4.5,2.5,2.5,4,2.5,4,3.5,2.4,3,4,4.6,4.5,2.5,4,2.4,4.6,3,4.5,3,3,3,4,7,4,6.4,4.5,3,4.5,3,4,2.5]]"
 							},
 							"target": {
-								"url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai.97"
+								"url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,17,222.3,88.3,484.7,96.5,[260,2.4]]]"}}
 					],
 					"backRefs": [[153, 0, 5]]
 				},
@@ -6908,14 +6759,7 @@
 					"type": "listitem",
 					"anchor": {"pageRects": [[17, 90, 74.91, 219.94, 84.02]]},
 					"content": [
-						{
-							"text": "97",
-							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,17,90,78.6,96,84,3,2]]"},
-							"target": {
-								"url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai.97"
-							}
-						},
+						{"text": "97", "style": {"sup": true}, "anchor": {"textMap": "[[0,17,90,78.6,96,84,3,2]]"}},
 						{"text": " "},
 						{
 							"text": "European Commission, “AI Act.”",
@@ -7363,12 +7207,13 @@
 							}
 						},
 						{
-							"text": "https://digital-strategy.ec.europa.eu/en/policies/ai-office.",
+							"text": "https://digital-strategy.ec.europa.eu/en/policies/ai-office",
 							"anchor": {
-								"textMap": "[[0,19,101.3,125.3,381,133.5,[76,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.5,4,2.5,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2.3,4,4,2,4,4.7,3,4.4,4.5,4,2.3,4,4.5,2.5,4,4.5,2.5,4.6,4.5,2.4,2.5,4,2.5,4,3.5,2.5,4,2.5,3,4.6,3,3,2.4,4,4,2]]"
+								"textMap": "[[0,19,101.3,125.3,381,133.5,[76,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.5,4,2.5,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2.3,4,4,2,4,4.7,3,4.4,4.5,4,2.3,4,4.5,2.5,4,4.5,2.5,4.6,4.5,2.4,2.5,4,2.5,4,3.5,2.5,4,2.5,3,4.6,3,3,2.4,4,4]]"
 							},
-							"target": {"url": "https://digital-strategy.ec.europa.eu/en/policies/ai-office.103"}
-						}
+							"target": {"url": "https://digital-strategy.ec.europa.eu/en/policies/ai-office"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,19,101.3,125.3,381,133.5,[277.7,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[167, 1]]
@@ -7380,8 +7225,7 @@
 						{
 							"text": "103",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,19,90,115.7,99,121,3,3,2]]"},
-							"target": {"url": "https://digital-strategy.ec.europa.eu/en/policies/ai-office.103"}
+							"anchor": {"textMap": "[[0,19,90,115.7,99,121,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -7391,12 +7235,13 @@
 							}
 						},
 						{
-							"text": "https://artificialintelligenceact.eu/article/99/.",
+							"text": "https://artificialintelligenceact.eu/article/99/",
 							"anchor": {
-								"textMap": "[[0,19,211.3,112,371,120,4.5,2.5,2.4,4.5,3.5,2.5,2.5,2.6,4,3,2.5,2.5,3,2.5,4,2.4,4,2.5,2.5,4.6,2.4,4,2.5,2.5,2.5,4.5,4,4.5,4,4,4,4,2.5,2,4,4.7,2.5,4,3,2.5,2.5,4,2.5,4,2.5,4.6,4.5,2.4,2.3]]"
+								"textMap": "[[0,19,211.3,112,371,120,4.5,2.5,2.4,4.5,3.5,2.5,2.5,2.6,4,3,2.5,2.5,3,2.5,4,2.4,4,2.5,2.5,4.6,2.4,4,2.5,2.5,2.5,4.5,4,4.5,4,4,4,4,2.5,2,4,4.7,2.5,4,3,2.5,2.5,4,2.5,4,2.5,4.6,4.5,2.4]]"
 							},
-							"target": {"url": "https://artificialintelligenceact.eu/article/99/.104"}
-						}
+							"target": {"url": "https://artificialintelligenceact.eu/article/99/"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,19,211.3,112,371,120,[157.6,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[167, 4]]
@@ -7408,8 +7253,7 @@
 						{
 							"text": "104",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,19,90,102.3,99,107.7,3,3,2]]"},
-							"target": {"url": "https://artificialintelligenceact.eu/article/99/.104"}
+							"anchor": {"textMap": "[[0,19,90,102.3,99,107.7,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -7419,14 +7263,15 @@
 							}
 						},
 						{
-							"text": "https://www.simmons-simmons.com/en/publications/clyimpowh000ouxgkw1oidakk/the-eu-ai-act-a-quick-guide.",
+							"text": "https://www.simmons-simmons.com/en/publications/clyimpowh000ouxgkw1oidakk/the-eu-ai-act-a-quick-guide",
 							"anchor": {
-								"textMap": "[[0,19,90,88.3,498,96.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,3.5,2.5,7,7,4.4,4.5,3.5,3,3.6,2.5,7,7,4.5,4.5,3.5,2.3,4,4.4,7,2.5,4,4.6,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.4,3.5,2.5,4,2.5,4.5,2.5,7,4.6,4.5,6.5,4.5,4.5,4.5,4.4,4.5,4.5,4.5,4.5,4.5,6.5,4.5,4.5,2.5,4.5,4,4.5,4.5,2.5,2.6,4.5,4,3,4,4.5,3,4,2.5,3,4,4,2.4,3,4,3,4.5,4.5,2.5,4,4.5,3,4.5,4.5,2.5,4.5,4,2.3]]"
+								"textMap": "[[0,19,90,88.3,498,96.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,3.5,2.5,7,7,4.4,4.5,3.5,3,3.6,2.5,7,7,4.5,4.5,3.5,2.3,4,4.4,7,2.5,4,4.6,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.4,3.5,2.5,4,2.5,4.5,2.5,7,4.6,4.5,6.5,4.5,4.5,4.5,4.4,4.5,4.5,4.5,4.5,4.5,6.5,4.5,4.5,2.5,4.5,4,4.5,4.5,2.5,2.6,4.5,4,3,4,4.5,3,4,2.5,3,4,4,2.4,3,4,3,4.5,4.5,2.5,4,4.5,3,4.5,4.5,2.5,4.5,4]]"
 							},
 							"target": {
-								"url": "https://www.simmons-simmons.com/en/publications/clyimpowh000ouxgkw1oidakk/the-eu-ai-act-a-quick-guide.105"
+								"url": "https://www.simmons-simmons.com/en/publications/clyimpowh000ouxgkw1oidakk/the-eu-ai-act-a-quick-guide"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,19,90,88.3,498,96.5,[405.5,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[167, 7]]
@@ -7438,10 +7283,7 @@
 						{
 							"text": "105",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,19,90,78.6,99,84,3,3,2]]"},
-							"target": {
-								"url": "https://www.simmons-simmons.com/en/publications/clyimpowh000ouxgkw1oidakk/the-eu-ai-act-a-quick-guide.105"
-							}
+							"anchor": {"textMap": "[[0,19,90,78.6,99,84,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -7668,14 +7510,15 @@
 							}
 						},
 						{
-							"text": "https://www.csis.org/analysis/talks-eu-ai-act-code-practice-crucial-phase.",
+							"text": "https://www.csis.org/analysis/talks-eu-ai-act-code-practice-crucial-phase",
 							"anchor": {
-								"textMap": "[[0,20,90,297,452,305,[97,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4,3.5,2.5,3.5,2.3,4.5,3,4.5,2.5,4,4.5,4,2.5,4.5,3.5,2.5,3.5,2.5,2.5,4,2.5,4.5,3.5,3,4,4.5,3,4,2.5,3,4,4,2.5,3,4,4.5,4.5,4,3,4.5,3,4,4,2.5,2.4,4,4,3,4,3,4.5,4,2.5,4,2.5,3,4.5,4.5,4,3.5,4,2.3]]"
+								"textMap": "[[0,20,90,297,452,305,[97,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4,3.5,2.5,3.5,2.3,4.5,3,4.5,2.5,4,4.5,4,2.5,4.5,3.5,2.5,3.5,2.5,2.5,4,2.5,4.5,3.5,3,4,4.5,3,4,2.5,3,4,4,2.5,3,4,4.5,4.5,4,3,4.5,3,4,4,2.5,2.4,4,4,3,4,3,4.5,4,2.5,4,2.5,3,4.5,4.5,4,3.5,4]]"
 							},
 							"target": {
-								"url": "https://www.csis.org/analysis/talks-eu-ai-act-code-practice-crucial-phase.107"
+								"url": "https://www.csis.org/analysis/talks-eu-ai-act-code-practice-crucial-phase"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,20,90,297,452,305,[359.7,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[172, 1]]
@@ -7687,10 +7530,7 @@
 						{
 							"text": "107",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,20,90,287.3,99,292.7,3,3,2]]"},
-							"target": {
-								"url": "https://www.csis.org/analysis/talks-eu-ai-act-code-practice-crucial-phase.107"
-							}
+							"anchor": {"textMap": "[[0,20,90,287.3,99,292.7,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -7715,14 +7555,15 @@
 							}
 						},
 						{
-							"text": "https://www.rolandberger.com/en/Insights/Publications/European-AIAct-Opportunities-and-challenges.html.",
+							"text": "https://www.rolandberger.com/en/Insights/Publications/European-AIAct-Opportunities-and-challenges.html",
 							"anchor": {
-								"textMap": "[[1,20,150,242,509.3,250.4,[107.3,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3,4.7,2.5,4,4.6,4.5,4.4,4,3,4.5,4,3,2.3,4,4.4,7,2.5,4,4.6,2.5,3,4.5,3.5,2.5,4.5,4.5,2.5,3.5,2.5,5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,5.5,4.5,3,4.5,4.5,4,4,4.5,3,6.5,3,3],[0,20,90,232,233.5,240,6.5,4,2.5,3,6.5,4.5,4.5,4.5,3,2.5,4.5,4.5,2.5,2.5,2.5,4,3.5,3,4,4.5,4.5,3,4,4.5,4,2.5,2.5,4,4.5,4.5,4,3.5,2,4.7,2.5,7,2.5,2]]"
+								"textMap": "[[1,20,150,242,509.3,250.4,[107.3,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,3,4.7,2.5,4,4.6,4.5,4.4,4,3,4.5,4,3,2.3,4,4.4,7,2.5,4,4.6,2.5,3,4.5,3.5,2.5,4.5,4.5,2.5,3.5,2.5,5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,5.5,4.5,3,4.5,4.5,4,4,4.5,3,6.5,3,3],[0,20,90,232,233.5,240,6.5,4,2.5,3,6.5,4.5,4.5,4.5,3,2.5,4.5,4.5,2.5,2.5,2.5,4,3.5,3,4,4.5,4.5,3,4,4.5,4,2.5,2.5,4,4.5,4.5,4,3.5,2,4.7,2.5,7,2.5]]"
 							},
 							"target": {
-								"url": "https://www.rolandberger.com/en/Insights/Publications/European-AIAct-Opportunities-and-challenges.html.108"
+								"url": "https://www.rolandberger.com/en/Insights/Publications/European-AIAct-Opportunities-and-challenges.html"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,20,90,232,233.5,240,[141,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[172, 4]]
@@ -7734,10 +7575,7 @@
 						{
 							"text": "108",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,20,90,222,99,227.6,3,3,2]]"},
-							"target": {
-								"url": "https://www.rolandberger.com/en/Insights/Publications/European-AIAct-Opportunities-and-challenges.html.108"
-							}
+							"anchor": {"textMap": "[[0,20,90,222,99,227.6,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -7774,14 +7612,15 @@
 							}
 						},
 						{
-							"text": "https://www.atlanticcouncil.org/blogs/new-atlanticist/the-draghi-report-grabbed-europes-attentionnow-its-time-for-the-eu-to-put-it-into-action/.",
+							"text": "https://www.atlanticcouncil.org/blogs/new-atlanticist/the-draghi-report-grabbed-europes-attentionnow-its-time-for-the-eu-to-put-it-into-action/",
 							"anchor": {
-								"textMap": "[[1,20,90,187.4,507.7,195.6,[61.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.4,6.5,2.3,4,2.5,2.5,4,4.5,2.5,2.5,4,4,4.5,4.5,4.5,4,2.5,2.5,2,4.7,3,4.5,2.5,4.5,2.5,4.5,4.5,3.5,2.5,4.5,4,6.5,3,4,2.5,2.5,4,4.5,2.5,2.5,4,2.6,3.5,2.5,2.5,2.5,4.5,4,3,4.5,3,4,4.4,4.5,2.5,3,3,4,4.5,4.5,3,2.5,3,4.6,3,4,4.5,4.5,4,4.4,3,4,4.5,3,4.5,4.5,4,3.5,3,4,2.5,2.5,4,4.5,2.5,2.5,4.5,4.5,3],[0,20,90,177,254,185.3,4.5,4.5,6.5,3,2.5,2.5,3.5,3,2.5,2.5,7,4,3,3,4.5,3,3,2.5,4.5,4,3,4,4.5,3,2.5,4.5,3,4.5,4.5,2.5,3,2.5,2.5,3,2.4,4.5,2.5,4.6,3,4,4,2.4,2.6,4.5,4.5,2.4,2.3]]"
+								"textMap": "[[1,20,90,187.4,507.7,195.6,[61.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.4,6.5,2.3,4,2.5,2.5,4,4.5,2.5,2.5,4,4,4.5,4.5,4.5,4,2.5,2.5,2,4.7,3,4.5,2.5,4.5,2.5,4.5,4.5,3.5,2.5,4.5,4,6.5,3,4,2.5,2.5,4,4.5,2.5,2.5,4,2.6,3.5,2.5,2.5,2.5,4.5,4,3,4.5,3,4,4.4,4.5,2.5,3,3,4,4.5,4.5,3,2.5,3,4.6,3,4,4.5,4.5,4,4.4,3,4,4.5,3,4.5,4.5,4,3.5,3,4,2.5,2.5,4,4.5,2.5,2.5,4.5,4.5,3],[0,20,90,177,254,185.3,4.5,4.5,6.5,3,2.5,2.5,3.5,3,2.5,2.5,7,4,3,3,4.5,3,3,2.5,4.5,4,3,4,4.5,3,2.5,4.5,3,4.5,4.5,2.5,3,2.5,2.5,3,2.4,4.5,2.5,4.6,3,4,4,2.4,2.6,4.5,4.5,2.4]]"
 							},
 							"target": {
-								"url": "https://www.atlanticcouncil.org/blogs/new-atlanticist/the-draghi-report-grabbed-europes-attentionnow-its-time-for-the-eu-to-put-it-into-action/.109"
+								"url": "https://www.atlanticcouncil.org/blogs/new-atlanticist/the-draghi-report-grabbed-europes-attentionnow-its-time-for-the-eu-to-put-it-into-action/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,20,90,177,254,185.3,[162,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[172, 7]]
@@ -7793,10 +7632,7 @@
 						{
 							"text": "109",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,20,90,167.4,99,173,3,3,2]]"},
-							"target": {
-								"url": "https://www.atlanticcouncil.org/blogs/new-atlanticist/the-draghi-report-grabbed-europes-attentionnow-its-time-for-the-eu-to-put-it-into-action/.109"
-							}
+							"anchor": {"textMap": "[[0,20,90,167.4,99,173,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -7890,12 +7726,13 @@
 							}
 						},
 						{
-							"text": "https://www.axios.com/2024/06/21/apple-ai-features-europe.",
+							"text": "https://www.axios.com/2024/06/21/apple-ai-features-europe",
 							"anchor": {
-								"textMap": "[[0,20,110,109,389,117,[59,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4,4.5,2.5,4.5,3.5,2.3,4,4.5,7,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4,4.5,4.5,2.5,4,3,4,2.4,3,3,4,4,2.6,4.5,3,4,3.5,3,4,4.5,3,4.5,4.5,4,2]]"
+								"textMap": "[[0,20,110,109,389,117,[59,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,4,4.5,2.5,4.5,3.5,2.3,4,4.5,7,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,2.5,4,4.5,4.5,2.5,4,3,4,2.4,3,3,4,4,2.6,4.5,3,4,3.5,3,4,4.5,3,4.5,4.5,4]]"
 							},
-							"target": {"url": "https://www.axios.com/2024/06/21/apple-ai-features-europe.111"}
-						}
+							"target": {"url": "https://www.axios.com/2024/06/21/apple-ai-features-europe"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,20,110,109,389,117,[277,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[173, 1]]
@@ -7907,8 +7744,7 @@
 						{
 							"text": "111",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,20,90,99.3,99,104.7,3,3,2]]"},
-							"target": {"url": "https://www.axios.com/2024/06/21/apple-ai-features-europe.111"}
+							"anchor": {"textMap": "[[0,20,90,99.3,99,104.7,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -8179,12 +8015,13 @@
 							}
 						},
 						{
-							"text": "https://doi.org/10.31175/eh4s.2014.12.",
+							"text": "https://doi.org/10.31175/eh4s.2014.12",
 							"anchor": {
-								"textMap": "[[0,21,90,211,230,219.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,4.5,2.4,2.3,4.5,3,4.5,2.5,4.6,4.4,2,[0.3,4.5],4.5,4.5,4.5,4.5,2.5,4,4.5,4.5,3.5,2,[0.3,4.5],4.5,4.4,4.5,2.3,4.5,4.5,2]]"
+								"textMap": "[[0,21,90,211,230,219.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,4.5,2.4,2.3,4.5,3,4.5,2.5,4.6,4.4,2,[0.3,4.5],4.5,4.5,4.5,4.5,2.5,4,4.5,4.5,3.5,2,[0.3,4.5],4.5,4.4,4.5,2.3,4.5,4.5]]"
 							},
-							"target": {"url": "https://doi.org/10.31175/eh4s.2014.12.115"}
-						}
+							"target": {"url": "https://doi.org/10.31175/eh4s.2014.12"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,21,90,211,230,219.3,[137.6,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[179, 11]]
@@ -8196,8 +8033,7 @@
 						{
 							"text": "115",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,21,90,201.5,99,207,3,3,2]]"},
-							"target": {"url": "https://doi.org/10.31175/eh4s.2014.12.115"}
+							"anchor": {"textMap": "[[0,21,90,201.5,99,207,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -8221,14 +8057,15 @@
 							}
 						},
 						{
-							"text": "https://www.jtl.columbia.edu/volume-63/the-promise-andperils-of-chinas-regulation-of-artificial-intelligence.",
+							"text": "https://www.jtl.columbia.edu/volume-63/the-promise-andperils-of-chinas-regulation-of-artificial-intelligence",
 							"anchor": {
-								"textMap": "[[1,21,168,187.4,505.7,195.6,[126.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2,2.7,2.5,2.5,2.3,4,4.5,2.5,4.5,7,4.5,2.5,4,2,4,4.7,4.5,2.5,4.6,4.5,2.5,4.5,7,4,3,4.5,4.5,2.5,2.4,4.5,4,3,4.5,3,4.5,7,2.5,3.5,4,3,4,4.5,4.5,3],[0,21,90,177,277,185.3,4.5,4,3,2.5,2.5,3.5,3,4.6,3,3,4,4.5,2.4,4.5,4,3.6,3,3,4,4.4,4.5,2.5,4,2.5,2.5,4.5,4.5,3,4.5,3,3,4,3,2.5,2.4,3,2.5,4,2.6,4,2.5,3,2.4,4.5,2.5,4,2.5,2.5,2.6,4.5,4,4.4,4,4,2.3]]"
+								"textMap": "[[1,21,168,187.4,505.7,195.6,[126.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2,2.7,2.5,2.5,2.3,4,4.5,2.5,4.5,7,4.5,2.5,4,2,4,4.7,4.5,2.5,4.6,4.5,2.5,4.5,7,4,3,4.5,4.5,2.5,2.4,4.5,4,3,4.5,3,4.5,7,2.5,3.5,4,3,4,4.5,4.5,3],[0,21,90,177,277,185.3,4.5,4,3,2.5,2.5,3.5,3,4.6,3,3,4,4.5,2.4,4.5,4,3.6,3,3,4,4.4,4.5,2.5,4,2.5,2.5,4.5,4.5,3,4.5,3,3,4,3,2.5,2.4,3,2.5,4,2.6,4,2.5,3,2.4,4.5,2.5,4,2.5,2.5,2.6,4.5,4,4.4,4,4]]"
 							},
 							"target": {
-								"url": "https://www.jtl.columbia.edu/volume-63/the-promise-andperils-of-chinas-regulation-of-artificial-intelligence.116"
+								"url": "https://www.jtl.columbia.edu/volume-63/the-promise-andperils-of-chinas-regulation-of-artificial-intelligence"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,21,90,177,277,185.3,[185,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[179, 14]]
@@ -8240,10 +8077,7 @@
 						{
 							"text": "116",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,21,90,167.4,99,173,3,3,2]]"},
-							"target": {
-								"url": "https://www.jtl.columbia.edu/volume-63/the-promise-andperils-of-chinas-regulation-of-artificial-intelligence.116"
-							}
+							"anchor": {"textMap": "[[0,21,90,167.4,99,173,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -8289,14 +8123,15 @@
 							}
 						},
 						{
-							"text": "https://www.uscc.gov/sites/default/files/2024-02/Ngor_Luong_Testimony.pdf.",
+							"text": "https://www.uscc.gov/sites/default/files/2024-02/Ngor_Luong_Testimony.pdf",
 							"anchor": {
-								"textMap": "[[0,21,90,132.7,373.5,141,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,3.5,4,4,2,4.7,4.5,4.5,2.5,3.6,2.5,2.4,4,3.6,2.5,4.5,4,3,4,4.4,2.5,2.5,2.5,3,2.5,2.5,4,3.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,2.5,6.5,4.5,4.5,3,4.5,5.5,4.5,4.5,4.5,4.5,4.5,5.5,4,3.5,2.5,2.5,7,4.5,4.5,4.5,2,[0.3,4.5],4.5,3,2]]"
+								"textMap": "[[0,21,90,132.7,373.5,141,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,3.5,4,4,2,4.7,4.5,4.5,2.5,3.6,2.5,2.4,4,3.6,2.5,4.5,4,3,4,4.4,2.5,2.5,2.5,3,2.5,2.5,4,3.5,2.5,4.5,4.5,4.5,4.5,3,4.5,4.5,2.5,6.5,4.5,4.5,3,4.5,5.5,4.5,4.5,4.5,4.5,4.5,5.5,4,3.5,2.5,2.5,7,4.5,4.5,4.5,2,[0.3,4.5],4.5,3]]"
 							},
 							"target": {
-								"url": "https://www.uscc.gov/sites/default/files/2024-02/Ngor_Luong_Testimony.pdf.117"
+								"url": "https://www.uscc.gov/sites/default/files/2024-02/Ngor_Luong_Testimony.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,21,90,132.7,373.5,141,[281.3,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[179, 17]]
@@ -8308,10 +8143,7 @@
 						{
 							"text": "117",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,21,90,123,99,128.4,3,3,2]]"},
-							"target": {
-								"url": "https://www.uscc.gov/sites/default/files/2024-02/Ngor_Luong_Testimony.pdf.117"
-							}
+							"anchor": {"textMap": "[[0,21,90,123,99,128.4,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -8321,14 +8153,15 @@
 							}
 						},
 						{
-							"text": "https://cset.georgetown.edu/article/an-analysis-of-chinas-aigovernance-proposals/.",
+							"text": "https://cset.georgetown.edu/article/an-analysis-of-chinas-aigovernance-proposals/",
 							"anchor": {
-								"textMap": "[[1,21,90,109,519.5,117,[213.4,4.7],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4,3.4,4,2.5,2.3,4.5,4,4.4,3,4.6,4,2.4,4.5,6.5,4.5,2.3,4,4.4,4.5,2.5,4,3,2.6,2.5,4,2.5,4,2.5,4,4.5,3,4,4.5,4,2.5,4.5,3.5,2.5,3.5,3,4.5,3,3,4,4.5,2.5,4.5,4,3.5,3,4,2.5,3],[0,21,90,98.6,174,107,4.5,4.5,4.5,4,3,4.5,4,4.5,4,4,3,4.5,3,4.5,4.5,4.5,3.5,4,2.5,3.5,2.5,2]]"
+								"textMap": "[[1,21,90,109,519.5,117,[213.4,4.7],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4,3.4,4,2.5,2.3,4.5,4,4.4,3,4.6,4,2.4,4.5,6.5,4.5,2.3,4,4.4,4.5,2.5,4,3,2.6,2.5,4,2.5,4,2.5,4,4.5,3,4,4.5,4,2.5,4.5,3.5,2.5,3.5,3,4.5,3,3,4,4.5,2.5,4.5,4,3.5,3,4,2.5,3],[0,21,90,98.6,174,107,4.5,4.5,4.5,4,3,4.5,4,4.5,4,4,3,4.5,3,4.5,4.5,4.5,3.5,4,2.5,3.5,2.5]]"
 							},
 							"target": {
-								"url": "https://cset.georgetown.edu/article/an-analysis-of-chinas-aigovernance-proposals/.118"
+								"url": "https://cset.georgetown.edu/article/an-analysis-of-chinas-aigovernance-proposals/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,21,90,98.6,174,107,[81.5,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[180, 1]]
@@ -8340,10 +8173,7 @@
 						{
 							"text": "118",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,21,90,89,99,94.4,3,3,2]]"},
-							"target": {
-								"url": "https://cset.georgetown.edu/article/an-analysis-of-chinas-aigovernance-proposals/.118"
-							}
+							"anchor": {"textMap": "[[0,21,90,89,99,94.4,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -8581,14 +8411,15 @@
 							}
 						},
 						{
-							"text": "https://www.technologyslegaledge.com/2025/03/china-released-new-measures-for-labelling-aigenerated-and-synthetic-content.",
+							"text": "https://www.technologyslegaledge.com/2025/03/china-released-new-measures-for-labelling-aigenerated-and-synthetic-content",
 							"anchor": {
-								"textMap": "[[1,22,90,248,519,256.4,[85,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,2.7,4,4,4.5,4.5,4.5,2.5,4.6,4.5,4.5,3.5,2.5,4,4.4,4,2.5,4,4.5,4.5,4,2,4,[0.3,4.5],7,2.4,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4,4.5,2.5,4.5,4,3,3,4,2.5,4,4,3.5,4,4.4,3,4.6,4,6.5,3,7,4,4,3.5,4.5,3,4,3.4,3,3,4.5,3,3,2.5,4,4.5,4,2.5,2.5,2.5,4.5,4.5,3,4,2.5,3],[0,22,90,238,208,246,4.5,4,4.5,4,3,4,2.5,4,4.5,3,4,4.5,4.5,3,3.5,4.5,4.5,2.5,4.5,4,2.5,2.6,4,3,4,4.4,4.5,2.5,4,4.5,2.5,2]]"
+								"textMap": "[[1,22,90,248,519,256.4,[85,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,2.7,4,4,4.5,4.5,4.5,2.5,4.6,4.5,4.5,3.5,2.5,4,4.4,4,2.5,4,4.5,4.5,4,2,4,[0.3,4.5],7,2.4,4.6,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4,4.5,2.5,4.5,4,3,3,4,2.5,4,4,3.5,4,4.4,3,4.6,4,6.5,3,7,4,4,3.5,4.5,3,4,3.4,3,3,4.5,3,3,2.5,4,4.5,4,2.5,2.5,2.5,4.5,4.5,3,4,2.5,3],[0,22,90,238,208,246,4.5,4,4.5,4,3,4,2.5,4,4.5,3,4,4.5,4.5,3,3.5,4.5,4.5,2.5,4.5,4,2.5,2.6,4,3,4,4.4,4.5,2.5,4,4.5,2.5]]"
 							},
 							"target": {
-								"url": "https://www.technologyslegaledge.com/2025/03/china-released-new-measures-for-labelling-aigenerated-and-synthetic-content.120"
+								"url": "https://www.technologyslegaledge.com/2025/03/china-released-new-measures-for-labelling-aigenerated-and-synthetic-content"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,22,90,238,208,246,[116,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[184, 1]]
@@ -8600,10 +8431,7 @@
 						{
 							"text": "120",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,22,90,228,99,233.6,3,3,2]]"},
-							"target": {
-								"url": "https://www.technologyslegaledge.com/2025/03/china-released-new-measures-for-labelling-aigenerated-and-synthetic-content.120"
-							}
+							"anchor": {"textMap": "[[0,22,90,228,99,233.6,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -8745,14 +8573,15 @@
 							}
 						},
 						{
-							"text": "https://www.reuters.com/world/china/chinas-xi-calls-self-sufficiency-ai-development-amid-usrivalry-2025-04-26/.",
+							"text": "https://www.reuters.com/world/china/chinas-xi-calls-self-sufficiency-ai-development-amid-usrivalry-2025-04-26/",
 							"anchor": {
-								"textMap": "[[1,22,90,119.3,521.7,127.5,[89,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.4,6.5,6.5,2.3,3,4,4.5,2.5,4,3,3.5,2.3,4,4.5,7,2.4,6.6,4.5,3,2.5,4.5,2.5,4,4.5,2.5,4.5,4,2.5,4,4.4,2.5,4.5,4,3.6,3,4.5,2.5,3,4,4,2.5,2.5,3.5,3,3.5,4,2.4,3,3,3.6,4.4,3,3,2.5,4,2.6,4,4.4,4,4.6,3,4,2.4,3,4.5,4,4.5,4,2.5,4.5,4.5,7,4,4.5,2.5,3,4,7,2.5,4.5,3,4.5,3.5,3],[0,22,90,109,164,117,3,2.5,4.5,4,2.5,3,4.5,3,4.6,4.5,4.5,4.5,3,4.5,4.5,3,4.4,4.5,2.5,2.3]]"
+								"textMap": "[[1,22,90,119.3,521.7,127.5,[89,5],2.3,2.5,4.5,3.5,2.5,2.5,2.5,6.4,6.5,6.5,2.3,3,4,4.5,2.5,4,3,3.5,2.3,4,4.5,7,2.4,6.6,4.5,3,2.5,4.5,2.5,4,4.5,2.5,4.5,4,2.5,4,4.4,2.5,4.5,4,3.6,3,4.5,2.5,3,4,4,2.5,2.5,3.5,3,3.5,4,2.4,3,3,3.6,4.4,3,3,2.5,4,2.6,4,4.4,4,4.6,3,4,2.4,3,4.5,4,4.5,4,2.5,4.5,4.5,7,4,4.5,2.5,3,4,7,2.5,4.5,3,4.5,3.5,3],[0,22,90,109,164,117,3,2.5,4.5,4,2.5,3,4.5,3,4.6,4.5,4.5,4.5,3,4.5,4.5,3,4.4,4.5,2.5]]"
 							},
 							"target": {
-								"url": "https://www.reuters.com/world/china/chinas-xi-calls-self-sufficiency-ai-development-amid-usrivalry-2025-04-26/.125"
+								"url": "https://www.reuters.com/world/china/chinas-xi-calls-self-sufficiency-ai-development-amid-usrivalry-2025-04-26/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,22,90,109,164,117,[71.5,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[185, 20]]
@@ -8764,10 +8593,7 @@
 						{
 							"text": "125",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,22,90,99.3,99,104.7,3,3,2]]"},
-							"target": {
-								"url": "https://www.reuters.com/world/china/chinas-xi-calls-self-sufficiency-ai-development-amid-usrivalry-2025-04-26/.125"
-							}
+							"anchor": {"textMap": "[[0,22,90,99.3,99,104.7,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -8997,14 +8823,15 @@
 							}
 						},
 						{
-							"text": "https://digital-strategy.ec.europa.eu/en/library/g7-leaders-statement-hiroshima-ai-process.",
+							"text": "https://digital-strategy.ec.europa.eu/en/library/g7-leaders-statement-hiroshima-ai-process",
 							"anchor": {
-								"textMap": "[[0,23,90,347.3,480,355.5,[67.3,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.5,4,2.5,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2,4,4,2.4,4,4.6,3,4.5,4.4,4,2,[0.3,4],4.5,2.4,4,4.6,2.5,2.5,2.5,4.5,3,4,3,4.4,2.6,4.5,4.5,3,2.5,4,4,4.5,4,3,3.4,3,3.6,2.5,4,2.5,4,7,4,4.4,2.5,3,4.6,2.5,3,4.4,3.5,4.5,2.5,7,4,3,4,2.5,3,4.5,3,4.5,4,4,3.5,3.5,2]]"
+								"textMap": "[[0,23,90,347.3,480,355.5,[67.3,4.5],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.5,4,2.5,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2,4,4,2.4,4,4.6,3,4.5,4.4,4,2,[0.3,4],4.5,2.4,4,4.6,2.5,2.5,2.5,4.5,3,4,3,4.4,2.6,4.5,4.5,3,2.5,4,4,4.5,4,3,3.4,3,3.6,2.5,4,2.5,4,7,4,4.4,2.5,3,4.6,2.5,3,4.4,3.5,4.5,2.5,7,4,3,4,2.5,3,4.5,3,4.5,4,4,3.5,3.5]]"
 							},
 							"target": {
-								"url": "https://digital-strategy.ec.europa.eu/en/library/g7-leaders-statement-hiroshima-ai-process.127"
+								"url": "https://digital-strategy.ec.europa.eu/en/library/g7-leaders-statement-hiroshima-ai-process"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,23,90,347.3,480,355.5,[388,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[191, 1]]
@@ -9016,10 +8843,7 @@
 						{
 							"text": "127",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,23,90,337.7,99,343,3,3,2]]"},
-							"target": {
-								"url": "https://digital-strategy.ec.europa.eu/en/library/g7-leaders-statement-hiroshima-ai-process.127"
-							}
+							"anchor": {"textMap": "[[0,23,90,337.7,99,343,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9029,12 +8853,13 @@
 							}
 						},
 						{
-							"text": "https://ec.europa.eu/newsroom/dae/redirection/document/99641.",
+							"text": "https://ec.europa.eu/newsroom/dae/redirection/document/99641",
 							"anchor": {
-								"textMap": "[[0,23,233,323.6,465,332,4.3,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,4,2,4,4.7,3,4.5,4.5,4,2,4,4.7,2.5,4.6,4,6.4,3.5,3,4.5,4.5,7,2.5,4.6,4,4,2.4,3,4,4.6,2.4,3,4,4,2.5,2.5,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,2.5,4.5,4.5,4.4,4.5,4.5,2.3]]"
+								"textMap": "[[0,23,233,323.6,465,332,4.3,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,4,2,4,4.7,3,4.5,4.5,4,2,4,4.7,2.5,4.6,4,6.4,3.5,3,4.5,4.5,7,2.5,4.6,4,4,2.4,3,4,4.6,2.4,3,4,4,2.5,2.5,4.5,4.5,2.5,4.5,4.5,4,4.5,7,4,4.5,2.5,2.5,4.5,4.5,4.4,4.5,4.5]]"
 							},
-							"target": {"url": "https://ec.europa.eu/newsroom/dae/redirection/document/99641.128"}
-						}
+							"target": {"url": "https://ec.europa.eu/newsroom/dae/redirection/document/99641"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,23,233,323.6,465,332,[229.6,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[191, 4]]
@@ -9046,8 +8871,7 @@
 						{
 							"text": "128",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,23,90,314,99,319.4,3,3,2]]"},
-							"target": {"url": "https://ec.europa.eu/newsroom/dae/redirection/document/99641.128"}
+							"anchor": {"textMap": "[[0,23,90,314,99,319.4,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9141,12 +8965,13 @@
 							}
 						},
 						{
-							"text": "https://gjeta.com/sites/default/files/GJETA-2024-0192.pdf.",
+							"text": "https://gjeta.com/sites/default/files/GJETA-2024-0192.pdf",
 							"anchor": {
-								"textMap": "[[0,23,90,224.5,303,232.7,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,2.4,4,2.5,4,2,4,4.7,7,2.5,3.6,2.5,2.5,4,3.5,2.5,4.5,4,3,4,4.5,2.5,2.5,2.5,3,2.5,2.5,4,3.5,2.4,6.5,3.5,5.5,5.5,6.5,3,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.5,2.3,4.5,4.5,3,2]]"
+								"textMap": "[[0,23,90,224.5,303,232.7,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,2.4,4,2.5,4,2,4,4.7,7,2.5,3.6,2.5,2.5,4,3.5,2.5,4.5,4,3,4,4.5,2.5,2.5,2.5,3,2.5,2.5,4,3.5,2.4,6.5,3.5,5.5,5.5,6.5,3,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4.5,2.3,4.5,4.5,3]]"
 							},
-							"target": {"url": "https://gjeta.com/sites/default/files/GJETA-2024-0192.pdf.130"}
-						}
+							"target": {"url": "https://gjeta.com/sites/default/files/GJETA-2024-0192.pdf"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,23,90,224.5,303,232.7,[210.5,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[191, 10]]
@@ -9158,8 +8983,7 @@
 						{
 							"text": "130",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,23,90,215,99,220,3,3,2]]"},
-							"target": {"url": "https://gjeta.com/sites/default/files/GJETA-2024-0192.pdf.130"}
+							"anchor": {"textMap": "[[0,23,90,215,99,220,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9169,12 +8993,13 @@
 							}
 						},
 						{
-							"text": "https://gpai.ai/projects/.",
+							"text": "https://gpai.ai/projects/",
 							"anchor": {
-								"textMap": "[[0,23,340,211,425,219.3,4.3,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,4.5,4,2.5,2.3,4,2.4,2.5,4.5,3,4.5,2.5,4,4,2.5,3.5,2.5,2]]"
+								"textMap": "[[0,23,340,211,425,219.3,4.3,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,4.5,4,2.5,2.3,4,2.4,2.5,4.5,3,4.5,2.5,4,4,2.5,3.5,2.5]]"
 							},
-							"target": {"url": "https://gpai.ai/projects/.131"}
-						}
+							"target": {"url": "https://gpai.ai/projects/"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,23,340,211,425,219.3,[82.5,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[192, 1]]
@@ -9186,8 +9011,7 @@
 						{
 							"text": "131",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,23,90,201.5,99,207,3,3,2]]"},
-							"target": {"url": "https://gpai.ai/projects/.131"}
+							"anchor": {"textMap": "[[0,23,90,201.5,99,207,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9197,14 +9021,15 @@
 							}
 						},
 						{
-							"text": "https://www.oecd.org/en/about/news/speech-statements/2024/07/GPAI-and-OECD-unite-to-advance-coordinatedinternational-efforts-for-trustworthy-AI.html.",
+							"text": "https://www.oecd.org/en/about/news/speech-statements/2024/07/GPAI-and-OECD-unite-to-advance-coordinatedinternational-efforts-for-trustworthy-AI.html",
 							"anchor": {
-								"textMap": "[[1,23,90,187.4,501.4,195.6,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,4,4.4,2.3,4.5,3,4.5,2.5,4,4.5,2.5,4,4.5,4.5,4.5,2.5,2.5,4.5,4,6.5,3.5,2.5,3.5,4.5,4,4,4,4.5,3,3.5,2.5,4,2.5,4,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,6.4,5,6.5,3,3,4,4.5,4.5,3,6.5,5.5,6,6.5,3,4.5,4.5,2.5,2.5,4,3,2.5,4.6,3,4,4.4,4.5,4,4.5,4,4,3,4,4.5,4.5,3,4.5,2.5,4.5,4,2.5,4,4.5,3],[0,23,90,177,253.5,185.3,2.5,4.5,2.5,4,3,4.5,4,2.5,2.5,4.5,4.5,4,2.5,3,4,3,3,4.5,3,2.5,3.5,3,3,4.5,3,3,2.5,3,4.5,3.5,2.5,6.5,4.5,3,2.5,4.5,4.5,3,6.5,3,2,4.7,2.5,7,2.5,2.3]]"
+								"textMap": "[[1,23,90,187.4,501.4,195.6,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,4,4,4.4,2.3,4.5,3,4.5,2.5,4,4.5,2.5,4,4.5,4.5,4.5,2.5,2.5,4.5,4,6.5,3.5,2.5,3.5,4.5,4,4,4,4.5,3,3.5,2.5,4,2.5,4,7,4,4.5,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,6.4,5,6.5,3,3,4,4.5,4.5,3,6.5,5.5,6,6.5,3,4.5,4.5,2.5,2.5,4,3,2.5,4.6,3,4,4.4,4.5,4,4.5,4,4,3,4,4.5,4.5,3,4.5,2.5,4.5,4,2.5,4,4.5,3],[0,23,90,177,253.5,185.3,2.5,4.5,2.5,4,3,4.5,4,2.5,2.5,4.5,4.5,4,2.5,3,4,3,3,4.5,3,2.5,3.5,3,3,4.5,3,3,2.5,3,4.5,3.5,2.5,6.5,4.5,3,2.5,4.5,4.5,3,6.5,3,2,4.7,2.5,7,2.5]]"
 							},
 							"target": {
-								"url": "https://www.oecd.org/en/about/news/speech-statements/2024/07/GPAI-and-OECD-unite-to-advance-coordinatedinternational-efforts-for-trustworthy-AI.html.132"
+								"url": "https://www.oecd.org/en/about/news/speech-statements/2024/07/GPAI-and-OECD-unite-to-advance-coordinatedinternational-efforts-for-trustworthy-AI.html"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,23,90,177,253.5,185.3,[161,2.5]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[192, 4]]
@@ -9216,10 +9041,7 @@
 						{
 							"text": "132",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,23,90,167.4,99,173,3,3,2]]"},
-							"target": {
-								"url": "https://www.oecd.org/en/about/news/speech-statements/2024/07/GPAI-and-OECD-unite-to-advance-coordinatedinternational-efforts-for-trustworthy-AI.html.132"
-							}
+							"anchor": {"textMap": "[[0,23,90,167.4,99,173,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9278,14 +9100,15 @@
 							}
 						},
 						{
-							"text": "https://digital-strategy.ec.europa.eu/en/factpages/eu-us-trade-and-technology-council-20212024.",
+							"text": "https://digital-strategy.ec.europa.eu/en/factpages/eu-us-trade-and-technology-council-20212024",
 							"anchor": {
-								"textMap": "[[1,23,174.3,109,504.3,117,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.5,4,2.5,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2,4,4,2.4,4,4.5,3,4.5,4.5,4,2,4,4.7,2.5,4,4.5,2.5,3,4,4,2.5,4.5,4,4.5,4,3.5,2.5,4,4.5,3,4.5,3.5,3,2.5,3,4,4.5,4,3,4,4.5,4.5,3,2.5,4,4,4.5,4.5,4.5,2.5,4.5,4.5,4.5,3,4,4.5,4.5,4.5,4,2.5,2.5,3,4.5,4.5,4.5,4.5,3],[0,23,90,98.6,110.3,107,4.5,4.5,4.5,4.5,2.3]]"
+								"textMap": "[[1,23,174.3,109,504.3,117,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,2.5,4.5,2.5,2.5,4,2.5,3,3.5,2.5,3,4,2.5,4,4.5,4.5,2,4,4,2.4,4,4.5,3,4.5,4.5,4,2,4,4.7,2.5,4,4.5,2.5,3,4,4,2.5,4.5,4,4.5,4,3.5,2.5,4,4.5,3,4.5,3.5,3,2.5,3,4,4.5,4,3,4,4.5,4.5,3,2.5,4,4,4.5,4.5,4.5,2.5,4.5,4.5,4.5,3,4,4.5,4.5,4.5,4,2.5,2.5,3,4.5,4.5,4.5,4.5,3],[0,23,90,98.6,110.3,107,4.5,4.5,4.5,4.5]]"
 							},
 							"target": {
-								"url": "https://digital-strategy.ec.europa.eu/en/factpages/eu-us-trade-and-technology-council-20212024.134"
+								"url": "https://digital-strategy.ec.europa.eu/en/factpages/eu-us-trade-and-technology-council-20212024"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,23,90,98.6,110.3,107,[18,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[193, 4]]
@@ -9297,10 +9120,7 @@
 						{
 							"text": "134",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,23,90,89,99,94.4,3,3,2]]"},
-							"target": {
-								"url": "https://digital-strategy.ec.europa.eu/en/factpages/eu-us-trade-and-technology-council-20212024.134"
-							}
+							"anchor": {"textMap": "[[0,23,90,89,99,94.4,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9548,12 +9368,13 @@
 							}
 						},
 						{
-							"text": "https://www.nist.gov/aisi/strategic-vision.",
+							"text": "https://www.nist.gov/aisi/strategic-vision",
 							"anchor": {
-								"textMap": "[[0,24,90,204,241,212,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,2.5,3.5,2.5,2,4.7,4.5,4.5,2.5,4,2.5,3.5,2.5,2.5,3.6,2.5,3,4,2.4,4,4.6,2.5,4,3,4.5,2.5,3.5,2.5,4.5,4.5,2]]"
+								"textMap": "[[0,24,90,204,241,212,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,2.5,3.5,2.5,2,4.7,4.5,4.5,2.5,4,2.5,3.5,2.5,2.5,3.6,2.5,3,4,2.4,4,4.6,2.5,4,3,4.5,2.5,3.5,2.5,4.5,4.5]]"
 							},
-							"target": {"url": "https://www.nist.gov/aisi/strategic-vision.137"}
-						}
+							"target": {"url": "https://www.nist.gov/aisi/strategic-vision"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,24,90,204,241,212,[148.6,2]]]"}}
 					],
 					"backRefs": [[197, 4]]
 				},
@@ -9564,8 +9385,7 @@
 						{
 							"text": "137",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,24,90,194,99,199.5,3,3,2]]"},
-							"target": {"url": "https://www.nist.gov/aisi/strategic-vision.137"}
+							"anchor": {"textMap": "[[0,24,90,194,99,199.5,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9642,14 +9462,15 @@
 							}
 						},
 						{
-							"text": "https://www.wired.com/story/ai-safety-institute-new-directive-america-first/.",
+							"text": "https://www.wired.com/story/ai-safety-institute-new-directive-america-first/",
 							"anchor": {
-								"textMap": "[[0,24,90,122.3,429,130.5,[61.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.4,6.5,2.3,6.5,2.5,3,4,4.5,2,[0.3,4],4.5,7,2.4,3.6,2.5,4.5,3,4.5,2.5,4,2.5,3,3.4,4,3,4,2.5,4.5,3,2.6,4.5,3.5,2.5,2.4,2.5,4.6,2.5,4,3,4.5,4,6.4,3,4.5,2.5,3,4,4,2.5,2.5,4.5,4,3,4,7,4,3,2.5,4,4,3,3,2.5,3,3.5,2.5,2.5,2]]"
+								"textMap": "[[0,24,90,122.3,429,130.5,[61.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.4,6.5,2.3,6.5,2.5,3,4,4.5,2,[0.3,4],4.5,7,2.4,3.6,2.5,4.5,3,4.5,2.5,4,2.5,3,3.4,4,3,4,2.5,4.5,3,2.6,4.5,3.5,2.5,2.4,2.5,4.6,2.5,4,3,4.5,4,6.4,3,4.5,2.5,3,4,4,2.5,2.5,4.5,4,3,4,7,4,3,2.5,4,4,3,3,2.5,3,3.5,2.5,2.5]]"
 							},
 							"target": {
-								"url": "https://www.wired.com/story/ai-safety-institute-new-directive-america-first/.140"
+								"url": "https://www.wired.com/story/ai-safety-institute-new-directive-america-first/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,24,90,122.3,429,130.5,[336.7,2]]]"}}
 					],
 					"backRefs": [[197, 13]]
 				},
@@ -9660,10 +9481,7 @@
 						{
 							"text": "140",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,24,90,112.7,99,118,3,3,2]]"},
-							"target": {
-								"url": "https://www.wired.com/story/ai-safety-institute-new-directive-america-first/.140"
-							}
+							"anchor": {"textMap": "[[0,24,90,112.7,99,118,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9673,14 +9491,15 @@
 							}
 						},
 						{
-							"text": "https://www.ftc.gov/system/files/ftc_gov/pdf/EEOC-CRT-FTC-CFPB-AI-JointStatement%28final%29.pdf.",
+							"text": "https://www.ftc.gov/system/files/ftc_gov/pdf/EEOC-CRT-FTC-CFPB-AI-JointStatement%28final%29.pdf",
 							"anchor": {
-								"textMap": "[[1,24,186,98.6,475,107,4.3,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,3,2.5,4,2.3,4.5,4.5,4.5,2.5,3.6,4.5,3.5,2.4,4,7,2.6,3,2.4,2.5,4,3.5,2.5,3,2.5,4,4.6,4.5,4.5,4.4,2.5,4.6,4.5,3,2.5,5.5,5.5,6.5,6,3,6,6,5.4,3,5,5.6,6,3,6,5,5,6,3,6.4,3,3,3.6,4.5,2.5,4.5,2.5,3],[0,24,90,88.3,192,96.5,5,2.5,4,2.5,4,7,4,4.5,2.5,7.5,4.5,4.5,3,2.5,4.4,4,2.5,7.6,4.5,4.5,2,5,4,3,2.5]]"
+								"textMap": "[[1,24,186,98.6,475,107,4.3,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.4,2.3,3,2.5,4,2.3,4.5,4.5,4.5,2.5,3.6,4.5,3.5,2.4,4,7,2.6,3,2.4,2.5,4,3.5,2.5,3,2.5,4,4.6,4.5,4.5,4.4,2.5,4.6,4.5,3,2.5,5.5,5.5,6.5,6,3,6,6,5.4,3,5,5.6,6,3,6,5,5,6,3,6.4,3,3,3.6,4.5,2.5,4.5,2.5,3],[0,24,90,88.3,192,96.5,5,2.5,4,2.5,4,7,4,4.5,2.5,7.5,4.5,4.5,3,2.5,4.4,4,2.5,7.6,4.5,4.5,2,5,4,3]]"
 							},
 							"target": {
-								"url": "https://www.ftc.gov/system/files/ftc_gov/pdf/EEOC-CRT-FTC-CFPB-AI-JointStatement%28final%29.pdf.141"
+								"url": "https://www.ftc.gov/system/files/ftc_gov/pdf/EEOC-CRT-FTC-CFPB-AI-JointStatement%28final%29.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,24,90,88.3,192,96.5,[99.5,2.5]]]"}}
 					]
 				},
 				{
@@ -9690,10 +9509,7 @@
 						{
 							"text": "141",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,24,90,78.6,99,84,3,3,2]]"},
-							"target": {
-								"url": "https://www.ftc.gov/system/files/ftc_gov/pdf/EEOC-CRT-FTC-CFPB-AI-JointStatement%28final%29.pdf.141"
-							}
+							"anchor": {"textMap": "[[0,24,90,78.6,99,84,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -9864,12 +9680,13 @@
 							}
 						},
 						{
-							"text": "https://perma.cc/2E6M-GANC.",
+							"text": "https://perma.cc/2E6M-GANC",
 							"anchor": {
-								"textMap": "[[0,25,307.7,143,421,151,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,4,3,7,4,2,[0.3,4],4,2.4,4.6,5.5,4.5,8,3,6.5,6.4,6.5,6,2]]"
+								"textMap": "[[0,25,307.7,143,421,151,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,4,3,7,4,2,[0.3,4],4,2.4,4.6,5.5,4.5,8,3,6.5,6.4,6.5,6]]"
 							},
-							"target": {"url": "https://perma.cc/2E6M-GANC.143"}
-						}
+							"target": {"url": "https://perma.cc/2E6M-GANC"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,25,307.7,143,421,151,[111,2]]]"}}
 					],
 					"reference": true
 				},
@@ -9880,8 +9697,7 @@
 						{
 							"text": "143",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,25,90,133.4,99,139,3,3,2]]"},
-							"target": {"url": "https://perma.cc/2E6M-GANC.143"}
+							"anchor": {"textMap": "[[0,25,90,133.4,99,139,3,3,2]]"}
 						},
 						{"text": " "},
 						{"text": "OMB,", "anchor": {"textMap": "[[0,25,101.3,129.7,124,138,6.5,8,[0,6],1.5]]"}},
@@ -9900,12 +9716,13 @@
 							}
 						},
 						{
-							"text": "https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-06.pdf.",
+							"text": "https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-06.pdf",
 							"anchor": {
-								"textMap": "[[0,25,90,119.3,350,127.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,6.5,4.5,2.5,2.4,4,4.6,4.5,4.5,3.5,4,2,4.7,4.5,4.5,2.5,6.5,4.5,3,4,4.5,4.5,2.5,4,4.6,2.4,2.5,4.6,4.5,2.5,4.5,4,4.4,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,8,3,4.5,4.5,3,4.5,4.5,2.3,4.5,4.5,3,2]]"
+								"textMap": "[[0,25,90,119.3,350,127.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,6.5,4.5,2.5,2.4,4,4.6,4.5,4.5,3.5,4,2,4.7,4.5,4.5,2.5,6.5,4.5,3,4,4.5,4.5,2.5,4,4.6,2.4,2.5,4.6,4.5,2.5,4.5,4,4.4,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,8,3,4.5,4.5,3,4.5,4.5,2.3,4.5,4.5,3]]"
 							},
-							"target": {"url": "https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-06.pdf.144"}
-						}
+							"target": {"url": "https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-06.pdf"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,25,90,119.3,350,127.5,[258,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[208, 1]]
@@ -9917,8 +9734,7 @@
 						{
 							"text": "144",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,25,90,109.7,99,115,3,3,2]]"},
-							"target": {"url": "https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-06.pdf.144"}
+							"anchor": {"textMap": "[[0,25,90,109.7,99,115,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -10201,14 +10017,15 @@
 							}
 						},
 						{
-							"text": "https://archives.federalregister.gov/issue_slice/1986/6/26/23299-23366.pdf.",
+							"text": "https://archives.federalregister.gov/issue_slice/1986/6/26/23299-23366.pdf",
 							"anchor": {
-								"textMap": "[[0,26,90,221.5,362.5,229.7,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,3,4,4.5,2.5,4.5,4,3.5,2,[0.3,3],4,4.4,4,3,4,2.5,3,4,4.5,2.5,3.5,2.5,4,3,2,[0.3,4.5],4.5,4.4,2.5,2.6,3.5,3.5,4.5,4,4.5,3.5,2.5,2.5,4,4,2.5,4.5,4.5,4.5,4.5,2.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,4.5,4.5,4.5,3,4.6,4.4,4.5,4.5,4.5,2,[0.3,4.5],4.5,3,2]]"
+								"textMap": "[[0,26,90,221.5,362.5,229.7,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4,3,4,4.5,2.5,4.5,4,3.5,2,[0.3,3],4,4.4,4,3,4,2.5,3,4,4.5,2.5,3.5,2.5,4,3,2,[0.3,4.5],4.5,4.4,2.5,2.6,3.5,3.5,4.5,4,4.5,3.5,2.5,2.5,4,4,2.5,4.5,4.5,4.5,4.5,2.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,4.5,4.5,4.5,3,4.6,4.4,4.5,4.5,4.5,2,[0.3,4.5],4.5,3]]"
 							},
 							"target": {
-								"url": "https://archives.federalregister.gov/issue_slice/1986/6/26/23299-23366.pdf.146"
+								"url": "https://archives.federalregister.gov/issue_slice/1986/6/26/23299-23366.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,26,90,221.5,362.5,229.7,[270.3,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[215, 4]]
@@ -10220,10 +10037,7 @@
 						{
 							"text": "146",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,26,90,212,99,217,3,3,2]]"},
-							"target": {
-								"url": "https://archives.federalregister.gov/issue_slice/1986/6/26/23299-23366.pdf.146"
-							}
+							"anchor": {"textMap": "[[0,26,90,212,99,217,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -10247,14 +10061,15 @@
 							}
 						},
 						{
-							"text": "https://usbiotechnologyregulation.mrp.usda.gov/sites/default/files/coordinated-framework-plainlanguage.pdf.",
+							"text": "https://usbiotechnologyregulation.mrp.usda.gov/sites/default/files/coordinated-framework-plainlanguage.pdf",
 							"anchor": {
-								"textMap": "[[1,26,90,187.4,500.5,195.6,[62.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,3.5,4.5,2.5,4.5,2.5,4,4,4.4,4.5,4.5,2.5,4.5,4.5,4.5,3,4,4.6,4.5,2.5,4,2.4,2.5,4.5,4.5,2.3,7,3,4.5,2,[0.3,4.5],3.5,4.5,4,2,4.7,4.5,4.5,2.4,3.6,2.5,2.5,4,3.5,2.6,4.5,4,3,4,4.4,2.5,2.5,2.5,3,2.5,2.5,4,3.5,2.5,4,4.5,4.5,3,4.5,2.5,4.5,4,2.5,4,4.5,3,3,3,4,7,4,6.5,4.5,3,4.5,3,4.5,2.5,4,2.5,4.5,3],[0,26,90,177,139,185.3,2.5,4,4.5,4.5,4.5,4,4.5,4,2,[0.3,4.5],4.5,3,2]]"
+								"textMap": "[[1,26,90,187.4,500.5,195.6,[62.7,4.6],2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.5,3.5,4.5,2.5,4.5,2.5,4,4,4.4,4.5,4.5,2.5,4.5,4.5,4.5,3,4,4.6,4.5,2.5,4,2.4,2.5,4.5,4.5,2.3,7,3,4.5,2,[0.3,4.5],3.5,4.5,4,2,4.7,4.5,4.5,2.4,3.6,2.5,2.5,4,3.5,2.6,4.5,4,3,4,4.4,2.5,2.5,2.5,3,2.5,2.5,4,3.5,2.5,4,4.5,4.5,3,4.5,2.5,4.5,4,2.5,4,4.5,3,3,3,4,7,4,6.5,4.5,3,4.5,3,4.5,2.5,4,2.5,4.5,3],[0,26,90,177,139,185.3,2.5,4,4.5,4.5,4.5,4,4.5,4,2,[0.3,4.5],4.5,3]]"
 							},
 							"target": {
-								"url": "https://usbiotechnologyregulation.mrp.usda.gov/sites/default/files/coordinated-framework-plainlanguage.pdf.147"
+								"url": "https://usbiotechnologyregulation.mrp.usda.gov/sites/default/files/coordinated-framework-plainlanguage.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,26,90,177,139,185.3,[47,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[215, 7]]
@@ -10266,10 +10081,7 @@
 						{
 							"text": "147",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,26,90,167.4,99,173,3,3,2]]"},
-							"target": {
-								"url": "https://usbiotechnologyregulation.mrp.usda.gov/sites/default/files/coordinated-framework-plainlanguage.pdf.147"
-							}
+							"anchor": {"textMap": "[[0,26,90,167.4,99,173,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -10299,14 +10111,15 @@
 							}
 						},
 						{
-							"text": "https://hai.stanford.edu/policy/assessing-the-implementation-of-federal-ai-leadership-and-compliance-mandates.",
+							"text": "https://hai.stanford.edu/policy/assessing-the-implementation-of-federal-ai-leadership-and-compliance-mandates",
 							"anchor": {
-								"textMap": "[[0,26,90,119.3,495,127.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,4,2.4,2,4,2.3,4,4.5,3,4.5,3,4.4,2.3,4,4.5,4.5,2.5,4.6,4.5,2.4,2.5,4,4.5,2.5,4,3.5,3.5,4,3.5,3.5,2.5,4.5,4.5,3,2.5,4.5,4,3,2.6,7,4.4,2.5,4,7,4,4.5,2.5,4,2.5,2.5,4.5,4.5,3,4.6,3,3,3,4,4.4,4,3,4,2.5,3,4,2.5,3,2.5,4,4,4.5,4,3,3.5,4.5,2.5,4.4,3,4,4.5,4.5,3,4,4.6,7,4.5,2.4,2.5,4,4.6,4,4,3,7,4,4.5,4.5,4,2.4,4,3.5,2]]"
+								"textMap": "[[0,26,90,119.3,495,127.5,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,4.6,4,2.4,2,4,2.3,4,4.5,3,4.5,3,4.4,2.3,4,4.5,4.5,2.5,4.6,4.5,2.4,2.5,4,4.5,2.5,4,3.5,3.5,4,3.5,3.5,2.5,4.5,4.5,3,2.5,4.5,4,3,2.6,7,4.4,2.5,4,7,4,4.5,2.5,4,2.5,2.5,4.5,4.5,3,4.6,3,3,3,4,4.4,4,3,4,2.5,3,4,2.5,3,2.5,4,4,4.5,4,3,3.5,4.5,2.5,4.4,3,4,4.5,4.5,3,4,4.6,7,4.5,2.4,2.5,4,4.6,4,4,3,7,4,4.5,4.5,4,2.4,4,3.5]]"
 							},
 							"target": {
-								"url": "https://hai.stanford.edu/policy/assessing-the-implementation-of-federal-ai-leadership-and-compliance-mandates.149"
+								"url": "https://hai.stanford.edu/policy/assessing-the-implementation-of-federal-ai-leadership-and-compliance-mandates"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,26,90,119.3,495,127.5,[403,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[216, 4]]
@@ -10318,10 +10131,7 @@
 						{
 							"text": "149",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,26,90,109.7,99,115,3,3,2]]"},
-							"target": {
-								"url": "https://hai.stanford.edu/policy/assessing-the-implementation-of-federal-ai-leadership-and-compliance-mandates.149"
-							}
+							"anchor": {"textMap": "[[0,26,90,109.7,99,115,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -10561,14 +10371,15 @@
 							}
 						},
 						{
-							"text": "https://www.uschamber.com/technology/artificial-intelligence-commission-report.",
+							"text": "https://www.uschamber.com/technology/artificial-intelligence-commission-report",
 							"anchor": {
-								"textMap": "[[0,27,90,220,387,228.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,3.5,4,4.4,4,7,4.6,4,3,2,4,4.7,7,2.5,2.5,4,4,4.5,4.5,4.5,2.5,4.5,4.5,4.5,2.5,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4,3,4,4.5,7,7,2.5,3.5,3.5,2.5,4.5,4.5,3,3,4,4.5,4.5,3,2.5,2]]"
+								"textMap": "[[0,27,90,220,387,228.3,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4.5,3.5,4,4.4,4,7,4.6,4,3,2,4,4.7,7,2.5,2.5,4,4,4.5,4.5,4.5,2.5,4.5,4.5,4.5,2.5,4,3,2.5,2.5,3,2.5,4,2.5,4,2.5,3,2.5,4.5,2.5,4,2.5,2.5,2.5,4.5,4,4.5,4,4,3,4,4.5,7,7,2.5,3.5,3.5,2.5,4.5,4.5,3,3,4,4.5,4.5,3,2.5]]"
 							},
 							"target": {
-								"url": "https://www.uschamber.com/technology/artificial-intelligence-commission-report.151"
+								"url": "https://www.uschamber.com/technology/artificial-intelligence-commission-report"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,27,90,220,387,228.3,[295,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[223, 1]]
@@ -10580,10 +10391,7 @@
 						{
 							"text": "151",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,27,90,210.5,99,216,3,3,2]]"},
-							"target": {
-								"url": "https://www.uschamber.com/technology/artificial-intelligence-commission-report.151"
-							}
+							"anchor": {"textMap": "[[0,27,90,210.5,99,216,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -10662,14 +10470,13 @@
 							}
 						},
 						{
-							"text": "https://www.govinfo.gov/app/details/CHRG-118shrg52706/CHRG-118shrg52706.",
+							"text": "https://www.govinfo.gov/app/details/CHRG-118shrg52706/CHRG-118shrg52706",
 							"anchor": {
-								"textMap": "[[0,27,90,162.4,501,170.6,[113,4.3],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4.7,4.5,4.5,2.5,4.5,3,4.5,2,[0.3,4.5],4.5,4.5,2.5,4,4.5,4.5,2.5,4.5,4,2.5,4,2.5,2.5,3.5,2.5,6,6.5,6,6.5,3,4.5,4.5,4.5,3.5,4.5,3,4.5,4.5,4.5,4.5,4.5,4.5,2.5,6,6.5,6,6.5,3,4.5,4.5,4.5,3.5,4.5,3,4.5,4.5,4.5,4.5,4.5,4.5,2]]"
+								"textMap": "[[0,27,90,162.4,501,170.6,[113,4.3],2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.5,6.5,6.5,2,4.7,4.5,4.5,2.5,4.5,3,4.5,2,[0.3,4.5],4.5,4.5,2.5,4,4.5,4.5,2.5,4.5,4,2.5,4,2.5,2.5,3.5,2.5,6,6.5,6,6.5,3,4.5,4.5,4.5,3.5,4.5,3,4.5,4.5,4.5,4.5,4.5,4.5,2.5,6,6.5,6,6.5,3,4.5,4.5,4.5,3.5,4.5,3,4.5,4.5,4.5,4.5,4.5,4.5]]"
 							},
-							"target": {
-								"url": "https://www.govinfo.gov/app/details/CHRG-118shrg52706/CHRG-118shrg52706.153"
-							}
-						}
+							"target": {"url": "https://www.govinfo.gov/app/details/CHRG-118shrg52706/CHRG-118shrg52706"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,27,90,162.4,501,170.6,[409,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[224, 4]]
@@ -10681,10 +10488,7 @@
 						{
 							"text": "153",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,27,90,152.7,99,158,3,3,2]]"},
-							"target": {
-								"url": "https://www.govinfo.gov/app/details/CHRG-118shrg52706/CHRG-118shrg52706.153"
-							}
+							"anchor": {"textMap": "[[0,27,90,152.7,99,158,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -10765,14 +10569,15 @@
 							}
 						},
 						{
-							"text": "https://subscriber.politicopro.com/newsletter/2025/03/hot-buttons-for-the-ai-action-plan-00239753.",
+							"text": "https://subscriber.politicopro.com/newsletter/2025/03/hot-buttons-for-the-ai-action-plan-00239753",
 							"anchor": {
-								"textMap": "[[0,27,90,101.6,470.7,110,[22.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,3.5,4.5,4.5,3.4,4,3,2.5,4.5,4,3,2.3,4.5,4.5,2.5,2.5,2.5,2.4,4,4.6,4.5,3,4.5,2,4,4.7,7,2.5,4.5,4,6.5,3.5,2.5,4,2.5,2.5,4,3,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.5,2.4,3,4.5,4.5,2.5,2.5,4.5,4.5,3.5,3,3,4.5,3,3,2.5,4.5,4,3,4,2.5,3,4,4,2.5,2.4,4.5,4.5,3,4.6,2.5,4,4.5,3,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,2]]"
+								"textMap": "[[0,27,90,101.6,470.7,110,[22.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,3.5,4.5,4.5,3.4,4,3,2.5,4.5,4,3,2.3,4.5,4.5,2.5,2.5,2.5,2.4,4,4.6,4.5,3,4.5,2,4,4.7,7,2.5,4.5,4,6.5,3.5,2.5,4,2.5,2.5,4,3,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.6,4.5,2.4,3,4.5,4.5,2.5,2.5,4.5,4.5,3.5,3,3,4.5,3,3,2.5,4.5,4,3,4,2.5,3,4,4,2.5,2.4,4.5,4.5,3,4.6,2.5,4,4.5,3,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5]]"
 							},
 							"target": {
-								"url": "https://subscriber.politicopro.com/newsletter/2025/03/hot-buttons-for-the-ai-action-plan-00239753.156"
+								"url": "https://subscriber.politicopro.com/newsletter/2025/03/hot-buttons-for-the-ai-action-plan-00239753"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,27,90,101.6,470.7,110,[378.5,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[226, 4]]
@@ -10784,10 +10589,7 @@
 						{
 							"text": "156",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,27,90,92,99,97.4,3,3,2]]"},
-							"target": {
-								"url": "https://subscriber.politicopro.com/newsletter/2025/03/hot-buttons-for-the-ai-action-plan-00239753.156"
-							}
+							"anchor": {"textMap": "[[0,27,90,92,99,97.4,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -11114,14 +10916,15 @@
 							}
 						},
 						{
-							"text": "https://obernolte.house.gov/media/pressreleases/reps-obernolte-beyer-introduce-bipartisan-create-ai-act-expand-access.",
+							"text": "https://obernolte.house.gov/media/pressreleases/reps-obernolte-beyer-introduce-bipartisan-create-ai-act-expand-access",
 							"anchor": {
-								"textMap": "[[1,28,234.3,235,492.6,243,[112,4.4],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4.5,4.5,4,3,4.4,4.5,2.5,2.5,4,2,4.7,4.5,4.5,3.5,4,2.3,4.5,4.5,4.5,2.5,7,4,4.6,2.5,4,2.4,4.6,3,4,3.5,3.5,3],[0,28,90,224.5,376,232.7,3,4,2.5,4,4,3.5,4,3.5,2.5,3,4,4.5,3.6,3,4.4,4.5,4,3,4.5,4.5,2.5,2.5,4,3,4.5,4,4.5,4,3,3,2.5,4.5,2.5,3,4.5,4.5,4.5,4,4,3,4.5,2.5,4.5,4,3,2.5,2.5,3.5,4,4.5,3,4,3,4,4,2.5,4,3,4,2.5,3,4,4,2.4,3,4,4.5,4.5,4,4.5,4.5,3,4,4,4,4,3.5,3.5,2]]"
+								"textMap": "[[1,28,234.3,235,492.6,243,[112,4.4],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4.5,4.5,4,3,4.4,4.5,2.5,2.5,4,2,4.7,4.5,4.5,3.5,4,2.3,4.5,4.5,4.5,2.5,7,4,4.6,2.5,4,2.4,4.6,3,4,3.5,3.5,3],[0,28,90,224.5,376,232.7,3,4,2.5,4,4,3.5,4,3.5,2.5,3,4,4.5,3.6,3,4.4,4.5,4,3,4.5,4.5,2.5,2.5,4,3,4.5,4,4.5,4,3,3,2.5,4.5,2.5,3,4.5,4.5,4.5,4,4,3,4.5,2.5,4.5,4,3,2.5,2.5,3.5,4,4.5,3,4,3,4,4,2.5,4,3,4,2.5,3,4,4,2.4,3,4,4.5,4.5,4,4.5,4.5,3,4,4,4,4,3.5,3.5]]"
 							},
 							"target": {
-								"url": "https://obernolte.house.gov/media/pressreleases/reps-obernolte-beyer-introduce-bipartisan-create-ai-act-expand-access.160"
+								"url": "https://obernolte.house.gov/media/pressreleases/reps-obernolte-beyer-introduce-bipartisan-create-ai-act-expand-access"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,28,90,224.5,376,232.7,[284,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[231, 4]]
@@ -11133,10 +10936,7 @@
 						{
 							"text": "160",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,28,90,215,99,220,3,3,2]]"},
-							"target": {
-								"url": "https://obernolte.house.gov/media/pressreleases/reps-obernolte-beyer-introduce-bipartisan-create-ai-act-expand-access.160"
-							}
+							"anchor": {"textMap": "[[0,28,90,215,99,220,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -11146,14 +10946,15 @@
 							}
 						},
 						{
-							"text": "https://www.nsf.gov/news/democratizing-future-ai-rd-nsf-launch-national-ai.",
+							"text": "https://www.nsf.gov/news/democratizing-future-ai-rd-nsf-launch-national-ai",
 							"anchor": {
-								"textMap": "[[0,28,90,201,390,209,[22.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.5,6.4,2,4.7,3.5,3,2.3,4.5,4.5,4.5,2.5,4.5,4,6.5,3.5,2.5,4.5,4,7,4.5,4,3,4,2.5,2.5,4,2.5,4.5,4.5,3,3,4.5,2.5,4.5,3,4,3,4,2.5,3,3,4.5,3,4.5,3.5,3,3,2.5,4,4.4,4.5,4,4.6,3,4.5,4,2.4,2.5,4.6,4.5,4,2.4,3,4,2.5,2.3]]"
+								"textMap": "[[0,28,90,201,390,209,[22.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.5,6.4,2,4.7,3.5,3,2.3,4.5,4.5,4.5,2.5,4.5,4,6.5,3.5,2.5,4.5,4,7,4.5,4,3,4,2.5,2.5,4,2.5,4.5,4.5,3,3,4.5,2.5,4.5,3,4,3,4,2.5,3,3,4.5,3,4.5,3.5,3,3,2.5,4,4.4,4.5,4,4.6,3,4.5,4,2.4,2.5,4.6,4.5,4,2.4,3,4,2.5]]"
 							},
 							"target": {
-								"url": "https://www.nsf.gov/news/democratizing-future-ai-rd-nsf-launch-national-ai.161"
+								"url": "https://www.nsf.gov/news/democratizing-future-ai-rd-nsf-launch-national-ai"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,28,90,201,390,209,[298,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[231, 7]]
@@ -11165,10 +10966,7 @@
 						{
 							"text": "161",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,28,90,191,99,196.5,3,3,2]]"},
-							"target": {
-								"url": "https://www.nsf.gov/news/democratizing-future-ai-rd-nsf-launch-national-ai.161"
-							}
+							"anchor": {"textMap": "[[0,28,90,191,99,196.5,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -11248,14 +11046,13 @@
 							}
 						},
 						{
-							"text": "https://apo.org.au/sites/default/files/resource-files/apo-nid322938.pdf.",
+							"text": "https://apo.org.au/sites/default/files/resource-files/apo-nid322938.pdf",
 							"anchor": {
-								"textMap": "[[0,28,153.7,132.7,469.5,141,[64,4.4],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4,4.4,4.5,2.3,4.5,3,4.5,2,4,4.7,2.5,3.6,2.5,2.4,4,3.6,2.5,4.5,4,3,4,4.4,2.5,2.6,2.4,3,2.5,2.5,4,3.5,2.5,3,4,3.5,4.5,4.5,3,4,4,3,3,2.5,2.5,4,3.5,2.5,4,4.5,4.5,3,4.5,2.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,2,4.7,4.5,3,2.3]]"
+								"textMap": "[[0,28,153.7,132.7,469.5,141,[64,4.4],2.5,2.4,4.5,3.5,2.5,2.5,2.6,4,4.4,4.5,2.3,4.5,3,4.5,2,4,4.7,2.5,3.6,2.5,2.4,4,3.6,2.5,4.5,4,3,4,4.4,2.5,2.6,2.4,3,2.5,2.5,4,3.5,2.5,3,4,3.5,4.5,4.5,3,4,4,3,3,2.5,2.5,4,3.5,2.5,4,4.5,4.5,3,4.5,2.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,2,4.7,4.5,3]]"
 							},
-							"target": {
-								"url": "https://apo.org.au/sites/default/files/resource-files/apo-nid322938.pdf.163"
-							}
-						}
+							"target": {"url": "https://apo.org.au/sites/default/files/resource-files/apo-nid322938.pdf"}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,28,153.7,132.7,469.5,141,[313.5,2.3]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[233, 1]]
@@ -11267,10 +11064,7 @@
 						{
 							"text": "163",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,28,90,123,99,128.4,3,3,2]]"},
-							"target": {
-								"url": "https://apo.org.au/sites/default/files/resource-files/apo-nid322938.pdf.163"
-							}
+							"anchor": {"textMap": "[[0,28,90,123,99,128.4,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -11280,14 +11074,15 @@
 							}
 						},
 						{
-							"text": "https://www.brookings.edu/articles/the-eu-and-us-diverge-on-ai-regulation-atransatlantic-comparison-and-steps-to-alignment/.",
+							"text": "https://www.brookings.edu/articles/the-eu-and-us-diverge-on-ai-regulation-atransatlantic-comparison-and-steps-to-alignment/",
 							"anchor": {
-								"textMap": "[[1,28,90,109,508,117,[138.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2,4.7,3,4.5,4.5,4.5,2.5,4.5,4.5,3.5,2.3,4,4.5,4.5,2.5,4,3,2.5,2.6,4,2.4,4,3.5,2.5,2.5,4.5,4,3,4,4.5,3,4,4.5,4.5,3,4.5,3.5,3,4.5,2.5,4.5,4,3,4.5,4,3,4.5,4.5,3,4,2.5,3,3,4,4.5,4.5,2.4,4,2.6,2.4,4.5,4.5,3,4,3],[0,28,90,98.6,270,107,2.5,3,4,4.5,3.5,4,2.5,2.5,4,4.5,2.5,2.5,4,3,4,4.6,7,4.4,4,3,2.6,3.5,4.5,4.5,3,4,4.5,4.5,3,3.5,2.5,4,4.4,3.5,3,2.5,4.5,3,4,2.6,2.4,4.5,4.5,7,4,4.5,2.5,2.5,2]]"
+								"textMap": "[[1,28,90,109,508,117,[138.5,4.6],2.5,2.4,4.5,3.5,2.5,2.5,2.6,6.5,6.4,6.5,2,4.7,3,4.5,4.5,4.5,2.5,4.5,4.5,3.5,2.3,4,4.5,4.5,2.5,4,3,2.5,2.6,4,2.4,4,3.5,2.5,2.5,4.5,4,3,4,4.5,3,4,4.5,4.5,3,4.5,3.5,3,4.5,2.5,4.5,4,3,4.5,4,3,4.5,4.5,3,4,2.5,3,3,4,4.5,4.5,2.4,4,2.6,2.4,4.5,4.5,3,4,3],[0,28,90,98.6,270,107,2.5,3,4,4.5,3.5,4,2.5,2.5,4,4.5,2.5,2.5,4,3,4,4.6,7,4.4,4,3,2.6,3.5,4.5,4.5,3,4,4.5,4.5,3,3.5,2.5,4,4.4,3.5,3,2.5,4.5,3,4,2.6,2.4,4.5,4.5,7,4,4.5,2.5,2.5]]"
 							},
 							"target": {
-								"url": "https://www.brookings.edu/articles/the-eu-and-us-diverge-on-ai-regulation-atransatlantic-comparison-and-steps-to-alignment/.164"
+								"url": "https://www.brookings.edu/articles/the-eu-and-us-diverge-on-ai-regulation-atransatlantic-comparison-and-steps-to-alignment/"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,28,90,98.6,270,107,[177.5,2]]]"}}
 					],
 					"reference": true,
 					"backRefs": [[233, 4]]
@@ -11299,10 +11094,7 @@
 						{
 							"text": "164",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,28,90,89,99,94.4,3,3,2]]"},
-							"target": {
-								"url": "https://www.brookings.edu/articles/the-eu-and-us-diverge-on-ai-regulation-atransatlantic-comparison-and-steps-to-alignment/.164"
-							}
+							"anchor": {"textMap": "[[0,28,90,89,99,94.4,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -11613,14 +11405,15 @@
 							}
 						},
 						{
-							"text": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2021/02/how-do-laws-andregulations-affect-competitiveness_bffcf65f/7c11f5d5-en.pdf.",
+							"text": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2021/02/how-do-laws-andregulations-affect-competitiveness_bffcf65f/7c11f5d5-en.pdf",
 							"anchor": {
-								"textMap": "[[1,29,131,180,517,188.3,[56,4.5],2.5,2.5,4.6,3.5,2.5,2.4,2.5,6.5,6.5,6.5,2,5,3.7,4,4.6,2,4.7,3,4.5,2.5,4,4.5,4.5,2.5,4,4.5,2.5,2.5,4.5,4,7,2.5,4.5,4,4,4.5,2.5,4,4.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,3,4,4.5,4.5,3,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,6.5,3,4.5,4.5,3,2.5,4,6.5,3.5,3,4,4.4,4.5,3],[0,29,90,169.7,313,178,3,4,4.5,4.5,2.5,4,2.5,2.5,4.5,4.5,3.5,3,4,3,3,4,4,2.5,3,4,4.5,7,4.5,4,2.5,2.5,2.5,2.5,4.5,4,4.5,4,3.5,3.5,4.5,4.5,3,3,4,3,4.5,4.5,3,2.5,4.5,4,4.5,4.5,3,4.5,4.5,4.5,3,4,4.5,2,[0.3,4.5],4.5,3,2]]"
+								"textMap": "[[1,29,131,180,517,188.3,[56,4.5],2.5,2.5,4.6,3.5,2.5,2.4,2.5,6.5,6.5,6.5,2,5,3.7,4,4.6,2,4.7,3,4.5,2.5,4,4.5,4.5,2.5,4,4.5,2.5,2.5,4.5,4,7,2.5,4.5,4,4,4.5,2.5,4,4.5,2.5,4.5,4.5,4.5,2.5,2.5,4,4,2.5,2.5,4.5,4.5,3.5,2.5,3,4,4.5,4.5,3,2.5,3.5,2.5,4.5,4.5,4.5,4.5,2.5,4.5,4.5,2.5,4.5,4.5,6.5,3,4.5,4.5,3,2.5,4,6.5,3.5,3,4,4.4,4.5,3],[0,29,90,169.7,313,178,3,4,4.5,4.5,2.5,4,2.5,2.5,4.5,4.5,3.5,3,4,3,3,4,4,2.5,3,4,4.5,7,4.5,4,2.5,2.5,2.5,2.5,4.5,4,4.5,4,3.5,3.5,4.5,4.5,3,3,4,3,4.5,4.5,3,2.5,4.5,4,4.5,4.5,3,4.5,4.5,4.5,3,4,4.5,2,[0.3,4.5],4.5,3]]"
 							},
 							"target": {
-								"url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2021/02/how-do-laws-andregulations-affect-competitiveness_bffcf65f/7c11f5d5-en.pdf.167"
+								"url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2021/02/how-do-laws-andregulations-affect-competitiveness_bffcf65f/7c11f5d5-en.pdf"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,29,90,169.7,313,178,[221,2]]]"}}
 					],
 					"backRefs": [[238, 7]]
 				},
@@ -11631,10 +11424,7 @@
 						{
 							"text": "167",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,29,90,160,99,165.5,3,3,2]]"},
-							"target": {
-								"url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2021/02/how-do-laws-andregulations-affect-competitiveness_bffcf65f/7c11f5d5-en.pdf.167"
-							}
+							"anchor": {"textMap": "[[0,29,90,160,99,165.5,3,3,2]]"}
 						},
 						{"text": " "},
 						{
@@ -11710,14 +11500,15 @@
 							}
 						},
 						{
-							"text": "https://www.axios.com/newsletters/axios-ai-plus-1fbeee90-ea4e-11ef-9140-6dbc403a18ee.html.",
+							"text": "https://www.axios.com/newsletters/axios-ai-plus-1fbeee90-ea4e-11ef-9140-6dbc403a18ee.html",
 							"anchor": {
-								"textMap": "[[0,29,90,109,437,117,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4,4.5,2.4,4.5,3.5,2,4,[0.3,4.5],7,2.5,4.6,4,6.4,3.5,2.5,4,2.5,2.5,4,3,3.5,2.5,4,4.5,2.5,4.6,3.5,3,4,2.4,3,4.5,2.5,4.5,3.5,3,4.5,3,4.5,4,4,4,4.5,4.5,3,4,4,4.5,4,3,4.4,4.5,4,3,3,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4,4.5,4.5,4.5,4,4.5,4.5,4,4,2,[0.3,4.5],2.5,7,2.5,2]]"
+								"textMap": "[[0,29,90,109,437,117,4.5,2.5,2.5,4.5,3.5,2.5,2.5,2.5,6.6,6.5,6.4,2.3,4,4.5,2.4,4.5,3.5,2,4,[0.3,4.5],7,2.5,4.6,4,6.4,3.5,2.5,4,2.5,2.5,4,3,3.5,2.5,4,4.5,2.5,4.6,3.5,3,4,2.4,3,4.5,2.5,4.5,3.5,3,4.5,3,4.5,4,4,4,4.5,4.5,3,4,4,4.5,4,3,4.4,4.5,4,3,3,4.5,4.5,4.5,4.5,3,4.5,4.5,4.5,4,4.5,4.5,4.5,4,4.5,4.5,4,4,2,[0.3,4.5],2.5,7,2.5]]"
 							},
 							"target": {
-								"url": "https://www.axios.com/newsletters/axios-ai-plus-1fbeee90-ea4e-11ef-9140-6dbc403a18ee.html.170"
+								"url": "https://www.axios.com/newsletters/axios-ai-plus-1fbeee90-ea4e-11ef-9140-6dbc403a18ee.html"
 							}
-						}
+						},
+						{"text": ".", "anchor": {"textMap": "[[0,29,90,109,437,117,[344.7,2]]]"}}
 					],
 					"backRefs": [[238, 16]]
 				},
@@ -11728,10 +11519,7 @@
 						{
 							"text": "170",
 							"style": {"sup": true},
-							"anchor": {"textMap": "[[0,29,90,99.3,99,104.7,3,3,2]]"},
-							"target": {
-								"url": "https://www.axios.com/newsletters/axios-ai-plus-1fbeee90-ea4e-11ef-9140-6dbc403a18ee.html.170"
-							}
+							"anchor": {"textMap": "[[0,29,90,99.3,99,104.7,3,3,2]]"}
 						},
 						{"text": " "},
 						{
