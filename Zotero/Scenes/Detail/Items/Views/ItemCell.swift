@@ -63,12 +63,18 @@ final class ItemCell: UICollectionViewListCell {
         func setupViews() {
             let subtitleTextStyle: UIFont.TextStyle
             let horizontalSpacing: CGFloat
+            let verticalInset: CGFloat
+            let baselineSpacing: CGFloat
             if #available(iOS 26.0.0, *) {
                 subtitleTextStyle = .subheadline
                 horizontalSpacing = 12
+                verticalInset = 14
+                baselineSpacing = 20
             } else {
                 subtitleTextStyle = .body
                 horizontalSpacing = 16
+                verticalInset = 12
+                baselineSpacing = 24
             }
 
             clipsToBounds = true
@@ -175,9 +181,9 @@ final class ItemCell: UICollectionViewListCell {
                 typeImageView.widthAnchor.constraint(equalToConstant: 28),
                 typeImageView.heightAnchor.constraint(equalToConstant: 28),
 
-                labelsContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+                labelsContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: verticalInset),
                 labelsContainer.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: horizontalSpacing),
-                contentView.bottomAnchor.constraint(equalTo: labelsContainer.bottomAnchor, constant: 12 + ItemDetailLayout.separatorHeight),
+                contentView.bottomAnchor.constraint(equalTo: labelsContainer.bottomAnchor, constant: verticalInset + ItemDetailLayout.separatorHeight),
                 accessoryContainer.leadingAnchor.constraint(equalTo: labelsContainer.trailingAnchor),
 
                 titleLabel.topAnchor.constraint(equalTo: labelsContainer.topAnchor),
@@ -186,7 +192,7 @@ final class ItemCell: UICollectionViewListCell {
                 subtitleStackView.topAnchor.constraint(greaterThanOrEqualTo: titleLabel.bottomAnchor),
                 subtitleStackView.leadingAnchor.constraint(equalTo: labelsContainer.leadingAnchor),
                 labelsContainer.trailingAnchor.constraint(greaterThanOrEqualTo: subtitleStackView.trailingAnchor),
-                subtitleLabel.firstBaselineAnchor.constraint(equalTo: titleLabel.firstBaselineAnchor, constant: 24),
+                subtitleLabel.firstBaselineAnchor.constraint(equalTo: titleLabel.firstBaselineAnchor, constant: baselineSpacing),
                 labelsContainer.bottomAnchor.constraint(equalTo: subtitleLabel.lastBaselineAnchor),
 
                 accessoryContainerRight,
