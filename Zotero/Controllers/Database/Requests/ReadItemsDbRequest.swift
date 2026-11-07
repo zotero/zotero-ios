@@ -61,7 +61,11 @@ struct ReadItemsDbRequest: DbResponseRequest {
             }
         }
         // Sort if needed
-        return sortType.flatMap({ results.sorted(by: $0.descriptors) }) ?? results
+        if case .custom(.recentlyRead) = collectionId {
+            return results.sorted(by: [SortDescriptor(keyPath: "effectiveLastRead", ascending: false), SortDescriptor(keyPath: "sortTitle", ascending: true)])
+        } else {
+            return sortType.flatMap({ results.sorted(by: $0.descriptors) }) ?? results
+        }
     }
 }
 
@@ -87,5 +91,21 @@ struct ReadLibraryItemsDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> Results<RItem> {
         return database.objects(RItem.self).filter(.items(for: libraryId))
+    }
+}
+
+struct ReadCollectionItemsDbRequest: DbResponseRequest {
+    typealias Response = Results<RItem>
+
+    let collectionKey: String
+    let libraryId: LibraryIdentifier
+    let includeSubcollections: Bool
+    let sortType: ItemsSortType
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RItem> {
+        let keys = includeSubcollections ? database.selfAndSubcollectionKeys(for: collectionKey, libraryId: libraryId) : [collectionKey]
+        return database.objects(RItem.self).filter(.items(forCollections: keys, libraryId: libraryId)).sorted(by: sortType.descriptors)
     }
 }

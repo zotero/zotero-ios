@@ -22,12 +22,16 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let delegate = UIApplication.shared.delegate as? AppDelegate, let controllers = delegate.controllers else { return }
 
         let windowScene = scene as? UIWindowScene
-        let frame = windowScene?.coordinateSpace.bounds ?? UIScreen.main.bounds
 
         // Assign activity counter
         activityCounter = delegate
         // Create window for scene
-        let window = EventObservableWindow(frame: frame)
+        let window: EventObservableWindow
+        if let windowScene {
+            window = EventObservableWindow(windowScene: windowScene)
+        } else {
+            window = EventObservableWindow(frame: UIScreen.main.bounds)
+        }
         self.window = window
         window.windowScene = windowScene
         window.makeKeyAndVisible()

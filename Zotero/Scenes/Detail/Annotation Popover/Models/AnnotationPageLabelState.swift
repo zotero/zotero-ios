@@ -10,7 +10,6 @@ import Foundation
 
 struct AnnotationPageLabelState: ViewModelState {
     var label: String
-    var updateSubsequentPages: Bool
 
     func cleanup() {}
 }

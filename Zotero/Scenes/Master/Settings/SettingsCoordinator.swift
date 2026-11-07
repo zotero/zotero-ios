@@ -14,6 +14,49 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
+protocol SettingsPresenter: Coordinator {
+    func showSettings(
+        using presenter: UINavigationController,
+        controllers: Controllers,
+        animated: Bool,
+        initialScreen: SettingsCoordinator.InitialScreen?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    )
+}
+
+extension SettingsPresenter {
+    func showSettings(
+        using presenter: UINavigationController,
+        controllers: Controllers,
+        animated: Bool,
+        initialScreen: SettingsCoordinator.InitialScreen?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    ) {
+        let navigationController = NavigationViewController()
+        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
+        coordinator.parentCoordinator = self
+        childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+        
+        if #available(iOS 26.0, *) {
+            navigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = navigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = presenter.view
+                    popoverPresentationController.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+            presenter.present(navigationController, animated: animated)
+        } else {
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            presenter.present(containerController, animated: animated)
+        }
+    }
+}
+
 protocol SettingsCoordinatorDelegate: AnyObject {
     func showSync()
     func showPrivacyPolicy()
@@ -29,7 +72,9 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>)
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
     func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
+    func showManageAccount(viewModel: ViewModel<SyncSettingsActionHandler>)
     func showWeb(url: URL, completion: @escaping () -> Void)
+    func showAnnotationToolsSettings()
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -80,7 +125,9 @@ final class SettingsCoordinator: NSObject, Coordinator {
 
         super.init()
 
-        navigationController.delegate = self
+        if #unavailable(iOS 26.0) {
+            navigationController.delegate = self
+        }
         navigationController.dismissHandler = {
             self.parentCoordinator?.childDidFinish(self)
         }
@@ -307,6 +354,14 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         self.pushDefaultSize(view: view)
     }
 
+    func showManageAccount(viewModel: ViewModel<SyncSettingsActionHandler>) {
+        var view = ManageAccountView()
+        view.coordinatorDelegate = self
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>) {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Settings.logoutWarning, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { [weak viewModel] _ in
@@ -320,6 +375,13 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         let viewModel = ViewModel(initialState: GeneralSettingsState(), handler: GeneralSettingsActionHandler())
         let view = GeneralSettingsView().environmentObject(viewModel)
         self.pushDefaultSize(view: view)
+    }
+    
+    func showAnnotationToolsSettings() {
+        let state = AnnotationToolsSettingsState(pdfAnnotationTools: Defaults.shared.pdfAnnotationTools, htmlEpubAnnotationTools: Defaults.shared.htmlEpubAnnotationTools)
+        let viewModel = ViewModel(initialState: state, handler: AnnotationToolsSettingsViewModel())
+        let view = AnnotationToolsSettingsView().environmentObject(viewModel)
+        pushDefaultSize(view: view)
     }
 
     func dismiss() {
@@ -416,9 +478,9 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
     func exportDb() {
-        guard let navigationController, let userId = self.controllers.sessionController.sessionData?.userId else { return }
+        guard let navigationController, let sessionData = controllers.sessionController.sessionData else { return }
 
-        let mainUrl = Files.dbFile(for: userId).createUrl()
+        let mainUrl = Files.dbFile(for: sessionData.userId, sessionId: sessionData.sessionId).createUrl()
         let bundledUrl = Files.bundledDataDbFile.createUrl()
 
         let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
@@ -448,7 +510,7 @@ extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: UINavigationControllerDelegate {
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        guard viewController.preferredContentSize.width > 0 && viewController.preferredContentSize.height > 0 else { return }
+        guard #unavailable(iOS 26.0), viewController.preferredContentSize.width > 0, viewController.preferredContentSize.height > 0 else { return }
         navigationController.preferredContentSize = viewController.preferredContentSize
     }
 }

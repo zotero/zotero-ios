@@ -1,5 +1,5 @@
 //
-//  SquareAnnotationPreviewController.swift
+//  AnnotationPreviewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 27/04/2020.
@@ -11,7 +11,7 @@ import UIKit
 import CocoaLumberjackSwift
 import RxSwift
 
-typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
+typealias AnnotationPreviewUpdate = (annotationKey: String, attachmentKey: String, image: UIImage)
 
 final class AnnotationPreviewController: NSObject {
     fileprivate struct EnqueuedData {
@@ -156,26 +156,26 @@ extension AnnotationPreviewController {
     /// - parameter parentKey: Key of PDF item.
     /// - parameter libraryId: Library identifier of item.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
-    func store(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, appearance: Appearance) {
-        queue.async { [weak self] in
-            guard
-                let self,
-                let data = EnqueuedData(annotation: annotation, parentKey: parentKey, libraryId: libraryId, imageSize: previewSize, imageScale: 0, appearance: appearance, type: .cachedAndReported)
-            else { return }
-            enqueue(data: data)
-        }
-    }
-
-    func store(annotations: [PSPDFKit.Annotation], parentKey: String, libraryId: LibraryIdentifier, appearance: Appearance) {
+    func store(annotations: [PSPDFKit.Annotation], parentKey: String, libraryId: LibraryIdentifier, appearance: Appearance, notify: Bool) {
         queue.async { [weak self] in
             guard let self else { return }
             for annotation in annotations {
-                guard
-                    let data = EnqueuedData(annotation: annotation, parentKey: parentKey, libraryId: libraryId, imageSize: previewSize, imageScale: 0, appearance: appearance, type: .cachedOnly)
+                guard let data = EnqueuedData(
+                    annotation: annotation,
+                    parentKey: parentKey,
+                    libraryId: libraryId,
+                    imageSize: previewSize,
+                    imageScale: 0,
+                    appearance: appearance,
+                    type: notify ? .cachedAndReported : .cachedOnly)
                 else { continue }
                 enqueue(data: data)
             }
         }
+    }
+
+    func store(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, appearance: Appearance, notify: Bool) {
+        store(annotations: [annotation], parentKey: parentKey, libraryId: libraryId, appearance: appearance, notify: notify)
     }
 
     /// Deletes cached preview for given annotation.

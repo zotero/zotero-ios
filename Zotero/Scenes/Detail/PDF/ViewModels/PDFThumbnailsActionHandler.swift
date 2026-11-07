@@ -11,18 +11,18 @@ import UIKit
 import PSPDFKit
 import RxSwift
 
-struct PDFThumbnailsActionHandler: ViewModelActionHandler {
+final class PDFThumbnailsActionHandler: ViewModelActionHandler {
     typealias Action = PDFThumbnailsAction
     typealias State = PDFThumbnailsState
 
     private unowned let thumbnailController: PDFThumbnailController
-    private let queue: DispatchQueue
     private let disposeBag: DisposeBag
+    private var prefetchDisposables: [UInt: Disposable]
 
     init(thumbnailController: PDFThumbnailController) {
         self.thumbnailController = thumbnailController
-        self.queue = DispatchQueue(label: "org.zotero.PDFThumbnailsActionHandler.background", qos: .userInitiated, attributes: .concurrent)
         self.disposeBag = DisposeBag()
+        self.prefetchDisposables = [:]
     }
 
     func process(action: PDFThumbnailsAction, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
@@ -33,6 +33,9 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
         case .prefetch(let pageIndices):
             prefetch(pageIndices: pageIndices, in: viewModel)
 
+        case .cancelPrefetch(let pageIndices):
+            cancelPrefetch(pageIndices: pageIndices)
+
         case .setAppearance(let appearance):
             setAppearance(appearance: appearance, in: viewModel)
 
@@ -42,16 +45,17 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
         case .setSelectedPage(let pageIndex, let type):
             set(selectedPage: pageIndex, type: type, viewModel: viewModel)
 
-        case .reloadThumbnails:
-            reloadThumbnails(viewModel: viewModel)
+        case .reloadThumbnails(let pageIndices):
+            reloadThumbnails(pageIndices: pageIndices, viewModel: viewModel)
         }
     }
 
-    private func reloadThumbnails(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-        guard !viewModel.state.pages.isEmpty else { return }
-        viewModel.state.cache.removeAllObjects()
-        thumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.libraryId)
+    private func reloadThumbnails(pageIndices: Set<Int>, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        guard !viewModel.state.pages.isEmpty, !pageIndices.isEmpty else { return }
+        cancelPrefetch(pageIndices: pageIndices.compactMap({ UInt(exactly: $0) }))
+        pageIndices.forEach({ viewModel.state.cache.removeObject(forKey: NSNumber(value: $0)) })
         update(viewModel: viewModel) { state in
+            state.reloadedPageIndices = pageIndices
             state.changes = .reload
         }
     }
@@ -82,68 +86,71 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func prefetch(pageIndices: [UInt], in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-        let toFetch = pageIndices.compactMap { pageIndex in
-            let hasImage = thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, appearance: viewModel.state.appearance)
-            return hasImage ? nil : pageIndex
-        }
-        thumbnailController.cache(
-            pages: toFetch,
-            key: viewModel.state.key,
-            libraryId: viewModel.state.libraryId,
-            document: viewModel.state.document,
-            imageSize: viewModel.state.thumbnailSize,
-            appearance: viewModel.state.appearance
-        )
-        .subscribe()
-        .disposed(by: disposeBag)
+    private func cache(image: UIImage, pageIndex: UInt, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        let cost = image.cgImage.map({ $0.bytesPerRow * $0.height }) ?? 0
+        viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex), cost: cost)
     }
 
-    private func load(pageIndex: UInt, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-        if thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, appearance: viewModel.state.appearance) {
-            loadCachedThumbnailAsync()
-        } else {
-            loadAndCacheThumbnailAsync()
-        }
+    private func prefetch(pageIndices: [UInt], in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        for pageIndex in Set(pageIndices) {
+            guard prefetchDisposables[pageIndex] == nil else { continue }
 
-        func loadCachedThumbnailAsync() {
-            queue.async { [weak thumbnailController, weak viewModel] in
-                guard let thumbnailController,
-                      let viewModel,
-                      let image = thumbnailController.thumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, appearance: viewModel.state.appearance)
-                else { return }
-                DispatchQueue.main.async { [weak viewModel] in
-                    guard let viewModel else { return }
-                    cache(image: image, viewModel: viewModel)
-                }
-            }
-        }
-
-        func loadAndCacheThumbnailAsync() {
-            thumbnailController.cache(
+            let disposable = thumbnailController.thumbnail(
                 page: pageIndex,
                 key: viewModel.state.key,
                 libraryId: viewModel.state.libraryId,
                 document: viewModel.state.document,
                 imageSize: viewModel.state.thumbnailSize,
-                appearance: viewModel.state.appearance
+                appearance: viewModel.state.appearance,
+                priority: .prefetch
             )
             .observe(on: MainScheduler.instance)
-            .subscribe(with: viewModel) { viewModel, image in
-                cache(image: image, viewModel: viewModel)
-            }
-            .disposed(by: disposeBag)
-        }
-
-        func cache(image: UIImage, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-            viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex))
-            update(viewModel: viewModel) { state in
-                state.loadedThumbnail = Int(pageIndex)
-            }
+            .subscribe(onSuccess: { [weak self, weak viewModel] image in
+                guard let self, let viewModel else { return }
+                cache(image: image, pageIndex: pageIndex, viewModel: viewModel)
+            }, onDisposed: { [weak self] in
+                self?.prefetchDisposables[pageIndex] = nil
+            })
+            prefetchDisposables[pageIndex] = disposable
+            disposable.disposed(by: disposeBag)
         }
     }
 
+    private func cancelPrefetch(pageIndices: [UInt]) {
+        for pageIndex in Set(pageIndices) {
+            prefetchDisposables.removeValue(forKey: pageIndex)?.dispose()
+        }
+    }
+
+    private func cancelAllPrefetches() {
+        let disposables = Array(prefetchDisposables.values)
+        prefetchDisposables.removeAll()
+        disposables.forEach({ $0.dispose() })
+    }
+
+    private func load(pageIndex: UInt, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        thumbnailController.thumbnail(
+            page: pageIndex,
+            key: viewModel.state.key,
+            libraryId: viewModel.state.libraryId,
+            document: viewModel.state.document,
+            imageSize: viewModel.state.thumbnailSize,
+            appearance: viewModel.state.appearance,
+            priority: .visible
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe(onSuccess: { [weak self, weak viewModel] image in
+            guard let self, let viewModel else { return }
+            cache(image: image, pageIndex: pageIndex, viewModel: viewModel)
+            update(viewModel: viewModel) { state in
+                state.loadedThumbnail = Int(pageIndex)
+            }
+        })
+        .disposed(by: disposeBag)
+    }
+
     private func setAppearance(appearance: Appearance, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        cancelAllPrefetches()
         viewModel.state.cache.removeAllObjects()
         update(viewModel: viewModel) { state in
             state.appearance = appearance

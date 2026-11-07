@@ -6,12 +6,14 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SafariServices
+import SwiftUI
 import UIKit
 
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
+protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate, ReadAloudCoordinatorDelegate {
     func showDocumentChangedAlert(completed: @escaping () -> Void)
     func show(url: URL)
     func showSearch(
@@ -27,22 +29,37 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
-    private var searchController: DocumentSearchViewController?
+    var searchController: DocumentSearchViewController?
 
     private let key: String
     private let parentKey: String?
     private let libraryId: LibraryIdentifier
     private let url: URL
-    internal unowned let controllers: Controllers
+    private let readerURL: URL?
+    private let preselectedAnnotationKey: String?
+    unowned let controllers: Controllers
+    let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
 
-    init(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, navigationController: NavigationViewController, controllers: Controllers) {
+    init(
+        key: String,
+        parentKey: String?,
+        libraryId: LibraryIdentifier,
+        url: URL,
+        readerURL: URL?,
+        preselectedAnnotationKey: String?,
+        navigationController: NavigationViewController,
+        controllers: Controllers
+    ) {
         self.key = key
         self.parentKey = parentKey
         self.libraryId = libraryId
         self.url = url
+        self.readerURL = readerURL
+        self.preselectedAnnotationKey = preselectedAnnotationKey
         self.navigationController = navigationController
         self.controllers = controllers
+        remoteVoicesController = RemoteVoicesController(apiClient: controllers.apiClient)
         childCoordinators = []
         disposeBag = DisposeBag()
 
@@ -58,12 +75,13 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
 
     func start(animated: Bool) {
         let username = Defaults.shared.username
-        guard let dbStorage = controllers.userControllers?.dbStorage,
+        guard let userControllers = controllers.userControllers,
               let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
               let parentNavigationController = parentCoordinator?.navigationController
         else { return }
 
+        let dbStorage = userControllers.dbStorage
         let settings = Defaults.shared.htmlEpubSettings
         let handler = HtmlEpubReaderActionHandler(
             dbStorage: dbStorage,
@@ -71,13 +89,16 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             dateParser: controllers.dateParser,
             fileStorage: controllers.fileStorage,
-            idleTimerController: controllers.idleTimerController
+            idleTimerController: controllers.idleTimerController,
+            lastReadWatcher: userControllers.lastReadWatcher
         )
         let state = HtmlEpubReaderState(
+            readerURL: readerURL,
             url: url,
             key: key,
             parentKey: parentKey,
             title: try? dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
+            preselectedAnnotationKey: preselectedAnnotationKey,
             settings: Defaults.shared.htmlEpubSettings,
             libraryId: libraryId,
             userId: userId,
@@ -86,7 +107,12 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         )
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
-            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
+            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
+            dbStorage: dbStorage,
+            documentWorkerController: userControllers.documentWorkerController,
+            speechPlaybackOwnership: controllers.speechPlaybackOwnership,
+            remoteVoicesController: remoteVoicesController,
+            documentPreviewController: controllers.documentPreviewController
         )
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: false)
@@ -101,35 +127,8 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
         sender: UIBarButtonItem,
         userInterfaceStyle: UIUserInterfaceStyle
     ) {
-        DDLogInfo("PDFCoordinator: show search")
-
-        if let searchController {
-            if let controller = searchController.presentingViewController {
-                controller.dismiss(animated: true) { [weak self] in
-                    self?.showSearch(viewModel: viewModel, documentController: documentController, text: text, sender: sender, userInterfaceStyle: userInterfaceStyle)
-                }
-                return
-            }
-
-            searchController.overrideUserInterfaceStyle = userInterfaceStyle
-            setupPresentation(for: searchController, with: sender)
-            searchController.text = text
-
-            navigationController?.present(searchController, animated: true, completion: nil)
-            return
-        }
-
-        let handler = HtmlEpubSearchHandler(viewModel: viewModel, documentController: documentController)
-        let viewController = DocumentSearchViewController(text: text, handler: handler)
-        viewController.overrideUserInterfaceStyle = userInterfaceStyle
-        setupPresentation(for: viewController, with: sender)
-        self.searchController = viewController
-        self.navigationController?.present(viewController, animated: true, completion: nil)
-
-        func setupPresentation(for pdfSearchController: DocumentSearchViewController, with sender: UIBarButtonItem) {
-            pdfSearchController.modalPresentationStyle = .popover
-            pdfSearchController.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
-            pdfSearchController.popoverPresentationController?.sourceRect = .zero
+        showSearch(text: text, sender: sender, userInterfaceStyle: userInterfaceStyle) {
+            HtmlEpubSearchHandler(viewModel: viewModel, documentController: documentController)
         }
     }
 

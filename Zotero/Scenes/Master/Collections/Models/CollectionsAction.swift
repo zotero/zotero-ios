@@ -19,6 +19,7 @@ enum CollectionsAction {
     case startEditing(CollectionsState.EditingType)
     case select(CollectionIdentifier)
     case toggleCollapsed(Collection)
+    case toggleShowsInCarPlay(Collection)
     case loadItemKeysForBibliography(Collection)
     case downloadAttachments(CollectionIdentifier)
     case removeDownloads(CollectionIdentifier)

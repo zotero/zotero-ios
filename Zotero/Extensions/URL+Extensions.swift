@@ -18,4 +18,12 @@ extension URL {
         components.scheme = "http"
         return components.url ?? self
     }
+
+    func appendingQueryItem(name: String, value: String) -> URL? {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return nil }
+        var queryItems = components.queryItems ?? []
+        queryItems.append(URLQueryItem(name: name, value: value))
+        components.queryItems = queryItems
+        return components.url
+    }
 }

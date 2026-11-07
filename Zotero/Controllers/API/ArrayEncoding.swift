@@ -52,10 +52,10 @@ struct ArrayEncoding: ParameterEncoding {
 
         guard let array = parameters[ArrayEncoding.arrayParametersKey] else { return urlRequest }
 
-        let tmpPath = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json").path
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json")
         try safeWrite()
 
-        guard let inputStream = InputStream(fileAtPath: tmpPath) else {
+        guard let inputStream = InputStream(url: url) else {
             throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: ArrayEncodingError.cantCreateInputStream))
         }
 
@@ -71,7 +71,7 @@ struct ArrayEncoding: ParameterEncoding {
             var error: NSError?
 
             for attempt in 1...2 {
-                guard let outputStream = OutputStream(toFileAtPath: tmpPath, append: false) else {
+                guard let outputStream = OutputStream(url: url, append: false) else {
                     throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: ArrayEncodingError.cantCreateOutputStream))
                 }
 
@@ -86,6 +86,8 @@ struct ArrayEncoding: ParameterEncoding {
                 DDLogError("ArrayEncoding: attempt \(attempt) serialization error - \(error). Stream status \(outputStream.streamStatus), error: \(outputStream.streamError as Any)")
 
                 if attempt == 1 {
+                    // Try creating empty file in given URL, because OutputStream can sometime fail if the file doesn't exist.
+                    FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil)
                     // Let's try again in a second to rule out cleanup of the temporary directory or other race conditions.
                     Thread.sleep(forTimeInterval: 1)
                 }

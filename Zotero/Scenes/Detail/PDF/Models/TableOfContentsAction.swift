@@ -8,7 +8,9 @@
 
 import Foundation
 
-enum TableOfContentsAction {
+enum TableOfContentsAction<O: Outline> {
     case load
     case search(String)
+    case setCurrentOutline(UUID?)
+    case setOutlines([O])
 }

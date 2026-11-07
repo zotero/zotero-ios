@@ -64,6 +64,7 @@ struct CollectionsPickerActionHandler: ViewModelActionHandler {
                 switch changes {
                 case .update(let results, _, _, _):
                     self.update(results: results, in: viewModel)
+
                 case .initial: break
                 case .error: break
                 }

@@ -64,8 +64,16 @@ struct CollectionEditView: View {
                 }
             }
         }
-        .navigationBarItems(leading: self.leadingItems, trailing: self.trailingItems)
-        .navigationBarTitle(self.title, displayMode: .inline)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                leadingItems
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                trailingItems
+            }
+        }
         .alert(item: self.viewModel.binding(keyPath: \.error, action: { .setError($0) })) { error -> Alert in
             return Alert(title: Text(L10n.error), message: Text(error.localizedDescription))
         }
@@ -73,22 +81,35 @@ struct CollectionEditView: View {
     }
 
     private var leadingItems: some View {
-        Button(action: {
-            self.coordinatorDelegate?.dismiss()
-        }, label: {
-            Text(L10n.cancel)
-                .padding(.vertical, 10)
-                .padding(.trailing, 10)
-        })
+        Group {
+            if #available(iOS 26.0, *) {
+                Button(role: .cancel) {
+                    coordinatorDelegate?.dismiss()
+                }
+            } else {
+                Button(action: {
+                    coordinatorDelegate?.dismiss()
+                }, label: {
+                    Text(L10n.cancel)
+                        .padding(.vertical, 10)
+                        .padding(.trailing, 10)
+                })
+            }
+        }
     }
 
     private var trailingItems: some View {
         Group {
-            if self.viewModel.state.loading {
+            if viewModel.state.loading {
                 ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+            } else if #available(iOS 26.0.0, *) {
+                Button(role: .confirm) {
+                    viewModel.process(action: .save)
+                }
+                .tint(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
             } else {
                 Button {
-                    self.viewModel.process(action: .save)
+                    viewModel.process(action: .save)
                 } label: {
                     Text(L10n.save)
                         .padding(.vertical, 10)

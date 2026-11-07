@@ -28,7 +28,13 @@ final class CrashReporter {
     private let queue: DispatchQueue
     private let scheduler: ConcurrentDispatchQueueScheduler
 
-    weak var coordinator: CrashReporterCoordinator?
+    weak var coordinator: CrashReporterCoordinator? {
+        didSet {
+            showPendingReportIfNeeded()
+        }
+    }
+    /// Report which couldn't be shown, since there was no UI (e.g. the app was launched by CarPlay). Shown once there is.
+    private var pendingReportId: String?
 
     init(apiClient: ApiClient) {
         let handler: PLCrashReporterSignalHandlerType
@@ -125,16 +131,24 @@ final class CrashReporter {
     }
 
     private func reportCrashIfNeeded(id: String, date: Date?, completion: @escaping () -> Void) {
-        guard let date = date else {
-            self.coordinator?.report(id: id, completion: completion)
-            return
-        }
         // Don't report to user if crash happened more than 10 minutes ago
-        guard Date().timeIntervalSince(date) <= 600 else {
+        if let date, Date().timeIntervalSince(date) > 600 {
             completion()
             return
         }
-        self.coordinator?.report(id: id, completion: completion)
+        guard let coordinator else {
+            // Starting the app doesn't wait for UI to show the report, it's shown once there is.
+            pendingReportId = id
+            completion()
+            return
+        }
+        coordinator.report(id: id, completion: completion)
+    }
+
+    private func showPendingReportIfNeeded() {
+        guard let coordinator, let id = pendingReportId else { return }
+        pendingReportId = nil
+        coordinator.report(id: id, completion: {})
     }
 
     private func cleanup() {

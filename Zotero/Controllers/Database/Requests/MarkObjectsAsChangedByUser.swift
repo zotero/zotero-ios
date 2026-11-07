@@ -65,6 +65,7 @@ struct MarkOtherObjectsAsChangedByUser: DbRequest {
         case .trash:
             let objects = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.syncState(.synced)).filter(.isTrash(true))
             self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+
         case .settings: break
         }
     }

@@ -97,6 +97,8 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
             let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
 
             do {
+                removeDerivedSidecars(for: oldFile.createUrl(), using: fileStorage.fileManager)
+                removeDerivedSidecars(for: newFile.createUrl(), using: fileStorage.fileManager)
                 try self.fileStorage.move(from: oldFile, to: newFile)
             } catch let error {
                 DDLogWarn("RevertLibraryUpdatesSyncAction: can't rename file - \(error)")

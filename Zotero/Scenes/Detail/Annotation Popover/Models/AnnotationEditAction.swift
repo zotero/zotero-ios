@@ -11,7 +11,7 @@ import UIKit
 enum AnnotationEditAction {
     case setColor(String)
     case setLineWidth(CGFloat)
-    case setPageLabel(String, Bool)
+    case setPageLabel(String)
     case setHighlight(NSAttributedString)
     case setFontSize(CGFloat)
     case setAnnotationType(AnnotationType)

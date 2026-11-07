@@ -8,6 +8,7 @@
 
 import CryptoKit
 import Foundation
+import os
 
 import CocoaLumberjackSwift
 
@@ -45,11 +46,23 @@ func md5(from url: URL) -> String? {
     }
 }
 
-var cachedMD5AndModificationDateByURL: [URL: (String, Date, NSNumber)] = [:]
+/// MD5 of a file, valid while the file has the same modification date and size.
+private struct CachedMD5: Sendable {
+    let md5: String
+    let modificationDate: Date
+    let size: UInt64
+}
+
+/// MD5s of files keyed by file url. Used from multiple queues, so access is guarded by the lock. The lock guards only access to the
+/// dictionary, nothing else (hashing, file access, calls to functions using this cache) may be done while holding it.
+private let cachedMD5ByURL = OSAllocatedUnfairLock(initialState: [URL: CachedMD5]())
+
 func cachedMD5(from url: URL, using fileManager: FileManager) -> String? {
     var newModificationDate: Date = .distantPast
     var newSize: NSNumber = .init(value: 0)
+    var hasAttributes = false
     if let attributes = try? fileManager.attributesOfItem(atPath: url.path) {
+        hasAttributes = true
         if let modificationDate = attributes[.modificationDate] as? Date {
             newModificationDate = modificationDate
         }
@@ -57,14 +70,75 @@ func cachedMD5(from url: URL, using fileManager: FileManager) -> String? {
             newSize = size
         }
     }
-    if let (cachedMd5, cachedModificationDate, cachedSize) = cachedMD5AndModificationDateByURL[url], newModificationDate == cachedModificationDate, newSize == cachedSize {
+    if let cached = cachedMD5ByURL.withLock({ $0[url] }), cached.modificationDate == newModificationDate, cached.size == newSize.uint64Value {
+        return cached.md5
+    }
+
+    if hasAttributes, let cachedMd5 = sidecarCachedMD5(from: url, modificationDate: newModificationDate, size: newSize) {
+        let cached = CachedMD5(md5: cachedMd5, modificationDate: newModificationDate, size: newSize.uint64Value)
+        cachedMD5ByURL.withLock { $0[url] = cached }
         return cachedMd5
     }
+
     let md5 = md5(from: url)
     if let md5 {
-        cachedMD5AndModificationDateByURL[url] = (md5, newModificationDate, newSize)
+        let cached = CachedMD5(md5: md5, modificationDate: newModificationDate, size: newSize.uint64Value)
+        cachedMD5ByURL.withLock { $0[url] = cached }
+        if hasAttributes {
+            writeSidecarCachedMD5(md5, for: url, modificationDate: newModificationDate, size: newSize)
+        }
     } else {
-        cachedMD5AndModificationDateByURL[url] = nil
+        cachedMD5ByURL.withLock { $0[url] = nil }
     }
     return md5
+}
+
+func removeDerivedSidecars(for url: URL, using fileManager: FileManager) {
+    cachedMD5ByURL.withLock { $0[url] = nil }
+    for sidecarUrl in derivedSidecarURLs(for: url) {
+        do {
+            if fileManager.fileExists(atPath: sidecarUrl.path) {
+                try fileManager.removeItem(at: sidecarUrl)
+            }
+        } catch {
+            DDLogError("Could not remove derived sidecar \(sidecarUrl.lastPathComponent): \(error)")
+        }
+    }
+}
+
+private struct SidecarCachedMD5: Codable {
+    let filename: String
+    let modificationDate: Date
+    let size: UInt64
+    let md5: String
+}
+
+private func sidecarURL(for url: URL) -> URL {
+    return url.deletingLastPathComponent().appendingPathComponent(".zotero-source-hash.json")
+}
+
+func derivedSidecarsDirectoryURL(for url: URL) -> URL {
+    return url.deletingLastPathComponent().appendingPathComponent(".zotero-derived")
+}
+
+private func derivedSidecarURLs(for url: URL) -> [URL] {
+    return [sidecarURL(for: url), derivedSidecarsDirectoryURL(for: url)]
+}
+
+private func sidecarCachedMD5(from url: URL, modificationDate: Date, size: NSNumber) -> String? {
+    let sidecarUrl = sidecarURL(for: url)
+    guard let data = try? Data(contentsOf: sidecarUrl),
+          let cached = try? JSONDecoder().decode(SidecarCachedMD5.self, from: data),
+          cached.filename == url.lastPathComponent,
+          cached.modificationDate == modificationDate,
+          cached.size == size.uint64Value else {
+        return nil
+    }
+    return cached.md5
+}
+
+private func writeSidecarCachedMD5(_ md5: String, for url: URL, modificationDate: Date, size: NSNumber) {
+    let cached = SidecarCachedMD5(filename: url.lastPathComponent, modificationDate: modificationDate, size: size.uint64Value, md5: md5)
+    guard let data = try? JSONEncoder().encode(cached) else { return }
+    try? data.write(to: sidecarURL(for: url), options: .atomic)
 }

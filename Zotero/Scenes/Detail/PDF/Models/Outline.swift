@@ -11,6 +11,7 @@ import Foundation
 import PSPDFKit
 
 protocol Outline: Equatable, Hashable {
+    var id: UUID { get }
     var title: String { get }
     var children: [Self] { get }
 
@@ -58,7 +59,7 @@ struct HtmlEpubOutline: Outline {
     let children: [HtmlEpubOutline]
 
     init(outline: HtmlEpubReaderState.Outline) {
-        id = UUID()
+        id = outline.id
         title = outline.title
         location = outline.location
         children = outline.children.map(HtmlEpubOutline.init)

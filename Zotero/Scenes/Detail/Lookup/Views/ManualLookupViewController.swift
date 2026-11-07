@@ -19,9 +19,9 @@ class ManualLookupViewController: UIViewController {
     @IBOutlet private weak var textView: UITextView!
     @IBOutlet private weak var scanButton: UIButton!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
-    @IBOutlet private var padBottomConstraint: NSLayoutConstraint!
-    @IBOutlet private var phoneBottomConstraint: NSLayoutConstraint!
 
+    private var padBottomConstraint: NSLayoutConstraint?
+    private var compactBottomConstraint: NSLayoutConstraint?
     private static let width: CGFloat = 500
     private let viewModel: ViewModel<ManualLookupActionHandler>
     private let disposeBag: DisposeBag
@@ -59,11 +59,6 @@ class ManualLookupViewController: UIViewController {
         if !self.inputContainer.isHidden {
             self.textView.becomeFirstResponder()
         }
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.updatePreferredContentSize()
     }
 
     deinit {
@@ -144,47 +139,59 @@ class ManualLookupViewController: UIViewController {
     private func setupCloseCancelAllBarButtons() {
         navigationItem.rightBarButtonItem = nil
 
-        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-        fixedSpacer.width = 16
+        let closePrimaryAction = UIAction(title: L10n.close) { [weak self] _ in
+            guard let self else { return }
+            coordinatorDelegate?.acknowledgeFailures = true
+            close()
+        }
+        let closeItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            closeItem = UIBarButtonItem(systemItem: .close, primaryAction: closePrimaryAction)
+        } else {
+            closeItem = UIBarButtonItem(primaryAction: closePrimaryAction)
+        }
 
-        let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
-        closeItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.close()
-        }).disposed(by: self.disposeBag)
-        
-        let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll, style: .plain, target: nil, action: nil)
-        cancelAllItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.lookupController?.viewModel.process(action: .cancelAllLookups)
-            self?.close()
-        }).disposed(by: self.disposeBag)
+        let cancelAllPrimaryAction = UIAction(title: L10n.cancelAll) { [weak self] _ in
+            guard let self else { return }
+            lookupController?.viewModel.process(action: .cancelAllLookups)
+            close()
+        }
+        let cancelAllItem = UIBarButtonItem(primaryAction: cancelAllPrimaryAction)
 
-        navigationItem.leftBarButtonItems = [closeItem, fixedSpacer, cancelAllItem]
+        navigationItem.leftBarButtonItems = [closeItem, .fixedSpace(16), cancelAllItem]
     }
 
     private func setupCancelDoneBarButtons() {
-        let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
-        doneItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.lookup(text: self?.textView.text ?? "")
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = doneItem
+        let donePrimaryAction = UIAction(title: L10n.lookUp) { [weak self] _ in
+            guard let self else { return }
+            lookup(text: textView.text ?? "")
+        }
+        let doneItem = UIBarButtonItem(primaryAction: donePrimaryAction)
+        if #available(iOS 26.0.0, *) {
+            doneItem.tintColor = Asset.Colors.zoteroBlue.color
+            doneItem.style = .prominent
+        } else {
+            doneItem.style = .done
+        }
+        navigationItem.rightBarButtonItem = doneItem
 
-        let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
+        let cancelPrimaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
             self?.close()
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItems = [cancelItem]
+        }
+        let cancelItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            cancelItem = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
+        } else {
+            cancelItem = UIBarButtonItem(primaryAction: cancelPrimaryAction)
+        }
+        navigationItem.leftBarButtonItems = [cancelItem]
     }
 
     private func updatePreferredContentSize() {
-        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != .compact else { return }
         let size = self.view.systemLayoutSizeFitting(CGSize(width: ManualLookupViewController.width, height: .greatestFiniteMagnitude))
         self.preferredContentSize = CGSize(width: ManualLookupViewController.width, height: size.height - self.view.safeAreaInsets.top)
         self.navigationController?.preferredContentSize = self.preferredContentSize
-    }
-
-    private func updateKeyboardSize(_ data: KeyboardData) {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.visibleHeight, right: 0)
     }
 
     // MARK: - Setups
@@ -209,14 +216,34 @@ class ManualLookupViewController: UIViewController {
             self.liveTextResponder = responder
         }
 
-        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        self.phoneBottomConstraint.isActive = isPhone
-        self.padBottomConstraint.isActive = !isPhone
-        self.textView.heightAnchor.constraint(equalToConstant: 80).isActive = true
+        padBottomConstraint = container.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -15)
+        compactBottomConstraint = container.bottomAnchor.constraint(lessThanOrEqualTo: view.keyboardLayoutGuide.topAnchor, constant: -15)
+        titleLabel.setContentHuggingPriority(.required, for: .vertical)
+        titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        let textViewHeightConstraint = textView.heightAnchor.constraint(equalToConstant: 80)
+        textViewHeightConstraint.priority = .defaultLow
+        textViewHeightConstraint.isActive = true
+        scanButton.setContentHuggingPriority(.required, for: .vertical)
+        scanButton.setContentCompressionResistancePriority(.required, for: .vertical)
+        updateLayout(currentTraitCollection: presentingViewController?.traitCollection)
+        startObservingTraits()
 
-        self.setupKeyboardObserving()
         self.setupCancelDoneBarButtons()
         self.setupLookupController()
+
+        func startObservingTraits() {
+            guard #available(iOS 17.0, *) else { return }
+            presentingViewController?.registerForTraitChanges([UITraitHorizontalSizeClass.self]) { [weak self] (handler: UIViewController, _: UITraitCollection) in
+                self?.updateLayout(currentTraitCollection: handler.traitCollection)
+            }
+        }
+    }
+
+    private func updateLayout(currentTraitCollection: UITraitCollection?) {
+        let usesCompactLayout = UIDevice.current.userInterfaceIdiom == .phone || currentTraitCollection?.horizontalSizeClass == .compact
+        padBottomConstraint?.isActive = !usesCompactLayout
+        compactBottomConstraint?.isActive = usesCompactLayout
+        updatePreferredContentSize()
     }
 
     private func setupLookupController() {
@@ -242,30 +269,6 @@ class ManualLookupViewController: UIViewController {
                       self.update(state: state)
                   })
                   .disposed(by: self.disposeBag)
-    }
-
-    private func setupKeyboardObserving() {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.updateKeyboardSize(data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.updateKeyboardSize(data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
     }
 }
 

@@ -22,11 +22,20 @@ class ItemDetailAbstractEditContentView: UIView {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        let titleFont = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.titleLabel.font = titleFont
-        self.titleTop.constant = -(titleFont.ascender - titleFont.capHeight)
         let contentFont = UIFont.preferredFont(forTextStyle: .body)
-        self.titleToContent.constant = contentFont.ascender - (ItemDetailLayout.lineHeight - contentFont.capHeight) - ItemDetailAbstractEditContentView.textViewTapAreaOffset
+        if #available(iOS 26.0, *) {
+            titleToContent.isActive = false
+            titleLabel.removeFromSuperview()
+            contentTextView.topAnchor.constraint(
+                equalTo: layoutMarginsGuide.topAnchor,
+                constant: -(contentFont.ascender - contentFont.capHeight) - ItemDetailAbstractEditContentView.textViewTapAreaOffset
+            ).isActive = true
+        } else {
+            let titleFont = UIFont.preferredFont(for: .headline, weight: .regular)
+            self.titleLabel.font = titleFont
+            self.titleTop.constant = -(titleFont.ascender - titleFont.capHeight)
+            self.titleToContent.constant = contentFont.ascender - (ItemDetailLayout.lineHeight - contentFont.capHeight) - ItemDetailAbstractEditContentView.textViewTapAreaOffset
+        }
         self.contentBottom.constant = contentFont.descender - ItemDetailLayout.separatorHeight - 1 - ItemDetailAbstractEditContentView.textViewTapAreaOffset
 
         self.contentTextView.delegate = self

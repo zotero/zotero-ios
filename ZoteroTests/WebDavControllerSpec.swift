@@ -51,6 +51,7 @@ final class WebDavControllerSpec: QuickSpec {
 
                         case .ready:
                             successAction()
+
                         default: break
                         }
                     })
@@ -134,6 +135,7 @@ final class WebDavControllerSpec: QuickSpec {
                                         finished()
                                         return
                                     }
+
                                 default: break
                                 }
                             }

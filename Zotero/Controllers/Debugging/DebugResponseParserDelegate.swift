@@ -21,6 +21,7 @@ final class DebugResponseParserDelegate: NSObject, XMLParserDelegate {
         case "reported":
             guard let reportId = attributeDict["reportID"] else { return }
             self.reportId = reportId
+
         default: break
         }
     }

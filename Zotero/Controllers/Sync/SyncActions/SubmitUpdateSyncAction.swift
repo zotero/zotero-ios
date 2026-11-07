@@ -46,13 +46,13 @@ struct SubmitUpdateSyncAction: SyncAction {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
             .observe(on: self.scheduler)
-            .flatMap({ _, response -> Single<([(String, LibraryIdentifier)], Int)> in
+            .flatMap({ _, response -> Single<([MarkSettingsAsSyncedDbRequest.Setting], Int)> in
                 let newVersion = response.allHeaderFields.lastModifiedVersion
-                var settings: [(String, LibraryIdentifier)] = []
+                var settings: [MarkSettingsAsSyncedDbRequest.Setting] = []
                 for params in self.parameters {
-                    guard let key = params.keys.first,
-                          let setting = try? PageIndexResponse.parse(key: key) else { continue }
-                    settings.append(setting)
+                    guard let uid = params.keys.first,
+                          let (key, libraryId) = try? SettingKeyParser.parse(key: uid) else { continue }
+                    settings.append(MarkSettingsAsSyncedDbRequest.Setting(uid: uid, key: key, libraryId: libraryId))
                 }
                 return Single.just((settings, newVersion))
             })
@@ -101,6 +101,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                 case .item, .trash:
                     // Cache JSONs locally for later use (in CR)
                     self.storeIndividualItemJsonObjects(from: Array(response.successfulJsonObjects.values), libraryId: self.libraryId)
+
                 case .collection, .search, .settings: break
                 }
             }
@@ -152,9 +153,44 @@ struct SubmitUpdateSyncAction: SyncAction {
             }
         }
 
-        DDLogError("SubmitUpdateSyncAction: failures - \(failedResponses)")
+        let remainingFailedResponses = clearLastReadOnlyItemChangesIfNeeded(for: failedResponses, in: libraryId)
+        if remainingFailedResponses.isEmpty {
+            return SyncError.NonFatal.preconditionFailed(libraryId)
+        }
 
-        return SyncActionError.submitUpdateFailures(failedResponses)
+        DDLogError("SubmitUpdateSyncAction: failures - \(remainingFailedResponses)")
+
+        return SyncActionError.submitUpdateFailures(remainingFailedResponses)
+
+        func clearLastReadOnlyItemChangesIfNeeded(for failedResponses: [FailedUpdateResponse], in libraryId: LibraryIdentifier) -> [FailedUpdateResponse] {
+            switch object {
+            case .item, .trash:
+                break
+
+            case .collection, .search, .settings:
+                return failedResponses
+            }
+
+            let missingKeys = Set(failedResponses.compactMap({ response -> String? in
+                guard response.code == 404 else { return nil }
+                return response.key
+            }))
+            guard !missingKeys.isEmpty else { return failedResponses }
+
+            do {
+                let clearedKeys = try dbStorage.perform(request: ClearLastReadOnlyItemChangesDbRequest(libraryId: libraryId, keys: missingKeys), on: queue)
+                guard !clearedKeys.isEmpty else { return failedResponses }
+
+                DDLogWarn("SubmitUpdateSyncAction: cleared lastRead-only changes for remotely missing items - \(clearedKeys)")
+                return failedResponses.filter({ response in
+                    guard let key = response.key else { return true }
+                    return !clearedKeys.contains(key)
+                })
+            } catch let error {
+                DDLogError("SubmitUpdateSyncAction: could not clear lastRead-only changes for remotely missing items - \(error)")
+                return failedResponses
+            }
+        }
     }
 
     private func process(response: UpdatesResponse) -> (unchangedKeys: [String], parsingFailedKeys: [String], changedCollections: [CollectionResponse], changedItems: [ItemResponse], changedSearches: [SearchResponse]) {
@@ -180,6 +216,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                 case .search:
                     let response = try SearchResponse(response: json)
                     changedSearches.append(response)
+
                 case .settings: break
                 }
             } catch let error {
@@ -210,6 +247,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
             case .search:
                 requests.append(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
+
             case .settings: break
             }
         }
@@ -225,6 +263,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
             case .search:
                 requests.append(MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: unchangedKeys))
+
             case .settings: break
             }
         }

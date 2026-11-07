@@ -159,7 +159,7 @@ struct FieldKeys {
             return !clean(doi: value).isEmpty
         }
 
-        static let knownNonFieldKeys: [String] = ["creators", "itemType", "version", "key", "tags", "deleted", "collections", "relations", "dateAdded", "dateModified", "parentItem", "inPublications"]
+        static let knownNonFieldKeys: [String] = ["creators", "itemType", "version", "key", "tags", "deleted", "collections", "relations", "dateAdded", "dateModified", "parentItem", "inPublications", "lastRead"]
     }
 
     struct Search {

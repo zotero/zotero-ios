@@ -26,10 +26,9 @@ struct AnnotationPopoverActionHandler: ViewModelActionHandler {
                 state.changes = .lineWidth
             }
 
-        case .setPageLabel(let label, let updateSubsequentPages):
+        case .setPageLabel(let label):
             update(viewModel: viewModel) { state in
                 state.pageLabel = label
-                state.updateSubsequentLabels = updateSubsequentPages
                 state.changes = .pageLabel
             }
 
@@ -50,7 +49,7 @@ struct AnnotationPopoverActionHandler: ViewModelActionHandler {
                 state.changes = .deletion
             }
 
-        case .setProperties(let type, let pageLabel, let updateSubsequentLabels, let highlightText):
+        case .setProperties(let type, let pageLabel, let highlightText):
             update(viewModel: viewModel) { state in
                 if state.type != type {
                     state.type = type
@@ -59,7 +58,6 @@ struct AnnotationPopoverActionHandler: ViewModelActionHandler {
 
                 if state.pageLabel != pageLabel {
                     state.pageLabel = pageLabel
-                    state.updateSubsequentLabels = updateSubsequentLabels
                     state.changes.insert(.pageLabel)
                 }
 

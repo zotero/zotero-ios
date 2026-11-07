@@ -17,7 +17,6 @@
                 <outlet property="tagsTitleLabel" destination="oRp-C7-g2y" id="7RE-WD-NIj"/>
                 <outlet property="view" destination="iN0-l3-epB" id="sMw-28-9m8"/>
                 <outlet property="webView" destination="jxz-hm-5nl" id="0pg-EH-ZyN"/>
-                <outlet property="webViewBottom" destination="MLJ-fz-aqG" id="Tz5-Bb-cHg"/>
             </connections>
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
@@ -88,7 +87,6 @@
                 <constraint firstItem="non-YD-RbY" firstAttribute="top" relation="greaterThanOrEqual" secondItem="jxz-hm-5nl" secondAttribute="bottom" id="7df-Ci-6iP"/>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="non-YD-RbY" secondAttribute="trailing" id="By0-Vv-i3B"/>
                 <constraint firstItem="jxz-hm-5nl" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="HOn-8T-wuQ"/>
-                <constraint firstAttribute="bottom" secondItem="jxz-hm-5nl" secondAttribute="bottom" priority="999" id="MLJ-fz-aqG"/>
                 <constraint firstItem="non-YD-RbY" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="XCK-IE-lfm"/>
                 <constraint firstItem="jxz-hm-5nl" firstAttribute="trailing" secondItem="vUN-kp-3ea" secondAttribute="trailing" id="ZD9-A8-7Y7"/>
                 <constraint firstItem="XQM-BM-Uvu" firstAttribute="bottom" secondItem="vUN-kp-3ea" secondAttribute="bottom" id="fN5-Uq-dtt"/>
