@@ -212,17 +212,6 @@ extension CollapsibleTextView: UIContextMenuInteractionDelegate {
 }
 
 extension CollapsibleTextView: UITextViewDelegate {
-    func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
-        if URL == Self.toggleURL {
-            if interaction == .invokeDefaultAction {
-                onToggle?()
-            }
-            return false
-        }
-        return true
-    }
-
-    @available(iOS 17.0, *)
     func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
         if case .link(let url) = textItem.content, url == Self.toggleURL {
             return UIAction { [weak self] _ in self?.onToggle?() }
@@ -230,7 +219,6 @@ extension CollapsibleTextView: UITextViewDelegate {
         return defaultAction
     }
 
-    @available(iOS 17.0, *)
     func textView(_ textView: UITextView, menuConfigurationFor textItem: UITextItem, defaultMenu: UIMenu) -> UITextItem.MenuConfiguration? {
         if case .link(let url) = textItem.content, url == Self.toggleURL {
             return nil

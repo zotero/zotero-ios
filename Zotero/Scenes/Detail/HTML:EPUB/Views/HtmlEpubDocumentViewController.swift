@@ -118,9 +118,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             webView.translatesAutoresizingMaskIntoConstraints = false
             webView.isOpaque = false
             webView.scrollView.contentInsetAdjustmentBehavior = .never
-            if #available(iOS 16.4, *) {
-                webView.isInspectable = true
-            }
+            webView.isInspectable = true
             view.addSubview(webView)
 
             NSLayoutConstraint.activate([

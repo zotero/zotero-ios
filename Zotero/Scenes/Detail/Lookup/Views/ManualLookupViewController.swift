@@ -232,7 +232,6 @@ class ManualLookupViewController: UIViewController {
         self.setupLookupController()
 
         func startObservingTraits() {
-            guard #available(iOS 17.0, *) else { return }
             presentingViewController?.registerForTraitChanges([UITraitHorizontalSizeClass.self]) { [weak self] (handler: UIViewController, _: UITraitCollection) in
                 self?.updateLayout(currentTraitCollection: handler.traitCollection)
             }

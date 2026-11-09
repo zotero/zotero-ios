@@ -63,7 +63,6 @@ final class MasterContainerViewController: UINavigationController {
     private weak var bottomContainer: UIView?
     private weak var bottomYConstraint: NSLayoutConstraint?
     private var visibleArea: UILayoutGuide?
-    private weak var visibleAreaBottomConstraint: NSLayoutConstraint?
     // Current position of bottom container
     private var bottomPosition: BottomPosition
     // Previous position of bottom container. Used to return to previous position when drag handle is tapped.
@@ -135,18 +134,12 @@ final class MasterContainerViewController: UINavigationController {
             // --- handle background (drag icon) - bottom controller view
             //  \- separator
             let keyboardLayoutGuide = view.keyboardLayoutGuide
-            if #available(iOS 17.0, *) {
-                keyboardLayoutGuide.usesBottomSafeArea = false
-            }
-            let visibleAreaBottomConstraint = visibleArea.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor)
-            if #unavailable(iOS 17.0) {
-                visibleAreaBottomConstraint.constant = view.safeAreaInsets.bottom
-            }
+            keyboardLayoutGuide.usesBottomSafeArea = false
             NSLayoutConstraint.activate([
                 visibleArea.topAnchor.constraint(equalTo: view.topAnchor),
                 visibleArea.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 visibleArea.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                visibleAreaBottomConstraint,
+                visibleArea.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
                 bottomYConstraint,
                 view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
                 view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
@@ -175,7 +168,6 @@ final class MasterContainerViewController: UINavigationController {
             self.bottomContainer = bottomContainer
             self.bottomYConstraint = bottomYConstraint
             self.visibleArea = visibleArea
-            self.visibleAreaBottomConstraint = visibleAreaBottomConstraint
 
             let bottomPanRecognizer = UIPanGestureRecognizer()
             bottomPanRecognizer.delegate = self
@@ -296,13 +288,6 @@ final class MasterContainerViewController: UINavigationController {
                     self.view.layoutIfNeeded()
                 })
             }
-        }
-    }
-
-    override func viewSafeAreaInsetsDidChange() {
-        super.viewSafeAreaInsetsDidChange()
-        if #unavailable(iOS 17.0) {
-            visibleAreaBottomConstraint?.constant = view.safeAreaInsets.bottom
         }
     }
 
