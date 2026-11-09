@@ -771,10 +771,7 @@ final class CarPlayCoordinator: NSObject {
     }
 
     private static func traitCollection(_ traitCollection: UITraitCollection, with style: UIUserInterfaceStyle) -> UITraitCollection {
-        if #available(iOS 17.0, *) {
-            return traitCollection.modifyingTraits { $0.userInterfaceStyle = style }
-        }
-        return UITraitCollection(traitsFrom: [traitCollection, UITraitCollection(userInterfaceStyle: style)])
+        return traitCollection.modifyingTraits { $0.userInterfaceStyle = style }
     }
 
     /// Icon drawn into 28x28 area. If `tintColor` is set, the icon is drawn as a template in given color.
