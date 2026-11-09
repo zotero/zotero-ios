@@ -234,7 +234,7 @@ final class Defaults {
     var didPerformFullSyncFix: Bool
 
     // Increment currentClearPSPDFKitCacheGuard by 1, whenever the upcoming release should clear the PSPDFKit cache.
-    static let currentClearPSPDFKitCacheGuard = 2
+    static let currentClearPSPDFKitCacheGuard = 3
     @UserDefault(key: "ClearPSPDFKitCacheGuard", defaultValue: currentClearPSPDFKitCacheGuard - 1)
     var clearPSPDFKitCacheGuard: Int
 
