@@ -138,7 +138,7 @@ final class PDFCoordinator: ReaderCoordinator {
             speechPlaybackOwnership: controllers.speechPlaybackOwnership,
             remoteVoicesController: remoteVoicesController,
             documentPreviewController: controllers.documentPreviewController,
-            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
+            compactSize: ReaderLayout.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
         handler.delegate = controller

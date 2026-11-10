@@ -10,6 +10,22 @@ import UIKit
 import CocoaLumberjackSwift
 import RxSwift
 
+struct ReaderLayout {
+    /// Sidebar width used when it doesn't span the whole reader width.
+    static let fixedSidebarWidth: CGFloat = 320
+    /// Minimum width left for the document when the sidebar is shown next to it.
+    static let minReaderWidth: CGFloat = 200
+    /// Readers narrower than this can't fit the fixed width sidebar next to a document of minimum width.
+    static let compactWidthLimit: CGFloat = fixedSidebarWidth + minReaderWidth
+
+    /// Decides whether width of given size is "compact", i.e. it can't fit the fixed width sidebar next to a document of minimum width.
+    /// - parameter size: Size of current view.
+    /// - returns: `true` if view size is compact, `false` otherwise.
+    static func isCompactWidth(size: CGSize) -> Bool {
+        return size.width < compactWidthLimit
+    }
+}
+
 protocol ReaderError: Error {
     var title: String { get }
     var message: String { get }

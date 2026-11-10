@@ -63,7 +63,7 @@ final class PDFDocumentViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, initialUIHidden: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, initialUIHidden: Bool) {
         self.viewModel = viewModel
         self.initialUIHidden = initialUIHidden
         selectedAnnotationWasSelectedBefore = false

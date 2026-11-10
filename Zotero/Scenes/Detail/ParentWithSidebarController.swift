@@ -32,6 +32,7 @@ protocol ParentWithSidebarController: UIViewController {
     var documentControllerLeft: NSLayoutConstraint? { get }
     var sidebarController: SidebarController? { get }
     var sidebarControllerLeft: NSLayoutConstraint? { get }
+    var sidebarControllerWidth: NSLayoutConstraint? { get }
     var annotationToolbarController: AnnotationToolbarViewController? { get }
     var annotationToolbarHandler: AnnotationToolbarHandler? { get }
     var toolbarState: AnnotationToolbarHandler.State { get }
@@ -51,6 +52,25 @@ protocol ParentWithSidebarController: UIViewController {
 }
 
 extension ParentWithSidebarController {
+    /// The sidebar is shown over the document in compact width readers, otherwise it is shown next to the document (moving it).
+    var isSidebarOverlay: Bool {
+        return ReaderLayout.isCompactWidth(size: view.bounds.size)
+    }
+
+    /// When shown over the document in compact horizontal size class, the sidebar spans the whole reader width, otherwise it has a fixed width.
+    var sidebarWidth: CGFloat {
+        guard isSidebarOverlay, traitCollection.horizontalSizeClass == .compact else { return ReaderLayout.fixedSidebarWidth }
+        return view.bounds.width
+    }
+
+    /// Updates sidebar width and document offset for the current reader size and traits. Call when either changes.
+    func updateSidebarLayout() {
+        let width = sidebarWidth
+        sidebarControllerWidth?.constant = width
+        guard isSidebarVisible else { return }
+        documentControllerLeft?.constant = isSidebarOverlay ? 0 : width
+    }
+
     var windowSize: CGSize {
         return view.window?.bounds.size ?? navigationController?.view.frame.size ?? .zero
     }
@@ -164,13 +184,14 @@ extension ParentWithSidebarController {
         if visible {
             initializeSidebarIfNeeded()
         }
-        // If the layout is compact, show annotation sidebar above pdf document.
-        if !isCompactWidth {
-            documentControllerLeft?.constant = visible ? PDFReaderLayout.sidebarWidth : 0
+        // If the sidebar is an overlay, show it above the document.
+        let width = sidebarWidth
+        if !isSidebarOverlay {
+            documentControllerLeft?.constant = visible ? width : 0
         } else if visible && toolbarState.visible {
             closeAnnotationToolbar()
         }
-        sidebarControllerLeft?.constant = visible ? 0 : -PDFReaderLayout.sidebarWidth
+        sidebarControllerLeft?.constant = visible ? 0 : -width
         if toolbarState.visible {
             annotationToolbarHandler?.recalculateConstraints()
         }
