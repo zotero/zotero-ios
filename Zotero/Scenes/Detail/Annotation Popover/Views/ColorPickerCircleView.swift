@@ -75,15 +75,18 @@ final class ColorPickerCircleView: UIView {
         let color = UIColor(hex: hexColor)
         self.setupCircleLayer(color: color)
         self.setupSelectionLayer(color: color)
+
+        observeTraitChanges()
+
+        func observeTraitChanges() {
+            registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (view: Self, _: UITraitCollection) in
+                view.selectionLayer.strokeColor = view.backgroundColor?.cgColor
+            }
+        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        self.selectionLayer.strokeColor = self.backgroundColor?.cgColor
     }
 
     override func layoutSubviews() {

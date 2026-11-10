@@ -127,19 +127,6 @@ final class FileAttachmentView: UIView {
         self.badgeBorder.position = self.badgeLayer.position
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
-
-        self.circleLayer.strokeColor = UIColor.systemGray5.cgColor
-        self.badgeBorder.borderColor = self.parentBackgroundColor?.cgColor
-
-        if let type = self.contentType {
-            self.set(contentType: type, style: self.style)
-        }
-    }
-
     // MARK: - Actions
 
     func set(backgroundColor: UIColor?) {
@@ -489,6 +476,19 @@ final class FileAttachmentView: UIView {
 //                  self?.tapAction?()
 //              })
 //              .disposed(by: self.disposeBag)
+
+        observeTraitChanges()
+
+        func observeTraitChanges() {
+            registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (view: Self, _: UITraitCollection) in
+                view.circleLayer.strokeColor = UIColor.systemGray5.cgColor
+                view.badgeBorder.borderColor = view.parentBackgroundColor?.cgColor
+
+                if let type = view.contentType {
+                    view.set(contentType: type, style: view.style)
+                }
+            }
+        }
     }
 
     private func createImageLayer() -> CALayer {

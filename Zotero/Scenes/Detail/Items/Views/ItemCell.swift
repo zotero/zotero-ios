@@ -55,6 +55,7 @@ final class ItemCell: UICollectionViewListCell {
 
         setupViews()
         setupAccessibilityActions()
+        observeTraitChanges()
 
         if #available(iOS 26.0.0, *) {
             tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
@@ -218,6 +219,12 @@ final class ItemCell: UICollectionViewListCell {
             })
             accessibilityCustomActions = [openItemAction]
         }
+
+        func observeTraitChanges() {
+            registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (cell: Self, _: UITraitCollection) in
+                cell.setNeedsUpdateConfiguration()
+            }
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -241,14 +248,6 @@ final class ItemCell: UICollectionViewListCell {
         guard let fileView, let tagCircles else { return }
         fileView.set(backgroundColor: configuration.resolvedBackgroundColor(for: tintColor))
         tagCircles.borderColor = tagBorderColor(for: state)
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
-
-        setNeedsUpdateConfiguration()
     }
 
     private func makeBackgroundConfiguration(for state: UICellConfigurationState) -> UIBackgroundConfiguration {

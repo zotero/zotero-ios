@@ -62,6 +62,7 @@ final class ItemsViewController: BaseItemsViewController {
         setupRecognizerObserver()
         setupAppStateObserver()
         setupSettingsObserver()
+        observeEditingTraitChanges()
 
         if let term = viewModel.state.searchTerm, !term.isEmpty {
             navigationItem.searchController?.searchBar.text = term
@@ -165,21 +166,19 @@ final class ItemsViewController: BaseItemsViewController {
                 })
                 .disposed(by: disposeBag)
         }
+
+        func observeEditingTraitChanges() {
+            guard #available(iOS 26.0, *) else { return }
+            registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
+                guard controller.viewModel.state.isEditing else { return }
+                controller.setupBarButtonItems(for: controller.viewModel.state)
+                controller.toolbarController?.createToolbarItems(data: controller.toolbarData)
+            }
+        }
     }
 
     deinit {
         DDLogInfo("ItemsViewController deinitialized")
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        guard #available(iOS 26.0, *),
-              traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass,
-              viewModel.state.isEditing
-        else { return }
-        setupBarButtonItems(for: viewModel.state)
-        toolbarController?.createToolbarItems(data: toolbarData)
     }
 
     // MARK: - UI state

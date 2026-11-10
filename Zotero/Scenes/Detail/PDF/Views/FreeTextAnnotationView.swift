@@ -165,6 +165,14 @@ final class FreeTextInputAccessory: UIView {
             separator3.heightAnchor.constraint(equalToConstant: 30),
             spacer.widthAnchor.constraint(equalToConstant: 20)
         ])
+
+        observeTraitChanges()
+
+        func observeTraitChanges() {
+            registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (view: Self, _: UITraitCollection) in
+                view.sizePicker?.stepperEnabled = view.traitCollection.horizontalSizeClass != .compact
+            }
+        }
     }
 
     private func attributedString(from tags: [Tag]) -> NSAttributedString {
@@ -177,10 +185,5 @@ final class FreeTextInputAccessory: UIView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        sizePicker?.stepperEnabled = traitCollection.horizontalSizeClass != .compact
     }
 }
