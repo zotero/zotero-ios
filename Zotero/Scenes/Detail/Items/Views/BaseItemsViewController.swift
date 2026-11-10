@@ -70,6 +70,7 @@ class BaseItemsViewController: UIViewController {
             refreshController = SyncRefreshController(libraryId: library.identifier, view: collectionView, syncScheduler: scheduler)
         }
         startObservingSyncProgress()
+        observeTraitChanges()
 
         func createCollectionView() {
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
@@ -109,6 +110,20 @@ class BaseItemsViewController: UIViewController {
 
             self.collectionView = collectionView
         }
+
+        func observeTraitChanges() {
+            // willTransition(to:with:) seems to not be not called for all transitions, so instead a horizontal size class trait change registration is used w/ a short animation block.
+            guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+            registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
+                if controller.traitCollection.horizontalSizeClass == .regular {
+                    controller.coordinatorDelegate?.dismissFilters()
+                }
+                controller.setupTitle()
+                UIView.animate(withDuration: 0.1) {
+                    controller.toolbarController?.reloadToolbarItems(for: controller.toolbarData)
+                }
+            }
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -131,20 +146,6 @@ class BaseItemsViewController: UIViewController {
                 //   "Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'The view should already be in the window before adding a _UIPassthroughScrollInteraction'".
         }
         toolbarController?.willAppear()
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        // willTransition(to:with:) seems to not be not called for all transitions, so instead traitCollectionDidChange(_:) is used w/ a short animation block.
-        guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass else { return }
-        if traitCollection.horizontalSizeClass == .regular {
-            coordinatorDelegate?.dismissFilters()
-        }
-        setupTitle()
-        UIView.animate(withDuration: 0.1) {
-            self.toolbarController?.reloadToolbarItems(for: self.toolbarData)
-        }
     }
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {

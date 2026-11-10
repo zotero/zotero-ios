@@ -27,6 +27,7 @@ final class ItemDetailTitleContentView: UIView {
         isAccessibilityElement = false
         setupBottomConstraint()
         setupObservers()
+        observeTraitChanges()
 
         func setup() {
             let font: UIFont = .preferredFont(forTextStyle: .title1)
@@ -58,14 +59,16 @@ final class ItemDetailTitleContentView: UIView {
             }
             .disposed(by: disposeBag)
         }
+
+        func observeTraitChanges() {
+            registerForTraitChanges([UITraitHorizontalSizeClass.self, UITraitPreferredContentSizeCategory.self]) { (view: Self, _: UITraitCollection) in
+                view.setupBottomConstraint()
+            }
+        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        setupBottomConstraint()
     }
 
     override func layoutSubviews() {

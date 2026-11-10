@@ -21,6 +21,20 @@ final class ContainerViewController: UIViewController {
         super.viewDidLoad()
 
         setupLayoutForCurrentTraits()
+        observeTraitChanges()
+
+        func observeTraitChanges() {
+            registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
+                clearLayout(controller: controller)
+                controller.setupLayoutForCurrentTraits()
+            }
+
+            func clearLayout(controller: ContainerViewController) {
+                NSLayoutConstraint.deactivate(controller.constraints)
+                controller.constraints = []
+                controller.containerHeight = nil
+            }
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -39,19 +53,6 @@ final class ContainerViewController: UIViewController {
 
         UIView.animate(withDuration: 0.2) {
             self.view.layoutIfNeeded()
-        }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        guard previousTraitCollection?.horizontalSizeClass != traitCollection.horizontalSizeClass else { return }
-        clearLayout()
-        setupLayoutForCurrentTraits()
-
-        func clearLayout() {
-            NSLayoutConstraint.deactivate(constraints)
-            constraints = []
-            containerHeight = nil
         }
     }
 

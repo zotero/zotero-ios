@@ -249,6 +249,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         }
 
         setupNavigationBar()
+        observeTraitChanges()
         updateInterface(to: viewModel.state.settings)
 
         func setupViews() {
@@ -383,6 +384,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 })
                 .disposed(by: disposeBag)
         }
+
+        func observeTraitChanges() {
+            registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (controller: Self, previousTraitCollection: UITraitCollection) in
+                controller.updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
+            }
+            registerForTraitChanges([UITraitHorizontalSizeClass.self, UITraitVerticalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
+                controller.readAloudHandler?.readAloudControlsShouldChange(isNavbarHidden: controller.isNavigationBarHidden)
+            }
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -411,12 +421,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         if documentController.view.frame.width < AnnotationToolbarHandler.minToolbarWidth && toolbarState.visible && toolbarState.position == .top {
             closeAnnotationToolbar()
         }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
-        readAloudHandler?.readAloudControlsShouldChange(isNavbarHidden: isNavigationBarHidden)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

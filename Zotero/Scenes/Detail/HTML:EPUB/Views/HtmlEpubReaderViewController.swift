@@ -214,6 +214,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         setupReadAloudIfNeeded()
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
+        observeTraitChanges()
 
         func setupReadAloudIfNeeded() {
             guard FeatureGates.enabled.contains(.speech), let documentController else { return }
@@ -349,6 +350,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
                 })
                 .disposed(by: disposeBag)
         }
+
+        func observeTraitChanges() {
+            registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (controller: Self, _: UITraitCollection) in
+                controller.viewModel.process(action: .userInterfaceStyleChanged(controller.currentSystemUserInterfaceStyle))
+            }
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -385,12 +392,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         if documentController.view.frame.width < AnnotationToolbarHandler.minToolbarWidth && toolbarState.visible && toolbarState.position == .top {
             closeAnnotationToolbar()
         }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
-        viewModel.process(action: .userInterfaceStyleChanged(currentSystemUserInterfaceStyle))
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

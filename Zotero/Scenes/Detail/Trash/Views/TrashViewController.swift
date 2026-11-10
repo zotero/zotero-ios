@@ -34,17 +34,6 @@ final class TrashViewController: BaseItemsViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        guard #available(iOS 26.0, *),
-              traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass,
-              viewModel.state.isEditing
-        else { return }
-        setupBarButtonItems(for: viewModel.state)
-        toolbarController?.createToolbarItems(data: toolbarData)
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -60,6 +49,7 @@ final class TrashViewController: BaseItemsViewController {
         setupDownloadObserver()
         dataSource.apply(snapshot: viewModel.state.snapshot)
         updateTagFilter(filters: viewModel.state.filters, collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier)
+        observeEditingTraitChanges()
 
         viewModel
             .stateObservable
@@ -99,6 +89,15 @@ final class TrashViewController: BaseItemsViewController {
                     }
                 })
                 .disposed(by: disposeBag)
+        }
+
+        func observeEditingTraitChanges() {
+            guard #available(iOS 26.0, *) else { return }
+            registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
+                guard controller.viewModel.state.isEditing else { return }
+                controller.setupBarButtonItems(for: controller.viewModel.state)
+                controller.toolbarController?.createToolbarItems(data: controller.toolbarData)
+            }
         }
     }
 
