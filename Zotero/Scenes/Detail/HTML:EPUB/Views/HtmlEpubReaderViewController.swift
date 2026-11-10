@@ -55,6 +55,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     var annotationToolbarHandler: AnnotationToolbarHandler?
     weak var sidebarController: HtmlEpubSidebarViewController?
     weak var sidebarControllerLeft: NSLayoutConstraint?
+    weak var sidebarControllerWidth: NSLayoutConstraint?
     var navigationBarHeight: CGFloat {
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
@@ -355,6 +356,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
             registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (controller: Self, _: UITraitCollection) in
                 controller.viewModel.process(action: .userInterfaceStyleChanged(controller.currentSystemUserInterfaceStyle))
             }
+            registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
+                controller.updateSidebarLayout()
+            }
         }
     }
 
@@ -397,7 +401,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
-        isCompactWidth = UIDevice.current.isCompactWidth(size: size)
+        isCompactWidth = ReaderLayout.isCompactWidth(size: size)
 
         guard viewIfLoaded != nil else { return }
 
@@ -405,6 +409,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
 
         coordinator.animate(alongsideTransition: { [weak self] _ in
             guard let self else { return }
+            // View has its new size here.
+            updateSidebarLayout()
             updateStatusBarHeight(allowZero: true)
             annotationToolbarHandler?.viewWillTransitionToNewSize()
             updateContainerInsets(force: true)
@@ -912,11 +918,12 @@ extension HtmlEpubReaderViewController: ParentWithSidebarController {
         view.insertSubview(sidebarController.view, aboveSubview: annotationToolbarController.view)
         view.insertSubview(separator, aboveSubview: sidebarController.view)
 
-        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -sidebarWidth)
+        let sidebarWidthConstraint = sidebarController.view.widthAnchor.constraint(equalToConstant: sidebarWidth)
         NSLayoutConstraint.activate([
             sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
             sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
+            sidebarWidthConstraint,
             sidebarLeftConstraint,
             separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
             separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
@@ -926,6 +933,7 @@ extension HtmlEpubReaderViewController: ParentWithSidebarController {
 
         self.sidebarController = sidebarController
         sidebarControllerLeft = sidebarLeftConstraint
+        sidebarControllerWidth = sidebarWidthConstraint
         view.layoutIfNeeded()
     }
 }

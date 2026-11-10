@@ -48,6 +48,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     var state: PDFReaderState { return viewModel.state }
     weak var sidebarController: PDFSidebarViewController?
     weak var sidebarControllerLeft: NSLayoutConstraint?
+    weak var sidebarControllerWidth: NSLayoutConstraint?
     weak var documentController: PDFDocumentViewController?
     weak var documentControllerLeft: NSLayoutConstraint?
     weak var documentControllerBottom: NSLayoutConstraint?
@@ -257,7 +258,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             topSafeAreaSpacer.translatesAutoresizingMaskIntoConstraints = false
             topSafeAreaSpacer.backgroundColor = Asset.Colors.navbarBackground.color
 
-            let documentController = PDFDocumentViewController(viewModel: viewModel, compactSize: isCompactWidth, initialUIHidden: !statusBarVisible)
+            let documentController = PDFDocumentViewController(viewModel: viewModel, initialUIHidden: !statusBarVisible)
             documentController.parentDelegate = self
             documentController.coordinatorDelegate = coordinatorDelegate
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -392,6 +393,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             registerForTraitChanges([UITraitHorizontalSizeClass.self, UITraitVerticalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
                 controller.readAloudHandler?.readAloudControlsShouldChange(isNavbarHidden: controller.isNavigationBarHidden)
             }
+            registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
+                controller.updateSidebarLayout()
+            }
         }
     }
 
@@ -426,12 +430,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
-        isCompactWidth = UIDevice.current.isCompactWidth(size: size)
+        isCompactWidth = ReaderLayout.isCompactWidth(size: size)
 
         guard viewIfLoaded != nil else { return }
 
         if isSidebarVisible {
-            documentControllerLeft?.constant = isCompactWidth ? 0 : PDFReaderLayout.sidebarWidth
             // If the layout is compact and toolbar is visible, then close it.
             if isCompactWidth && toolbarState.visible {
                 closeAnnotationToolbar()
@@ -442,6 +445,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
         coordinator.animate { [weak self] _ in
             guard let self else { return }
+            // View has its new size here.
+            updateSidebarLayout()
             annotationToolbarHandler?.viewWillTransitionToNewSize()
         }
     }
@@ -1141,11 +1146,12 @@ extension PDFReaderViewController: ParentWithSidebarController {
         view.insertSubview(sidebarController.view, aboveSubview: documentController.view)
         view.insertSubview(separator, aboveSubview: sidebarController.view)
 
-        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -sidebarWidth)
+        let sidebarWidthConstraint = sidebarController.view.widthAnchor.constraint(equalToConstant: sidebarWidth)
         NSLayoutConstraint.activate([
             sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
             sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
+            sidebarWidthConstraint,
             sidebarLeftConstraint,
             separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
             separator.trailingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
@@ -1155,6 +1161,7 @@ extension PDFReaderViewController: ParentWithSidebarController {
 
         self.sidebarController = sidebarController
         sidebarControllerLeft = sidebarLeftConstraint
+        sidebarControllerWidth = sidebarWidthConstraint
         view.layoutIfNeeded()
         intraDocumentNavigationHandler?.updateButtonsZPosition()
     }
