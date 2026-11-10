@@ -667,19 +667,11 @@ final class PDFDocumentViewController: UIViewController {
         pdfController.didMove(toParent: self)
 
         NSLayoutConstraint.activate([
-            pdfController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pdfController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            pdfController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             pdfController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            pdfController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+            pdfController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
         ])
-        if #available(iOS 26.0.0, *) {
-            NSLayoutConstraint.activate([
-                pdfController.view.topAnchor.constraint(equalTo: view.topAnchor)
-            ])
-        } else {
-            NSLayoutConstraint.activate([
-                pdfController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-            ])
-        }
 
         self.pdfController = pdfController
 
