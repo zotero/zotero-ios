@@ -22,6 +22,8 @@ struct HtmlEpubAnnotation {
     let dateAdded: Date
     let dateModified: Date
     let tags: [Tag]
+    /// `true` if the reader saved the annotation because only its text or comment changed. Its position may be out of date then, so it's not stored.
+    var onlyTextOrComment: Bool = false
 
     func copy(comment: String) -> HtmlEpubAnnotation {
         return HtmlEpubAnnotation(
@@ -37,7 +39,8 @@ struct HtmlEpubAnnotation {
             sortIndex: sortIndex,
             dateAdded: dateAdded,
             dateModified: dateModified,
-            tags: tags
+            tags: tags,
+            onlyTextOrComment: onlyTextOrComment
         )
     }
 }

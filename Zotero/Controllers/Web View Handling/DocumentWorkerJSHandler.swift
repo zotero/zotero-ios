@@ -93,6 +93,7 @@ final class DocumentWorkerJSHandler {
         case missingData
         case invalidBundledWorkerDataPath(String)
         case missingBundledWorkerData(String)
+        case stopped
     }
 
     var workFile: File?
@@ -108,6 +109,8 @@ final class DocumentWorkerJSHandler {
     private var pending: [Int: (Result<Any, Swift.Error>) -> Void]
     private var pendingProgress: [Int: (Double) -> Void]
     private var loadError: Swift.Error?
+    /// Set once the handler is stopped, see `stop()`. Accessed on `queue`.
+    private var isStopped = false
     private var cachedWorkData: Data?
     private let usesNativeONNXForStructuredDocumentText: Bool
 #if MAINAPP
@@ -168,8 +171,22 @@ final class DocumentWorkerJSHandler {
         }
     }
 
+    /// Stops the work running in the JS context. The JS can't be interrupted, but it only continues when native code calls back into it, so it halts at its
+    /// next asynchronous step: timers stop firing and its requests (native ONNX runs, data fetches) aren't answered anymore.
+    func stop() {
+        queue.async { [weak self] in
+            guard let self, !isStopped else { return }
+            DDLogInfo("DocumentWorkerJSHandler: stopped")
+            isStopped = true
+            engine.stop()
+            pending.removeAll()
+            pendingProgress.removeAll()
+            cachedWorkData = nil
+        }
+    }
+
     private func handlePostMessage(message: Any?) {
-        guard let body = message as? [String: Any] else { return }
+        guard !isStopped, let body = message as? [String: Any] else { return }
 
         if let progressId = body["progressID"] as? Int {
             guard let data = body["data"] as? [String: Any], let progress = data["progress"] as? Double else { return }
@@ -294,6 +311,10 @@ final class DocumentWorkerJSHandler {
                     DDLogError("DocumentWorkerJSHandler: failed to start work - \(error)")
                     observable.on(.next((workId: workId, result: .failure(error))))
                 }
+            }
+            if isStopped {
+                deferredError = Error.stopped
+                return
             }
             if let loadError {
                 deferredError = loadError

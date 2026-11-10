@@ -37,6 +37,9 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     private let url: URL
     private let readerURL: URL?
     private let preselectedAnnotationKey: String?
+    private let kind: HtmlEpubReaderState.Kind
+    private let pageRegionRenderer: PDFPageRegionRenderer?
+    private let sourceContext: ReadingModeSourceContext?
     unowned let controllers: Controllers
     let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
@@ -48,9 +51,15 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         url: URL,
         readerURL: URL?,
         preselectedAnnotationKey: String?,
+        kind: HtmlEpubReaderState.Kind = .document,
+        pageRegionRenderer: PDFPageRegionRenderer? = nil,
+        sourceContext: ReadingModeSourceContext? = nil,
         navigationController: NavigationViewController,
         controllers: Controllers
     ) {
+        self.kind = kind
+        self.pageRegionRenderer = pageRegionRenderer
+        self.sourceContext = sourceContext
         self.key = key
         self.parentKey = parentKey
         self.libraryId = libraryId
@@ -82,7 +91,8 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         else { return }
 
         let dbStorage = userControllers.dbStorage
-        let settings = Defaults.shared.htmlEpubSettings
+        // Reading mode shares the settings of the reader which opened it.
+        let settings = sourceContext.map({ HtmlEpubSettings(appearance: $0.appearance) }) ?? Defaults.shared.htmlEpubSettings
         let handler = HtmlEpubReaderActionHandler(
             dbStorage: dbStorage,
             schemaController: controllers.schemaController,
@@ -94,12 +104,14 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         )
         let state = HtmlEpubReaderState(
             readerURL: readerURL,
+            kind: kind,
+            initialPageIndex: sourceContext?.initialPageIndex,
             url: url,
             key: key,
             parentKey: parentKey,
             title: try? dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
             preselectedAnnotationKey: preselectedAnnotationKey,
-            settings: Defaults.shared.htmlEpubSettings,
+            settings: settings,
             libraryId: libraryId,
             userId: userId,
             username: username,
@@ -112,9 +124,16 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             documentWorkerController: userControllers.documentWorkerController,
             speechPlaybackOwnership: controllers.speechPlaybackOwnership,
             remoteVoicesController: remoteVoicesController,
-            documentPreviewController: controllers.documentPreviewController
+            documentPreviewController: controllers.documentPreviewController,
+            pageRegionRenderer: pageRegionRenderer,
+            sourceContext: sourceContext
         )
         controller.coordinatorDelegate = self
+        // In standalone reading mode there is no document to switch back to, so turning reading mode off closes the
+        // reader and returns to the reader of the source document.
+        controller.onCloseStandaloneReadingMode = { [weak self] in
+            self?.navigationController?.presentingViewController?.dismiss(animated: false)
+        }
         navigationController?.setViewControllers([controller], animated: false)
     }
 }
