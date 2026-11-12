@@ -14,7 +14,7 @@ enum HtmlEpubReaderAction {
     case createAnnotationFromSelection(AnnotationType)
     case deinitialiseReader
     case deselectAnnotationDuringEditing(String)
-    case deselectSelectedAnnotation
+    case deselectSelectedAnnotation(dismissPopover: Bool)
     /// Ends a read aloud highlight session. `annotation` is the annotation reported by the reader, which is stored in the database, `nil` when the session was discarded. `key` is the key of
     /// the session annotation, if the reader already assigned one, whose saves are ignored from now on.
     case endReadAloudAnnotationSession(annotation: [String: Any]?, key: String?)
