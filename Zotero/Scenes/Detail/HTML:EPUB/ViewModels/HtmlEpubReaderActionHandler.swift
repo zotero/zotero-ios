@@ -106,9 +106,16 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .setTags(let key, let tags):
             set(tags: tags, to: key, in: viewModel)
 
-        case .deselectSelectedAnnotation:
+        case .deselectSelectedAnnotation(let dismissPopover):
             update(viewModel: viewModel) { state in
                 _select(key: nil, didSelectInDocument: false, state: &state)
+                if state.annotationPopoverKey != nil || state.annotationPopoverRect != nil {
+                    state.annotationPopoverKey = nil
+                    state.annotationPopoverRect = nil
+                    if dismissPopover {
+                        state.changes.insert(.popover)
+                    }
+                }
             }
 
         case .parseAndCacheComment(key: let key, comment: let comment):

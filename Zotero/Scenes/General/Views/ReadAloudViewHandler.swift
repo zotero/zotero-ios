@@ -361,8 +361,6 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         button.selectedTintColor = .white
         button.isSelected = isSelected
         button.isEnabled = isEnabled
-        button.menuWillPresent = { [weak self] in self?.menuWillPresent?() }
-        button.menuDidDismiss = { [weak self] in self?.menuDidDismiss?() }
         button.addAction(
             UIAction(handler: { [weak self] _ in
                 self?.toggleReadAloud()
