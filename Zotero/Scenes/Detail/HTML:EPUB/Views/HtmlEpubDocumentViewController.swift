@@ -569,7 +569,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 if let key = ids.first {
                     viewModel.process(action: .selectAnnotationFromDocument(key: key))
                 } else {
-                    viewModel.process(action: .deselectSelectedAnnotation)
+                    viewModel.process(action: .deselectSelectedAnnotation(dismissPopover: true))
                 }
 
             case "onSetSelectionPopup":

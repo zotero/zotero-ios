@@ -75,6 +75,7 @@
 		61457F572BEA2F53000AE230 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 61457F562BEA2F53000AE230 /* RealmSwift */; };
 		61457F582BEA2F53000AE230 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 61457F562BEA2F53000AE230 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		61457F5A2BEA2F66000AE230 /* RealmSwift in CopyFiles */ = {isa = PBXBuildFile; productRef = B35C9C072642A0BC0004C47E /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		614B328230A7A61E00B96104 /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 614B328130A7A61E00B96104 /* CheckboxButton.swift */; };
 		614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 614D65862A8030C9007CF449 /* OrderedCollections */; };
@@ -1547,6 +1548,7 @@
 		61391B822B3C6F83003B314A /* CopyBibliographyActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyBibliographyActionHandler.swift; sourceTree = "<group>"; };
 		61391B852B3C6FF4003B314A /* CopyBibliographyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyBibliographyViewController.swift; sourceTree = "<group>"; };
 		613F32782C1086950088EF70 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		614B328130A7A61E00B96104 /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
 		614D65812A79C9AC007CF449 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 		615645502DE0825900B8AA6D /* FeatureGates.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FeatureGates.xcconfig; sourceTree = "<group>"; };
@@ -3671,6 +3673,7 @@
 				B3CC280A2AA8A8EC00886856 /* AnnotationToolbarHandler.swift */,
 				B340ECA5290FDC9F00EE920D /* AnnotationToolbarViewController.swift */,
 				B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */,
+				614B328130A7A61E00B96104 /* CheckboxButton.swift */,
 				B33AB487246D315F00490DDE /* MenuTrackingButton.swift */,
 				B3A95DA929194BDE00BCCF11 /* DashedView.swift */,
 				B325C4092A7A8DE0008A2F11 /* FreeTextAnnotationView.swift */,
@@ -5875,6 +5878,7 @@
 				B3CC280B2AA8A8EC00886856 /* AnnotationToolbarHandler.swift in Sources */,
 				B336FE812A2F6D9E00B52F4A /* UploadFixSyncAction.swift in Sources */,
 				B3486B8B26CFAFEA0036A267 /* SingleCitationAction.swift in Sources */,
+				614B328230A7A61E00B96104 /* CheckboxButton.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,
 				B37434CA2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */,
 				B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
