@@ -4,8 +4,9 @@
 #
 # A translation that reorders unnumbered placeholders (e.g., "%@ in %@ (%d / %d)" for
 # "Syncing %@ (%d / %d) in %@") passes arguments of the wrong type to String(format:),
-# which crashes the app. Every string in the translated Localizable.strings and
-# Localizable.stringsdict files is compared against en.lproj, and mismatches are listed.
+# which crashes the app. A stray % (e.g., "@%" for "%@") is listed too. Every string in
+# the translated Localizable.strings and Localizable.stringsdict files is compared
+# against en.lproj, and mismatches are listed.
 
 import os
 import plistlib
@@ -73,6 +74,11 @@ def load_stringsdict(path):
 	return strings
 
 
+def has_stray_percent(text):
+	"""A % that doesn't start a format specifier (e.g., "@%" for "%@")"""
+	return '%' in SPECIFIER.sub('', text)
+
+
 def load(lproj):
 	strings = load_strings(os.path.join(lproj, 'Localizable.strings'))
 	strings.update(load_stringsdict(os.path.join(lproj, 'Localizable.stringsdict')))
@@ -102,7 +108,7 @@ def main():
 				for index, types in arg_types(text).items():
 					expected.setdefault(index, set()).update(types)
 			for text in texts:
-				if not compatible(expected, arg_types(text)):
+				if not compatible(expected, arg_types(text)) or (expected and has_stray_percent(text)):
 					problems.append(f'{folder}: {key}: {text!r} (English: {english[key][-1]!r})')
 	if problems:
 		print(f'{len(problems)} translated strings have format arguments that don\'t match the English:')
