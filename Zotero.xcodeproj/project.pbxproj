@@ -2738,6 +2738,9 @@
 		D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSessionWebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelLoginSessionRequest.swift; sourceTree = "<group>"; };
 		D6148A17CEF16C1C227498D0 /* PDFAnnotationsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFAnnotationsActionHandler.swift; sourceTree = "<group>"; };
+		73AEB1ED260E41A3D96020E9 /* sr-Latn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "sr-Latn"; path = "sr-Latn.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		26212FC89CDA493E2AA5ECC8 /* sr-Latn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "sr-Latn"; path = "sr-Latn.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		861D7E40BE25303076A7F19B /* sr-Latn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "sr-Latn"; path = "sr-Latn.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -5382,6 +5385,7 @@
 				sl,
 				sq,
 				sr,
+				"sr-Latn",
 				sv,
 				ta,
 				th,
@@ -7194,6 +7198,7 @@
 				B3877DC32F0FA24900D25D4C /* vi */,
 				B3877DC52F0FA26000D25D4C /* zh-Hans */,
 				B3877DC82F0FA26700D25D4C /* zh-Hant */,
+				73AEB1ED260E41A3D96020E9 /* sr-Latn */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -7255,6 +7260,7 @@
 				B3877DC72F0FA26100D25D4C /* zh-Hans */,
 				B3877DCA2F0FA26700D25D4C /* zh-Hant */,
 				B3877DCC2F0FA28700D25D4C /* yue-Hans */,
+				861D7E40BE25303076A7F19B /* sr-Latn */,
 			);
 			name = Localizable.stringsdict;
 			sourceTree = "<group>";
@@ -7334,6 +7340,7 @@
 				B3877DC62F0FA26100D25D4C /* zh-Hans */,
 				B3877DC92F0FA26700D25D4C /* zh-Hant */,
 				B3877DCB2F0FA28700D25D4C /* yue-Hans */,
+				26212FC89CDA493E2AA5ECC8 /* sr-Latn */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
