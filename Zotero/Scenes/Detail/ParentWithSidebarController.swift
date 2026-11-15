@@ -19,10 +19,9 @@ protocol ParentWithSidebarController: UIViewController {
     associatedtype SidebarController: UIViewController
 
     var toolbarButton: UIBarButtonItem { get }
-    /// Fixed leading navigation bar buttons (never overflow), in visual left-to-right order.
+    /// Leading navigation bar buttons in visual order, starting with Close.
     var navigationBarLeadingItems: [UIBarButtonItem] { get set }
-    /// Fixed trailing navigation bar buttons (never overflow), in visual left-to-right order. Laid out inboard of
-    /// (to the left of) the overflow group.
+    /// Primary trailing navigation bar buttons in visual order, before the optional group.
     var navigationBarTrailingFixedItems: [UIBarButtonItem] { get set }
     /// Trailing navigation bar buttons that may collapse into the system "•••" overflow menu when the bar runs out
     /// of room, in visual left-to-right order. Laid out at the trailing edge. Only menu-representable items (image/
@@ -79,39 +78,39 @@ extension ParentWithSidebarController {
         return toolbarState.visible
     }
 
-    /// Builds the navigation bar from item groups so that, when the bar runs out of room, the overflow items collapse
-    /// into the system "•••" menu instead of being squashed/clipped (which is what happens with the classic
-    /// `left/rightBarButtonItems` arrays).
-    ///
-    /// - Each fixed item gets its own `fixedGroup` so they keep the standard discrete inter-item spacing (items inside
-    ///   a single group are clustered tightly together).
-    /// - On iPad the overflow items share one `optionalGroup`; the system moves them into a "•••" menu together when
-    ///   space is tight (e.g. minimum split-view width). Only menu-representable items belong there — custom-view
-    ///   buttons stay fixed.
-    /// - On iPhone the overflow items are kept fixed as well — everything fits and having all buttons visible looks
-    ///   better than collapsing some into a "•••" menu.
-    /// - `trailingItemGroups` are laid out leading→trailing in array order, so the fixed groups come first (inboard)
-    ///   and the overflow group sits at the trailing edge.
+    /// Groups the leading controls separately from Close. On iOS 26 and later, individual trailing groups
+    /// can share a background and overflow independently.
     func applyNavigationBarButtons(windowSize: CGSize) {
-        let spacer = UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil)
+        let trailingItems = navigationBarTrailingFixedItems + navigationBarOverflowItems
+        if #unavailable(iOS 26.0), windowSize.width >= 385 {
+            navigationItem.leadingItemGroups = []
+            navigationItem.trailingItemGroups = []
+            navigationItem.leftBarButtonItems = navigationBarLeadingItems
+            navigationItem.rightBarButtonItems = trailingItems.reversed() + [.flexibleSpace()]
+            return
+        }
 
-        if windowSize.width < 385 {
-            navigationItem.leftBarButtonItems = nil
-            navigationItem.rightBarButtonItems = nil
+        navigationItem.leftBarButtonItems = nil
+        var leadingGroups: [UIBarButtonItemGroup] = []
+        if let closeButton = navigationBarLeadingItems.first {
+            leadingGroups.append(closeButton.creatingFixedGroup())
+        }
+        let readerButtons = Array(navigationBarLeadingItems.dropFirst())
+        if !readerButtons.isEmpty {
+            leadingGroups.append(.fixedGroup(items: readerButtons))
+        }
+        navigationItem.leadingItemGroups = leadingGroups
 
-            navigationItem.leadingItemGroups = navigationBarLeadingItems.map { $0.creatingFixedGroup() }
-
-            var trailingGroups = [spacer.creatingFixedGroup()] + navigationBarTrailingFixedItems.map { $0.creatingFixedGroup() }
+        navigationItem.rightBarButtonItems = nil
+        if #available(iOS 26.0, *) {
+            navigationItem.trailingItemGroups = trailingItems.map { $0.creatingFixedGroup() }
+        } else {
+            var trailingGroups = [UIBarButtonItem.flexibleSpace().creatingFixedGroup()]
+            trailingGroups += navigationBarTrailingFixedItems.map { $0.creatingFixedGroup() }
             if !navigationBarOverflowItems.isEmpty {
                 trailingGroups.append(.optionalGroup(customizationIdentifier: "ParentWithSidebar.overflow", items: navigationBarOverflowItems))
             }
             navigationItem.trailingItemGroups = trailingGroups
-        } else {
-            navigationItem.leadingItemGroups = []
-            navigationItem.trailingItemGroups = []
-
-            navigationItem.leftBarButtonItems = navigationBarLeadingItems
-            navigationItem.rightBarButtonItems = (navigationBarTrailingFixedItems + navigationBarOverflowItems).reversed() + [spacer]
         }
     }
 

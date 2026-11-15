@@ -98,6 +98,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         share.isEnabled = !viewModel.state.document.isLocked
         share.title = L10n.Accessibility.Pdf.share
         share.tag = NavigationBarButton.share.rawValue
+        if #available(iOS 27.0, *) {
+            share.visibilityPriority = .low
+        }
         let deferredMenu = UIDeferredMenuElement.uncached { [weak self] elementProvider in
             var elements: [UIMenuElement] = []
             defer {
@@ -146,6 +149,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         let settings = UIBarButtonItem(primaryAction: primaryAction)
         settings.isEnabled = !viewModel.state.document.isLocked
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
+        if #available(iOS 27.0, *) {
+            settings.visibilityPriority = .low
+        }
         return settings
     }()
     private lazy var searchButton: UIBarButtonItem = {
@@ -155,10 +161,17 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         let search = UIBarButtonItem(primaryAction: primaryAction)
         search.isEnabled = !viewModel.state.document.isLocked
         search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
+        if #available(iOS 27.0, *) {
+            search.visibilityPriority = .standard
+        }
         return search
     }()
     lazy var toolbarButton: UIBarButtonItem = {
-        return createToolbarButton()
+        let button = createToolbarButton()
+        if #available(iOS 27.0, *) {
+            button.visibilityPriority = .high
+        }
+        return button
     }()
 
     override var keyCommands: [UIKeyCommand]? {
@@ -549,6 +562,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 indicator.startAnimating()
                 let button = UIBarButtonItem(customView: indicator)
                 button.tag = NavigationBarButton.share.rawValue
+                if #available(iOS 27.0, *) {
+                    button.visibilityPriority = shareButton.visibilityPriority
+                }
                 items[shareId] = button
 
             case .exported(let file):
@@ -792,9 +808,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     // MARK: - Setups
 
-    /// Populates the trailing navigation bar items. `settings`, `share` and `search` go into the overflow group (so
-    /// they collapse into a "•••" menu when space is tight, in visual order search · share · settings), while the
-    /// annotation toolbar toggle stays fixed inboard of them.
+    /// Places Annotate and Search before Share and Settings in the trailing section.
     private func updateNavigationBarTrailingItems() {
         navigationBarOverflowItems = [shareButton, settingsButton]
         navigationBarTrailingFixedItems = viewModel.state.library.metadataEditable ? [toolbarButton, searchButton] : [searchButton]

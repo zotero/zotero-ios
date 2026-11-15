@@ -91,7 +91,11 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     var isDocumentLocked: Bool { return false }
     private(set) var activeAnnotationTool: AnnotationTool?
     lazy var toolbarButton: UIBarButtonItem = {
-        return createToolbarButton()
+        let toolbar = createToolbarButton()
+        if #available(iOS 27.0, *) {
+            toolbar.visibilityPriority = .high
+        }
+        return toolbar
     }()
     private lazy var zoomOutAction = createZoomAction(
         title: L10n.Reader.Settings.Zoom.zoomOut,
@@ -112,14 +116,19 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         enabled: viewModel.state.zoomState.canZoomReset
     )
     private lazy var zoomButton: UIBarButtonItem = {
-        let item = UIBarButtonItem(
+        let image: UIImage?
+        if #available(iOS 26.0, *) {
+            image = UIImage(systemName: "textformat.size", withConfiguration: UIImage.SymbolConfiguration(scale: .default))
+        } else {
+            image = UIImage(systemName: "textformat.size")
+        }
+        let zoom = UIBarButtonItem(
             title: L10n.Reader.Settings.Zoom.title,
-            image: UIImage(systemName: "textformat.size"),
+            image: image,
             menu: UIMenu(children: [zoomOutAction, zoomInAction, zoomResetAction])
         )
-        item.title = L10n.Reader.Settings.Zoom.title
-        item.accessibilityLabel = L10n.Reader.Settings.Zoom.title
-        return item
+        zoom.accessibilityLabel = L10n.Reader.Settings.Zoom.title
+        return zoom
     }()
     private lazy var settingsButton: UIBarButtonItem = {
         let primaryAction = UIAction(title: L10n.Accessibility.Pdf.settings, image: UIImage(systemName: "gearshape")) { [weak self] action in
@@ -128,12 +137,18 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         }
         let settings = UIBarButtonItem(primaryAction: primaryAction)
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
+        if #available(iOS 27.0, *) {
+            settings.visibilityPriority = .low
+        }
         return settings
     }()
     private lazy var searchButton: UIBarButtonItem = {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
         search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
         search.title = viewModel.state.originalFile.ext.lowercased() == "epub" ? L10n.Accessibility.Htmlepub.searchEpub : L10n.Accessibility.Htmlepub.searchHtml
+        if #available(iOS 27.0, *) {
+            search.visibilityPriority = .standard
+        }
         search.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let documentController else { return }
@@ -696,9 +711,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         documentController?.containerInsets = insets
     }
 
-    /// Populates the trailing navigation bar items. `search` and `settings` go into the overflow group (so they
-    /// collapse into a "•••" menu when space is tight, in visual order search · settings), while the annotation
-    /// toolbar toggle stays fixed inboard of them.
+    /// Places Annotate before Search and Settings in the trailing section.
     private func updateNavigationBarTrailingItems() {
         navigationBarOverflowItems = [searchButton, settingsButton]
         navigationBarTrailingFixedItems = viewModel.state.library.metadataEditable ? [toolbarButton] : []
