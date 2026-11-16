@@ -38,8 +38,8 @@ struct TagFilterState: ViewModelState {
     var searchTerm: String
     var showAutomatic: Bool
     var displayAll: Bool
+    var library: Library?
     var error: Error?
-    var automaticCount: Int?
     var changes: Changes
 
     init(selectedTags: Set<String>, showAutomatic: Bool, displayAll: Bool) {
@@ -54,6 +54,5 @@ struct TagFilterState: ViewModelState {
     mutating func cleanup() {
         changes = []
         error = nil
-        automaticCount = nil
     }
 }

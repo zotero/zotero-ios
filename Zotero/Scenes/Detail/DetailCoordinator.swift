@@ -54,7 +54,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(error: ItemsError)
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
+    func showFilters(filters: [ItemsFilter], filtersDelegate: DownloadsFilterDelegate, button: UIBarButtonItem)
     func dismissFilters()
     func showLookup()
 }
@@ -80,13 +80,6 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
     func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String?, saveCallback: ((Note) -> Void)?)
 }
 
-protocol ItemsTagFilterDelegate: AnyObject {
-    var delegate: FiltersDelegate? { get set }
-
-    func clearSelection()
-    func itemsDidChange(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
-}
-
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
 
 final class DetailCoordinator: Coordinator {
@@ -94,7 +87,6 @@ final class DetailCoordinator: Coordinator {
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
     private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
-    weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
     private var tmpAudioDelegate: AVPlayerDelegate?
 
@@ -110,7 +102,6 @@ final class DetailCoordinator: Coordinator {
         searchItemKeys: [String]?,
         navigationController: UINavigationController,
         mainCoordinatorDelegate: MainCoordinatorDelegate,
-        itemsTagFilterDelegate: ItemsTagFilterDelegate?,
         controllers: Controllers
     ) {
         self.libraryId = libraryId
@@ -118,7 +109,6 @@ final class DetailCoordinator: Coordinator {
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
         self.mainCoordinatorDelegate = mainCoordinatorDelegate
-        self.itemsTagFilterDelegate = itemsTagFilterDelegate
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -132,26 +122,33 @@ final class DetailCoordinator: Coordinator {
         guard let userControllers = controllers.userControllers else { return }
         DDLogInfo("DetailCoordinator: show items for \(collection.id); \(libraryId)")
 
-        let controller: UIViewController
+        let tagFilterViewModel = mainCoordinatorDelegate.sharedTagFilterViewModel
+        let controller: BaseItemsViewController
         switch collection.identifier {
         case .custom(let type) where type == .trash:
-            controller = createTrashViewController(libraryId: libraryId, itemsTagFilterDelegate: itemsTagFilterDelegate, controllers: controllers)
+            controller = createTrashViewController(libraryId: libraryId, controllers: controllers)
 
         case .collection, .search, .custom:
             controller = createItemsViewController(
                 collection: collection,
                 libraryId: libraryId,
                 searchItemKeys: searchItemKeys,
-                itemsTagFilterDelegate: itemsTagFilterDelegate,
                 controllers: controllers
             )
         }
 
+        if let tagFilterViewModel {
+            tagFilterViewModel.process(action: .reset(library: controller.library))
+            tagFilterViewModel.stateObservable
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak controller] state in
+                    controller?.applyTagFilterState(state)
+                })
+                .disposed(by: disposeBag)
+        }
         navigationController?.setViewControllers([controller], animated: animated)
 
-        func createTrashViewController(libraryId: LibraryIdentifier, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) -> TrashViewController {
-            itemsTagFilterDelegate?.clearSelection()
-
+        func createTrashViewController(libraryId: LibraryIdentifier, controllers: Controllers) -> TrashViewController {
             let searchTerm = searchItemKeys?.joined(separator: " ")
             let sortType = Defaults.shared.itemsSortType
             let downloadBatchData = ItemsState.DownloadBatchData(batchData: userControllers.fileDownloader.batchData)
@@ -165,21 +162,20 @@ final class DetailCoordinator: Coordinator {
                 htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
                 fileCleanupController: userControllers.fileCleanupController
             )
-            let controller = TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
-            controller.tagFilterDelegate = itemsTagFilterDelegate
-            itemsTagFilterDelegate?.delegate = controller
-            return controller
+            return TrashViewController(
+                viewModel: ViewModel(initialState: state, handler: handler),
+                tagFilterViewModel: tagFilterViewModel,
+                controllers: controllers,
+                coordinatorDelegate: self
+            )
         }
 
         func createItemsViewController(
             collection: Collection,
             libraryId: LibraryIdentifier,
             searchItemKeys: [String]?,
-            itemsTagFilterDelegate: ItemsTagFilterDelegate?,
             controllers: Controllers
         ) -> ItemsViewController {
-            itemsTagFilterDelegate?.clearSelection()
-
             let searchTerm = searchItemKeys?.joined(separator: " ")
             let downloadBatchData = ItemsState.DownloadBatchData(batchData: userControllers.fileDownloader.batchData)
             let remoteDownloadBatchData = ItemsState.DownloadBatchData(batchData: userControllers.remoteFileDownloader.batchData)
@@ -207,10 +203,12 @@ final class DetailCoordinator: Coordinator {
                 htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
                 recognizerController: userControllers.recognizerController
             )
-            let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
-            controller.tagFilterDelegate = itemsTagFilterDelegate
-            itemsTagFilterDelegate?.delegate = controller
-            return controller
+            return ItemsViewController(
+                viewModel: ViewModel(initialState: state, handler: handler),
+                tagFilterViewModel: tagFilterViewModel,
+                controllers: controllers,
+                coordinatorDelegate: self
+            )
         }
     }
 
@@ -700,7 +698,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         showCitationBibliographyExport(using: navigationController, for: itemIds, in: libraryId, controllers: controllers, animated: true, sourceItem: sourceItem)
     }
 
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem) {
+    func showFilters(filters: [ItemsFilter], filtersDelegate: DownloadsFilterDelegate, button: UIBarButtonItem) {
         DDLogInfo("DetailCoordinator: show item filters")
 
         let navigationController = NavigationViewController()
@@ -711,8 +709,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             filters: filters,
             filtersDelegate: filtersDelegate,
             navigationController: navigationController,
-            mainCoordinatorDelegate: mainCoordinatorDelegate,
-            controllers: controllers
+            mainCoordinatorDelegate: mainCoordinatorDelegate
         )
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)

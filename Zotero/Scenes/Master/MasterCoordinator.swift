@@ -309,7 +309,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
 extension MasterCoordinator: MasterContainerCoordinatorDelegate {
     func createBottomController() -> DraggableViewController? {
-        guard UIDevice.current.userInterfaceIdiom == .pad, let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return nil }
+        guard let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return nil }
         return TagFilterViewController(viewModel: viewModel, context: .masterBottomSheet)
     }
 }

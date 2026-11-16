@@ -57,9 +57,7 @@ final class MasterContainerViewController: UINavigationController {
     private static let minVisibleBottomHeight: CGFloat = 200
     private let disposeBag: DisposeBag
 
-    lazy var bottomController: DraggableViewController? = {
-        return coordinatorDelegate?.createBottomController()
-    }()
+    var bottomController: DraggableViewController?
     private weak var bottomContainer: UIView?
     private weak var bottomYConstraint: NSLayoutConstraint?
     private var visibleArea: UILayoutGuide?
@@ -89,11 +87,89 @@ final class MasterContainerViewController: UINavigationController {
         super.viewDidLoad()
         view.backgroundColor = .clear
         delegate = self
-        setupView()
         setBottomSheet(hidden: true)
+    }
 
-        func setupView() {
-            guard let bottomController else { return }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let availableHeight = currentAvailableHeight()
+        guard lastAvailableHeight != availableHeight else { return }
+        lastAvailableHeight = availableHeight
+        updateBottomPosition()
+    }
+
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+
+        updateBottomPosition()
+        if let splitViewController {
+            var hideBottomSheet = splitViewController.isCollapsed
+            switch splitViewController.traitCollection.horizontalSizeClass {
+            case .unspecified:
+                break
+
+            case .compact:
+                hideBottomSheet = true
+
+            case .regular:
+                hideBottomSheet = false
+
+            @unknown default:
+                break
+            }
+            setBottomSheet(hidden: hideBottomSheet)
+        }
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate { _ in
+            self.view.layoutIfNeeded()
+        } completion: { _ in
+            self.updateBottomPosition()
+        }
+    }
+
+    override func collapseSecondaryViewController(_ secondaryViewController: UIViewController, for splitViewController: UISplitViewController) {
+        setBottomSheet(hidden: true)
+        super.collapseSecondaryViewController(secondaryViewController, for: splitViewController)
+    }
+
+    override func separateSecondaryViewController(for splitViewController: UISplitViewController) -> UIViewController? {
+        setBottomSheet(hidden: false)
+        if topViewController?.isKind(of: UINavigationController.self) == true {
+            return super.separateSecondaryViewController(for: splitViewController)
+        }
+        if #available(iOS 26.0.0, *) {
+            if let collectionsViewController = topViewController as? CollectionsViewController {
+                collectionsViewController.viewModel.process(action: .select(.custom(.all)))
+            } else {
+                coordinatorDelegate?.showDefaultCollection(reason: .splitExpansion)
+            }
+            return super.separateSecondaryViewController(for: splitViewController)
+        } else {
+            // When separating from an initially collapsed split view controller, the detail view controller is not yet set.
+            coordinatorDelegate?.showDefaultCollection(reason: .splitExpansion)
+            return nil
+        }
+    }
+
+    // MARK: - Bottom Panning
+    var isBottomSheetHidden: Bool {
+        bottomContainer?.isHidden ?? true
+    }
+
+    private func setBottomSheet(hidden: Bool) {
+        defer {
+            bottomContainer?.isHidden = hidden
+            updateBottomPosition()
+        }
+        guard !hidden, bottomController == nil else { return }
+        setupBottomController()
+
+        func setupBottomController() {
+            guard let bottomController = coordinatorDelegate?.createBottomController() else { return }
 
             let visibleArea = UILayoutGuide()
             view.addLayoutGuide(visibleArea)
@@ -165,6 +241,7 @@ final class MasterContainerViewController: UINavigationController {
                 bottomControllerBottom
             ])
 
+            self.bottomController = bottomController
             self.bottomContainer = bottomContainer
             self.bottomYConstraint = bottomYConstraint
             self.visibleArea = visibleArea
@@ -289,81 +366,6 @@ final class MasterContainerViewController: UINavigationController {
                 })
             }
         }
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        let availableHeight = currentAvailableHeight()
-        guard lastAvailableHeight != availableHeight else { return }
-        lastAvailableHeight = availableHeight
-        updateBottomPosition()
-    }
-
-    override func viewIsAppearing(_ animated: Bool) {
-        super.viewIsAppearing(animated)
-
-        updateBottomPosition()
-        if let splitViewController {
-            var hideBottomSheet = splitViewController.isCollapsed
-            switch splitViewController.traitCollection.horizontalSizeClass {
-            case .unspecified:
-                break
-
-            case .compact:
-                hideBottomSheet = true
-
-            case .regular:
-                hideBottomSheet = false
-
-            @unknown default:
-                break
-            }
-            setBottomSheet(hidden: hideBottomSheet)
-        }
-    }
-
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-
-        coordinator.animate { _ in
-            self.view.layoutIfNeeded()
-        } completion: { _ in
-            self.updateBottomPosition()
-        }
-    }
-
-    override func collapseSecondaryViewController(_ secondaryViewController: UIViewController, for splitViewController: UISplitViewController) {
-        setBottomSheet(hidden: true)
-        super.collapseSecondaryViewController(secondaryViewController, for: splitViewController)
-    }
-
-    override func separateSecondaryViewController(for splitViewController: UISplitViewController) -> UIViewController? {
-        setBottomSheet(hidden: false)
-        if topViewController?.isKind(of: UINavigationController.self) == true {
-            return super.separateSecondaryViewController(for: splitViewController)
-        }
-        if #available(iOS 26.0.0, *) {
-            if let collectionsViewController = topViewController as? CollectionsViewController {
-                collectionsViewController.viewModel.process(action: .select(.custom(.all)))
-            } else {
-                coordinatorDelegate?.showDefaultCollection(reason: .splitExpansion)
-            }
-            return super.separateSecondaryViewController(for: splitViewController)
-        } else {
-            // When separating from an initially collapsed split view controller, the detail view controller is not yet set.
-            coordinatorDelegate?.showDefaultCollection(reason: .splitExpansion)
-            return nil
-        }
-    }
-
-    // MARK: - Bottom Panning
-    var isBottomSheetHidden: Bool {
-        bottomContainer?.isHidden ?? true
-    }
-
-    private func setBottomSheet(hidden: Bool) {
-        bottomContainer?.isHidden = hidden
-        updateBottomPosition()
     }
 
     private func set(bottomPosition: BottomPosition, containerHeight: CGFloat, availableHeight: CGFloat) {
