@@ -33,6 +33,7 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
 protocol MasterContainerCoordinatorDelegate: AnyObject {
     func showDefaultCollection(reason: ShowItemsReason)
     func createBottomController() -> DraggableViewController?
+    func sidebarTagFilterVisibilityDidChange()
 }
 
 final class MasterCoordinator: NSObject, Coordinator {
@@ -241,6 +242,8 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 }
 
 extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
+    var usesSidebarTagFilter: Bool { mainCoordinatorDelegate.usesSidebarTagFilter }
+
     var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? {
         return mainCoordinatorDelegate.sharedTagFilterViewModel
     }
@@ -308,6 +311,10 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 }
 
 extension MasterCoordinator: MasterContainerCoordinatorDelegate {
+    func sidebarTagFilterVisibilityDidChange() {
+        mainCoordinatorDelegate.sidebarTagFilterVisibilityDidChange()
+    }
+
     func createBottomController() -> DraggableViewController? {
         guard let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return nil }
         return TagFilterViewController(viewModel: viewModel, context: .masterBottomSheet)

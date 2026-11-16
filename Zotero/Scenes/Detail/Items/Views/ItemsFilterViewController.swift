@@ -16,18 +16,15 @@ class ItemsFilterViewController: UIViewController {
     private static let downloadsHeight: CGFloat = 44
     private static let width: CGFloat = 320
     private let tagFilterController: TagFilterViewController
+    private weak var mainCoordinatorDelegate: MainCoordinatorDelegate?
 
-//    weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
     private var downloadsFilterEnabled: Bool
     weak var delegate: DownloadsFilterDelegate?
 
-    private var isCompact: Bool {
-        return UIDevice.current.userInterfaceIdiom == .phone || (presentingViewController as? MainViewController)?.isCollapsed == true
-    }
-
-    init(downloadsFilterEnabled: Bool, tagFilterController: TagFilterViewController) {
+    init(downloadsFilterEnabled: Bool, tagFilterController: TagFilterViewController, mainCoordinatorDelegate: MainCoordinatorDelegate) {
         self.downloadsFilterEnabled = downloadsFilterEnabled
         self.tagFilterController = tagFilterController
+        self.mainCoordinatorDelegate = mainCoordinatorDelegate
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -141,9 +138,7 @@ class ItemsFilterViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if #available(iOS 26.0, *) {
-            updateToolbar()
-        }
+        showHideTagFilter()
         preferredContentSize = CGSize(width: Self.width, height: Self.downloadsHeight)
     }
 
@@ -158,30 +153,17 @@ class ItemsFilterViewController: UIViewController {
     // MARK: - Actions
     
     private func showHideTagFilter() {
-        if isCompact {
-            tagFilterController.view.isHidden = false
-            separator.isHidden = false
-            if #unavailable(iOS 26.0.0) {
-                containerTop.constant = 4
-            }
-        } else {
-            tagFilterController.view.isHidden = true
-            separator.isHidden = true
-            if #unavailable(iOS 26.0.0) {
-                containerTop.constant = 15
-            }
-        }
+        let hideTags = mainCoordinatorDelegate?.usesSidebarTagFilter == true
+        tagFilterController.view.isHidden = hideTags
+        separator.isHidden = hideTags
         if #available(iOS 26.0, *) {
-            updateToolbar()
+            if !hideTags {
+                tagFilterController.setupBottomToolbar(in: self)
+            }
+            navigationController?.setToolbarHidden(hideTags, animated: false)
+        } else {
+            containerTop.constant = hideTags ? 15 : 4
         }
-    }
-
-    @available(iOS 26.0, *)
-    private func updateToolbar() {
-        if isCompact {
-            tagFilterController.setupBottomToolbar(in: self)
-        }
-        navigationController?.setToolbarHidden(!isCompact, animated: false)
     }
 }
 

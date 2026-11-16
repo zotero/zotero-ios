@@ -47,7 +47,11 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
-        let controller = ItemsFilterViewController(downloadsFilterEnabled: downloadsFilterEnabled, tagFilterController: tagController)
+        let controller = ItemsFilterViewController(
+            downloadsFilterEnabled: downloadsFilterEnabled,
+            tagFilterController: tagController,
+            mainCoordinatorDelegate: mainCoordinatorDelegate
+        )
         controller.delegate = filtersDelegate
         navigationController?.setViewControllers([controller], animated: animated)
     }

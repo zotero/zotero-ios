@@ -13,6 +13,7 @@ import RxSwift
 
 protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     var isCompact: Bool { get }
+    var usesSidebarTagFilter: Bool { get }
 
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
@@ -184,7 +185,7 @@ final class ItemsToolbarController {
                 clearStatusSubtitle()
             }
         } else {
-            let filters = sizeClassSpecificFilters(from: data.filters)
+            let filters = toolbarFilters(from: data.filters)
             let toolbarItems = createNormalToolbarItems()
             updateNormalToolbarItems(
                 toolbarItems,
@@ -406,7 +407,7 @@ final class ItemsToolbarController {
         } else {
             updateNormalToolbarItems(
                 viewController.toolbarItems,
-                for: sizeClassSpecificFilters(from: data.filters),
+                for: toolbarFilters(from: data.filters),
                 sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
@@ -416,22 +417,9 @@ final class ItemsToolbarController {
         }
     }
 
-    private func sizeClassSpecificFilters(from filters: [ItemsFilter]) -> [ItemsFilter] {
-        // There is different functionality based on horizontal size class. iPhone and compact iPad show tag filters in filter popup in items screen while iPad shows tag filters in master controller.
-        // So filter icon and description should always show up on iPhone and compact iPad, while it should not show up on regular iPad for tag filters.
-        // Therefore we ignore `.tag` filter on iPhone and compact iPad, and keep it on regular iPad.
-        if isCompact {
-            return filters
-        }
-        return filters.filter({
-            switch $0 {
-            case .tags:
-                return false
-                
-            case .downloadedFiles:
-                return true
-            }
-        })
+    private func toolbarFilters(from filters: [ItemsFilter]) -> [ItemsFilter] {
+        guard delegate?.usesSidebarTagFilter == true else { return filters }
+        return filters.filter(\.isDownloadedFilesFilter)
     }
 
     /// Applies the current filter state to the filter bar button item: the icon reflects whether any filter is active, and the tap behavior differs by size class (a menu on regular
@@ -447,12 +435,12 @@ final class ItemsToolbarController {
             imageName = hasActiveFilters ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
         }
         item.image = UIImage(systemName: imageName)
-        if isCompact {
-            item.menu = nil
-            item.primaryAction = createFilterPrimaryAction(image: item.image)
-        } else {
+        if delegate?.usesSidebarTagFilter == true {
             item.primaryAction = nil
             item.menu = createFilterMenu(downloadsFilterEnabled: filters.contains(where: { $0.isDownloadedFilesFilter }))
+        } else {
+            item.menu = nil
+            item.primaryAction = createFilterPrimaryAction(image: item.image)
         }
     }
 
