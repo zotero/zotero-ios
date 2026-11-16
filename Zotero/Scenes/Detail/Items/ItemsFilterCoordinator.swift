@@ -8,12 +8,8 @@
 
 import UIKit
 
-protocol FiltersDelegate: AnyObject {
-    var currentLibrary: Library { get }
-
+protocol DownloadsFilterDelegate: AnyObject {
     func downloadsFilterDidChange(enabled: Bool)
-    func tagSelectionDidChange(selected: Set<String>)
-    func tagOptionsDidChange()
 }
 
 final class ItemsFilterCoordinator: NSObject, Coordinator {
@@ -23,20 +19,17 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
 
     private let filters: [ItemsFilter]
     private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
-    private unowned let controllers: Controllers
-    private weak var filtersDelegate: BaseItemsViewController?
+    private weak var filtersDelegate: DownloadsFilterDelegate?
 
     init(
         filters: [ItemsFilter],
-        filtersDelegate: BaseItemsViewController,
+        filtersDelegate: DownloadsFilterDelegate,
         navigationController: NavigationViewController,
-        mainCoordinatorDelegate: MainCoordinatorDelegate,
-        controllers: Controllers
+        mainCoordinatorDelegate: MainCoordinatorDelegate
     ) {
         self.filters = filters
         self.navigationController = navigationController
         self.mainCoordinatorDelegate = mainCoordinatorDelegate
-        self.controllers = controllers
         self.filtersDelegate = filtersDelegate
         childCoordinators = []
 
@@ -52,8 +45,6 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
         guard let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return }
         let tagController = TagFilterViewController(viewModel: viewModel, context: .filterScreen)
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
-        tagController.delegate = filtersDelegate
-        filtersDelegate?.tagFilterDelegate = tagController
 
         let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
         let controller = ItemsFilterViewController(downloadsFilterEnabled: downloadsFilterEnabled, tagFilterController: tagController)

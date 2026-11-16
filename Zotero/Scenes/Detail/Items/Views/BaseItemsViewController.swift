@@ -33,13 +33,18 @@ class BaseItemsViewController: UIViewController {
     var toolbarController: ItemsToolbarController?
     var refreshController: SyncRefreshController?
     var handler: ItemsCollectionViewHandler?
-    weak var tagFilterDelegate: ItemsTagFilterDelegate?
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
+    private let tagFilterViewModel: ViewModel<TagFilterActionHandler>?
     private let debugReaderQueue: DispatchQueue?
     private var readerURL: URL?
     private weak var selectionLeftBarButtonItem: UIBarButtonItem?
 
-    init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        tagFilterViewModel: ViewModel<TagFilterActionHandler>?,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)
+    ) {
+        self.tagFilterViewModel = tagFilterViewModel
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
         disposeBag = DisposeBag()
@@ -167,8 +172,18 @@ class BaseItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    func updateTagFilter(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) {
-        tagFilterDelegate?.itemsDidChange(filters: filters, collectionId: collection.identifier, libraryId: library.identifier)
+    func applyTagFilterState(_ state: TagFilterState) {
+        if state.changes.contains(.selection) {
+            tagSelectionDidChange(selected: state.selectedTags)
+        }
+        if state.changes.contains(.options) {
+            updateTagFilter(filters: toolbarData.filters)
+        }
+    }
+
+    func updateTagFilter(filters: [ItemsFilter]) {
+        guard coordinatorDelegate != nil else { return }
+        tagFilterViewModel?.process(action: .load(itemFilters: filters, collectionId: collection.identifier, library: library))
     }
 
     func showDocumentWorkerRecorder(button: UIBarButtonItem) {
@@ -482,15 +497,7 @@ class BaseItemsViewController: UIViewController {
     }
 }
 
-extension BaseItemsViewController: FiltersDelegate {
-    var currentLibrary: Library {
-        return library
-    }
-
-    func tagOptionsDidChange() {
-        updateTagFilter(filters: toolbarData.filters, collectionId: collection.identifier, libraryId: library.identifier)
-    }
-}
+extension BaseItemsViewController: DownloadsFilterDelegate { }
 
 extension BaseItemsViewController: UISearchControllerDelegate {
     func didDismissSearchController(_ searchController: UISearchController) {

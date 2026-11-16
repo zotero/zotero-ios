@@ -31,9 +31,14 @@ final class ItemsViewController: BaseItemsViewController {
         return toolbarData(from: viewModel.state)
     }
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        viewModel: ViewModel<ItemsActionHandler>,
+        tagFilterViewModel: ViewModel<TagFilterActionHandler>?,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)
+    ) {
         self.viewModel = viewModel
-        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate)
+        super.init(tagFilterViewModel: tagFilterViewModel, controllers: controllers, coordinatorDelegate: coordinatorDelegate)
         viewModel.process(action: .loadInitialState)
     }
 
@@ -216,6 +221,9 @@ final class ItemsViewController: BaseItemsViewController {
         if state.changes.contains(.selection) || state.changes.contains(.library) {
             setupBarButtonItems(for: state)
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
+        }
+        if state.changes.contains(.library) {
+            updateTagFilter(filters: state.filters)
         }
 
         if state.changes.contains(.filters) || state.changes.contains(.batchData) || state.changes.contains(.results) {
@@ -421,7 +429,7 @@ final class ItemsViewController: BaseItemsViewController {
             switch changes {
             case .initial(let results):
                 dataSource.apply(snapshot: results.freeze())
-                updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
+                updateTagFilter(filters: viewModel.state.filters)
 
             case .update(let results, let deletions, let insertions, let modifications):
                 let frozenResults = results.freeze()
@@ -429,7 +437,7 @@ final class ItemsViewController: BaseItemsViewController {
                 viewModel.process(action: .updateKeys(items: frozenResults, deletions: deletions, insertions: insertions, modifications: correctedModifications))
                 dataSource.apply(snapshot: frozenResults, modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
                     guard let self else { return }
-                    updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
+                    updateTagFilter(filters: viewModel.state.filters)
                 }
 
             case .error(let error):
@@ -439,7 +447,7 @@ final class ItemsViewController: BaseItemsViewController {
         })
     }
 
-    // MARK: - Tag filter delegate
+    // MARK: - Filters
 
     override func tagSelectionDidChange(selected: Set<String>) {
         if selected.isEmpty {

@@ -25,6 +25,15 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
 
     func process(action: TagFilterAction, in viewModel: ViewModel<TagFilterActionHandler>) {
         switch action {
+        case .reset(let library):
+            update(viewModel: viewModel) { state in
+                state.library = library
+                state.selectedTags = []
+                state.tags = []
+                state.snapshot = nil
+                state.changes = .tags
+            }
+
         case .select(let name):
             update(viewModel: viewModel) { state in
                 state.selectedTags.insert(name)
@@ -37,8 +46,8 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 state.changes = .selection
             }
 
-        case .load(let itemFilters, let collectionId, let libraryId):
-            load(with: itemFilters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
+        case .load(let itemFilters, let collectionId, let library):
+            load(with: itemFilters, collectionId: collectionId, library: library, in: viewModel)
 
         case .search(let term):
             search(with: term, in: viewModel)
@@ -67,24 +76,17 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 state.changes = .selection
             }
 
-        case .deselectAllWithoutNotifying:
-            update(viewModel: viewModel) { state in
-                state.selectedTags = []
-            }
-
-        case .loadAutomaticCount(let libraryId):
-            let request = ReadAutomaticTagsDbRequest(libraryId: libraryId)
-            let count = (try? dbStorage.perform(request: request, on: .main))?.count ?? 0
-            update(viewModel: viewModel) { state in
-                state.automaticCount = count
-            }
-
         case .deleteAutomatic(let libraryId):
             deleteAutomaticTags(in: libraryId, viewModel: viewModel)
 
         case .assignTag(let name, let itemKeys, let libraryId):
             assign(tagName: name, toItemKeys: itemKeys, libraryId: libraryId, viewModel: viewModel)
         }
+    }
+
+    func automaticTagCount(in libraryId: LibraryIdentifier) -> Int {
+        let request = ReadAutomaticTagsDbRequest(libraryId: libraryId)
+        return (try? dbStorage.perform(request: request, on: .main))?.count ?? 0
     }
 
     private func assign(tagName: String, toItemKeys keys: Set<String>, libraryId: LibraryIdentifier, viewModel: ViewModel<TagFilterActionHandler>) {
@@ -133,7 +135,10 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
         }
     }
 
-    private func load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
+    private func load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, library: Library, in viewModel: ViewModel<TagFilterActionHandler>) {
+        update(viewModel: viewModel, notifyListeners: false) { state in
+            state.library = library
+        }
         // Creating local copies of required state properties, so we avoid an exclusivity violation, if the main thread updates the state while the background queue reads it at the same time.
         let showAutomatic = viewModel.state.showAutomatic
         let selectedTags = filters.compactMap({ $0.tags }).first ?? []
@@ -147,7 +152,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
             _load(
                 with: filters,
                 collectionId: collectionId,
-                libraryId: libraryId,
+                libraryId: library.identifier,
                 showAutomatic: showAutomatic,
                 selectedTags: selectedTags,
                 retainedSelectedTags: retainedSelectedTags,

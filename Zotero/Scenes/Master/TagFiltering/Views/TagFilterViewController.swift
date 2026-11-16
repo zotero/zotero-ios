@@ -41,7 +41,6 @@ class TagFilterViewController: UIViewController {
     private weak var collectionView: UICollectionView!
     private weak var optionsButton: UIButton?
     private weak var moreButton: UIBarButtonItem?
-    weak var delegate: FiltersDelegate?
 
     private static let cellId = "TagFilterCell"
     private let searchBarHeight: CGFloat
@@ -72,6 +71,7 @@ class TagFilterViewController: UIViewController {
 
         view.backgroundColor = .systemBackground
         setupViews()
+        update(to: viewModel.state, initial: true)
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -179,29 +179,20 @@ class TagFilterViewController: UIViewController {
         ]
     }
 
-    private func update(to state: TagFilterState) {
+    private func update(to state: TagFilterState, initial: Bool = false) {
         if searchBar.text != state.searchTerm {
             searchBar.text = state.searchTerm
         }
 
-        if state.changes.contains(.selection) {
+        if initial || !state.changes.isEmpty {
             updateOptionsMenu(with: state)
-            delegate?.tagSelectionDidChange(selected: state.selectedTags)
         }
-
-        if state.changes.contains(.tags) {
-            updateOptionsMenu(with: state)
+        let tagsChanged = initial || state.changes.contains(.tags)
+        if tagsChanged {
             collectionView.reloadData()
+        }
+        if tagsChanged || state.changes.contains(.selection) {
             fixSelectionIfNeeded(selected: state.selectedTags)
-        }
-
-        if state.changes.contains(.options) {
-            updateOptionsMenu(with: state)
-            delegate?.tagOptionsDidChange()
-        }
-
-        if let count = state.automaticCount {
-            confirmDeletion(count: count)
         }
 
         if let error = state.error {
@@ -209,7 +200,7 @@ class TagFilterViewController: UIViewController {
         }
 
         func fixSelectionIfNeeded(selected: Set<String>) {
-            guard let selectedIndexPaths = collectionView.indexPathsForSelectedItems else { return }
+            let selectedIndexPaths = collectionView.indexPathsForSelectedItems ?? []
 
             var currentlySelected: Set<String> = []
             for indexPath in selectedIndexPaths {
@@ -232,16 +223,16 @@ class TagFilterViewController: UIViewController {
                 (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: true)
             }
         }
+    }
 
-        func confirmDeletion(count: Int) {
-            let controller = UIAlertController(title: L10n.TagPicker.confirmDeletionQuestion, message: L10n.TagPicker.confirmDeletion(count), preferredStyle: .alert)
-            controller.addAction(UIAlertAction(title: L10n.ok, style: .destructive, handler: { [weak self] _ in
-                guard let self, let libraryId = delegate?.currentLibrary.identifier else { return }
-                viewModel.process(action: .deleteAutomatic(libraryId))
-            }))
-            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
-            present(controller, animated: true)
-        }
+    private func confirmDeletion(in libraryId: LibraryIdentifier) {
+        let count = viewModel.handler.automaticTagCount(in: libraryId)
+        let controller = UIAlertController(title: L10n.TagPicker.confirmDeletionQuestion, message: L10n.TagPicker.confirmDeletion(count), preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .destructive, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .deleteAutomatic(libraryId))
+        }))
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
+        present(controller, animated: true)
     }
 
     private func updateOptionsMenu(with state: TagFilterState) {
@@ -270,8 +261,8 @@ class TagFilterViewController: UIViewController {
         let optionsMenu = UIMenu(options: .displayInline, children: options.orderedMenuChildrenBasedOnDevice())
 
         let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive) { [weak self] _ in
-            guard let self, let libraryId = delegate?.currentLibrary.identifier else { return }
-            viewModel.process(action: .loadAutomaticCount(libraryId))
+            guard let self, let libraryId = viewModel.state.library?.identifier else { return }
+            confirmDeletion(in: libraryId)
         }
         let deleteMenu = UIMenu(options: .displayInline, children: [deleteAutomatic])
 
@@ -306,7 +297,7 @@ extension TagFilterViewController: UICollectionViewDataSource {
 
 extension TagFilterViewController: UICollectionViewDropDelegate {
     func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
-        guard let library = delegate?.currentLibrary,
+        guard let library = viewModel.state.library,
               library.metadataEditable,
               let localContext = session.localDragSession?.localContext as? DragDropController.LocalContext,
               localContext.libraryIdentifier == library.identifier,
@@ -357,15 +348,5 @@ extension TagFilterViewController: DraggableViewController {
 extension TagFilterViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
-    }
-}
-
-extension TagFilterViewController: ItemsTagFilterDelegate {
-    func clearSelection() {
-        viewModel.process(action: .deselectAllWithoutNotifying)
-    }
-
-    func itemsDidChange(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) {
-        viewModel.process(action: .load(itemFilters: filters, collectionId: collectionId, libraryId: libraryId))
     }
 }

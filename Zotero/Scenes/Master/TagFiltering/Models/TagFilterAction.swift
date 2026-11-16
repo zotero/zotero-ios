@@ -11,15 +11,14 @@ import Foundation
 import RealmSwift
 
 enum TagFilterAction {
-    case load(itemFilters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
+    case reset(library: Library)
+    case load(itemFilters: [ItemsFilter], collectionId: CollectionIdentifier, library: Library)
     case select(String)
     case deselect(String)
     case search(String)
     case setDisplayAll(Bool)
     case setShowAutomatic(Bool)
     case deselectAll
-    case deselectAllWithoutNotifying
-    case loadAutomaticCount(LibraryIdentifier)
     case deleteAutomatic(LibraryIdentifier)
     case assignTag(name: String, toItemKeys: Set<String>, libraryId: LibraryIdentifier)
 }

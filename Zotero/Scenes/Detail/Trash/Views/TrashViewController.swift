@@ -24,9 +24,14 @@ final class TrashViewController: BaseItemsViewController {
         return toolbarData(from: viewModel.state)
     }
 
-    init(viewModel: ViewModel<TrashActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        viewModel: ViewModel<TrashActionHandler>,
+        tagFilterViewModel: ViewModel<TagFilterActionHandler>?,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)
+    ) {
         self.viewModel = viewModel
-        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate)
+        super.init(tagFilterViewModel: tagFilterViewModel, controllers: controllers, coordinatorDelegate: coordinatorDelegate)
         viewModel.process(action: .loadData)
     }
 
@@ -48,7 +53,7 @@ final class TrashViewController: BaseItemsViewController {
         setupBarButtonItems(for: viewModel.state)
         setupDownloadObserver()
         dataSource.apply(snapshot: viewModel.state.snapshot)
-        updateTagFilter(filters: viewModel.state.filters, collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier)
+        updateTagFilter(filters: viewModel.state.filters)
         observeEditingTraitChanges()
 
         viewModel
@@ -106,11 +111,13 @@ final class TrashViewController: BaseItemsViewController {
     private func update(state: TrashState) {
         if state.changes.contains(.objects) {
             dataSource.apply(snapshot: state.snapshot)
-            updateTagFilter(filters: state.filters, collectionId: .custom(.trash), libraryId: state.library.identifier)
         } else if let key = state.updateItemKey, let accessory = state.itemDataCache[key]?.accessory {
             dataSource.updateCellAccessory(key: key, itemAccessory: accessory)
         } else if state.changes.contains(.attachmentsRemoved) {
             dataSource.updateAttachmentAccessories()
+        }
+        if state.changes.contains(.objects) || state.changes.contains(.library) {
+            updateTagFilter(filters: state.filters)
         }
 
         if state.changes.contains(.editing) {
@@ -266,7 +273,7 @@ final class TrashViewController: BaseItemsViewController {
         }
     }
 
-    // MARK: - Tag filter delegate
+    // MARK: - Filters
 
     override func tagSelectionDidChange(selected: Set<String>) {
         if selected.isEmpty {

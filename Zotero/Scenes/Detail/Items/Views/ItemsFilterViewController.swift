@@ -19,7 +19,7 @@ class ItemsFilterViewController: UIViewController {
 
 //    weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
     private var downloadsFilterEnabled: Bool
-    weak var delegate: FiltersDelegate?
+    weak var delegate: DownloadsFilterDelegate?
 
     private var isCompact: Bool {
         return UIDevice.current.userInterfaceIdiom == .phone || (presentingViewController as? MainViewController)?.isCollapsed == true
@@ -145,9 +145,6 @@ class ItemsFilterViewController: UIViewController {
             updateToolbar()
         }
         preferredContentSize = CGSize(width: Self.width, height: Self.downloadsHeight)
-        if !tagFilterController.view.isHidden {
-            delegate?.tagOptionsDidChange()
-        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -161,7 +158,6 @@ class ItemsFilterViewController: UIViewController {
     // MARK: - Actions
     
     private func showHideTagFilter() {
-        let wasHidden = tagFilterController.view.isHidden
         if isCompact {
             tagFilterController.view.isHidden = false
             separator.isHidden = false
@@ -174,9 +170,6 @@ class ItemsFilterViewController: UIViewController {
             if #unavailable(iOS 26.0.0) {
                 containerTop.constant = 15
             }
-        }
-        if wasHidden && !tagFilterController.view.isHidden {
-            delegate?.tagOptionsDidChange()
         }
         if #available(iOS 26.0, *) {
             updateToolbar()
