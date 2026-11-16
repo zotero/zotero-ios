@@ -35,6 +35,7 @@ protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDeleg
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     var displayTitle: String { get }
+    var usesSidebarTagFilter: Bool { get }
     func showCollectionsPicker(in library: Library, cancelled: @escaping () -> Void, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
@@ -55,7 +56,6 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(error: ItemsError)
     func showFilters(filters: [ItemsFilter], filtersDelegate: DownloadsFilterDelegate, button: UIBarButtonItem)
-    func dismissFilters()
     func showLookup()
 }
 
@@ -432,6 +432,8 @@ final class DetailCoordinator: Coordinator {
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
+    var usesSidebarTagFilter: Bool { mainCoordinatorDelegate.usesSidebarTagFilter }
+
     var displayTitle: String {
         collection.name
     }
@@ -699,6 +701,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showFilters(filters: [ItemsFilter], filtersDelegate: DownloadsFilterDelegate, button: UIBarButtonItem) {
+        guard !usesSidebarTagFilter, let presenter = navigationController else { return }
         DDLogInfo("DetailCoordinator: show item filters")
 
         let navigationController = NavigationViewController()
@@ -715,12 +718,17 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
+        presenter.present(navigationController, animated: true, completion: nil)
     }
 
-    func dismissFilters() {
-        guard let coordinator = childCoordinators.first(where: { $0 is ItemsFilterCoordinator }) as? ItemsFilterCoordinator else { return }
-        coordinator.navigationController?.dismiss(animated: true)
+    func sidebarTagFilterVisibilityDidChange() {
+        if usesSidebarTagFilter,
+           let coordinator = childCoordinators.first(where: { $0 is ItemsFilterCoordinator }) as? ItemsFilterCoordinator {
+            coordinator.navigationController?.dismiss(animated: true)
+        }
+        if let itemsController = navigationController?.viewControllers.first as? BaseItemsViewController {
+            itemsController.toolbarController?.reloadToolbarItems(for: itemsController.toolbarData)
+        }
     }
 
     func show(error: ItemsError) {

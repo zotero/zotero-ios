@@ -23,8 +23,10 @@ enum ShowItemsReason {
 
 protocol MainCoordinatorDelegate: AnyObject {
     var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { get }
+    var usesSidebarTagFilter: Bool { get }
     
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason)
+    func sidebarTagFilterVisibilityDidChange()
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
@@ -241,6 +243,15 @@ extension MainViewController: UISplitViewControllerDelegate { }
 
 extension MainViewController: MainCoordinatorDelegate {
     var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
+
+    var usesSidebarTagFilter: Bool {
+        let master = masterCoordinator?.navigationController as? MasterContainerViewController
+        return master?.isBottomSheetHidden == false
+    }
+
+    func sidebarTagFilterVisibilityDidChange() {
+        detailCoordinator?.sidebarTagFilterVisibilityDidChange()
+    }
 
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason) {
         guard detailCoordinator?.libraryId == libraryId && detailCoordinator?.collection.identifier == collection.identifier else {

@@ -117,16 +117,9 @@ class BaseItemsViewController: UIViewController {
         }
 
         func observeTraitChanges() {
-            // willTransition(to:with:) seems to not be not called for all transitions, so instead a horizontal size class trait change registration is used w/ a short animation block.
-            guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+            // Size transitions do not always call viewWillTransition(to:with:).
             registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _: UITraitCollection) in
-                if controller.traitCollection.horizontalSizeClass == .regular {
-                    controller.coordinatorDelegate?.dismissFilters()
-                }
                 controller.setupTitle()
-                UIView.animate(withDuration: 0.1) {
-                    controller.toolbarController?.reloadToolbarItems(for: controller.toolbarData)
-                }
             }
         }
     }
@@ -163,6 +156,10 @@ class BaseItemsViewController: UIViewController {
 
     var isCompact: Bool {
         return traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
+    }
+
+    var usesSidebarTagFilter: Bool {
+        return coordinatorDelegate?.usesSidebarTagFilter ?? false
     }
 
     var usesCompactSelectionLayout: Bool {

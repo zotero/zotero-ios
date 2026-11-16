@@ -103,21 +103,19 @@ final class MasterContainerViewController: UINavigationController {
 
         updateBottomPosition()
         if let splitViewController {
-            var hideBottomSheet = splitViewController.isCollapsed
             switch splitViewController.traitCollection.horizontalSizeClass {
-            case .unspecified:
-                break
+            case .regular:
+                setBottomSheet(hidden: false)
 
             case .compact:
-                hideBottomSheet = true
+                setBottomSheet(hidden: true)
 
-            case .regular:
-                hideBottomSheet = false
+            case .unspecified:
+                setBottomSheet(hidden: splitViewController.isCollapsed)
 
             @unknown default:
-                break
+                setBottomSheet(hidden: splitViewController.isCollapsed)
             }
-            setBottomSheet(hidden: hideBottomSheet)
         }
     }
 
@@ -161,9 +159,13 @@ final class MasterContainerViewController: UINavigationController {
     }
 
     private func setBottomSheet(hidden: Bool) {
+        let wasHidden = isBottomSheetHidden
         defer {
             bottomContainer?.isHidden = hidden
             updateBottomPosition()
+            if wasHidden != isBottomSheetHidden {
+                coordinatorDelegate?.sidebarTagFilterVisibilityDidChange()
+            }
         }
         guard !hidden, bottomController == nil else { return }
         setupBottomController()
