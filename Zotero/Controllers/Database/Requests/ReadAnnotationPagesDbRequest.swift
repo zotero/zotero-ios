@@ -29,13 +29,14 @@ struct ReadAnnotationPagesDbRequest: DbResponseRequest {
         var pages = IndexSet()
         for annotation in databaseAnnotations {
             let sortIndex = annotation.annotationSortIndex
-            guard let separatorIndex = sortIndex.firstIndex(of: "|"), let page = Int(sortIndex[..<separatorIndex]) else { continue }
+            guard let separatorIndex = sortIndex.firstIndex(of: "|"), let page = Int(sortIndex[..<separatorIndex]), page >= 0 else { continue }
             pages.insert(page)
         }
         if let cachedDocumentAnnotations = try ReadDocumentAnnotationsCacheInfoDbRequest(attachmentKey: attachmentKey, libraryId: libraryId)
             .process(in: database)?
             .annotations {
             for annotation in cachedDocumentAnnotations {
+                guard annotation.page >= 0 else { continue }
                 pages.insert(annotation.page)
             }
         }
