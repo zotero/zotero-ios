@@ -313,9 +313,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 documentTop,
                 documentBottomConstraint,
                 documentLeftConstraint,
-                backButton.leadingAnchor.constraint(equalTo: documentController.view.leadingAnchor, constant: 20),
+                backButton.leadingAnchor.constraint(equalTo: documentController.view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
                 documentController.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 40),
-                forwardButton.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor, constant: -20),
+                forwardButton.trailingAnchor.constraint(equalTo: documentController.view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
                 forwardButton.heightAnchor.constraint(equalTo: backButton.heightAnchor),
                 forwardButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor)
             ])
