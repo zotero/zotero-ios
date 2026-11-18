@@ -18,6 +18,7 @@ enum PageChange {
     case programmatic
 }
 
+@MainActor
 final class IntraDocumentNavigationButtonsHandler {
     private enum Kind {
         case back
@@ -222,12 +223,6 @@ final class IntraDocumentNavigationButtonsHandler {
         configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
         configuration.imagePadding = 8
         let button = UIButton(configuration: configuration)
-        button.configurationUpdateHandler = { button in
-            let hasCompactWidth = button.traitCollection.horizontalSizeClass == .compact
-            var configuration = button.configuration
-            configuration?.title = hasCompactWidth ? nil : title
-            button.configuration = configuration
-        }
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
@@ -247,10 +242,33 @@ final class IntraDocumentNavigationButtonsHandler {
             documentView.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: Self.bottomInset)
         ])
 
+        // Now that the button is in the view hierarchy, its traits are the container's, so the initial title matches the current size class.
+        // Update the title as soon as the horizontal size class changes, before the layout for the new size runs, so that the button gets sized
+        // for its new content. A `configurationUpdateHandler` would apply the title later, during the button's own layout, after its frame has
+        // already been determined, which can leave the button truncated until the next layout.
+        updateTitle(of: button)
+        button.registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (button: UIButton, _: UITraitCollection) in
+            updateTitle(of: button)
+        }
+
         // Lay out the new button right away, so that its frame is valid for callers reading it (e.g. the annotation toolbar's available size).
         UIView.performWithoutAnimation {
             containerView.layoutIfNeeded()
         }
         return button
+
+        func updateTitle(of button: UIButton) {
+            // Size class is unspecified until the button is in a window, so only an explicitly regular size class shows the title.
+            let showsTitle = button.traitCollection.horizontalSizeClass == .regular
+            var configuration = button.configuration
+            configuration?.title = showsTitle ? title : nil
+            button.configuration = configuration
+            // Trait changes can be delivered in the middle of a layout pass, after the container has already sized the button. Apply the new
+            // configuration now, so that the intrinsic content size reflects the title, and request another layout of the container, so that the
+            // button is resized. `layoutIfNeeded` isn't used, since forcing layout from within a layout pass can be re-entrant.
+            button.updateConfiguration()
+            button.invalidateIntrinsicContentSize()
+            button.superview?.setNeedsLayout()
+        }
     }
 }
