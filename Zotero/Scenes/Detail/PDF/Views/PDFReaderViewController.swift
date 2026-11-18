@@ -280,6 +280,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             annotationToolbar.delegate = self
 
             let intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
+                containerView: view,
+                documentView: documentController.view,
                 back: { [weak self] in
                     self?.documentController?.performBackAction()
                 },
@@ -289,16 +291,12 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 delegate: self
             )
             intraDocumentNavigationHandler.interfaceIsVisible = statusBarVisible
-            let backButton = intraDocumentNavigationHandler.backButton
-            let forwardButton = intraDocumentNavigationHandler.forwardButton
 
             add(controller: documentController)
             add(controller: annotationToolbar)
             view.addSubview(topSafeAreaSpacer)
             view.addSubview(documentController.view)
             view.addSubview(annotationToolbar.view)
-            view.addSubview(backButton)
-            view.addSubview(forwardButton)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let documentBottomConstraint = view.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
@@ -312,12 +310,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 documentTop,
                 documentBottomConstraint,
-                documentLeftConstraint,
-                backButton.leadingAnchor.constraint(equalTo: documentController.view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-                documentController.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 40),
-                forwardButton.trailingAnchor.constraint(equalTo: documentController.view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-                forwardButton.heightAnchor.constraint(equalTo: backButton.heightAnchor),
-                forwardButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor)
+                documentLeftConstraint
             ])
 
             self.documentController = documentController
@@ -975,10 +968,10 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
                 documentAvailableHeight -= scrubberHeight
             }
             if let intraDocumentNavigationHandler {
-                if toolbarState.position == .leading, intraDocumentNavigationHandler.showsBackButton {
-                    documentAvailableHeight = min(intraDocumentNavigationHandler.backButton.frame.minY, documentAvailableHeight)
-                } else if toolbarState.position == .trailing, intraDocumentNavigationHandler.showsForwardButton {
-                    documentAvailableHeight = min(intraDocumentNavigationHandler.forwardButton.frame.minY, documentAvailableHeight)
+                if toolbarState.position == .leading, intraDocumentNavigationHandler.showsBackButton, let backButton = intraDocumentNavigationHandler.backButton {
+                    documentAvailableHeight = min(backButton.frame.minY, documentAvailableHeight)
+                } else if toolbarState.position == .trailing, intraDocumentNavigationHandler.showsForwardButton, let forwardButton = intraDocumentNavigationHandler.forwardButton {
+                    documentAvailableHeight = min(forwardButton.frame.minY, documentAvailableHeight)
                 }
             }
             return documentAvailableHeight - (2 * AnnotationToolbarHandler.toolbarCompactInset)

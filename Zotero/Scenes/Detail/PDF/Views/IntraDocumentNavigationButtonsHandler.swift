@@ -19,21 +19,32 @@ enum PageChange {
 }
 
 final class IntraDocumentNavigationButtonsHandler {
+    private enum Kind {
+        case back
+        case forward
+    }
+
+    /// Horizontal distance of the buttons from the document's safe area edges.
+    private static let horizontalInset: CGFloat = 20
+    /// Distance of the buttons' bottom from the document's bottom.
+    private static let bottomInset: CGFloat = 40
+
     let back: () -> Void
     let forward: () -> Void
     private unowned let delegate: IntraDocumentNavigationButtonsHandlerDelegate
+    /// View the buttons are added to.
+    private weak var containerView: UIView?
+    /// View the buttons are laid out against. Must be a subview of `containerView`.
+    private weak var documentView: UIView?
 
-    lazy var backButton: UIButton = {
-        return createButton(title: L10n.back, imageSystemName: "chevron.left", action: UIAction(handler: { [weak self] _ in self?.back() }))
-    }()
-    lazy var forwardButton: UIButton = {
-        return createButton(title: L10n.forward, imageSystemName: "chevron.right", action: UIAction(handler: { [weak self] _ in self?.forward() }))
-    }()
+    // Buttons are created the first time they need to be shown.
+    private(set) var backButton: UIButton?
+    private(set) var forwardButton: UIButton?
     var showsBackButton: Bool {
-        backButton.isHidden == false
+        backButton?.isHidden == false
     }
     var showsForwardButton: Bool {
-        forwardButton.isHidden == false
+        forwardButton?.isHidden == false
     }
     private(set) var hasBackActions: Bool = false
     private(set) var hasForwardActions: Bool = false
@@ -45,7 +56,15 @@ final class IntraDocumentNavigationButtonsHandler {
     private var backDisappearingTimer: BackgroundTimer?
     private var forwardDisappearingTimer: BackgroundTimer?
 
-    init(back: @escaping () -> Void, forward: @escaping () -> Void, delegate: IntraDocumentNavigationButtonsHandlerDelegate) {
+    init(
+        containerView: UIView,
+        documentView: UIView,
+        back: @escaping () -> Void,
+        forward: @escaping () -> Void,
+        delegate: IntraDocumentNavigationButtonsHandlerDelegate
+    ) {
+        self.containerView = containerView
+        self.documentView = documentView
         self.back = back
         self.forward = forward
         self.delegate = delegate
@@ -72,12 +91,14 @@ final class IntraDocumentNavigationButtonsHandler {
     }
 
     func updateButtonsZPosition() {
-        if let sidebarView = delegate.sidebarView {
-            backButton.superview?.insertSubview(backButton, belowSubview: sidebarView)
-            backButton.superview?.insertSubview(forwardButton, belowSubview: sidebarView)
-        } else {
-            backButton.superview?.bringSubviewToFront(backButton)
-            forwardButton.superview?.bringSubviewToFront(forwardButton)
+        let sidebarView = delegate.sidebarView
+        for button in [backButton, forwardButton] {
+            guard let button, let superview = button.superview else { continue }
+            if let sidebarView {
+                superview.insertSubview(button, belowSubview: sidebarView)
+            } else {
+                superview.bringSubviewToFront(button)
+            }
         }
     }
 
@@ -89,8 +110,8 @@ final class IntraDocumentNavigationButtonsHandler {
         if interfaceIsVisible || (!hasBackActions && !hasForwardActions) {
             resetBothDisappearingTimers()
             // Update the buttons.
-            backButton.isHidden = !hasBackActions
-            forwardButton.isHidden = !hasForwardActions
+            setButton(.back, hidden: !hasBackActions)
+            setButton(.forward, hidden: !hasForwardActions)
             return
         }
         if hasBackActions {
@@ -98,13 +119,13 @@ final class IntraDocumentNavigationButtonsHandler {
             switch pageChange {
             case .manual:
                 // A manual page change by scrolling triggered this update. Start a disappearing timer, if one is not already running.
-                backButton.isHidden = false
+                setButton(.back, hidden: false)
                 startBackDisappearingTimerIfNeeded()
 
             case .none, .link, .programmatic:
                 // Another change triggered this update. Reset timer and show button.
                 resetBackDisappearingTimer()
-                backButton.isHidden = false
+                setButton(.back, hidden: false)
             }
         }
         if hasForwardActions {
@@ -112,13 +133,13 @@ final class IntraDocumentNavigationButtonsHandler {
             switch pageChange {
             case .manual:
                 // A manual page change by scrolling triggered this update. Start a disappearing timer, if one is not already running.
-                forwardButton.isHidden = false
+                setButton(.forward, hidden: false)
                 startForwardDisappearingTimerIfNeeded()
 
             case .none, .link, .programmatic:
                 // Another change triggered this update. Reset timer, show button, and start timer again.
                 resetForwardDisappearingTimer()
-                forwardButton.isHidden = false
+                setButton(.forward, hidden: false)
                 startForwardDisappearingTimerIfNeeded()
             }
         }
@@ -128,7 +149,7 @@ final class IntraDocumentNavigationButtonsHandler {
             backDisappearingTimer = BackgroundTimer(timeInterval: Self.disappearingDelay, queue: .main)
             backDisappearingTimer?.eventHandler = { [weak self] in
                 guard let self else { return }
-                backButton.isHidden = true
+                setButton(.back, hidden: true)
                 backDisappearingTimer = nil
             }
             backDisappearingTimer?.resume()
@@ -139,7 +160,7 @@ final class IntraDocumentNavigationButtonsHandler {
             forwardDisappearingTimer = BackgroundTimer(timeInterval: Self.disappearingDelay, queue: .main)
             forwardDisappearingTimer?.eventHandler = { [weak self] in
                 guard let self else { return }
-                forwardButton.isHidden = true
+                setButton(.forward, hidden: true)
                 forwardDisappearingTimer = nil
             }
             forwardDisappearingTimer?.resume()
@@ -161,7 +182,40 @@ final class IntraDocumentNavigationButtonsHandler {
         resetForwardDisappearingTimer()
     }
 
-    private func createButton(title: String, imageSystemName: String, action: UIAction) -> UIButton {
+    /// Shows or hides a button, creating it the first time it is shown.
+    private func setButton(_ kind: Kind, hidden: Bool) {
+        switch kind {
+        case .back:
+            if !hidden, backButton == nil {
+                backButton = createButton(kind: .back)
+            }
+            backButton?.isHidden = hidden
+
+        case .forward:
+            if !hidden, forwardButton == nil {
+                forwardButton = createButton(kind: .forward)
+            }
+            forwardButton?.isHidden = hidden
+        }
+    }
+
+    private func createButton(kind: Kind) -> UIButton? {
+        guard let containerView, let documentView else { return nil }
+        let title: String
+        let imageSystemName: String
+        let action: UIAction
+        switch kind {
+        case .back:
+            title = L10n.back
+            imageSystemName = "chevron.left"
+            action = UIAction(handler: { [weak self] _ in self?.back() })
+
+        case .forward:
+            title = L10n.forward
+            imageSystemName = "chevron.right"
+            action = UIAction(handler: { [weak self] _ in self?.forward() })
+        }
+
         var configuration = UIButton.Configuration.plain()
         configuration.image = UIImage(systemName: imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .small))
         configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
@@ -178,6 +232,25 @@ final class IntraDocumentNavigationButtonsHandler {
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         button.addAction(action, for: .touchUpInside)
+
+        containerView.addSubview(button)
+        let horizontalConstraint: NSLayoutConstraint
+        switch kind {
+        case .back:
+            horizontalConstraint = button.leadingAnchor.constraint(equalTo: documentView.safeAreaLayoutGuide.leadingAnchor, constant: Self.horizontalInset)
+
+        case .forward:
+            horizontalConstraint = documentView.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: Self.horizontalInset)
+        }
+        NSLayoutConstraint.activate([
+            horizontalConstraint,
+            documentView.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: Self.bottomInset)
+        ])
+
+        // Lay out the new button right away, so that its frame is valid for callers reading it (e.g. the annotation toolbar's available size).
+        UIView.performWithoutAnimation {
+            containerView.layoutIfNeeded()
+        }
         return button
     }
 }
