@@ -52,10 +52,9 @@ final class ManualLookupActionHandler: ViewModelActionHandler {
     }
 
     private func getResults(withExpression expression: NSRegularExpression, from text: String) -> [String] {
-        return expression.matches(in: text, range: NSRange(text.startIndex..., in: text)).map { result in
-            let startIndex = text.index(text.startIndex, offsetBy: result.range.lowerBound)
-            let endIndex = text.index(text.startIndex, offsetBy: result.range.upperBound)
-            return String(text[startIndex..<endIndex])
+        return expression.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { result in
+            guard let range = Range(result.range, in: text) else { return nil }
+            return String(text[range])
         }
     }
 }

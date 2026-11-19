@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-protocol TrashObject: ItemsTableViewObject {
+protocol TrashObject: ItemsCollectionViewObject {
     var key: String { get }
     var libraryId: LibraryIdentifier? { get }
     var dateAdded: Date { get }

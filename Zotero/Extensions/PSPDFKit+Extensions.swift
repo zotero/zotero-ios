@@ -11,12 +11,83 @@ import UIKit
 import PSPDFKit
 
 extension Document {
-    func annotation(on page: Int, with key: String) -> PSPDFKit.Annotation? {
-        return self.annotations(at: UInt(page)).first(where: { $0.key == key || $0.uuid == key })
+    func annotation(at pageIndex: PageIndex, with key: String) -> PSPDFKit.Annotation? {
+        return annotations(at: pageIndex).first(where: { $0.key == key || $0.uuid == key })
+    }
+}
+
+extension Document: AnnotationBoundingBoxConverter {
+    /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform)
+    }
+
+    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return convertFromDb(rect: tmpRect, page: page)?.origin
+    }
+
+    /// Converts from PSPDFKit to database rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform.inverted())
+    }
+
+    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return convertToDb(rect: tmpRect, page: page)?.origin
+    }
+
+    /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.
+    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
+        guard let pageInfo = pageInfoForPage(at: page) else { return nil }
+
+        switch pageInfo.savedRotation {
+        case .rotation0:
+            return pageInfo.size.height - rect.maxY
+
+        case .rotation180:
+            return rect.minY
+
+        case .rotation90:
+            return pageInfo.size.width - rect.minX
+
+        case .rotation270:
+            return rect.minX
+        }
+    }
+
+    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
+        guard let parser = textParserForPage(at: page), !parser.glyphs.isEmpty else { return nil }
+
+        var index = 0
+        var minDistance: CGFloat = .greatestFiniteMagnitude
+        var textOffset = 0
+
+        for glyph in parser.glyphs {
+            guard !glyph.isWordOrLineBreaker else { continue }
+
+            let distance = rect.distance(to: glyph.frame)
+
+            if distance < minDistance {
+                minDistance = distance
+                textOffset = index
+            }
+
+            index += 1
+        }
+
+        return textOffset
     }
 }
 
 extension PSPDFKit.Annotation {
+    enum Source: String {
+        case database
+        case document
+    }
+
     /// Defines internal Zotero key. PDFs which were previously exported by Zotero may include this flag.
     var key: String? {
         get {
@@ -30,6 +101,59 @@ extension PSPDFKit.Annotation {
                 }
             } else {
                 self.customData?[AnnotationsConfig.keyKey] = newValue
+            }
+        }
+    }
+
+    var baseColor: String {
+        get {
+            if let customBaseColor = customData?[AnnotationsConfig.baseColorKey] as? String, !customBaseColor.isEmpty {
+                return customBaseColor
+            }
+            if let currentColorHex = color?.hexString {
+                return AnnotationsConfig.colorVariationMap[currentColorHex] ?? currentColorHex
+            }
+            return AnnotationsConfig.defaultActiveColor
+        }
+
+        set {
+            if customData == nil {
+                customData = [AnnotationsConfig.baseColorKey: newValue]
+            } else {
+                customData?[AnnotationsConfig.baseColorKey] = newValue
+            }
+        }
+    }
+
+    var source: Source? {
+        get {
+            guard let rawValue = customData?[AnnotationsConfig.sourceKey] as? String else { return nil }
+            return Source(rawValue: rawValue)
+        }
+
+        set {
+            if customData == nil {
+                if let newValue {
+                    customData = [AnnotationsConfig.sourceKey: newValue.rawValue]
+                }
+            } else {
+                customData?[AnnotationsConfig.sourceKey] = newValue?.rawValue
+            }
+        }
+    }
+
+    var createdByUserId: Int? {
+        get {
+            return customData?[AnnotationsConfig.createdByUserIdKey] as? Int
+        }
+
+        set {
+            if customData == nil {
+                if let newValue {
+                    customData = [AnnotationsConfig.createdByUserIdKey: newValue]
+                }
+            } else {
+                customData?[AnnotationsConfig.createdByUserIdKey] = newValue
             }
         }
     }

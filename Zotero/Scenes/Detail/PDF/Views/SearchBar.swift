@@ -72,6 +72,12 @@ final class SearchBar: UIView {
         self.text.on(.next(""))
     }
 
+    func set(text: String?) {
+        guard textField.text != text else { return }
+        textField.text = text
+        clearButton.isHidden = (text ?? "").isEmpty
+    }
+
     // MARK: - Setups
 
     private func setupView() {

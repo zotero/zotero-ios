@@ -22,8 +22,8 @@ private enum MainAttachmentButtonState {
 }
 
 final class ItemDetailViewController: UIViewController {
-    @IBOutlet private weak var collectionView: UICollectionView!
-    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
+    private weak var collectionView: UICollectionView!
+    private weak var activityIndicator: UIActivityIndicatorView!
 
     private let viewModel: ViewModel<ItemDetailActionHandler>
     private let controllers: Controllers
@@ -59,7 +59,7 @@ final class ItemDetailViewController: UIViewController {
         downloadingViaNavigationBar = false
         disposeBag = DisposeBag()
 
-        super.init(nibName: "ItemDetailViewController", bundle: nil)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -70,8 +70,25 @@ final class ItemDetailViewController: UIViewController {
         super.viewDidLoad()
 
         navigationController?.setToolbarHidden(true, animated: false)
-        collectionView.isHidden = true
+        setupUI()
         setupFileObservers()
+
+        if #available(iOS 26.0, *) {
+            // On iPadOS 26, split view expansion can leave the navigation buttons invisible despite remaining assigned.
+            registerForTraitChanges([UITraitSplitViewControllerLayoutEnvironment.self]) { (controller: ItemDetailViewController, previous: UITraitCollection) in
+                let old = previous.splitViewControllerLayoutEnvironment
+                let new = controller.traitCollection.splitViewControllerLayoutEnvironment
+                guard old == .collapsed, new == .expanded else { return }
+                if let coordinator = controller.transitionCoordinator {
+                    coordinator.animate(alongsideTransition: nil) { [weak controller] context in
+                        guard !context.isCancelled else { return }
+                        controller?.refreshNavigationButtonsAfterExpansion()
+                    }
+                } else {
+                    controller.refreshNavigationButtonsAfterExpansion()
+                }
+            }
+        }
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -81,6 +98,41 @@ final class ItemDetailViewController: UIViewController {
             .disposed(by: disposeBag)
 
         viewModel.process(action: .loadInitialData)
+
+        func setupUI() {
+            view.backgroundColor = .systemBackground
+            view.clearsContextBeforeDrawing = false
+
+            let layout = UICollectionViewFlowLayout()
+            layout.minimumLineSpacing = 0
+            layout.minimumInteritemSpacing = 0
+            layout.itemSize = CGSize(width: 128, height: 128)
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+            collectionView.backgroundColor = .systemBackground
+            collectionView.allowsSelectionDuringEditing = true
+            collectionView.isHidden = true
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(collectionView)
+            self.collectionView = collectionView
+            if #available(iOS 26.0, *) {
+                setContentScrollView(collectionView)
+            }
+
+            let activityIndicator = UIActivityIndicatorView()
+            activityIndicator.startAnimating()
+            activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(activityIndicator)
+            self.activityIndicator = activityIndicator
+
+            NSLayoutConstraint.activate([
+                collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+                activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            ])
+        }
 
         func setupFileObservers() {
             NotificationCenter.default.rx
@@ -114,7 +166,7 @@ final class ItemDetailViewController: UIViewController {
                     switch update.kind {
                     case .ready:
                         viewModel.process(action: .attachmentOpened(update.key))
-                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: nil)
 
                     case .failed(let error):
                         viewModel.process(action: .attachmentOpened(update.key))
@@ -148,6 +200,17 @@ final class ItemDetailViewController: UIViewController {
         coordinator.animate { _ in
             self.collectionView?.reloadData()
         }
+    }
+
+    @available(iOS 26.0, *)
+    private func refreshNavigationButtonsAfterExpansion() {
+        guard UIDevice.current.userInterfaceIdiom == .pad,
+              traitCollection.splitViewControllerLayoutEnvironment == .expanded,
+              navigationController?.topViewController === self
+        else { return }
+        let buttons = navigationItem.rightBarButtonItems
+        navigationItem.setRightBarButtonItems(nil, animated: false)
+        navigationItem.setRightBarButtonItems(buttons, animated: false)
     }
 
     // MARK: - Navigation
@@ -209,6 +272,12 @@ final class ItemDetailViewController: UIViewController {
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return }
             coordinatorDelegate?.show(doi: encoded)
+
+        case .openCollection(let collection):
+            coordinatorDelegate?.show(collection: collection, libraryId: viewModel.state.library.identifier)
+
+        case .openLibrary(let library):
+            coordinatorDelegate?.show(library: library.identifier)
         }
     }
 
@@ -231,12 +300,12 @@ final class ItemDetailViewController: UIViewController {
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 if !state.isEditing {
-                    self.viewModel.process(action: .reloadData)
+                    viewModel.process(action: .reloadData)
                     return
                 }
 
-                coordinatorDelegate?.showDataReloaded(completion: { [weak viewModel] in
-                    viewModel?.process(action: .reloadData)
+                coordinatorDelegate?.showDataReloaded(completion: { [weak self] in
+                    self?.viewModel.process(action: .reloadData)
                 })
             }
             return
@@ -245,7 +314,11 @@ final class ItemDetailViewController: UIViewController {
         if state.changes.contains(.reloadedData) {
             let wasHidden = collectionView.isHidden
             collectionView.isHidden = state.isLoadingData
-            activityIndicator.isHidden = !state.isLoadingData
+            if state.isLoadingData {
+                activityIndicator.startAnimating()
+            } else {
+                activityIndicator.stopAnimating()
+            }
 
             setNavigationBarButtons(to: state)
             collectionViewHandler.recalculateTitleWidth(from: state.data)
@@ -338,14 +411,20 @@ final class ItemDetailViewController: UIViewController {
                     indicator.color = .gray
                     saveButton = UIBarButtonItem(customView: indicator)
                 } else {
-                    saveButton = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak viewModel] _ in
-                        viewModel?.process(action: .endEditing)
+                    saveButton = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak self] _ in
+                        self?.view.endEditing(true)
+                        DispatchQueue.main.async { [weak self] in
+                            self?.viewModel.process(action: .endEditing)
+                        }
                     })
+                    if #available(iOS 26.0.0, *) {
+                        saveButton.tintColor = Asset.Colors.zoteroBlue.color
+                    }
                 }
                 navigationItem.rightBarButtonItem = saveButton
 
                 guard includesCancel else { return }
-                let cancelButton = UIBarButtonItem(primaryAction: UIAction(title: L10n.cancel) { [weak viewModel] _ in
+                let cancelButton = UIBarButtonItem(systemItem: .cancel, primaryAction: UIAction(title: L10n.cancel) { [weak viewModel] _ in
                     viewModel?.process(action: .cancelEditing)
                 })
                 navigationItem.leftBarButtonItem = cancelButton
@@ -376,9 +455,7 @@ final class ItemDetailViewController: UIViewController {
                 func attachmentButtonItems(for state: MainAttachmentButtonState?) -> [UIBarButtonItem] {
                     guard let state else { return [] }
 
-                    let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-                    spacer.width = 16
-                    var items: [UIBarButtonItem] = [spacer]
+                    var items: [UIBarButtonItem] = [.fixedSpace(16)]
 
                     switch state {
                     case .ready(let key), .error(let key, _):
@@ -427,6 +504,30 @@ final class ItemDetailViewController: UIViewController {
 extension ItemDetailViewController: ItemDetailCollectionViewHandlerDelegate {
     func isDownloadingFromNavigationBar(for key: String) -> Bool {
         return downloadingViaNavigationBar && key == viewModel.state.mainAttachmentKey
+    }
+
+    func getStructuredText(for attachment: Attachment) {
+        guard let file = attachment.file as? FileData,
+              let downloader = controllers.userControllers?.fileDownloader,
+              let documentWorkerController = controllers.userControllers?.documentWorkerController
+        else { return }
+
+        downloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.key) { [weak self, weak documentWorkerController] result in
+            switch result {
+            case .success:
+                self?.queueStructuredTextExtraction(from: file, using: documentWorkerController)
+
+            case .failure(let error):
+                self?.coordinatorDelegate?.showAttachmentError(error)
+            }
+        }
+    }
+
+    private func queueStructuredTextExtraction(from file: FileData, using documentWorkerController: DocumentWorkerController?) {
+        guard let documentWorkerController else { return }
+
+        let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
+        _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
     }
 }
 

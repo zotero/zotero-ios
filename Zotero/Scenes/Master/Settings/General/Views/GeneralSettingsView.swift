@@ -39,6 +39,7 @@ struct GeneralSettingsView: View {
                 Text(L10n.Settings.General.never).tag(0)
             }
         }
+        .background(Color(UIColor.systemGroupedBackground))
         .navigationBarTitle(L10n.Settings.General.title)
     }
 }

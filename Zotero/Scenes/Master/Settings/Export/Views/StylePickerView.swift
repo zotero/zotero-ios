@@ -29,6 +29,7 @@ struct StylePickerView: View {
                 }
             }
         }
+        .background(Color(UIColor.systemGroupedBackground))
         .onAppear {
             self.viewModel.process(action: .load)
         }

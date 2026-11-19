@@ -10,19 +10,17 @@ import UIKit
 
 import RxSwift
 
-typealias AnnotationPageLabelSaveAction = (String, Bool) -> Void
+typealias AnnotationPageLabelSaveAction = (String) -> Void
 
 final class AnnotationPageLabelViewController: UIViewController {
     enum Section {
         case labelInput
-        case switches
 
         static let sortedAllCases: [Section] = [.labelInput]
 
         var cellId: String {
             switch self {
             case .labelInput: return "InputCell"
-            case .switches: return "SwitchCell"
             }
         }
     }
@@ -61,7 +59,7 @@ final class AnnotationPageLabelViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        self.saveAction(self.viewModel.state.label, self.viewModel.state.updateSubsequentPages)
+        self.saveAction(self.viewModel.state.label)
     }
 
     // MARK: - Actions
@@ -78,7 +76,6 @@ final class AnnotationPageLabelViewController: UIViewController {
         self.tableView.dataSource = self
         self.tableView.rowHeight = 44
         self.tableView.register(UINib(nibName: "TextFieldCell", bundle: nil), forCellReuseIdentifier: Section.labelInput.cellId)
-        self.tableView.register(UINib(nibName: "SwitchCell", bundle: nil), forCellReuseIdentifier: Section.switches.cellId)
         self.tableView.setDefaultSizedHeader()
     }
 }
@@ -101,13 +98,6 @@ extension AnnotationPageLabelViewController: UITableViewDataSource {
             cell.textObservable
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .setLabel(text))
-                })
-                .disposed(by: cell.disposeBag)
-        } else if let cell = cell as? SwitchCell {
-            cell.setup(with: L10n.Pdf.AnnotationPopover.updateSubsequentPages, isOn: self.viewModel.state.updateSubsequentPages)
-            cell.switchObservable
-                .subscribe(onNext: { [weak self] isOn in
-                    self?.viewModel.process(action: .setUpdateSubsequentLabels(isOn))
                 })
                 .disposed(by: cell.disposeBag)
         }

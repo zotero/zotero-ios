@@ -10,7 +10,46 @@ import UIKit
 
 struct ItemAction {
     enum Kind {
-        case addToCollection, delete, duplicate, removeFromCollection, restore, trash, sort, filter, createParent, retrieveMetadata, copyCitation, copyBibliography, share, download, removeDownload
+        case addToCollection
+        case delete
+        case duplicate
+        case removeFromCollection
+        case restore
+        case trash
+        case sort
+        case filter
+        case createParent
+        case retrieveMetadata
+        case copyCitation
+        case copyBibliography
+        case share
+        case download
+        case removeDownload
+        case debugReader
+        case removeFromRecentlyRead
+        case getStructuredText
+
+        var menuOrder: Int {
+            switch self {
+            case .addToCollection, .restore:
+                return 0
+
+            case .removeFromCollection:
+                return 1
+
+            case .download:
+                return 2
+
+            case .removeDownload:
+                return 3
+
+            case .trash, .delete, .removeFromRecentlyRead:
+                return 4
+
+            case .duplicate, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .debugReader, .getStructuredText:
+                return 5
+            }
+        }
     }
 
     private enum Image {
@@ -32,8 +71,11 @@ struct ItemAction {
     }
     var isDestructive: Bool {
         switch self.type {
-        case .delete, .trash: return true
-        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .download, .removeDownload: return false
+        case .delete, .trash, .removeFromRecentlyRead:
+            return true
+
+        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader, .getStructuredText:
+            return false
         }
     }
 
@@ -100,6 +142,18 @@ struct ItemAction {
         case .removeDownload:
             self.title = L10n.Items.Action.removeDownload
             self._image = .system("arrow.down.circle.dotted")
+
+        case .debugReader:
+            self.title = "Debug Reader"
+            self._image = .system("ladybug")
+
+        case .removeFromRecentlyRead:
+            self.title = L10n.Items.Action.removeFromRecentlyRead
+            self._image = .system("folder.badge.minus")
+
+        case .getStructuredText:
+            self.title = "Get Structured Text"
+            self._image = .system("text.document")
         }
     }
 }

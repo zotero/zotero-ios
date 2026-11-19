@@ -16,6 +16,8 @@ protocol SecureStorage: AnyObject {
     var lastResultCode: OSStatus { get }
 
     func reset()
+    /// Stores values again with current accessibility, see `SecureString`. Needs the values to be readable.
+    func updateAccessibilityIfNeeded()
 }
 
 final class KeychainSecureStorage: SecureStorage {
@@ -39,8 +41,23 @@ final class KeychainSecureStorage: SecureStorage {
     func reset() {
         KeychainSecureStorage.keychain.clear()
     }
+
+    func updateAccessibilityIfNeeded() {
+        guard !Defaults.shared.didUpdateKeychainAccessibility else { return }
+        // Setting values stores them with current accessibility.
+        if let apiToken {
+            self.apiToken = apiToken
+        }
+        if let webDavPassword {
+            self.webDavPassword = webDavPassword
+        }
+        Defaults.shared.didUpdateKeychainAccessibility = true
+    }
 }
 
+/// Values are accessible after the device is unlocked for the first time since restart, so that they can be read while it's
+/// locked, e.g. when the app is launched by CarPlay or in background. Values stored before used the default
+/// `.accessibleWhenUnlocked`, see `SecureStorage.updateAccessibilityIfNeeded()`.
 @propertyWrapper
 struct SecureString {
     let key: String
@@ -58,7 +75,7 @@ struct SecureString {
 
         set {
             if let value = newValue {
-                self.keychain.set(value, forKey: self.key)
+                self.keychain.set(value, forKey: self.key, withAccess: .accessibleAfterFirstUnlock)
             } else {
                 self.keychain.delete(self.key)
             }

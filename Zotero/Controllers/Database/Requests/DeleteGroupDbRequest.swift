@@ -37,10 +37,6 @@ struct DeleteGroupDbRequest: DbRequest {
 
     private func deleteObjects<Obj: DeletableObject>(of type: Obj.Type, with predicate: NSPredicate, database: Realm) {
         let objects = database.objects(type).filter(predicate)
-        for object in objects {
-            guard !object.isInvalidated else { continue }
-            object.willRemove(in: database)
-        }
-        database.delete(objects)
+        database.delete(deletable: objects)
     }
 }

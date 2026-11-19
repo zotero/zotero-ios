@@ -9,11 +9,41 @@
 import Foundation
 
 struct UnsubscribeWsMessage: Encodable {
+    enum Subscription: Encodable {
+        case apiKey(String)
+        case topic(String)
+
+        private enum CodingKeys: String, CodingKey {
+            case apiKey
+            case topic
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+
+            switch self {
+            case .apiKey(let apiKey):
+                try container.encode(apiKey, forKey: .apiKey)
+
+            case .topic(let topic):
+                try container.encode(topic, forKey: .topic)
+            }
+        }
+    }
+
     let action: String
-    let subscriptions: [[String: String]]
+    let subscriptions: [Subscription]
+
+    init(subscription: Subscription) {
+        action = "deleteSubscriptions"
+        subscriptions = [subscription]
+    }
 
     init(apiKey: String) {
-        self.action = "deleteSubscriptions"
-        self.subscriptions = [["apiKey": apiKey]]
+        self.init(subscription: .apiKey(apiKey))
+    }
+
+    init(topic: String) {
+        self.init(subscription: .topic(topic))
     }
 }

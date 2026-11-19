@@ -32,6 +32,7 @@ struct ExportLocalePickerView: View {
                     }
                 }
             }
+            .background(Color(UIColor.systemGroupedBackground))
         }
     }
 

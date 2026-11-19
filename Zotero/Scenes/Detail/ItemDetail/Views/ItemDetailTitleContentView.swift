@@ -13,7 +13,6 @@ final class ItemDetailTitleContentView: UIView {
     private weak var textView: FormattedTextView!
     private weak var topConstraint: NSLayoutConstraint!
     private weak var bottomConstraint: NSLayoutConstraint!
-    private weak var separatorHeight: NSLayoutConstraint!
 
     var attributedTextChanged: ((NSAttributedString) -> Void)?
     private let disposeBag: DisposeBag
@@ -28,6 +27,7 @@ final class ItemDetailTitleContentView: UIView {
         isAccessibilityElement = false
         setupBottomConstraint()
         setupObservers()
+        observeTraitChanges()
 
         func setup() {
             let font: UIFont = .preferredFont(forTextStyle: .title1)
@@ -42,24 +42,14 @@ final class ItemDetailTitleContentView: UIView {
             delegate = PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, textView: textView)
             textView.delegate = delegate
 
-            let separatorView = UIView()
-            separatorView.backgroundColor = .separator
-            separatorView.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(separatorView)
-
             topConstraint = textView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor, constant: font.capHeight - font.ascender)
             bottomConstraint = layoutMarginsGuide.bottomAnchor.constraint(equalTo: textView.bottomAnchor)
-            separatorHeight = separatorView.heightAnchor.constraint(equalToConstant: ItemDetailLayout.separatorHeight)
 
             NSLayoutConstraint.activate([
                 topConstraint,
                 bottomConstraint,
                 textView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-                layoutMarginsGuide.trailingAnchor.constraint(equalTo: textView.trailingAnchor),
-                bottomAnchor.constraint(equalTo: separatorView.bottomAnchor),
-                separatorView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-                trailingAnchor.constraint(equalTo: separatorView.trailingAnchor),
-                separatorHeight
+                layoutMarginsGuide.trailingAnchor.constraint(equalTo: textView.trailingAnchor)
             ])
         }
 
@@ -69,14 +59,16 @@ final class ItemDetailTitleContentView: UIView {
             }
             .disposed(by: disposeBag)
         }
+
+        func observeTraitChanges() {
+            registerForTraitChanges([UITraitHorizontalSizeClass.self, UITraitPreferredContentSizeCategory.self]) { (view: Self, _: UITraitCollection) in
+                view.setupBottomConstraint()
+            }
+        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        setupBottomConstraint()
     }
 
     override func layoutSubviews() {

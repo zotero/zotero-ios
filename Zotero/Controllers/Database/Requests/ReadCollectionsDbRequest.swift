@@ -42,3 +42,21 @@ struct ReadCollectionsDbRequest: DbResponseRequest {
         return database.objects(RCollection.self).filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
     }
 }
+
+struct ReadCarPlayCollectionsDbRequest: DbResponseRequest {
+    typealias Response = Results<RCollection>
+
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RCollection> {
+        let predicates: [NSPredicate] = [
+            .notSyncState(.dirty, in: libraryId),
+            .deleted(false),
+            .isTrash(false),
+            NSPredicate(format: "showsInCarPlay = true")
+        ]
+        return database.objects(RCollection.self).filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
+    }
+}

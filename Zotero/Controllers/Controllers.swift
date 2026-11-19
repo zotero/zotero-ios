@@ -11,6 +11,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 import RealmSwift
+import RxCocoa
 import RxSwift
 
 /// Global controllers which don't need user session
@@ -26,6 +27,7 @@ final class Controllers {
     let translatorsAndStylesController: TranslatorsAndStylesController
     let annotationPreviewController: AnnotationPreviewController
     let pdfThumbnailController: PDFThumbnailController
+    let documentPreviewController: DocumentPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -33,13 +35,22 @@ final class Controllers {
     let backgroundTaskController: BackgroundTaskController
     let lowPowerModeController: LowPowerModeController
     let uriConverter: ZoteroURIConverter
+    let speechPlaybackOwnership: SpeechPlaybackOwnership
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
+    /// Reports that the user is being logged out while `userControllers` still exist. It's sent synchronously and
+    /// `userControllers` are released right after, so subscribers have to tear down anything depending on them without
+    /// switching queues.
+    let userWillLogOut: PassthroughSubject<Void, Never>
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
-    private var didInitialize: Bool
+    private(set) var didInitialize: Bool
+    /// Whether session initialization waits for the device to be unlocked, since the keychain can't be read before that
+    /// (e.g. when the app is launched by CarPlay while locked).
+    @Published private(set) var isWaitingForDeviceUnlock = false
+    private var protectedDataObserver: NSObjectProtocol?
     @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
     fileprivate var needsBaseKeyMigration: Bool
     fileprivate static let childItemCollectionsFixVersion: Int = 1
@@ -90,15 +101,18 @@ final class Controllers {
         self.translatorsAndStylesController = translatorsAndStylesController
         annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         pdfThumbnailController = PDFThumbnailController(fileStorage: fileStorage)
+        documentPreviewController = DocumentPreviewController(fileStorage: fileStorage)
         self.urlDetector = urlDetector
         dateParser = DateParser()
         htmlAttributedStringConverter = HtmlAttributedStringConverter()
         userInitialized = PassthroughSubject()
+        userWillLogOut = PassthroughSubject()
         lastBuildNumber = Defaults.shared.lastBuildNumber
         idleTimerController = IdleTimerController()
         backgroundTaskController = BackgroundTaskController()
         lowPowerModeController = LowPowerModeController()
         uriConverter = ZoteroURIConverter()
+        speechPlaybackOwnership = SpeechPlaybackOwnership()
         didInitialize = false
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
@@ -142,12 +156,29 @@ final class Controllers {
         do {
             // Try to initialize session
             try sessionController.initializeSession()
-            // Start with initialized session
-            update(with: sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
-            // Start observing further session changes
-            startObservingSession()
-            completion(true)
+            finish(with: sessionController.sessionData, completed: true)
         } catch let error {
+            if let sessionError = error as? SessionController.Error,
+               case .keychainNotAccessible(let protectedDataAvailable, let lastResultCode) = sessionError,
+               protectedDataAvailable,
+               lastResultCode == errSecItemNotFound {
+                DDLogInfo("Controllers: api token missing, resetting persisted session - \(sessionError)")
+                sessionController.reset()
+                finish(with: nil, completed: false)
+                return
+            }
+
+            if let sessionError = error as? SessionController.Error,
+               case .keychainNotAccessible(let protectedDataAvailable, _) = sessionError,
+               !protectedDataAvailable {
+                // The device is locked, so the user isn't reported as logged out, the session is initialized once it's unlocked.
+                DDLogInfo("Controllers: waiting for device unlock to initialize session - \(sessionError)")
+                waitForDeviceUnlock { [weak self] in
+                    self?.initializeSessionIfPossible(failOnError: failOnError, completion: completion)
+                }
+                return
+            }
+
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
                 debugLogging.start(type: .immediate)
@@ -166,11 +197,34 @@ final class Controllers {
                 debugLogging.stop(ignoreEmptyLogs: true, userId: 0, customAlertMessage: { L10n.loginDebug($0) })
             }
 
-            // Show login screen
-            update(with: nil, isLogin: false, debugLogging: debugLogging)
-            // Start observing further session changes so that user can log in
+            finish(with: nil, completed: false)
+        }
+
+        func finish(with data: SessionData?, completed: Bool) {
+            update(with: data, isLogin: false, debugLogging: debugLogging)
             startObservingSession()
-            completion(false)
+            completion(completed)
+        }
+    }
+
+    private func waitForDeviceUnlock(completed: @escaping () -> Void) {
+        isWaitingForDeviceUnlock = true
+        let finish: () -> Void = { [weak self] in
+            // Called only once, by the notification or by the check below.
+            guard let self, let observer = protectedDataObserver else { return }
+            NotificationCenter.default.removeObserver(observer)
+            protectedDataObserver = nil
+            isWaitingForDeviceUnlock = false
+            completed()
+        }
+        protectedDataObserver = NotificationCenter.default.addObserver(forName: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil, queue: .main) { _ in
+            finish()
+        }
+        // The device may have been unlocked since the keychain was read.
+        if UIApplication.shared.isProtectedDataAvailable {
+            DispatchQueue.main.async {
+                finish()
+            }
         }
     }
 
@@ -201,7 +255,15 @@ final class Controllers {
 
     private func update(with data: SessionData?, isLogin: Bool, debugLogging: DebugLogging) {
         if let data {
-            set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
+            if let userControllers {
+                // Same user logged in again with new API key, keep current user data and continue syncing with new key.
+                // `SessionController` logs out previous user before registering a different one, so `userControllers` are already cleared in that case.
+                DDLogInfo("Controllers: same user re-authenticated")
+                apiClient.set(authToken: ("Bearer " + data.apiToken))
+                userControllers.reauthenticate(apiKey: data.apiToken)
+            } else {
+                set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
+            }
             apiKey = data.apiToken
         } else {
             clearSession()
@@ -216,7 +278,7 @@ final class Controllers {
             // Start logging to catch user controller issues
             debugLogging.start(type: .immediate)
             // Initialize user controllers
-            let controllers = try UserControllers(userId: data.userId, controllers: self)
+            let controllers = try UserControllers(userId: data.userId, sessionId: data.sessionId, controllers: self)
             if isLogin {
                 controllers.enableSync(apiKey: data.apiToken)
             }
@@ -233,6 +295,7 @@ final class Controllers {
             DDLogError("Controllers: can't create UserControllers - \(error)")
 
             let userId = Defaults.shared.userId
+            let sessionId = Defaults.shared.sessionId
             // Initialization failed, clear everything
             apiClient.set(authToken: nil)
             userControllers = nil
@@ -244,7 +307,7 @@ final class Controllers {
 
             if let error = error as? Realm.Error, error.code == .fail {
                 // Fatal error, remove db and let user log in again.
-                let dbFile = Files.dbFile(for: userId)
+                let dbFile = Files.dbFile(for: userId, sessionId: sessionId)
                 FileManager.default.clearDatabaseFiles(at: dbFile.createUrl())
             }
 
@@ -256,20 +319,24 @@ final class Controllers {
 
     private func clearSession() {
         // `controllers.logout()` is called last so that the user is first redirected to login screen and then the DB is cleared. Otherwise the user would briefly see all data gone before being redirected.
+        // Stop everything which depends on user controllers (e.g. CarPlay read aloud) while they still exist
+        if userControllers != nil {
+            userWillLogOut.send()
+        }
         // Disable ongoing sync and unsubscribe from websocket
         userControllers?.disableSync(apiKey: apiKey)
         // Cancel all downloads
         userControllers?.fileDownloader.cancelAll(invalidateSession: true)
-        // Cancel all identifier lookups
-        userControllers?.identifierLookupController.cancelAllLookups()
+        // Cancels all identifier lookups. Items are not trashed as the database will be cleared.
+        userControllers?.identifierLookupController.cancelAllLookups(trashItems: false)
         // Cancel all remote downloads
         userControllers?.remoteFileDownloader.stop()
         // Cancel all background uploads
         userControllers?.backgroundUploadObserver.cancelAllUploads()
         // Cancel all Recognizer Tasks
         userControllers?.recognizerController.cancellAllTasks()
-        // Cancel all PDF workers
-        userControllers?.pdfWorkerController.cancellAllWorks()
+        // Cancel all document workers
+        userControllers?.documentWorkerController.cancellAllWorks()
         // Clear user controllers
         let dbStorage = userControllers?.dbStorage
         userControllers = nil
@@ -279,8 +346,11 @@ final class Controllers {
         fileStorage.clearCache()
         // Report user logged out and show login screen
         userInitialized.send(.success(false))
-        // Remove database
-        dbStorage?.clear()
+        // Remove database. `userInitialized` subscribers receive the logout on the main queue, so the files are removed after
+        // they tore down their screens and released their results.
+        DispatchQueue.main.async {
+            dbStorage?.clear()
+        }
     }
 }
 
@@ -295,15 +365,16 @@ final class UserControllers {
     let fileDownloader: AttachmentDownloader
     let remoteFileDownloader: RemoteAttachmentDownloader
     let identifierLookupController: IdentifierLookupController
-    let pdfWorkerController: PDFWorkerController
+    let documentWorkerController: DocumentWorkerController
     let recognizerController: RecognizerController
-    let webSocketController: WebSocketController
+    let webSocketController: APIWebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
     let dragDropController: DragDropController
     let webDavController: WebDavController
     let customUrlController: CustomURLController
     let fullSyncDebugger: FullSyncDebugger
+    let lastReadWatcher: LastReadWatcher
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
     private unowned let translatorsAndStylesController: TranslatorsAndStylesController
@@ -312,12 +383,14 @@ final class UserControllers {
     private static let schemaVersion: UInt64 = 9
 
     private var disposeBag: DisposeBag
+    /// `true` when API key was rejected. Automatic sync stays disabled until app restart or new login.
+    let isApiKeyForbidden = BehaviorRelay(value: false)
 
     // MARK: - Lifecycle
 
     /// Instance is initialized on login or when app launches while user is logged in
-    init(userId: Int, controllers: Controllers) throws {
-        let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
+    init(userId: Int, sessionId: String?, controllers: Controllers) throws {
+        let dbStorage = try UserControllers.createDbStorage(for: userId, sessionId: sessionId, controllers: controllers)
         let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
         let backgroundUploadContext = BackgroundUploaderContext()
@@ -337,7 +410,7 @@ final class UserControllers {
             syncDelayIntervals: DelayIntervals.sync,
             maxRetryCount: DelayIntervals.retry.count
         )
-        let webSocketController = WebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
+        let webSocketController = APIWebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         var isFirstLaunch = false
@@ -385,15 +458,16 @@ final class UserControllers {
             dateParser: controllers.dateParser,
             remoteFileDownloader: remoteFileDownloader
         )
-        pdfWorkerController = PDFWorkerController(fileStorage: controllers.fileStorage)
+        documentWorkerController = DocumentWorkerController(fileStorage: controllers.fileStorage, configuration: .mainApp)
         recognizerController = RecognizerController(
-            pdfWorkerController: pdfWorkerController,
+            documentWorkerController: documentWorkerController,
             apiClient: controllers.apiClient,
             translatorsController: controllers.translatorsAndStylesController,
             schemaController: controllers.schemaController,
             dbStorage: dbStorage,
             dateParser: controllers.dateParser,
-            fileStorage: controllers.fileStorage
+            fileStorage: controllers.fileStorage,
+            lookupTiming: .mainApp
         )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
@@ -403,6 +477,7 @@ final class UserControllers {
         fullSyncDebugger = FullSyncDebugger(syncScheduler: syncScheduler, debugLogging: controllers.debugLogging, sessionController: controllers.sessionController)
         idleTimerController = controllers.idleTimerController
         customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
+        lastReadWatcher = LastReadWatcher(dbStorage: dbStorage)
         lastBuildNumber = controllers.lastBuildNumber
         disposeBag = DisposeBag()
     }
@@ -441,8 +516,14 @@ final class UserControllers {
                 case .starting:
                     idleTimerController.startCustomIdleTimer()
 
-                case .finished, .aborted:
+                case .finished:
                     idleTimerController.stopCustomIdleTimer()
+
+                case .aborted(let error):
+                    idleTimerController.stopCustomIdleTimer()
+                    if case .forbidden = error {
+                        stopAutomaticSync()
+                    }
 
                 default:
                     idleTimerController.resetCustomTimer()
@@ -455,7 +536,8 @@ final class UserControllers {
             .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] changedLibraries in
-                self?.syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries))
+                guard let self, !isApiKeyForbidden.value else { return }
+                syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries))
             })
             .disposed(by: disposeBag)
 
@@ -464,25 +546,62 @@ final class UserControllers {
             .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] change in
+                guard let self else { return }
                 switch change {
                 case .translators:
-                    self?.translatorsAndStylesController.updateFromRepo(type: .notification)
+                    translatorsAndStylesController.updateFromRepo(type: .notification)
 
                 case .library(let libraryId, _):
-                    self?.syncScheduler.webSocketUpdate(libraryId: libraryId)
+                    guard !isApiKeyForbidden.value else { return }
+                    syncScheduler.webSocketUpdate(libraryId: libraryId)
                 }
             })
             .disposed(by: disposeBag)
 
+        webSocketController.forbiddenObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] in
+                self?.stopAutomaticSync()
+            })
+            .disposed(by: disposeBag)
+
+        guard !isApiKeyForbidden.value else {
+            DDLogWarn("Controllers: API key forbidden, skipping websocket connection and sync")
+            return
+        }
+
         // Connect to websockets and start sync
         webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
-            guard let self else { return }
-            // Call this before sync so that background uploads are updated and taken care of by sync if needed.
-            backgroundUploadObserver.updateSessions()
+            // We have to move to main thread so that the isApiKeyForbidden is updated (in case of 4403 the websocket controller first calls forbiddenObservable.on(.next(()))
+            // then the completion block, so isApiKeyForbidden is not updated when this completion block is called).
+            inMainThread { [weak self] in
+                guard let self, !isApiKeyForbidden.value else { return }
+                // Call this before sync so that background uploads are updated and taken care of by sync if needed.
+                backgroundUploadObserver.updateSessions()
 
-            let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
-            syncScheduler.request(sync: type, libraries: .all)
+                let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
+                syncScheduler.request(sync: type, libraries: .all)
+            }
         })
+    }
+
+    /// Stops websocket connection and automatic syncs after API key was rejected (HTTP 403 or WS 4403), so that we don't trigger rate limiting.
+    /// They stay stopped until app restart or new login, manual syncs are still allowed.
+    private func stopAutomaticSync() {
+        guard !isApiKeyForbidden.value else { return }
+        DDLogWarn("Controllers: API key forbidden, stopping websocket and automatic sync")
+        isApiKeyForbidden.accept(true)
+        // Remove queued syncs, they would fail with the same error.
+        syncScheduler.cancelSync()
+        webSocketController.disconnect(apiKey: nil)
+    }
+
+    /// Restarts websocket connection and sync with new API key after the same user logged in again.
+    /// - parameter apiKey: New API key.
+    fileprivate func reauthenticate(apiKey: String) {
+        disableSync(apiKey: nil)
+        isApiKeyForbidden.accept(false)
+        enableSync(apiKey: apiKey)
     }
 
     /// Cancels ongoing sync and stops websocket connection.
@@ -497,8 +616,8 @@ final class UserControllers {
 
     // MARK: - Helpers
 
-    private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
-        let file = Files.dbFile(for: userId)
+    private class func createDbStorage(for userId: Int, sessionId: String?, controllers: Controllers) throws -> DbStorage {
+        let file = Files.dbFile(for: userId, sessionId: sessionId)
         try controllers.fileStorage.createDirectories(for: file)
         return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl(), fileStorage: controllers.fileStorage))
     }

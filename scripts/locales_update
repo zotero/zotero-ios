@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/.."
+tx pull -t --force --mode sourceastranslation
+python3 scripts/locales_fix_stringsdict.py
+python3 scripts/generate_sr_latn.py
+python3 scripts/check_string_formats.py

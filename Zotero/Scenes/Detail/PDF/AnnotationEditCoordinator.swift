@@ -67,8 +67,8 @@ extension AnnotationEditCoordinator: AnnotationEditCoordinatorDelegate {
         self.navigationController?.pushViewController(controller, animated: true)
     }
     
-    func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction) {
-        let state = AnnotationPageLabelState(label: label, updateSubsequentPages: updateSubsequentPages)
+    func showPageLabelEditor(label: String, saveAction: @escaping AnnotationPageLabelSaveAction) {
+        let state = AnnotationPageLabelState(label: label)
         let handler = AnnotationPageLabelActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationPageLabelViewController(viewModel: viewModel, saveAction: saveAction)

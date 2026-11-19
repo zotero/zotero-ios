@@ -102,9 +102,18 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
 
         if self.preferRemoteData {
+            DDLogInfo("StoreItemDbRequest: reset item (\(response.key)) internal flags")
             item.deleted = false
             item.deleteAllChanges(database: database)
-            item.attachmentNeedsSync = false
+            if response.isFileAttachmentWithMissingRemoteFile {
+                // `attachmentNeedsSync` both queues the file for upload and protects the local file from cleanup. The remote item reports no file, so the local file has not been uploaded yet
+                // and the flag has to be kept, otherwise the upload would be cancelled permanently and the local file could be removed afterwards.
+                if item.attachmentNeedsSync {
+                    DDLogWarn("StoreItemDbRequest: keeping attachmentNeedsSync for \(response.key); remote item has no file")
+                }
+            } else {
+                item.attachmentNeedsSync = false
+            }
         }
 
         return try StoreItemDbRequest.update(
@@ -143,6 +152,15 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.lastSyncDate = Date(timeIntervalSince1970: 0)
         item.changeType = .sync
         item.libraryId = libraryId
+
+        switch libraryId {
+        case .custom(.myLibrary):
+            item.lastRead = response.lastRead
+            item.updateEffectiveLastRead()
+
+        case .group:
+            break
+        }
 
         let filenameChange = self.syncFields(data: response, item: item, database: database, schemaController: schemaController, dateParser: dateParser)
         self.syncParent(key: response.parentKey, libraryId: libraryId, item: item, database: database)
@@ -248,6 +266,7 @@ struct StoreItemDbRequest: DbResponseRequest {
 
             case (FieldKeys.Item.Attachment.contentType, _), (_, FieldKeys.Item.Attachment.contentType):
                 contentType = value
+
             default: break
             }
         }
@@ -361,6 +380,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             parent = RItem()
             parent.key = key
             parent.syncState = .dirty
+            parent.lastSyncDate = Date(timeIntervalSince1970: 0)
             parent.libraryId = libraryId
             database.add(parent)
         }
@@ -393,6 +413,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             let collection = RCollection()
             collection.key = key
             collection.syncState = .dirty
+            collection.lastSyncDate = Date(timeIntervalSince1970: 0)
             collection.libraryId = libraryId
             database.add(collection)
 

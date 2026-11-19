@@ -21,3 +21,14 @@ struct ReadDeletedObjectsDbRequest<Obj: DeletableObject>: DbResponseRequest {
         return database.objects(Obj.self).filter(.deleted(true, in: self.libraryId))
     }
 }
+
+struct ReadDeletedLastReadDbRequest: DbResponseRequest {
+    typealias Response = Results<RLastReadDate>
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RLastReadDate> {
+        // Don't filter last read by library, this setting is always synced to user library, so when it's called for user library, return all changes
+        return database.objects(RLastReadDate.self).filter(.deleted(true))
+    }
+}

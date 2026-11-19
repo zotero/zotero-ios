@@ -28,7 +28,7 @@ extension RCollectionChanges {
 }
 
 final class RCollection: Object {
-    static let observableKeypathsForList: [String] = ["name", "parentKey", "items", "trash"]
+    static let observableKeypathsForList: [String] = ["name", "parentKey", "items", "trash", "showsInCarPlay"]
 
     @Persisted(indexed: true) var key: String
     @Persisted var name: String
@@ -36,6 +36,8 @@ final class RCollection: Object {
     @Persisted var dateModified: Date
     @Persisted var parentKey: String?
     @Persisted var collapsed: Bool = true
+    /// Local only. Whether the collection is listed in CarPlay.
+    @Persisted var showsInCarPlay: Bool = false
     @Persisted var lastUsed: Date
     @Persisted var items: List<RItem>
     @Persisted var customLibraryKey: RCustomLibraryType?

@@ -8,6 +8,7 @@
 
 import UIKit
 
+import PSPDFKit
 import RxSwift
 
 final class AnnotationCell: UITableViewCell {
@@ -102,6 +103,7 @@ final class AnnotationCell: UITableViewCell {
             annotationView.resignFirstResponder()
         }
 
+        let reconfiguringForSameAnnotation = key == annotation.key
         key = annotation.key
         selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
@@ -114,6 +116,10 @@ final class AnnotationCell: UITableViewCell {
             library: library,
             currentUserId: currentUserId
         )
+        if !reconfiguringForSameAnnotation {
+            annotationView.setupObserving()
+        }
+        // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
 
         setupAccessibility(
             isAuthor: annotation.isAuthor,
@@ -133,14 +139,15 @@ final class AnnotationCell: UITableViewCell {
         preview: UIImage?,
         selected: Bool,
         availableWidth: CGFloat,
+        document: PSPDFKit.Document,
+        attachmentKey: String,
         library: Library,
         isEditing: Bool,
         currentUserId: Int,
         displayName: String,
         username: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter,
-        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate,
-        state: PDFReaderState
+        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate
     ) {
         if !selected {
             annotationView.resignFirstResponder()
@@ -157,13 +164,14 @@ final class AnnotationCell: UITableViewCell {
             preview: preview,
             selected: selected,
             availableWidth: availableWidth,
+            document: document,
+            attachmentKey: attachmentKey,
             library: library,
             currentUserId: currentUserId,
             displayName: displayName,
             username: username,
             boundingBoxConverter: boundingBoxConverter,
-            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate,
-            state: state
+            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate
         )
         if !reconfiguringForSameAnnotation {
             annotationView.setupObserving()

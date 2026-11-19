@@ -24,13 +24,7 @@ protocol AppDelegateCoordinatorDelegate: AnyObject {
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
     func showAbout()
-    func presentLogin()
-    func presentRegister()
-}
-
-protocol AppLoginCoordinatorDelegate: AnyObject {
-    func dismiss()
-    func showForgotPassword()
+    func presentAlert(_ controller: UIAlertController)
 }
 
 final class AppCoordinator: NSObject {
@@ -92,7 +86,7 @@ final class AppCoordinator: NSObject {
 
         func showBetaAlert() {
             guard let rootViewController = window?.rootViewController else { return }
-            let controller = UIAlertController(title: L10n.betaWipeTitle, message: L10n.betaWipeMessage, preferredStyle: .alert)
+            let controller = UIAlertController(title: "Resync Required", message: "Due to a beta update, your data must be redownloaded from zotero.org.", preferredStyle: .alert)
             controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
             rootViewController.present(controller, animated: true, completion: nil)
         }
@@ -120,7 +114,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         var urlContext: UIOpenURLContext?
         var data: RestoredStateData?
         if !isLoggedIn {
-            let controller = OnboardingViewController(size: window.frame.size, htmlConverter: controllers.htmlAttributedStringConverter)
+            let loginHandler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
+            let loginViewModel = ViewModel(initialState: LoginState(), handler: loginHandler)
+            let controller = OnboardingViewController(size: window.frame.size, htmlConverter: controllers.htmlAttributedStringConverter, loginViewModel: loginViewModel)
             controller.coordinatorDelegate = self
             viewController = controller
 
@@ -200,7 +196,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                     // Collection is missing, show all items instead
                     collection = Collection(custom: .all)
                 }
-                mainController.showItems(for: collection, in: data.libraryId)
+                mainController.showItems(for: collection, in: data.libraryId, reason: .restoration)
                 guard data.restoreMostRecentlyOpenedItem, let item = data.openItems.first else { return }
                 restoreMostRecentlyOpenedItem(using: self, item: item)
 
@@ -272,10 +268,10 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                                     return .pdf(library: library, key: key, parentKey: parentKey, url: url, page: nil, preselectedAnnotationKey: nil, previewRects: nil)
 
                                 case .html(_, let key):
-                                    return .html(library: library, key: key, parentKey: parentKey, url: url)
+                                    return .html(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: nil)
 
                                 case .epub(_, let key):
-                                    return .epub(library: library, key: key, parentKey: parentKey, url: url)
+                                    return .epub(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: nil)
 
                                 case .note:
                                     return nil
@@ -514,7 +510,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
             message = L10n.Errors.Logging.start
 
         case .contentReading, .cantCreateData:
-            message = L10n.Errors.Logging.contentReading
+            message = "Log files could not be found"
 
         case .noLogsRecorded:
             message = L10n.Errors.Logging.noLogsRecorded
@@ -647,36 +643,9 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
         rootViewController.present(controller, animated: true, completion: nil)
     }
 
-    func presentLogin() {
+    func presentAlert(_ controller: UIAlertController) {
         guard let rootViewController = window?.rootViewController else { return }
-        let handler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
-        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(), handler: handler))
-        controller.coordinatorDelegate = self
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            controller.modalPresentationStyle = .formSheet
-            controller.preferredContentSize = CGSize(width: 540, height: 620)
-        } else {
-            controller.modalPresentationStyle = .fullScreen
-        }
-        controller.isModalInPresentation = false
-        rootViewController.present(controller, animated: true, completion: nil)
-    }
-
-    func presentRegister() {
-        guard let rootViewController = window?.rootViewController else { return }
-        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/user/register?app=1")!)
-        rootViewController.present(controller, animated: true, completion: nil)
-    }
-}
-
-extension AppCoordinator: AppLoginCoordinatorDelegate {
-    func showForgotPassword() {
-        guard let url = URL(string: "https://www.zotero.org/user/lostpassword?app=1") else { return }
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
-    }
-
-    func dismiss() {
-        window?.rootViewController?.dismiss(animated: true, completion: nil)
+        rootViewController.present(controller, animated: true)
     }
 }
 
@@ -694,7 +663,7 @@ extension AppCoordinator: CrashReporterCoordinator {
         if userId > 0 {
             let action = UIAlertAction(title: L10n.Settings.CrashAlert.exportDb, style: .default) { [weak self] _ in
                 UIPasteboard.general.string = id
-                self?.exportDb(with: userId, completion: completion)
+                self?.exportDb(with: userId, sessionId: Defaults.shared.sessionId, completion: completion)
             }
             actions.append(action)
         }
@@ -710,9 +679,9 @@ extension AppCoordinator: CrashReporterCoordinator {
         }
     }
 
-    private func exportDb(with userId: Int, completion: (() -> Void)?) {
+    private func exportDb(with userId: Int, sessionId: String?, completion: (() -> Void)?) {
         guard let viewController else { return }
-        let mainUrl = Files.dbFile(for: userId).createUrl()
+        let mainUrl = Files.dbFile(for: userId, sessionId: sessionId).createUrl()
         let bundledUrl = Files.bundledDataDbFile.createUrl()
 
         let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
@@ -736,7 +705,7 @@ extension AppCoordinator: TranslatorsControllerCoordinatorDelegate {
     }
 
     func showResetToBundleError() {
-        showAlert(title: L10n.error, message: L10n.Errors.Translators.bundleReset, actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
+        showAlert(title: L10n.error, message: "Could not load bundled translators.", actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
     }
 }
 
@@ -748,7 +717,7 @@ extension AppCoordinator: ConflictReceiver {
 
         func _resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
             switch conflict {
-            case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
+            case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags, let settings):
                 guard let controller = conflictReceiverAlertController else {
                     completed(
                         .remoteDeletionOfActiveObject(
@@ -758,7 +727,8 @@ extension AppCoordinator: ConflictReceiver {
                             toDeleteItems: items,
                             toRestoreItems: [],
                             searches: searches,
-                            tags: tags
+                            tags: tags,
+                            settings: settings
                         )
                     )
                     return
@@ -777,7 +747,8 @@ extension AppCoordinator: ConflictReceiver {
                             toDeleteItems: toDeleteItems,
                             toRestoreItems: toRestoreItems,
                             searches: searches,
-                            tags: tags
+                            tags: tags,
+                            settings: settings
                         )
                     )
                 }

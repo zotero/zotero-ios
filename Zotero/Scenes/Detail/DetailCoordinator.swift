@@ -35,21 +35,27 @@ protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDeleg
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     var displayTitle: String { get }
-    func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
+    var usesSidebarTagFilter: Bool { get }
+    func showCollectionsPicker(in library: Library, cancelled: @escaping () -> Void, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void)
     func show(url: URL)
     func show(doi: String)
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
-    func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
-    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
+    func showRemoveFromCollectionQuestion(count: Int, cancelAction: @escaping () -> Void, confirmAction: @escaping () -> Void)
+    func showCitation(
+        using presenter: UIViewController?,
+        for itemIds: Set<String>,
+        libraryId: LibraryIdentifier,
+        delegate: DetailCitationCoordinatorDelegate?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    )
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
-    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(error: ItemsError)
+    func showFilters(filters: [ItemsFilter], filtersDelegate: DownloadsFilterDelegate, button: UIBarButtonItem)
     func showLookup()
 }
 
@@ -65,18 +71,13 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
+    func show(collection: Collection, libraryId: LibraryIdentifier)
+    func show(library: LibraryIdentifier)
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
     func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String?, saveCallback: ((Note) -> Void)?)
-}
-
-protocol ItemsTagFilterDelegate: AnyObject {
-    var delegate: FiltersDelegate? { get set }
-
-    func clearSelection()
-    func itemsDidChange(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
 }
 
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
@@ -85,7 +86,7 @@ final class DetailCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
-    weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
+    private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
     weak var navigationController: UINavigationController?
     private var tmpAudioDelegate: AVPlayerDelegate?
 
@@ -100,14 +101,14 @@ final class DetailCoordinator: Coordinator {
         collection: Collection,
         searchItemKeys: [String]?,
         navigationController: UINavigationController,
-        itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+        mainCoordinatorDelegate: MainCoordinatorDelegate,
         controllers: Controllers
     ) {
         self.libraryId = libraryId
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
-        self.itemsTagFilterDelegate = itemsTagFilterDelegate
+        self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -121,26 +122,33 @@ final class DetailCoordinator: Coordinator {
         guard let userControllers = controllers.userControllers else { return }
         DDLogInfo("DetailCoordinator: show items for \(collection.id); \(libraryId)")
 
-        let controller: UIViewController
+        let tagFilterViewModel = mainCoordinatorDelegate.sharedTagFilterViewModel
+        let controller: BaseItemsViewController
         switch collection.identifier {
         case .custom(let type) where type == .trash:
-            controller = createTrashViewController(libraryId: libraryId, itemsTagFilterDelegate: itemsTagFilterDelegate, controllers: controllers)
+            controller = createTrashViewController(libraryId: libraryId, controllers: controllers)
 
         case .collection, .search, .custom:
             controller = createItemsViewController(
                 collection: collection,
                 libraryId: libraryId,
                 searchItemKeys: searchItemKeys,
-                itemsTagFilterDelegate: itemsTagFilterDelegate,
                 controllers: controllers
             )
         }
 
+        if let tagFilterViewModel {
+            tagFilterViewModel.process(action: .reset(library: controller.library))
+            tagFilterViewModel.stateObservable
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak controller] state in
+                    controller?.applyTagFilterState(state)
+                })
+                .disposed(by: disposeBag)
+        }
         navigationController?.setViewControllers([controller], animated: animated)
 
-        func createTrashViewController(libraryId: LibraryIdentifier, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) -> TrashViewController {
-            itemsTagFilterDelegate?.clearSelection()
-
+        func createTrashViewController(libraryId: LibraryIdentifier, controllers: Controllers) -> TrashViewController {
             let searchTerm = searchItemKeys?.joined(separator: " ")
             let sortType = Defaults.shared.itemsSortType
             let downloadBatchData = ItemsState.DownloadBatchData(batchData: userControllers.fileDownloader.batchData)
@@ -154,21 +162,20 @@ final class DetailCoordinator: Coordinator {
                 htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
                 fileCleanupController: userControllers.fileCleanupController
             )
-            let controller = TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
-            controller.tagFilterDelegate = itemsTagFilterDelegate
-            itemsTagFilterDelegate?.delegate = controller
-            return controller
+            return TrashViewController(
+                viewModel: ViewModel(initialState: state, handler: handler),
+                tagFilterViewModel: tagFilterViewModel,
+                controllers: controllers,
+                coordinatorDelegate: self
+            )
         }
 
         func createItemsViewController(
             collection: Collection,
             libraryId: LibraryIdentifier,
             searchItemKeys: [String]?,
-            itemsTagFilterDelegate: ItemsTagFilterDelegate?,
             controllers: Controllers
         ) -> ItemsViewController {
-            itemsTagFilterDelegate?.clearSelection()
-
             let searchTerm = searchItemKeys?.joined(separator: " ")
             let downloadBatchData = ItemsState.DownloadBatchData(batchData: userControllers.fileDownloader.batchData)
             let remoteDownloadBatchData = ItemsState.DownloadBatchData(batchData: userControllers.remoteFileDownloader.batchData)
@@ -196,22 +203,24 @@ final class DetailCoordinator: Coordinator {
                 htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
                 recognizerController: userControllers.recognizerController
             )
-            let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
-            controller.tagFilterDelegate = itemsTagFilterDelegate
-            itemsTagFilterDelegate?.delegate = controller
-            return controller
+            return ItemsViewController(
+                viewModel: ViewModel(initialState: state, handler: handler),
+                tagFilterViewModel: tagFilterViewModel,
+                controllers: controllers,
+                coordinatorDelegate: self
+            )
         }
     }
 
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?) {
         guard let (attachment, sourceItem) = navigationController?.viewControllers.reversed()
             .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
             .first
         else { return }
-        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem)
+        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem, readerURL: readerURL)
     }
 
-    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem) {
+    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem, readerURL: URL?) {
         switch attachment.type {
         case .url(let url):
             show(url: url)
@@ -226,15 +235,8 @@ final class DetailCoordinator: Coordinator {
                 showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
             case "text/html", "application/epub+zip":
-                if FeatureGates.enabled.contains(.htmlEpubReader) {
-                    DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                    showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
-                } else if contentType == "text/html" {
-                    showWebView(for: url)
-                } else {
-                    DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceItem: sourceItem)
-                }
+                DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
+                showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, readerURL: readerURL)
 
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
@@ -257,12 +259,15 @@ final class DetailCoordinator: Coordinator {
                 }
 
             default:
-                if AVURLAsset(url: url).isPlayable {
-                    DDLogInfo("DetailCoordinator: show video \(attachment.key)")
-                    showVideo(for: url)
-                } else {
-                    DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceItem: sourceItem)
+                Task { @MainActor in
+                    let isPlayable = (try? await AVURLAsset(url: url).load(.isPlayable)) ?? false
+                    if isPlayable {
+                        DDLogInfo("DetailCoordinator: show video \(attachment.key)")
+                        self.showVideo(for: url)
+                    } else {
+                        DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
+                        self.share(item: file.createUrl(), sourceItem: sourceItem)
+                    }
                 }
             }
         }
@@ -327,6 +332,9 @@ final class DetailCoordinator: Coordinator {
         }
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
+        if #available(iOS 26.0, *) {
+            controller.sheetPresentationController?.prefersGrabberVisible = true
+        }
         navigationController.present(controller, animated: true, completion: nil)
     }
 
@@ -360,10 +368,19 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
 
-    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL) -> NavigationViewController {
+    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, readerURL: URL?, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
-        let coordinator = HtmlEpubCoordinator(key: key, parentKey: parentKey, libraryId: libraryId, url: url, navigationController: navigationController, controllers: controllers)
+        let coordinator = HtmlEpubCoordinator(
+            key: key,
+            parentKey: parentKey,
+            libraryId: libraryId,
+            url: url,
+            readerURL: readerURL,
+            preselectedAnnotationKey: preselectedAnnotationKey,
+            navigationController: navigationController,
+            controllers: controllers
+        )
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -375,17 +392,9 @@ final class DetailCoordinator: Coordinator {
         navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    private func showHtmlEpubReader(for url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        let controller = createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
+    private func showHtmlEpubReader(for url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?) {
+        let controller = createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url, readerURL: readerURL)
         self.navigationController?.present(controller, animated: true, completion: nil)
-    }
-
-    private func showWebView(for url: URL) {
-        guard let currentNavigationController = self.navigationController else { return }
-        let controller = WebViewController(url: url)
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .fullScreen
-        currentNavigationController.present(navigationController, animated: true, completion: nil)
     }
 
     func show(doi: String) {
@@ -420,19 +429,11 @@ final class DetailCoordinator: Coordinator {
         transitionDelegate = nil
         (navigationController?.presentedViewController ?? navigationController)?.present(controller, animated: true, completion: nil)
     }
-
-    private func showSettings(using presenter: UINavigationController, initialScreen: SettingsCoordinator.InitialScreen? = nil) {
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        presenter.present(containerController, animated: true)
-    }
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
+    var usesSidebarTagFilter: Bool { mainCoordinatorDelegate.usesSidebarTagFilter }
+
     var displayTitle: String {
         collection.name
     }
@@ -480,66 +481,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
         self.navigationController?.present(controller, animated: true, completion: nil)
-    }
-
-    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void) {
-        DDLogInfo("DetailCoordinator: show item sort popup")
-
-        let sortNavigationController = UINavigationController()
-        sortNavigationController.modalPresentationStyle = .popover
-        sortNavigationController.popoverPresentationController?.sourceItem = button
-        let view = ItemSortingView(
-            sortType: sortType,
-            changed: changed,
-            showPicker: { [weak sortNavigationController] view in
-                guard let sortNavigationController else { return }
-                showPicker(view: view, navigationController: sortNavigationController)
-            },
-            closePicker: { [weak sortNavigationController] in
-                sortNavigationController?.popViewController(animated: true)
-            }
-        )
-        let controller = createItemSortingController(for: view, navigationController: sortNavigationController)
-        sortNavigationController.setViewControllers([controller], animated: false)
-        navigationController?.present(sortNavigationController, animated: true, completion: nil)
-
-        func createItemSortingController(for view: ItemSortingView, navigationController: UINavigationController) -> UIHostingController<ItemSortingView> {
-            let controller = DisappearActionHostingController(rootView: view)
-            var size: CGSize?
-            controller.willAppear = { [weak controller, weak navigationController] in
-                guard let controller else { return }
-                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
-                size = _size
-                controller.preferredContentSize = _size
-                navigationController?.preferredContentSize = _size
-            }
-
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                controller.didLoad = { [weak self] viewController in
-                    guard let self else { return }
-                    let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-                    doneButton.rx.tap
-                        .subscribe({ [weak self] _ in
-                            self?.navigationController?.dismiss(animated: true)
-                        })
-                        .disposed(by: disposeBag)
-                    viewController.navigationItem.rightBarButtonItem = doneButton
-                }
-            }
-            return controller
-        }
-
-        func showPicker(view: ItemSortTypePickerView, navigationController: UINavigationController) {
-            let controller = UIHostingController(rootView: view)
-            controller.preferredContentSize = CGSize(width: 400, height: 600)
-            navigationController.preferredContentSize = controller.preferredContentSize
-            navigationController.pushViewController(controller, animated: true)
-        }
-    }
-
-    private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
-        let sortOrderTitle = sortType.ascending ? L10n.Items.ascending : L10n.Items.descending
-        return ("\(L10n.Items.sortBy): \(sortType.field.title)", "\(L10n.Items.sortOrder): \(sortOrderTitle)")
     }
 
     func createNoteController(
@@ -595,8 +536,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 previewRects: previewRects
             )
 
-        case .html(let library, let key, let parentKey, let url), .epub(let library, let key, let parentKey, let url):
-            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
+        case .html(let library, let key, let parentKey, let url, let preselectedAnnotationKey), .epub(let library, let key, let parentKey, let url, let preselectedAnnotationKey):
+            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url, readerURL: nil, preselectedAnnotationKey: preselectedAnnotationKey)
 
         case .note(let library, let key, let text, let tags, let parentTitleData, let title):
             let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
@@ -640,35 +581,27 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.pushViewController(controller, animated: animated)
     }
 
-    func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+    func showCollectionsPicker(in library: Library, cancelled: @escaping () -> Void, completed: @escaping (Set<String>) -> Void) {
+        guard let dbStorage = controllers.userControllers?.dbStorage else {
+            cancelled()
+            return
+        }
 
         DDLogInfo("DetailCoordinator: show collection picker")
 
         let state = CollectionsPickerState(library: library, excludedKeys: [], selected: [])
         let handler = CollectionsPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = CollectionsPickerViewController(mode: .multiple(selected: completed), viewModel: viewModel)
+        let controller = CollectionsPickerViewController(mode: .multiple(selected: completed, cancelled: cancelled), viewModel: viewModel)
 
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
-    }
-
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem) {
-        DDLogInfo("DetailCoordinator: show item filters")
-
-        let navigationController = NavigationViewController()
-        navigationController.modalPresentationStyle = .popover
-        navigationController.popoverPresentationController?.sourceItem = button
-
-        let coordinator = ItemsFilterCoordinator(filters: filters, filtersDelegate: filtersDelegate, navigationController: navigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
+        guard let presenter = self.navigationController else {
+            cancelled()
+            return
+        }
+        presenter.present(navigationController, animated: true, completion: nil)
     }
 
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
@@ -676,12 +609,16 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: confirmAction, cancel: cancelAction)
     }
 
-    func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void) {
+    func showRemoveFromCollectionQuestion(count: Int, cancelAction: @escaping () -> Void, confirmAction: @escaping () -> Void) {
         let question = L10n.Items.removeFromCollectionQuestion(count)
-        self.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: confirmAction)
+        ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: confirmAction, cancel: cancelAction)
     }
 
     private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void, cancel: (() -> Void)? = nil) {
+        guard let navigationController else {
+            cancel?()
+            return
+        }
         let controller = UIAlertController(title: title, message: question, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: (isDestructive ? .destructive : .default), handler: { _ in
             confirm()
@@ -689,10 +626,16 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: { _ in
             cancel?()
         }))
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?) {
+    func showCitation(
+        using presenter: UIViewController?,
+        for itemIds: Set<String>,
+        libraryId: LibraryIdentifier,
+        delegate: DetailCitationCoordinatorDelegate?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    ) {
         guard let resolvedPresenter = presenter ?? navigationController else { return }
         guard let citationController = controllers.userControllers?.citationController else { return }
 
@@ -711,8 +654,22 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = SingleCitationViewController(viewModel: viewModel)
         controller.coordinatorDelegate = delegate ?? self
         let navigationController = UINavigationController(rootViewController: controller)
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        resolvedPresenter.present(containerController, animated: true, completion: nil)
+        if #available(iOS 26.0, *) {
+            navigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = navigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = resolvedPresenter.view
+                    popoverPresentationController.sourceRect = CGRect(x: resolvedPresenter.view.bounds.midX, y: resolvedPresenter.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+            resolvedPresenter.present(navigationController, animated: true)
+        } else {
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            resolvedPresenter.present(containerController, animated: true)
+        }
     }
 
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?) {
@@ -737,16 +694,41 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         presenter.present(controller, animated: true)
     }
 
-    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?) {
         DDLogInfo("DetailCoordinator: show citation/bibliography export for \(itemIds)")
+        guard let navigationController else { return }
+        showCitationBibliographyExport(using: navigationController, for: itemIds, in: libraryId, controllers: controllers, animated: true, sourceItem: sourceItem)
+    }
+
+    func showFilters(filters: [ItemsFilter], filtersDelegate: DownloadsFilterDelegate, button: UIBarButtonItem) {
+        guard !usesSidebarTagFilter, let presenter = navigationController else { return }
+        DDLogInfo("DetailCoordinator: show item filters")
 
         let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceItem = button
+
+        let coordinator = ItemsFilterCoordinator(
+            filters: filters,
+            filtersDelegate: filtersDelegate,
+            navigationController: navigationController,
+            mainCoordinatorDelegate: mainCoordinatorDelegate
+        )
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+
+        presenter.present(navigationController, animated: true, completion: nil)
+    }
+
+    func sidebarTagFilterVisibilityDidChange() {
+        if usesSidebarTagFilter,
+           let coordinator = childCoordinators.first(where: { $0 is ItemsFilterCoordinator }) as? ItemsFilterCoordinator {
+            coordinator.navigationController?.dismiss(animated: true)
+        }
+        if let itemsController = navigationController?.viewControllers.first as? BaseItemsViewController {
+            itemsController.toolbarController?.reloadToolbarItems(for: itemsController.toolbarData)
+        }
     }
 
     func show(error: ItemsError) {
@@ -758,7 +740,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         case .deletion:
             message = L10n.Errors.Items.deletion
 
-        case .deletionFromCollection:
+        case .deletionFromCollection, .deletionFromRecentlyRead:
             message = L10n.Errors.Items.deletionFromCollection
 
         case .collectionAssignment:
@@ -809,7 +791,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
         guard let navigationController else { return }
-        let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg], asCopy: true)
+        let controller = DocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
         controller.popoverPresentationController?.sourceItem = navigationController.visibleViewController?.view
         controller.observable
                   .observe(on: MainScheduler.instance)
@@ -841,6 +823,9 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                 case .cantUnzipSnapshot:
                     return (L10n.Errors.Attachments.cantUnzipSnapshot, cancelAction)
 
+                case .invalidZipDownload:
+                    return (L10n.Errors.Attachments.invalidWebdavZipDownload, cancelAction)
+
                 case .cancelled:
                     break
                 }
@@ -868,7 +853,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                         if webDavEnabled {
                             let action = UIAlertAction(title: L10n.goToSettings, style: .default) { [weak self] _ in
                                 guard let self, let navigationController else { return }
-                                showSettings(using: navigationController, initialScreen: .sync)
+                                showSettings(using: navigationController, controllers: controllers, animated: true, initialScreen: .sync, sourceItem: nil)
                             }
                             return(L10n.Errors.Attachments.unauthorizedWebdav, [action] + cancelAction)
                         }
@@ -929,6 +914,9 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         let navigationController = NavigationViewController()
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
+        if #available(iOS 26.0, *) {
+            navigationController.sheetPresentationController?.prefersGrabberVisible = true
+        }
 
         let coordinator = CreatorEditCoordinator(creator: creator, itemType: itemType, saved: saved, deleted: deleted, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
@@ -1038,6 +1026,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         case .cantRemoveItem, .cantRemoveParent:
             title = L10n.error
             message = L10n.Errors.unknown
+            
+        case .cantRemoveCollection:
+            title = L10n.error
+            message = L10n.Errors.Items.deletionFromCollection
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -1059,6 +1051,14 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             completion()
         }))
         self.navigationController?.present(controller, animated: true, completion: nil)
+    }
+
+    func show(collection: Collection, libraryId: LibraryIdentifier) {
+        (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collection.identifier, animated: true)
+    }
+    
+    func show(library: LibraryIdentifier) {
+        (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(.all), animated: true)
     }
 }
 
@@ -1101,7 +1101,8 @@ extension DetailCoordinator: DetailMissingStyleErrorDelegate {
         let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
         controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
-            self?.showSettings(using: resolvedPresenter, initialScreen: .export)
+            guard let self else { return }
+            showSettings(using: resolvedPresenter, controllers: controllers, animated: true, initialScreen: .export, sourceItem: nil)
         }))
 
         if resolvedPresenter.presentedViewController == nil {
@@ -1123,6 +1124,10 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+extension DetailCoordinator: SettingsPresenter { }
+
+extension DetailCoordinator: CitationBibliographyExportPresenter { }
 
 // swiftlint:disable private_over_fileprivate
 fileprivate class AVPlayerDelegate: NSObject, AVPlayerViewControllerDelegate {

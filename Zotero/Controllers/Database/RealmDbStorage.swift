@@ -179,10 +179,7 @@ extension RealmDbCoordinator: DbCoordinator {
     }
 
     func invalidate() {
-        guard !Thread.isMainThread else {
-            DDLogWarn("!!! RealmDbStorage: invalidating on main thread")
-            return
-        }
+        guard !Thread.isMainThread else { return }
         self.realm.invalidate()
     }
 }

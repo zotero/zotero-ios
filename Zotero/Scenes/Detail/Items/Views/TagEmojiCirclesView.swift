@@ -87,7 +87,12 @@ final class TagEmojiCirclesView: UIView {
             sublayers.forEach({ $0.removeFromSuperlayer() })
         }
 
-        let font = UIFont.preferredFont(forTextStyle: .body)
+        let font: UIFont
+        if #available(iOS 26.0, *) {
+            font = .preferredFont(forTextStyle: .subheadline)
+        } else {
+            font = .preferredFont(forTextStyle: .body)
+        }
         var height: CGFloat = 0
         var width: CGFloat = 0
 

@@ -10,9 +10,10 @@ import Foundation
 
 enum PDFThumbnailsAction {
     case prefetch([UInt])
+    case cancelPrefetch([UInt])
     case load(UInt)
     case setAppearance(Appearance)
     case loadPages
     case setSelectedPage(pageIndex: Int, type: PDFThumbnailsState.SelectionType)
-    case reloadThumbnails
+    case reloadThumbnails(Set<Int>)
 }

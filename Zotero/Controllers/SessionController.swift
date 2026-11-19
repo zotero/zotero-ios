@@ -8,7 +8,7 @@
 
 import UIKit
 
-typealias SessionData = (userId: Int, apiToken: String)
+typealias SessionData = (userId: Int, apiToken: String, sessionId: String?)
 
 struct DebugSessionConstants {
     #if DEBUG
@@ -43,6 +43,7 @@ final class SessionController: ObservableObject {
     func initializeSession() throws {
         var apiToken = self.secureStorage.apiToken
         var userId = self.defaults.userId
+        let sessionId = defaults.sessionId
 
         if (apiToken == nil) || (userId == 0),
            let debugUserId = DebugSessionConstants.userId,
@@ -69,18 +70,34 @@ final class SessionController: ObservableObject {
         self.isInitialized = true
 
         if let token = apiToken, userId > 0 {
-            self.sessionData = (userId, token)
+            secureStorage.updateAccessibilityIfNeeded()
+            sessionData = (userId, token, sessionId)
         } else {
             self.sessionData = nil
         }
     }
 
     func register(userId: Int, username: String, displayName: String, apiToken: String) {
+        if let sessionData {
+            if sessionData.userId == userId {
+                // Same user logged in again (e.g. after API key was deleted). Keep current session so that local data are preserved, just replace API key.
+                self.defaults.username = username
+                self.defaults.displayName = displayName
+                self.secureStorage.apiToken = apiToken
+                self.sessionData = (userId, apiToken, sessionData.sessionId)
+                return
+            }
+            // Different user logged in, log out previous user first so that all local data are cleared.
+            reset()
+        }
+
+        let sessionId = UUID().uuidString
         self.defaults.userId = userId
         self.defaults.username = username
         self.defaults.displayName = displayName
+        self.defaults.sessionId = sessionId
         self.secureStorage.apiToken = apiToken
-        self.sessionData = (userId, apiToken)
+        sessionData = (userId, apiToken, sessionId)
         self.isInitialized = true
     }
 

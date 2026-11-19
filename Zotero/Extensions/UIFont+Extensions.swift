@@ -9,10 +9,14 @@
 import UIKit
 
 extension UIFont {
-    static func preferredFont(for style: TextStyle, weight: Weight) -> UIFont {
+    static func preferredFont(for style: UIFont.TextStyle, weight: UIFont.Weight) -> UIFont {
+        // Get the font descriptor for the default Dynamic Type setting value, which is large.
+        let traits = UITraitCollection(preferredContentSizeCategory: .large)
+        let fontDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: style, compatibleWith: traits)
+        // Then create the system font with the desired weight at that default size.
+        let font = UIFont.systemFont(ofSize: fontDescriptor.pointSize, weight: weight)
+        // Finally apply metrics so it scales according to the current Dynamic Type setting.
         let metrics = UIFontMetrics(forTextStyle: style)
-        let desc = UIFontDescriptor.preferredFontDescriptor(withTextStyle: style)
-        let font = UIFont.systemFont(ofSize: desc.pointSize, weight: weight)
         return metrics.scaledFont(for: font)
     }
 

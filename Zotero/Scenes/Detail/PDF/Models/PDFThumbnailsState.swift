@@ -47,6 +47,7 @@ struct PDFThumbnailsState: ViewModelState {
     var pages: [Page]
     var appearance: Appearance
     var loadedThumbnail: Int?
+    var reloadedPageIndices: Set<Int>?
     var selectedPageIndex: Int
     var changes: Changes
 
@@ -62,10 +63,12 @@ struct PDFThumbnailsState: ViewModelState {
         self.appearance = appearance
         self.changes = []
         self.pages = []
+        self.reloadedPageIndices = nil
     }
 
     mutating func cleanup() {
         changes = []
         loadedThumbnail = nil
+        reloadedPageIndices = nil
     }
 }

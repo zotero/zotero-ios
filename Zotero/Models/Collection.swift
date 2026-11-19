@@ -14,13 +14,15 @@ struct Collection: Identifiable, Equatable, Hashable {
     let identifier: CollectionIdentifier
     let name: String
     var itemCount: Int
+    let isAvailable: Bool
+    let showsInCarPlay: Bool
 
     var id: CollectionIdentifier {
-        return self.identifier
+        return identifier
     }
 
     var iconName: String {
-        switch self.identifier {
+        switch identifier {
         case .collection:
             return Asset.Images.Cells.collection.name
 
@@ -35,50 +37,65 @@ struct Collection: Identifiable, Equatable, Hashable {
             case .unfiled:
                 return Asset.Images.Cells.unfiled.name
 
+            case .recentlyRead:
+                return Asset.Images.Cells.collectionRecent.name
+
             case .trash:
                 return itemCount == 0 ? Asset.Images.Cells.trashEmpty.name : Asset.Images.Cells.trash.name
             }
         }
     }
 
-    init(object: RCollection, itemCount: Int) {
-        self.identifier = .collection(object.key)
-        self.name = object.name
+    init(object: RCollection, itemCount: Int = 0, isAvailable: Bool = true) {
+        identifier = .collection(object.key)
+        name = object.name
         self.itemCount = itemCount
+        self.isAvailable = isAvailable
+        showsInCarPlay = object.showsInCarPlay
     }
 
     init(object: RSearch) {
-        self.identifier = .search(object.key)
-        self.name = object.name
-        self.itemCount = 0
+        identifier = .search(object.key)
+        name = object.name
+        itemCount = 0
+        isAvailable = true
+        showsInCarPlay = false
     }
 
     init(custom type: CollectionIdentifier.CustomType, itemCount: Int = 0) {
         self.itemCount = itemCount
-        self.identifier = .custom(type)
+        identifier = .custom(type)
+        isAvailable = true
+        showsInCarPlay = false
+
         switch type {
         case .all:
-            self.name = L10n.Collections.allItems
+            name = L10n.Collections.allItems
+
+        case .recentlyRead:
+            name = L10n.Collections.recentlyRead
 
         case .publications:
-            self.name = L10n.Collections.myPublications
+            name = L10n.Collections.myPublications
 
         case .trash:
-            self.name = L10n.Collections.trash
+            name = L10n.Collections.trash
 
         case .unfiled:
-            self.name = L10n.Collections.unfiled
+            name = L10n.Collections.unfiled
         }
     }
 
-    private init(identifier: CollectionIdentifier, name: String, itemCount: Int) {
+    private init(identifier: CollectionIdentifier, name: String, itemCount: Int, isAvailable: Bool, showsInCarPlay: Bool) {
         self.identifier = identifier
         self.name = name
         self.itemCount = itemCount
+        self.isAvailable = isAvailable
+        self.showsInCarPlay = showsInCarPlay
     }
 
     func isCustom(type: CollectionIdentifier.CustomType) -> Bool {
-        switch self.identifier {
+        switch identifier {
         case .custom(let customType):
             return type == customType
 
@@ -88,7 +105,7 @@ struct Collection: Identifiable, Equatable, Hashable {
     }
 
     var isCollection: Bool {
-        switch self.identifier {
+        switch identifier {
         case .collection:
             return true
 
@@ -98,6 +115,6 @@ struct Collection: Identifiable, Equatable, Hashable {
     }
 
     func copy(with itemCount: Int) -> Collection {
-        return Collection(identifier: self.identifier, name: self.name, itemCount: itemCount)
+        return Collection(identifier: identifier, name: name, itemCount: itemCount, isAvailable: isAvailable, showsInCarPlay: showsInCarPlay)
     }
 }
