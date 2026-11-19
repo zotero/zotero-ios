@@ -282,6 +282,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             let intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
                 containerView: view,
                 documentView: documentController.view,
+                userInterfaceViewProvider: { [weak self] in
+                    self?.documentController?.pdfController?.userInterfaceView
+                },
                 back: { [weak self] in
                     self?.documentController?.performBackAction()
                 },

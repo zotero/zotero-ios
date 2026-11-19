@@ -8,6 +8,8 @@
 
 import UIKit
 
+import PSPDFKitUI
+
 protocol IntraDocumentNavigationButtonsHandlerDelegate: AnyObject {
     var sidebarView: UIView? { get }
 }
@@ -23,12 +25,41 @@ final class IntraDocumentNavigationButtonsHandler {
     private enum Kind {
         case back
         case forward
+
+        var title: String {
+            switch self {
+            case .back:
+                return L10n.back
+
+            case .forward:
+                return L10n.forward
+            }
+        }
+
+        var imageSystemName: String {
+            switch self {
+            case .back:
+                return "chevron.left"
+
+            case .forward:
+                return "chevron.right"
+            }
+        }
+    }
+
+    private struct MeasuredWidthKey: Hashable {
+        let kind: Kind
+        let showsTitle: Bool
+        let contentSizeCategory: UIContentSizeCategory
     }
 
     /// Horizontal distance of the buttons from the document's safe area edges.
     private static let horizontalInset: CGFloat = 20
     /// Distance of the buttons' bottom from the document's bottom.
     private static let bottomInset: CGFloat = 40
+    /// Horizontal margin PSPDFKit keeps, on each side, between the scrubber bar's frame and its floating content. The floating content is at most
+    /// as wide as the scrubber bar minus 32 (`-[PSPDFScrubberBar maximumSizeForScrubberBar:]`, which isn't public, so this is assumed).
+    private static let floatingScrubberBarContentMargin: CGFloat = 16
 
     let back: () -> Void
     let forward: () -> Void
@@ -37,6 +68,11 @@ final class IntraDocumentNavigationButtonsHandler {
     private weak var containerView: UIView?
     /// View the buttons are laid out against. Must be a subview of `containerView`.
     private weak var documentView: UIView?
+    /// Provides PSPDFKit's user interface view, whose scrubber bar is inset so that it doesn't go under visible buttons. A provider is used,
+    /// since the PDF controller (and its user interface view) can be created after this handler.
+    private let userInterfaceViewProvider: () -> UserInterfaceView?
+    // Widths of buttons that may not exist yet, measured with throwaway buttons.
+    private var measuredWidths: [MeasuredWidthKey: CGFloat] = [:]
 
     // Buttons are created the first time they need to be shown.
     private(set) var backButton: UIButton?
@@ -60,12 +96,14 @@ final class IntraDocumentNavigationButtonsHandler {
     init(
         containerView: UIView,
         documentView: UIView,
+        userInterfaceViewProvider: @escaping () -> UserInterfaceView?,
         back: @escaping () -> Void,
         forward: @escaping () -> Void,
         delegate: IntraDocumentNavigationButtonsHandlerDelegate
     ) {
         self.containerView = containerView
         self.documentView = documentView
+        self.userInterfaceViewProvider = userInterfaceViewProvider
         self.back = back
         self.forward = forward
         self.delegate = delegate
@@ -198,31 +236,77 @@ final class IntraDocumentNavigationButtonsHandler {
             }
             forwardButton?.isHidden = hidden
         }
+        updateScrubberBarInsets()
+    }
+
+    /// Insets the scrubber bar equally on both sides, so that it stays centered and its floating content stays clear of the buttons, while any
+    /// button is visible. The inset is based on the wider of both buttons, even if only one of them is visible (or created), so that the scrubber
+    /// bar doesn't jump when the other one appears. PSPDFKit already keeps a margin between the bar's frame and its floating content, so the inset
+    /// is reduced by it, letting the content reach the buttons. Called whenever a button is shown, hidden or changes its title.
+    private func updateScrubberBarInsets() {
+        guard let userInterfaceView = userInterfaceViewProvider(), let containerView else { return }
+        let visibleButtons = [backButton, forwardButton].compactMap({ $0 }).filter({ !$0.isHidden })
+        var maxButtonWidth: CGFloat = 0
+        if !visibleButtons.isEmpty {
+            let traitCollection = containerView.traitCollection
+            let showsTitle = Self.showsTitle(for: traitCollection)
+            maxButtonWidth = max(
+                measuredWidth(of: .back, showsTitle: showsTitle, contentSizeCategory: traitCollection.preferredContentSizeCategory),
+                measuredWidth(of: .forward, showsTitle: showsTitle, contentSizeCategory: traitCollection.preferredContentSizeCategory)
+            )
+        }
+        let horizontalInset = maxButtonWidth > 0 ? max(0, Self.horizontalInset + maxButtonWidth - Self.floatingScrubberBarContentMargin) : 0
+        var insets = userInterfaceView.scrubberBarInsets
+        guard insets.left != horizontalInset || insets.right != horizontalInset else { return }
+        insets.left = horizontalInset
+        insets.right = horizontalInset
+        userInterfaceView.scrubberBarInsets = insets
+        // Reposition the scrubber bar right away, so that it doesn't lag behind the buttons.
+        userInterfaceView.setNeedsLayout()
+        userInterfaceView.layoutIfNeeded()
+    }
+
+    /// Width a button has (or would have), measured with a throwaway button so that buttons that aren't needed aren't created.
+    private func measuredWidth(of kind: Kind, showsTitle: Bool, contentSizeCategory: UIContentSizeCategory) -> CGFloat {
+        let key = MeasuredWidthKey(kind: kind, showsTitle: showsTitle, contentSizeCategory: contentSizeCategory)
+        if let width = measuredWidths[key] {
+            return width
+        }
+        let button = UIButton(configuration: Self.configuration(for: kind, showsTitle: showsTitle))
+        button.traitOverrides.preferredContentSizeCategory = contentSizeCategory
+        button.updateConfiguration()
+        let width = ceil(button.intrinsicContentSize.width)
+        measuredWidths[key] = width
+        return width
+    }
+
+    /// Size class is unspecified until a view is in a window, so only an explicitly regular size class shows the titles.
+    private static func showsTitle(for traitCollection: UITraitCollection) -> Bool {
+        return traitCollection.horizontalSizeClass == .regular
+    }
+
+    private static func configuration(for kind: Kind, showsTitle: Bool) -> UIButton.Configuration {
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(systemName: kind.imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+        configuration.title = showsTitle ? kind.title : nil
+        configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
+        configuration.imagePadding = 8
+        return configuration
     }
 
     private func createButton(kind: Kind) -> UIButton? {
         guard let containerView, let documentView else { return nil }
-        let title: String
-        let imageSystemName: String
         let action: UIAction
         switch kind {
         case .back:
-            title = L10n.back
-            imageSystemName = "chevron.left"
             action = UIAction(handler: { [weak self] _ in self?.back() })
 
         case .forward:
-            title = L10n.forward
-            imageSystemName = "chevron.right"
             action = UIAction(handler: { [weak self] _ in self?.forward() })
         }
 
-        var configuration = UIButton.Configuration.plain()
-        configuration.image = UIImage(systemName: imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-        configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
-        configuration.imagePadding = 8
-        let button = UIButton(configuration: configuration)
+        let button = UIButton(configuration: Self.configuration(for: kind, showsTitle: false))
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
@@ -247,8 +331,10 @@ final class IntraDocumentNavigationButtonsHandler {
         // for its new content. A `configurationUpdateHandler` would apply the title later, during the button's own layout, after its frame has
         // already been determined, which can leave the button truncated until the next layout.
         updateTitle(of: button)
-        button.registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (button: UIButton, _: UITraitCollection) in
+        button.registerForTraitChanges([UITraitHorizontalSizeClass.self]) { [weak self] (button: UIButton, _: UITraitCollection) in
             updateTitle(of: button)
+            // The button's width changed with its title, so the scrubber bar insets need to follow.
+            self?.updateScrubberBarInsets()
         }
 
         // Lay out the new button right away, so that its frame is valid for callers reading it (e.g. the annotation toolbar's available size).
@@ -258,10 +344,9 @@ final class IntraDocumentNavigationButtonsHandler {
         return button
 
         func updateTitle(of button: UIButton) {
-            // Size class is unspecified until the button is in a window, so only an explicitly regular size class shows the title.
-            let showsTitle = button.traitCollection.horizontalSizeClass == .regular
+            let showsTitle = Self.showsTitle(for: button.traitCollection)
             var configuration = button.configuration
-            configuration?.title = showsTitle ? title : nil
+            configuration?.title = showsTitle ? kind.title : nil
             button.configuration = configuration
             // Trait changes can be delivered in the middle of a layout pass, after the container has already sized the button. Apply the new
             // configuration now, so that the intrinsic content size reflects the title, and request another layout of the container, so that the
