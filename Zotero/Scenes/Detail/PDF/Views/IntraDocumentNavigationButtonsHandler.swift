@@ -296,6 +296,7 @@ final class IntraDocumentNavigationButtonsHandler {
         }
         configuration.image = UIImage(systemName: kind.imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .small))
         configuration.title = showsTitle ? kind.title : nil
+        configuration.imagePlacement = kind == .forward ? .trailing : .leading
         configuration.imagePadding = 8
         return configuration
     }
