@@ -286,11 +286,16 @@ final class IntraDocumentNavigationButtonsHandler {
     }
 
     private static func configuration(for kind: Kind, showsTitle: Bool) -> UIButton.Configuration {
-        var configuration = UIButton.Configuration.plain()
+        var configuration: UIButton.Configuration
+        if #available(iOS 26.0, *) {
+            configuration = .glass()
+        } else {
+            configuration = .plain()
+            configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
+        }
         configuration.image = UIImage(systemName: kind.imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .small))
         configuration.title = showsTitle ? kind.title : nil
-        configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
         configuration.imagePadding = 8
         return configuration
     }
