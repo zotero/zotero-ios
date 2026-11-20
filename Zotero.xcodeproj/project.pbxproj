@@ -5173,6 +5173,7 @@
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
+				55BCB7616227195E8F3E3108 /* Sync Translation Utilities */,
 				B311B3272386A39800BCF592 /* Embed Foundation Extensions */,
 				B3E196FA25308D9700DBBE5C /* CopyFiles */,
 				B3E196FB25308DA500DBBE5C /* Fix Code Signing */,
@@ -5261,6 +5262,7 @@
 				B311B3192386A39800BCF592 /* Frameworks */,
 				B311B31A2386A39800BCF592 /* Resources */,
 				B3087B87245190F500FF05ED /* Cleanup Translate Files */,
+				D3FD112A27C4B0F123B3BE42 /* Sync Translation Utilities */,
 				B3E1970525308DCA00DBBE5C /* CopyFiles */,
 				B3E1970625308DD100DBBE5C /* Fix Code Signing */,
 			);
@@ -5616,6 +5618,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		55BCB7616227195E8F3E3108 /* Sync Translation Utilities */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/sync_translation_utilities.sh",
+			);
+			name = "Sync Translation Utilities";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
+		};
 		6179996F2D79F40B0051D35E /* SwiftGen */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -5852,6 +5874,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "find \"${CODESIGNING_FOLDER_PATH}\" -name '*.framework' -print0 | while read -d $'\\0' framework \ndo \n    codesign --force --deep --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" --preserve-metadata=identifier,entitlements --timestamp=none \"${framework}\" \ndone\n";
+		};
+		D3FD112A27C4B0F123B3BE42 /* Sync Translation Utilities */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/sync_translation_utilities.sh",
+			);
+			name = "Sync Translation Utilities";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

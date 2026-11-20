@@ -26,6 +26,7 @@ class WebViewHandler: NSObject {
     enum Error: Swift.Error {
         case webViewMissing
         case urlMissingTranslators
+        case navigationNotStarted
     }
 
     private enum InitializationState {
@@ -208,6 +209,9 @@ class WebViewHandler: NSObject {
     var challengePresenter: WebViewChallengePresenter?
     let timing: Timing
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
+    /// The navigation `webDidLoad` waits for. Other navigations in `webView`, such as a challenge page's own reloads, are ignored, so they can't
+    /// resolve or fail a load they didn't start.
+    private var pendingNavigation: WKNavigation?
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
     private(set) var cookies: String?
@@ -323,7 +327,11 @@ class WebViewHandler: NSObject {
             DDLogError("WebViewHandler: web view is nil")
             return .error(Error.webViewMissing)
         }
-        webView.loadFileURL(fileUrl, allowingReadAccessTo: fileUrl.deletingLastPathComponent())
+        guard let navigation = webView.loadFileURL(fileUrl, allowingReadAccessTo: fileUrl.deletingLastPathComponent()) else {
+            DDLogError("WebViewHandler: navigation not started for \(fileUrl.lastPathComponent)")
+            return .error(Error.navigationNotStarted)
+        }
+        pendingNavigation = navigation
         return createWebLoadedSingle()
     }
 
@@ -333,9 +341,18 @@ class WebViewHandler: NSObject {
             return .error(Error.webViewMissing)
         }
         let request = URLRequest(url: webUrl)
+        // Until the delayed load below starts, no navigation may resolve or fail this load.
+        pendingNavigation = nil
         // Share extension started crashing when `load()` was called immediately, a little delay fixed the crash (##616)
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [weak self] in
-            self?.webView?.load(request)
+            guard let self, let webView else { return }
+            let navigation = webView.load(request)
+            guard let navigation else {
+                DDLogError("WebViewHandler: navigation not started for \(webUrl.absoluteString)")
+                webDidLoad?(.failure(Error.navigationNotStarted))
+                return
+            }
+            pendingNavigation = navigation
         }
         return createWebLoadedSingle()
     }
@@ -393,6 +410,7 @@ class WebViewHandler: NSObject {
             session.invalidateAndCancel()
             tearDownActiveChallenges()
             webDidLoad = nil
+            pendingNavigation = nil
             guard let webView else { return }
             webView.navigationDelegate = nil
             webView.stopLoading()
@@ -416,6 +434,12 @@ class WebViewHandler: NSObject {
 
     func additionalCookieNames(for url: URL) -> Set<String> {
         return ["cf_clearance"]
+    }
+
+    /// Whether requests that carry cookies from `webView` (`additionalCookieNames(for:)`) should be sent with `webView`'s User-Agent, unless the request
+    /// sets its own. Clearance cookies, such as Cloudflare's `cf_clearance`, are only accepted together with the User-Agent that obtained them.
+    func shouldUseWebViewUserAgentWithWebViewCookies(for url: URL) -> Bool {
+        return false
     }
 
     /// Lets a new lookup try each browser challenge once again. Challenges still in progress keep running, and new requests to their sites
@@ -477,10 +501,11 @@ class WebViewHandler: NSObject {
     private func sendRequest(context: HTTPRequestContext, messageId: Int) {
         guard activeRequests[messageId] === context, let url = context.request.url else { return }
         let host = url.host(percentEncoded: false) ?? ""
-        addAdditionalCookies(for: url, host: host, existingHeaders: context.headers) { [weak self, weak context] headers in
+        addAdditionalCookies(for: url, host: host, existingHeaders: context.headers) { [weak self, weak context] headers, addedWebViewCookies in
             guard let self, let context, activeRequests[messageId] === context else { return }
             var request = context.request
-            applyHeaders(to: &request, headers: headers, url: url)
+            let useWebViewUserAgent = addedWebViewCookies && shouldUseWebViewUserAgentWithWebViewCookies(for: url)
+            applyHeaders(to: &request, headers: headers, url: url, useWebViewUserAgent: useWebViewUserAgent)
             context.attemptCount += 1
             context.attemptDate = Date()
             let hasTurnstileCookie = request.value(forHTTPHeaderField: "Cookie")?.contains("turnstile_passed=") == true
@@ -502,12 +527,14 @@ class WebViewHandler: NSObject {
         }
     }
 
-    private func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?) {
+    private func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?, useWebViewUserAgent: Bool) {
         headers.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
         }
         if headers["User-Agent"] == nil {
-            if let url, shouldUsePlainUserAgent(for: url), let browserUserAgent {
+            if useWebViewUserAgent, let webViewUserAgent = webView?.customUserAgent, !webViewUserAgent.isEmpty {
+                request.setValue(webViewUserAgent, forHTTPHeaderField: "User-Agent")
+            } else if let url, shouldUsePlainUserAgent(for: url), let browserUserAgent {
                 request.setValue(browserUserAgent, forHTTPHeaderField: "User-Agent")
             } else if let userAgent {
                 request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
@@ -750,19 +777,20 @@ class WebViewHandler: NSObject {
         }
     }
 
-    private func addAdditionalCookies(for url: URL, host: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
+    /// Adds cookies named by `additionalCookieNames(for:)` from `webView`'s cookie store. The completion's flag is `true` if any were added.
+    private func addAdditionalCookies(for url: URL, host: String, existingHeaders: [String: String], completion: @escaping ([String: String], Bool) -> Void) {
         let names = additionalCookieNames(for: url)
-        guard !names.isEmpty, let webView else { return completion(existingHeaders) }
+        guard !names.isEmpty, let webView else { return completion(existingHeaders, false) }
         let store = webView.configuration.websiteDataStore.httpCookieStore
         store.getCookies(host: host, names: names) { matchingCookies in
-            guard !matchingCookies.isEmpty else { return completion(existingHeaders) }
+            guard !matchingCookies.isEmpty else { return completion(existingHeaders, false) }
             var cookieString = matchingCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
             var headers = existingHeaders
             if let existingCookie = headers["Cookie"], !existingCookie.isEmpty {
                 cookieString = existingCookie + "; " + cookieString
             }
             headers["Cookie"] = cookieString
-            completion(headers)
+            completion(headers, true)
         }
     }
 
@@ -778,20 +806,39 @@ class WebViewHandler: NSObject {
 
 extension WebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard isPending(navigation) else { return }
         // Wait for javascript to load
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [weak self] in
-            self?.webDidLoad?(.success(()))
+            // A new load may have started in the meantime.
+            guard let self, isPending(navigation) else { return }
+            pendingNavigation = nil
+            webDidLoad?(.success(()))
         }
     }
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
+        guard isPending(navigation) else {
+            DDLogInfo("WebViewHandler: ignored failure of other navigation - \(error)")
+            return
+        }
         DDLogError("WebViewHandler: did fail - \(error)")
+        pendingNavigation = nil
         webDidLoad?(.failure(error))
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Swift.Error) {
+        guard isPending(navigation) else {
+            DDLogInfo("WebViewHandler: ignored provisional failure of other navigation - \(error)")
+            return
+        }
         DDLogError("WebViewHandler: did fail provisional navigation - \(error)")
+        pendingNavigation = nil
         webDidLoad?(.failure(error))
+    }
+
+    private func isPending(_ navigation: WKNavigation?) -> Bool {
+        guard let navigation, let pendingNavigation else { return false }
+        return navigation === pendingNavigation
     }
 }
 
