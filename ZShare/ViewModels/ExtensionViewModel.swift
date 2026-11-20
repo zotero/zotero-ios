@@ -806,6 +806,8 @@ final class ExtensionViewModel {
         DDLogInfo("ExtensionViewModel: continue after challenge")
         challengePendingOriginalURL = nil
         state.attachmentState = .decoding
+        // Stop the challenge page's own navigations, such as Cloudflare's reload, so they don't overlap with loading the original page.
+        webView?.stopLoading()
         webView?.isHidden = true
         process(remoteUrl: originalURL)
     }
