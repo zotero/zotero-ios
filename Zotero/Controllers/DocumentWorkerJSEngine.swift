@@ -30,6 +30,9 @@ final class DocumentWorkerJSEngine {
     private var timeoutId: Int
     private var timeouts: [Int: DispatchWorkItem]
     private var intervals: [Int: DispatchWorkItem]
+    /// Set once the engine is stopped. JS keeps running only while native code calls back into it (timers, responses), so a stopped engine schedules
+    /// no more callbacks and the JS halts at its next asynchronous step.
+    private var isStopped = false
 
     var onPostMessage: ((Any?, [Any]) -> Void)?
     var onLog: ((Any) -> Void)?
@@ -49,6 +52,16 @@ final class DocumentWorkerJSEngine {
             self?.lastException = message
             self?.onException?(message)
         }
+    }
+
+    /// Stops calling back into the JS: pending timers are cancelled and no new ones are scheduled. Has to be called on `queue`.
+    func stop() {
+        isStopped = true
+        timeouts.values.forEach({ $0.cancel() })
+        timeouts.removeAll()
+        intervals.values.forEach({ $0.cancel() })
+        intervals.removeAll()
+        onPostMessage = nil
     }
 
     func loadWorkerScripts() throws {
@@ -211,9 +224,14 @@ final class DocumentWorkerJSEngine {
         context.setObject(textDecode, forKeyedSubscript: "__nativeTextDecode" as NSString)
 
         let setTimeout: @convention(block) (JSValue, Int) -> Int = { [weak self] fn, ms in
-            guard let self else { return 0 }
+            guard let self, !self.isStopped else { return 0 }
             let id = self.nextTimeoutId()
-            let workItem = DispatchWorkItem { _ = fn.call(withArguments: []) }
+            // The callback is held weakly by the engine, so that a stopped or released engine doesn't keep running the JS.
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self, !self.isStopped else { return }
+                self.timeouts[id] = nil
+                _ = fn.call(withArguments: [])
+            }
             self.timeouts[id] = workItem
             self.queue.asyncAfter(deadline: .now() + .milliseconds(ms), execute: workItem)
             return id
@@ -227,10 +245,10 @@ final class DocumentWorkerJSEngine {
         context.setObject(clearTimeout, forKeyedSubscript: "__nativeClearTimeout" as NSString)
 
         let setInterval: @convention(block) (JSValue, Int) -> Int = { [weak self] fn, ms in
-            guard let self else { return 0 }
+            guard let self, !self.isStopped else { return 0 }
             let id = self.nextTimeoutId()
             let workItem = DispatchWorkItem { [weak self] in
-                guard let self else { return }
+                guard let self, !self.isStopped else { return }
                 _ = fn.call(withArguments: [])
                 self.rescheduleInterval(id: id, fn: fn, ms: ms)
             }
@@ -266,9 +284,9 @@ final class DocumentWorkerJSEngine {
     }
 
     private func rescheduleInterval(id: Int, fn: JSValue, ms: Int) {
-        guard intervals[id] != nil else { return }
+        guard !isStopped, intervals[id] != nil else { return }
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self else { return }
+            guard let self, !self.isStopped else { return }
             _ = fn.call(withArguments: [])
             self.rescheduleInterval(id: id, fn: fn, ms: ms)
         }
