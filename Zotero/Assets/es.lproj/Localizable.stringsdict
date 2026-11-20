@@ -157,11 +157,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>¿Estás seguro que quieres eliminar 1 etiqueta automática en esta librería?\n\nEsta acción no se puede deshacer.</string>
+			<string>¿Estás seguro que quieres eliminar 1 etiqueta automática en esta librería?
+
+Esta acción no se puede deshacer.</string>
 			<key>many</key>
-			<string>¿Estás seguro que quieres eliminar %d etiquetas automáticas en esta librería?\n\nEsta acción no se puede deshacer.</string>
+			<string>¿Estás seguro que quieres eliminar %d etiquetas automáticas en esta librería?
+
+Esta acción no se puede deshacer.</string>
 			<key>other</key>
-			<string>¿Estás seguro que quieres eliminar %d etiquetas automáticas en esta librería?\n\nEsta acción no se puede deshacer.</string>
+			<string>¿Estás seguro que quieres eliminar %d etiquetas automáticas en esta librería?
+
+Esta acción no se puede deshacer.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>

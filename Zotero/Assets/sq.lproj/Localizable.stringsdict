@@ -141,9 +141,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Jeni i sigurt se doni të fshihet 1 etiketë automatike në këtë bibliotekë?\n\nKy veprim s’mund të zhbëhet.</string>
+			<string>Jeni i sigurt se doni të fshihet 1 etiketë automatike në këtë bibliotekë?
+
+Ky veprim s’mund të zhbëhet.</string>
 			<key>other</key>
-			<string>Jeni i sigurt se doni të fshihen %d etiketa automatike në këtë bibliotekë?\n\nKy veprim s’mund të zhbëhet.</string>
+			<string>Jeni i sigurt se doni të fshihen %d etiketa automatike në këtë bibliotekë?
+
+Ky veprim s’mund të zhbëhet.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>

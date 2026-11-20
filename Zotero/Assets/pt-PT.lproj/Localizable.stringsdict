@@ -157,11 +157,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Você tem certeza que deseja excluir 1 etiqueta automática desta biblioteca?\n\nEsta ação não pode ser desfeita.</string>
+			<string>Você tem certeza que deseja excluir 1 etiqueta automática desta biblioteca?
+
+Esta ação não pode ser desfeita.</string>
 			<key>many</key>
-			<string>Você tem certeza que deseja excluir %d etiquetas automáticas desta biblioteca?\n\nEsta ação não pode ser desfeita.</string>
+			<string>Você tem certeza que deseja excluir %d etiquetas automáticas desta biblioteca?
+
+Esta ação não pode ser desfeita.</string>
 			<key>other</key>
-			<string>Você tem certeza que deseja excluir %d etiquetas automáticas desta biblioteca?\n\nEsta ação não pode ser desfeita.</string>
+			<string>Você tem certeza que deseja excluir %d etiquetas automáticas desta biblioteca?
+
+Esta ação não pode ser desfeita.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>

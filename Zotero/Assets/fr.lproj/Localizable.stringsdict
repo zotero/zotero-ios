@@ -157,11 +157,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Voulez-vous vraiment supprimer de cette bibliothèque 1 marqueur ajouté automatiquement ? Cette action ne peut pas être annulée.</string>
+			<string>Voulez-vous vraiment supprimer de cette bibliothèque 1 marqueur ajouté automatiquement ?
+
+Cette action ne peut pas être annulée.</string>
 			<key>many</key>
-			<string>Voulez-vous vraiment supprimer de cette bibliothèque %d marqueurs ajoutés automatiquement ? Cette action ne peut pas être annulée.</string>
+			<string>Voulez-vous vraiment supprimer de cette bibliothèque %d marqueurs ajoutés automatiquement ?
+
+Cette action ne peut pas être annulée.</string>
 			<key>other</key>
-			<string>Voulez-vous vraiment supprimer de cette bibliothèque %d marqueurs ajoutés automatiquement ? Cette action ne peut pas être annulée.</string>
+			<string>Voulez-vous vraiment supprimer de cette bibliothèque %d marqueurs ajoutés automatiquement ?
+
+Cette action ne peut pas être annulée.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>

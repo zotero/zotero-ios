@@ -60,7 +60,7 @@
 "close_without_saving" = "Ohne speichern schliessen";
 "stay" = "Bleiben";
 
-"migration_debug" = "Die App konnte nicht gestartet werden und funktioniert nicht ordnungsgemäss. Bitte im Zotero Forum Debug ID %@ benachrichtigen.";
+"migration_debug" = "Die App konnte nicht gestartet werden und funktioniert nicht ordnungsgemäß. Bitte melden Sie den Fehler unter Angabe der Debug ID %@ im Zotero-Forum.";
 "login_debug" = "Die App konnte sich nicht anmelden. Melden Sie sich erneut an und benachrichtigen Sie im Zotero Forum Debug ID %@.";
 "full_sync_debug" = "Vollständige Synchronisation abgeschlossen. Bitte im Zotero Forum Debug ID %@ benachrichtigen.";
 
@@ -74,12 +74,12 @@
 "onboarding.create_account" = "Konto erstellen";
 
 "libraries.my_library" = "Meine Bibliothek";
-"libraries.group_libraries" = "Gruppen Bibliotheken";
+"libraries.group_libraries" = "Gruppenbibliotheken";
 "libraries.delete_question" = "Wollen Sie \"%@\" wirklich löschen?";
 
 "collections.search_title" = "Sammlung finden";
 "collections.all_items" = "Alle Einträge";
-"collections.recently_read" = "Recently Read";
+"collections.recently_read" = "Kürzlich gelesen";
 "collections.my_publications" = "Meine Publikationen";
 "collections.trash" = "Papierkorb";
 "collections.unfiled" = "Einträge ohne Sammlung";
@@ -90,6 +90,8 @@
 "collections.create_title" = "Sammlung erstellen";
 "collections.picker_title" = "Übergeordneter Eintrag auswählen";
 "collections.empty_trash" = "Papierkorb leeren";
+"collections.show_in_carplay" = "Show in CarPlay";
+"collections.hide_from_carplay" = "Hide from CarPlay";
 "collections.collapse_all" = "Alle einklappen";
 "collections.expand_all" = "Alle ausklappen";
 "collections.create_bibliography" = "Bibliografie der Sammlung erstellen";
@@ -98,10 +100,10 @@
 
 "sync_toolbar.starting" = "Synchronisierung starten";
 "sync_toolbar.groups" = "Gruppen synchronisieren";
-"sync_toolbar.groups_with_data" = "Gruppen saynchronisieren (%d / %d)";
+"sync_toolbar.groups_with_data" = "Gruppen synchronisieren (%d / %d)";
 "sync_toolbar.library" = "%@ synchronisieren";
 "sync_toolbar.object" = "%@ in %@ synchronisieren";
-"sync_toolbar.object_with_data" = "%@ in %@ synchronisieren (%d / %d)";
+"sync_toolbar.object_with_data" = "%1$@ in %4$@ synchronisieren (%2$d / %3$d)";
 "sync_toolbar.finished" = "Synchronisieren abgeschlossen";
 "sync_toolbar.deletion" = "Löschen wird angewendet in %@";
 "sync_toolbar.aborted" = "Synchronisieren fehlgeschlagen (%@)";
@@ -129,7 +131,7 @@
 "items.remove_from_collection_title" = "Aus Sammlung entfernen";
 "items.action.add_to_collection" = "Zu Sammlung hinzufügen";
 "items.action.remove_from_collection" = "Aus Sammlung entfernen";
-"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
+"items.action.remove_from_recentlyRead" = "Aus „Kürzlich gelesen“ entfernen";
 "items.action.duplicate" = "Verdoppeln";
 "items.action.create_parent" = "Übergeordneten Eintrag erstelln";
 "items.action.download" = "Herunterladen";
@@ -140,13 +142,15 @@
 "items.filters.tags" = "Tags";
 "items.toolbar_saved" = "Speichern %d / %d";
 "items.toolbar_downloaded" = "Herunterladen %d / %d";
+"items.toolbar_failed" = "Failed %d";
 "items.generating_bib" = "Bibliografie erstellen";
 "items.creator_summary.and" = "%@ und %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Metadaten werden abgerufen";
-"items.collections_select_prompt" = "Select a Collection";
+"items.collections_select_prompt" = "Sammlung auswählen";
 
 "lookup.title" = "ISBN, DOI, PMID, arCiv, ID, oder ADS einfügen, um zur Bibliothek hinzuzufügen";
+"lookup.continue" = "Continue";
 
 "citation.title" = "Zitiervorschau";
 "citation.copy_citation" = "Zitat kopieren";
@@ -193,12 +197,12 @@
 "item_detail.show_more" = "Mehr anzeigen";
 "item_detail.show_less" = "Weniger anzeigen";
 "item_detail.view_pdf" = "PDF anzeigen";
-"item_detail.data_reloaded" = "Dieser Eintrag wurde remote verändert. Er wird nicht mehr geladen.";
+"item_detail.data_reloaded" = "Dieser Eintrag wurde an einem anderen Ort verändert. Er wird jetzt neu geladen.";
 "item_detail.delete_attachment_file" = "Download entfernen";
 "item_detail.deleted_title" = "Gelöscht ";
 "item_detail.deleted_message" = "Dieser Eintrag wurde gelöscht. Möchten Sie ihn wiederherstellen?";
 "item_detail.move_to_standalone_attachment" = "Zu eigenem Eintrag konvertieren";
-"item_detail.libraries_and_collections" = "Libraries and Collections";
+"item_detail.libraries_and_collections" = "Bibliotheken und Sammlungen";
 
 "tag_picker.title" = "%d ausgewählt";
 "tag_picker.placeholder" = "Name als Tag";
@@ -232,7 +236,7 @@
 "pdf.annotation_popover.page_label_title" = "Seitennummer anpassen";
 "pdf.annotation_popover.no_comment" = "Kein Kommentar";
 "pdf.annotation_popover.line_width" = "Breite";
-"pdf.annotation_popover.size" = "Grösse";
+"pdf.annotation_popover.size" = "Größe";
 "pdf.deleted_title" = "Gelöscht ";
 "pdf.deleted_message" = "Dieses Dokument wurde gelöscht. Wollen Sie es wiederherstelltn?";
 "pdf.line_width_point" = "%0.1f pt";
@@ -240,23 +244,23 @@
 "pdf.underline" = "Unterstreichen";
 "pdf.annotation_share.image.share" = "Foto teilen";
 "pdf.annotation_share.image.medium" = "Mittel";
-"pdf.annotation_share.image.large" = "Gross";
-"pdf.annotation_toolbar.eraser" = "Raddiergummi";
+"pdf.annotation_share.image.large" = "Groß";
+"pdf.annotation_toolbar.eraser" = "Radiergummi";
 "pdf.annotation_toolbar.highlight" = "Anstreichen";
 "pdf.annotation_toolbar.note" = "Notiz";
-"pdf.annotation_toolbar.image" = "oto";
+"pdf.annotation_toolbar.image" = "Bild";
 "pdf.annotation_toolbar.ink" = "Tinte";
 "pdf.annotation_toolbar.underline" = "Unterstreichen";
 "pdf.annotation_toolbar.text" = "Text";
 "pdf.locked.locked" = "Gesperrt";
 "pdf.locked.enter_password" = "Bitte Passwort eingeben, um das Dokument zu öffnen";
 "pdf.locked.failed" = "Falsches Passwort. Bitte erneut versuchen.";
-"pdf.settings.scroll_direction.title" = "Scroll Richtung";
+"pdf.settings.scroll_direction.title" = "Scrollrichtung";
 "pdf.settings.scroll_direction.horizontal" = "Horizontal";
 "pdf.settings.scroll_direction.vertical" = "Waagerecht";
 "pdf.settings.page_transition.title" = "Seitenübergang";
 "pdf.settings.page_transition.jump" = "Springen";
-"pdf.settings.page_transition.continuous" = "Bildlauf";
+"pdf.settings.page_transition.continuous" = "Durchgehend";
 "pdf.settings.appearance.title" = "Erscheinung";
 "pdf.settings.appearance.auto" = "Automatisch";
 "pdf.settings.appearance.light_mode" = "Hell";
@@ -283,6 +287,49 @@
 "pdf.previous_viewport" = "Vorherige Ansicht";
 "pdf.next_viewport" = "Nächste Ansicht";
 
+"reader.settings.zoom.title" = "Zoom";
+"reader.settings.zoom.zoom_in" = "Zoom In";
+"reader.settings.zoom.zoom_out" = "Zoom Out";
+"reader.settings.zoom.reset" = "Reset Zoom";
+
+"accessibility_popup.show_reader" = "Lese-Modus";
+"accessibility_popup.show_speech" = "Laut vorlesen";
+"speech.title" = "Laut vorlesen";
+"speech.voice" = "Voice";
+"speech.speak" = "Laut vorlesen";
+"speech.automatic" = "Automatisch";
+"speech.no_voices_for_tier" = "No voices found for detected language %@ in this tier. Pick a different tier or choose language manually.";
+"speech.onboarding.title" = "Choose your preferred Read Aloud voice:";
+"speech.onboarding.tier_premium" = "Premium";
+"speech.onboarding.tier_standard" = "Standard";
+"speech.onboarding.tier_local" = "Local";
+"speech.onboarding.description_premium_1" = "Highest-quality voices";
+"speech.onboarding.description_premium_2" = "Only available with an internet connection";
+"speech.onboarding.description_premium_3" = "Broad language selection";
+"speech.onboarding.description_premium_4" = "Multilingual support";
+"speech.onboarding.description_premium_5" = "Source text is processed by external text-to-speech providers";
+"speech.onboarding.description_premium_6" = "{ -subscription-name } plans include monthly Premium Voice minutes";
+"speech.onboarding.description_premium_" = "Request credits for additional minutes during beta";
+"speech.onboarding.description_standard_1" = "Natural-sounding voices";
+"speech.onboarding.description_standard_2" = "Only available with an internet connection";
+"speech.onboarding.description_standard_3" = "Limited language selection";
+"speech.onboarding.description_standard_4" = "No multilingual support";
+"speech.onboarding.description_standard_5" = "Source text doesn't leave { -app-name } servers";
+"speech.onboarding.description_standard_6" = "Unlimited use with a { -subscription-name } subscription";
+"speech.onboarding.description_local_1" = "Voices provided by your operating system";
+"speech.onboarding.description_local_2" = "Available without an internet connection";
+"speech.onboarding.description_local_3" = "Free to use";
+"speech.voices" = "Voices";
+"speech.region" = "Region";
+"speech.local_sample" = "I am the local voice %@.";
+"speech.language" = "Sprache";
+"speech.speech_rate" = "Speech Rate";
+"speech.switch" = "Switch";
+"speech.stop" = "Stop";
+"speech.add_time" = "Add More Time";
+"speech.continue_standard" = "Continue Reading With Standard Voices";
+"speech.continue_local" = "Continue Reading With Local Voices";
+
 "settings.title" = "Einstellungen";
 "settings.logout" = "Abmelden";
 "settings.logout_warning" = "Alle lokalen Datein, die nicht synchronisiert waren, werden gelöscht. Wollen Sie sich wirklich abmelden?";
@@ -300,12 +347,13 @@
 "settings.sync.file_syncing_type_message" = "Angehängte Dateien in 'Meine Bibliothek' synchronisieren";
 "settings.sync.account" = "Konto";
 "settings.sync.manage_account" = "Konto verwalten";
+"settings.sync.account_settings" = "Account Settings";
 "settings.sync.delete_account" = "Konto löschen";
 "settings.sync.username" = "Benutzername";
 "settings.sync.password" = "Passwort";
 "settings.sync.verify" = "Server überprüfen";
 "settings.sync.directory_not_found.title" = "Verzeichnis nicht gefunden";
-"settings.sync.directory_not_found.message" = "%@ wurde nicht gefunden. Wollen Sie es erstellen?";
+"settings.sync.directory_not_found.message" = "%@ wurde nicht gefunden.\n\nWollen Sie es erstellen?";
 "settings.sync.verified" = "Verifiziert";
 "settings.permission" = "Nutzer-Berechtigung";
 "settings.permission_subtitle" = "Bei jedem Schreiben nach Erlaubnis fragen";
@@ -316,7 +364,7 @@
 "settings.debug" = "Output Logging debuggen";
 "settings.logging_title" = "Protokoll";
 "settings.start_logging" = "Protokoll starten";
-"settings.start_logging_on_launch" = "Protkoll bei nächstem Aufstarten beginnen";
+"settings.start_logging_on_launch" = "Protokollierung beim nächstem Start der App beginnen";
 "settings.cancel_logging" = "Protokoll löschen";
 "settings.stop_logging" = "Protokoll aufhören";
 "settings.view_output" = "Output ansehen";
@@ -328,9 +376,9 @@
 "settings.log_alert.title" = "Logs gesendet";
 "settings.log_alert.message" = "Ihre Debug-ID ist %@";
 "settings.crash_alert.title" = "Crash-Log gesendet";
-"settings.crash_alert.message" = "Ihre Meldungs-ID ist %@. Bitte posten Sie eine Nachricht im Zotero Forum (forums.zotero.org) mit der Meldungs-ID und den nötigen Schritten um den Crash hervorzurufen.";
-"settings.crash_alert.message_with_db" = "Ihre Meldungs-ID ist %@. Bitte posten Sie eine Nachricht im Zotero Forum (forums.zotero.org) mit der Meldungs-ID und den nötigen Schritten um den Crash hervorzurufen.Wenn Zotero wiederholt abstürzt, drücken sie bitte \"Database exporiteren\" und senden sie die exportierten Dateien an support@zotero.org.";
-"settings.crash_alert.submit_forum" = "In Zotero Forums einfügen";
+"settings.crash_alert.message" = "Ihre Meldungs-ID ist %@.\n\nBitte posten Sie eine Nachricht im Zotero Forum (forums.zotero.org) mit der Meldungs-ID und den nötigen Schritten, um den Crash hervorzurufen.";
+"settings.crash_alert.message_with_db" = "Ihre Meldungs-ID ist %@.\n\nBitte posten Sie eine Nachricht im Zotero Forum (forums.zotero.org) mit der Meldungs-ID und den nötigen Schritten, um den Crash hervorzurufen.\n\nWenn Zotero wiederholt abstürzt, drücken sie bitte \"Datenbank exportieren\" und senden Sie die exportierten Dateien an support@zotero.org.";
+"settings.crash_alert.submit_forum" = "Im Zotero-Forum hochladen";
 "settings.crash_alert.export_db" = "Database kopieren und exportieren";
 "settings.crash_alert.copy" = "In Zwischenablage kopieren";
 "settings.websocket_title" = "Server Verbindung";
@@ -341,9 +389,9 @@
 "settings.websocket_connect" = "Mit Server verbinden";
 "settings.storage" = "Lokaler Speicher";
 "settings.storage.delete_all" = "Alle lokal gespeicherten Anhänge löschen";
-"settings.storage.delete_all_question" = "Sind Sie sicher, dass sie alle Anhänge von diesem Gerät löschen wollen?Andere synchronisierte Geräte sind davon nicht betroffen.";
-"settings.storage.delete_library_question" = "Sind Sie sicher, dass sie alle Anhänge in %@ von diesem Gerät löschen wollen? Andere synchronisierte Geräte sind davon nicht betroffen.";
-"settings.saving.title" = "Speichert";
+"settings.storage.delete_all_question" = "Sind Sie sicher, dass sie alle Anhänge von diesem Gerät löschen wollen?\n\nAndere synchronisierte Geräte sind davon nicht betroffen.";
+"settings.storage.delete_library_question" = "Sind Sie sicher, dass sie alle Anhänge in %@ von diesem Gerät löschen wollen?\n\nAndere synchronisierte Geräte sind davon nicht betroffen.";
+"settings.saving.title" = "Speichern";
 "settings.saving.files_title" = "Dateien speichern";
 "settings.saving.files_message" = "Verwandte PDF-Dokumente automatisch anhängen, wenn gespeichert";
 "settings.saving.tags_title" = "Automatische Tags speichern";
@@ -352,7 +400,7 @@
 "settings.cite.styles_title" = "Zitierstile";
 "settings.cite.get_more_styles" = "Zusätzliche Zitierstile erhalten";
 "settings.cite_search.search_title" = "Stile durchsuchen";
-"settings.export.title" = "Kopie";
+"settings.export.title" = "Schnelles Kopieren";
 "settings.export.default_format" = "Standard-Format";
 "settings.export.language" = "Sprache";
 "settings.export.copy_as_html" = "Als HTML kopieren";
@@ -368,7 +416,7 @@
 "settings.annotation_tools.reset" = "Zurücksetzen";
 
 "shareext.save" = "In Zotero speichern";
-"shareext.resolve_challenge" = "Resolve Challenge";
+"shareext.continue" = "Continue";
 "shareext.decoding_attachment" = "Nach Einträgen Suchen";
 "shareext.translation.item_selection" = "Eintrag auswählen";
 "shareext.translation.translating_with" = "Mit %@ speichern";
@@ -383,21 +431,22 @@
 "searchbar.accessibility_cancel" = "Suche löschen";
 "searchbar.accessibility_clear" = "Suche leeren";
 
-"errors.schema" = "Einige Dateien in Meine Bibliothek konnten nicht heruntergeladen werden. Sie wurde möglicherweise mit einer neueren Version von Zotero gespeichert.";
+"errors.schema" = "Einige Daten in Meine Bibliothek konnten nicht heruntergeladen werden. Sie wurden möglicherweise mit einer neueren Version von Zotero gespeichert.\n\nAndere Daten werden weiterhin synchronisiert.";
 "errors.parsing" = "Einige Dateien konnten nicht gefunden werden. Andere Dateien werden weiter synchronisiert.";
 "errors.api" = "%@ Fehler der API-Antwort";
-"errors.db" = "Konnte nicht mit Database verbinden. Der Gerätespeicher ist möglicherweise voll.";
+"errors.db" = "Konnte nicht mit Datenbank verbinden. Der Gerätespeicher ist möglicherweise voll.";
 "errors.versionMismatch" = "Eine verngesteuerete Änderung wurde während der Synchronisation vorgenommen";
 "errors.unknown" = "Unbekannter Fehler";
 "errors.attachments.cant_unzip_snapshot" = "Snapshot konnte nicht extrahiert werden";
 "errors.attachments.incompatible_attachment" = "Verlinkte Dateien werden auf mobilen Geräten nicht unterstützt. Versuchen Sie sie auf der Desktop-Version zu öffnen.";
+"errors.attachments.invalid_webdav_zip_download" = "The WebDAV server did not return a zipped attachment file.";
 "errors.attachments.cant_open_attachment" = "Der Anhang wurde nicht gefunden";
 "errors.attachments.missing_zotero" = "Der Anhang ist in der Online-Bibliothek nicht verfügbar.";
 "errors.attachments.missing_webdav" = "Der Anhang ist auf dem WebDAV-Server nicht verfügbar.";
 "errors.attachments.missing_additional" = "Bitte überprüfen Sie, ob die Datei auf dem Gerät synchronisiert wurde auf dem sie hinzugefügt wurde.";
-"errors.attachments.unauthorized_webdav" = "Der WebDAV-Server akzeptiert den Benutzernamen und das Passowort nicht, welches in den Einstellungen gespeichert wurde.";
+"errors.attachments.unauthorized_webdav" = "Der WebDAV-Server akzeptiert den gespeicherten Benutzernamen und das Passwort nicht.";
 "errors.attachments.too_many_requests_webdav" = "Der WebDAV-Server beschränkt ihre Anfrage. Versuchen Sie es in einigen Minuten erneut.";
-"errors.attachments.too_many_requests" = "Zu viele Anfrgen. Versuchen SIe es in einigen Minuten erneut.";
+"errors.attachments.too_many_requests" = "Zu viele Anfragen. Versuchen SIe es in einigen Minuten erneut.";
 "errors.attachments.forbidden_webdav" = "Sie haben keine Erlaubnis um auf %@ auf dem WebDAV-Server zuzugreifen";
 "errors.attachments.generic_filename" = "die Datei";
 "errors.libraries.cantLoad" = "Bibliotheken konnten nicht geladen werden";
@@ -407,7 +456,7 @@
 "errors.sync.group_removed" = "Die Gruppe \"%@\" ist nicht mehr verfügbar. Was wollen Sie tun?";
 "errors.sync.metadata_write_denied" = "Sie können nicht mehr in die Gruppe \"%@\" schreiben. Was wollen Sie tun?";
 "errors.sync.revert_to_original" = "Zu Original zurückverwandeln";
-"errors.sync.file_write_denied" = "Sie haben keine Erlaubnis die Einträge der Gruppe \"%@\" zu bearbeiten, die Dateien, welche Sie lokal gespeichert haben, können nicht hochgeladen werden. Fahren Sie fort, werden alle Dateien in %@ auf ihren Stand zurückgesetzt. Wollen Sie die Dateien an einem anderen Ort bearbeiten, erfragen Sie Zugang beim Gruppen-Administrator. Sie können die Synchronisation nun beenden.";
+"errors.sync.file_write_denied" = "Sie haben keine Erlaubnis die Einträge der Gruppe \"%@\" zu bearbeiten, die Dateien, welche Sie lokal gespeichert haben, können nicht hochgeladen werden. Fahren Sie fort, werden alle Dateien in %@ auf ihren Stand zurückgesetzt.\n\nWollen Sie die Dateien an einem anderen Ort bearbeiten, erfragen Sie Zugang beim Gruppen-Administrator. Sie können die Synchronisation nun beenden.";
 "errors.sync.reset_group_files" = "Gruppen-Datein zurücksetzen und synchronisieren";
 "errors.sync.skip_group" = "Gruppe überspringen";
 "errors.sync_toolbar.finished_with_errors" = "Synchronisieren abgeschlossen (%@)";
@@ -417,8 +466,9 @@
 "errors.sync_toolbar.conflict_retry_limit" = "Andere Synchronisation läuft. Versuchen Sie es in einigen Minuten erneut.";
 "errors.sync_toolbar.group_permissions" = "Sie haben keine Erlaubnis diese Gruppen zu bearbeiten";
 "errors.sync_toolbar.internet_connection" = "Verbindung mit Netzwerk nicht möglich. Bitte erneut versuchen. ";
-"errors.sync_toolbar.personal_quota_reached" = "SIe haben Ihr Zotero Speicher-Limit erreicht. Einige Dateien wurden nicht hochgeladen. Andere Dateien werden weiterhin synchronisiert. Um Optionen für Speichererweiterungen zu finden,  besuchen Sie zotero.org unter Kontoeinstellungen";
-"errors.sync_toolbar.group_quota_reached" = "Die Gruppe \"@%\" hat ihr Zotero Speicherlimit erreicht.Einige Dateien wurden nicht hochgeladen. Andere Dateien werden weiterhin synchronisiert. Der Gruppen-Inhaber kann Speichererweiterungen unter zotero.org erwerben.";
+"errors.sync_toolbar.unexpected_my_library_last_read_deletions" = "Sync received unexpected last read settings deletions for My Library.";
+"errors.sync_toolbar.personal_quota_reached" = "SIe haben Ihr Zotero Speicher-Limit erreicht. Einige Dateien wurden nicht hochgeladen. Andere Dateien werden weiterhin synchronisiert.\n\nUm Optionen für Speichererweiterungen zu finden,  besuchen Sie zotero.org unter Kontoeinstellungen";
+"errors.sync_toolbar.group_quota_reached" = "Die Gruppe \"%@\" hat ihr Zotero Speicherlimit erreicht. Einige Dateien wurden nicht hochgeladen. Andere Dateien werden weiterhin synchronisiert.\n\nDer Gruppen-Inhaber kann Speichererweiterungen unter zotero.org erwerben.";
 "errors.sync_toolbar.insufficient_space" = "Sie haben nicht genug Platz auf ihrem WebDAV-Server. Einige Dateien wurden nicht hochgeladen. Andere Dateien werden weiterhin synchronisiert. ";
 "errors.sync_toolbar.quota_reached_short" = "Limit erreicht";
 "errors.sync_toolbar.unavailable" = "Zotero ist zeitweise nicht erreichbar. Versuchen Sie es in einigen Minuten erneut.";
@@ -427,7 +477,7 @@
 "errors.sync_toolbar.show_item" = "Zeige Eintrag";
 "errors.sync_toolbar.show_items" = "Zeige Einträge";
 "errors.sync_toolbar.forbidden" = "Ungültiger Benutzername oder Passwort";
-"errors.sync_toolbar.forbidden_message" = "Der Server hat ihr Passwort und Benutzernamen nicht akzeptiert. Bitte melden Sie sich ab und mit den korrekten Eingaben erneut an.";
+"errors.sync_toolbar.forbidden_message" = "The Zotero sync server did not accept your username and password.\n\nPlease log out and log in with correct login information.\n\nIf you log in with different user any local data that was not synced will be deleted.";
 "errors.sync_toolbar.webdav_request_failed" = "Ihr WebDAV-Server hat einen HTTP %d Fehler zurückgemeldet für folgende Anfrage: %@";
 "errors.items.loading" = "Einträge konnten nicht geladen werden";
 "errors.items.deletion" = "Eintrag konnte nicht entfernt werden";
@@ -441,7 +491,7 @@
 "errors.items.generating_bib" = "Bibliografie konnte nicht generiert werden";
 "errors.citation_preview" = "Zitierstil-Vorschau konnte nicht generiert werden";
 "errors.item_detail.dropped_fields_title" = "Eintragsart ändern";
-"errors.item_detail.dropped_fields_message" = "Sind Sie sich sicher die Eintragsart ändern zu wollen? Folgende Felder würden gelöscht: %@";
+"errors.item_detail.dropped_fields_message" = "Sind Sie sich sicher die Eintragsart ändern zu wollen?\n\nFolgende Felder würden gelöscht:\n\n%@";
 "errors.item_detail.cant_load_data" = "Daten konnten nicht geladen werden. Bitte erneut versuchen.";
 "errors.item_detail.cant_create_attachments_with_names" = "Anhänge konnten nicht erstellt werden: %@";
 "errors.item_detail.cant_create_attachments" = "Anhänge konnten nicht erstellt werden";
@@ -451,7 +501,7 @@
 "errors.item_detail.cant_save_tags" = "Tags konnten nicht gespeichert werden";
 "errors.item_detail.unsupported_type" = "Art \"%@\" nicht unterstützt";
 "errors.settings.storage" = "Speicherdaten konnten nicht gesammelt werden";
-"errors.settings.webdav.file_missing_after_upload" = "Ein mögliches Problem ihres WebDAV-Servers.Eine hochgeladene kann nicht sofort heruntergeladen werden. Es gibt eine kurze Übergangsphase zwischen dem Hochladen und dem Verfügbarmachen, insbesondere, wenn eine Cloud-Lösung verwendet wird.Wenn die Synchronisation manuell funktioniert, können Sie diese Nachricht ignorieren. Treten Schwierigkeiten auf, posten Sie diese im Zotero-Forum.";
+"errors.settings.webdav.file_missing_after_upload" = "Ein mögliches Problem ihres WebDAV-Servers.\n\nEine hochgeladene Datei kann nicht sofort heruntergeladen werden. Es gibt eine kurze Übergangsphase zwischen dem Hochladen und dem Verfügbarmachen, insbesondere, wenn eine Cloud-Lösung verwendet wird.\n\nWenn die Synchronisation manuell funktioniert, können Sie diese Nachricht ignorieren. Treten Schwierigkeiten auf, posten Sie diese im Zotero-Forum.";
 "errors.settings.webdav.invalid_url" = "WebDAV Verifikationsfehler";
 "errors.settings.webdav.no_password" = "WebDAV Verifikationsfehler";
 "errors.settings.webdav.no_url" = "WebDAV Verifikationsfehler";
@@ -460,11 +510,11 @@
 "errors.settings.webdav.not_dav" = "Ungültige WebDAV-URL";
 "errors.settings.webdav.parent_dir_not_found" = "WebDAV Verifikationsfehler";
 "errors.settings.webdav.zotero_dir_not_found" = "WebDAV Verifikationsfehler";
-"errors.settings.webdav.unauthorized" = "Der WebDAV-Server akzeptiert den Benutzernamen und das Passowort nicht, welches eingegeben wurde";
+"errors.settings.webdav.unauthorized" = "Der WebDAV-Server akzeptiert den eingegebenen Benutzernamen und das Passwort nicht.";
 "errors.settings.webdav.forbidden" = "SIe haben keine Erlaubnis auf diesen Ordner im WebDAV-Server zuzugreifen.";
 "errors.settings.webdav.internet_connection" = "Verbindung mit Netzwerk nicht möglich. Bitte erneut versuchen. ";
 "errors.settings.webdav.host_not_found" = "Es konnte keine Verbingung mit dem WebDAV-Server hergestellt werden ";
-"errors.settings.webdav.ats" = "Wegen iOS-Einschränkungen müssen Sie HTTPS verwenden, um sich mit einem nicht-lokalne WebDAV-Server zu verbidnen";
+"errors.settings.webdav.ats" = "Wegen iOS-Einschränkungen müssen Sie HTTPS verwenden, um sich mit einem nicht-lokalen WebDAV-Server zu verbinden";
 "errors.shareext.logged_out" = "Bitte einloggen, bevor diese Erweiterung verwendet wird";
 "errors.shareext.cant_load_data" = "Daten konnten nicht geladen werden. Bitte erneut versuchen.";
 "errors.shareext.unknown" = "Ein unbekannter Fehler ist aufgetreten";
@@ -476,10 +526,10 @@
 "errors.shareext.response_missing_data" = "Ein Fehler ist aufgetreten. Bitte erneut versuchen";
 "errors.shareext.failed_additional" = "Sie können diese Seite als Webpage-Eintrag speichern";
 "errors.shareext.file_not_pdf" = "PDF konnte nicht gespeichert werden";
-"errors.shareext.api_error" = "Fehler beim hochladen der Datei. Der Eintrag wurde lokal gespeichert.";
+"errors.shareext.api_error" = "Fehler beim Hochladen der Datei. Der Eintrag wurde lokal gespeichert.";
 "errors.shareext.webdav_error" = "Fehler beim Hochladen auf den WebDAV-Server";
-"errors.shareext.personal_quota_reached" = "Sie haben die Grenze ihres Zotero-Speichers erreicht, die Datei konnte nicht hochgeladen werden. Schauen Sie in ihre Kontoeinstellungen für die Option den Speicherplatz zu erweitern. Diese Datei wurde lokal gespeichert.";
-"errors.shareext.group_quota_reached" = "Die Gruppe \"%@\" hat die Grenze des Speicherplatzes erreicht, die Datei konnte nicht hochgeladen werden. Der Eigentümer der Gruppe kann in seinen Konto-Einstellungen die Optionen auf Speicherplatzerweiterungen einsehen.Die Datei wurde lokal gespeichert.";
+"errors.shareext.personal_quota_reached" = "Sie haben die Grenze ihres Zotero-Speichers erreicht, die Datei konnte nicht hochgeladen werden. Schauen Sie in ihre Kontoeinstellungen für die Option, den Speicherplatz zu erweitern.\n\nDiese Datei wurde lokal gespeichert.";
+"errors.shareext.group_quota_reached" = "Die Gruppe \"%@\" hat die Grenze des Speicherplatzes erreicht, die Datei konnte nicht hochgeladen werden. Der Eigentümer der Gruppe kann in seinen Konto-Einstellungen die Optionen auf Speicherplatzerweiterungen einsehen.\n\nDie Datei wurde lokal gespeichert.";
 "errors.shareext.forbidden" = "Sie haben die nötige Erlaubnis nicht um diese Datei zu %@ hinzuzufügen.";
 "errors.shareext.webdav_not_verified" = "WebDAV Verifikationsfehler";
 "errors.shareext.requires_browser" = "Dieser Inhalt muss in einem Browser geladen werden, um mit Zotero geteilt zu werden. Im Browser öffnen und via \"Teilen-Button\" zu Zotero hinzufügen.";
@@ -520,7 +570,7 @@
 "accessibility.collections.create_collection" = "Sammlung erstellen";
 "accessibility.collections.search_collections" = "Sammlungen durchsuchen";
 "accessibility.collections.expand_all_collections" = "Alle Sammlungen erweitern";
-"accessibility.items.open_item" = "Dateiinformation öffnen";
+"accessibility.items.open_item" = "Eintragsinformation öffnen";
 "accessibility.items.select_items" = "Eintrag auswählen";
 "accessibility.items.select_all_items" = "Alle Einträge auswählen";
 "accessibility.items.deselect_all_items" = "Alle Einträge nicht mehr auswählen";
@@ -529,7 +579,7 @@
 "accessibility.items.add_to_collection" = "Ausgewählte Einträge zur Sammlung hinzufügen";
 "accessibility.items.remove_from_collection" = "Ausgewählte Einträge von der Sammlung entfernen";
 "accessibility.items.trash" = "Ausgewählte Einträge in den Papierkorb verschieben";
-"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
+"accessibility.items.remove_from_recentlyRead" = "Ausgewählte Einträge aus „Kürzlich gelesen“ entfernen";
 "accessibility.items.delete" = "Ausgewählte Einträge löschen";
 "accessibility.items.restore" = "Ausgewählte Einträge wiederherstellen";
 "accessibility.items.duplicate" = "Ausgewählte Einträge duplizieren";
@@ -538,7 +588,7 @@
 "accessibility.items.remove_downloads" = "Heruntergeladene Dateien der ausgewählten Einträge entfernen";
 "accessibility.items.collection" = "Sammlung";
 "accessibility.item_detail.download_and_open" = "Doppelklick um herunterzuladen und zu öffnen";
-"accessibility.item_detail.open" = "Doppelklick zum öffnen";
+"accessibility.item_detail.open" = "Doppelklick zum Öffnen";
 "accessibility.pdf.sidebar_open" = "Sidebar öffnen";
 "accessibility.pdf.sidebar_close" = "Sidebar schliessen";
 "accessibility.pdf.share" = "PDF teilen";
@@ -569,7 +619,7 @@
 "accessibility.pdf.comment" = "Kommentar";
 "accessibility.pdf.tags" = "Tags";
 "accessibility.pdf.annotation_hint" = "Doppelklick zum Anwählen und Ändern";
-"accessibility.pdf.tags_hint" = "Doppelklick um Tags anzupassen";
+"accessibility.pdf.tags_hint" = "Doppelklick, um Tags anzupassen";
 "accessibility.pdf.selected" = "Ausgewählt";
 "accessibility.pdf.search_pdf" = "PDF durchsuchen";
 "accessibility.pdf.redo" = "Wiedermachen";
@@ -578,13 +628,26 @@
 "accessibility.pdf.show_more_tools" = "Mehr anzeigen";
 "accessibility.htmlepub.search_html" = "Webseite durchsuchen";
 "accessibility.htmlepub.search_epub" = "EPUB durchsuchen";
+"accessibility.speech.show_reader" = "Zum Lese-Modus wechseln";
+"accessibility.speech.show_speech" = "Laut vorlesen beginnen";
 "accessibility.speech.play" = "Sprechen starten";
 "accessibility.speech.pause" = "Sprechen pausieren";
 "accessibility.speech.forward" = "Überspringen";
 "accessibility.speech.backward" = "Zurück";
-"accessibility.speech.title" = "Laut vorlesen";
-"accessibility.show_reader" = "Lese-Modus";
-"accessibility.show_reader_accessibility_label" = "Zum Lese-Modus wechseln";
-"accessibility.show_speech" = "Laut vorlesen";
-"accessibility.show_speech_accessibility_label" = "Laut vorlesen beginnen";
 "accessibility.open_document_accessibility" = "Barriere-Optionen öffnen";
+"accessibility.collections.shown_in_carplay" = "Shown in CarPlay";
+
+"carplay.loading" = "Loading…";
+"carplay.logged_out.title" = "Not Logged In";
+"carplay.logged_out.subtitle" = "Log in to Zotero on your iPhone.";
+"carplay.locked.title" = "Unlock Your iPhone";
+"carplay.locked.subtitle" = "Zotero can load your library once your iPhone has been unlocked.";
+"carplay.no_items.title" = "No Readable Items";
+"carplay.no_items.subtitle" = "Items with PDF, EPUB or snapshot files appear here.";
+"carplay.download_failed" = "Couldn't download the file.";
+"carplay.tiers" = "Tiers";
+"carplay.read_aloud_unavailable" = "Read aloud isn't available for this file.";
+"carplay.processing_document" = "Processing document…";
+"carplay.processing_failed" = "Couldn't prepare the document for reading aloud.";
+"carplay.out_of_credits" = "You've run out of read aloud time.";
+"carplay.voice_settings" = "Voice Settings";

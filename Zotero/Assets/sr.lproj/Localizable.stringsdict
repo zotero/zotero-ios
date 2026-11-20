@@ -13,9 +13,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 Collection Selected</string>
+			<string>Изабрана је %d збирка</string>
+			<key>few</key>
+			<string>Изабране су %d збирке</string>
 			<key>other</key>
-			<string>%d Collections Selected</string>
+			<string>Изабрано је %d збирки</string>
 		</dict>
 	</dict>
 	<key>items.delete_question</key>
@@ -29,9 +31,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to delete the selected item?</string>
+			<string>Да ли заиста желите да обришете изабрану ставку?</string>
+			<key>few</key>
+			<string>Да ли заиста желите да обришете изабране ставке?</string>
 			<key>other</key>
-			<string>Are you sure you want to delete the selected items?</string>
+			<string>Да ли заиста желите да обришете изабране ставке?</string>
 		</dict>
 	</dict>
 	<key>items.remove_from_collection_question</key>
@@ -45,9 +49,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to remove the selected item from this collection?</string>
+			<string>Да ли заиста желите да уклоните изабрану ставку из ове збирке?</string>
+			<key>few</key>
+			<string>Да ли заиста желите да уклоните изабране ставке из ове збирке?</string>
 			<key>other</key>
-			<string>Are you sure you want to remove the selected items from this collection?</string>
+			<string>Да ли заиста желите да уклоните изабране ставке из ове збирке?</string>
 		</dict>
 	</dict>
 	<key>items.toolbar_filter</key>
@@ -61,9 +67,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Filter: 1 item</string>
+			<string>Филтер: %d ставка</string>
+			<key>few</key>
+			<string>Филтер: %d ставке</string>
 			<key>other</key>
-			<string>Filter: %d items</string>
+			<string>Филтер: %d ставки</string>
 		</dict>
 	</dict>
 	<key>pdf.search.matches</key>
@@ -77,9 +85,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Found 1 match</string>
+			<string>Пронађено је %d подударање</string>
+			<key>few</key>
+			<string>Пронађена су %d подударања</string>
 			<key>other</key>
-			<string>Found %d matches</string>
+			<string>Пронађено је %d подударања</string>
 		</dict>
 	</dict>
 	<key>settings.storage.files_size_and_unit</key>
@@ -93,9 +103,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 file</string>
+			<string>%d датотека</string>
+			<key>few</key>
+			<string>%d датотеке</string>
 			<key>other</key>
-			<string>%d files</string>
+			<string>%d датотека</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.errors</key>
@@ -109,9 +121,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 issue</string>
+			<string>%d проблем</string>
+			<key>few</key>
+			<string>%d проблема</string>
 			<key>other</key>
-			<string>%d issues</string>
+			<string>%d проблема</string>
 		</dict>
 	</dict>
 	<key>tag_picker.tags_selected</key>
@@ -125,9 +139,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 tag selected</string>
+			<string>Изабрана је %d ознака</string>
+			<key>few</key>
+			<string>Изабране су %d ознаке</string>
 			<key>other</key>
-			<string>%d tags selected</string>
+			<string>Изабрано је %d ознака</string>
 		</dict>
 	</dict>
 	<key>tag_picker.confirm_deletion</key>
@@ -141,9 +157,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+			<string>Да ли желите да избришете %d аутоматску ознаку из ове библиотеке?
+
+Ова радња се не може опозвати.</string>
+			<key>few</key>
+			<string>Да ли желите да избришете %d аутоматске ознаке из ове библиотеке?
+
+Ова радња се не може опозвати.</string>
 			<key>other</key>
-			<string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+			<string>Да ли желите да избришете %d аутоматских ознака из ове библиотеке?
+
+Ова радња се не може опозвати.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>
@@ -157,9 +181,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 line logged</string>
+			<string>Забележен је %d ред</string>
+			<key>few</key>
+			<string>Забележена су %d реда</string>
 			<key>other</key>
-			<string>%d lines logged</string>
+			<string>Забележено је %d редова</string>
 		</dict>
 	</dict>
 	<key>settings.lines</key>
@@ -173,9 +199,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 line</string>
+			<string>%d ред</string>
+			<key>few</key>
+			<string>%d реда</string>
 			<key>other</key>
-			<string>%d lines</string>
+			<string>%d редова</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.webdav_error2</key>
@@ -189,9 +217,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Could not delete 1 file from your WebDAV server</string>
+			<string>Није могуће избрисати %d датотеку са вашег ВебДАВ сервера</string>
+			<key>few</key>
+			<string>Није могуће избрисати %d датотеке са вашег ВебДАВ сервера</string>
 			<key>other</key>
-			<string>Could not delete %d files from your WebDAV server</string>
+			<string>Није могуће избрисати %d датотека са вашег ВебДАВ сервера</string>
 		</dict>
 	</dict>
 	<key>settings.general.after_x_days</key>
@@ -205,9 +235,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>After 1 Day</string>
+			<string>После %d дана</string>
+			<key>few</key>
+			<string>После %d дана</string>
 			<key>other</key>
-			<string>After %d Days</string>
+			<string>После %d дана</string>
 		</dict>
 	</dict>
 </dict>

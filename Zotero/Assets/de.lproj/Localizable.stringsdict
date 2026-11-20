@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to remove the selected item from this collection?</string>
+			<string>Sicher, dass der ausgewählte Eintrag aus dieser Sammlung entfernt werden soll?</string>
 			<key>other</key>
-			<string>Are you sure you want to remove the selected items from this collection?</string>
+			<string>Sicher, dass die ausgewählten Einträge aus dieser Sammlung entfernt werden sollen?</string>
 		</dict>
 	</dict>
 	<key>items.toolbar_filter</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Filter: 1 item</string>
+			<string>Filter: 1 Eintrag</string>
 			<key>other</key>
-			<string>Filter: %d items</string>
+			<string>Filter: %d Einträge</string>
 		</dict>
 	</dict>
 	<key>pdf.search.matches</key>
@@ -77,9 +77,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Found 1 match</string>
+			<string>1 Treffer gefunden</string>
 			<key>other</key>
-			<string>Found %d matches</string>
+			<string>%d Treffer gefunden</string>
 		</dict>
 	</dict>
 	<key>settings.storage.files_size_and_unit</key>
@@ -141,9 +141,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+			<string>Are you sure you want to delete 1 automatic tag in this library?
+
+This action cannot be undone.</string>
 			<key>other</key>
-			<string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+			<string>Are you sure you want to delete %d automatic tags in this library?
+
+This action cannot be undone.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>
@@ -173,9 +177,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 line</string>
+			<string>1 Zeile</string>
 			<key>other</key>
-			<string>%d lines</string>
+			<string>%d Zeilen</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.webdav_error2</key>
@@ -189,9 +193,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Could not delete 1 file from your WebDAV server</string>
+			<string>1 Datei konnte nicht von Ihrem WebDAV-Server gelöscht werden</string>
 			<key>other</key>
-			<string>Could not delete %d files from your WebDAV server</string>
+			<string>%d Dateien konnten nicht von Ihrem WebDAV-Server gelöscht werden</string>
 		</dict>
 	</dict>
 	<key>settings.general.after_x_days</key>
@@ -205,9 +209,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>After 1 Day</string>
+			<string>Nach 1 Tag</string>
 			<key>other</key>
-			<string>After %d Days</string>
+			<string>Nach %d Tagen</string>
 		</dict>
 	</dict>
 </dict>

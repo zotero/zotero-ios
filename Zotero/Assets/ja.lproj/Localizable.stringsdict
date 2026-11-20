@@ -12,10 +12,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>1 Collection Selected</string>
 			<key>other</key>
-			<string>%d Collections Selected</string>
+			<string>%d 件のコレクションが選択済み</string>
 		</dict>
 	</dict>
 	<key>items.delete_question</key>
@@ -28,10 +26,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Are you sure you want to delete the selected item?</string>
 			<key>other</key>
-			<string>Are you sure you want to delete the selected items?</string>
+			<string>選択項目を削除してもよろしいですか？</string>
 		</dict>
 	</dict>
 	<key>items.remove_from_collection_question</key>
@@ -44,10 +40,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Are you sure you want to remove the selected item from this collection?</string>
 			<key>other</key>
-			<string>Are you sure you want to remove the selected items from this collection?</string>
+			<string>このコレクションから選択した項目を削除してもよろしいですか？</string>
 		</dict>
 	</dict>
 	<key>items.toolbar_filter</key>
@@ -60,10 +54,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Filter: 1 item</string>
 			<key>other</key>
-			<string>Filter: %d items</string>
+			<string>フィルター : %d 項目</string>
 		</dict>
 	</dict>
 	<key>pdf.search.matches</key>
@@ -76,10 +68,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Found 1 match</string>
 			<key>other</key>
-			<string>Found %d matches</string>
+			<string>%d 件の一致が見つかりました</string>
 		</dict>
 	</dict>
 	<key>settings.storage.files_size_and_unit</key>
@@ -92,10 +82,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>1 file</string>
 			<key>other</key>
-			<string>%d files</string>
+			<string>%d ファイル</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.errors</key>
@@ -108,10 +96,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>1 issue</string>
 			<key>other</key>
-			<string>%d issues</string>
+			<string>%d 件の問題</string>
 		</dict>
 	</dict>
 	<key>tag_picker.tags_selected</key>
@@ -124,10 +110,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>1 tag selected</string>
 			<key>other</key>
-			<string>%d tags selected</string>
+			<string>%d 個のタグが選択済み</string>
 		</dict>
 	</dict>
 	<key>tag_picker.confirm_deletion</key>
@@ -140,10 +124,10 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
 			<key>other</key>
-			<string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+			<string>このライブラリ内の %d 個の自動タグを削除してもよろしいですか？
+
+この操作は元に戻せません。</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>
@@ -156,10 +140,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>1 line logged</string>
 			<key>other</key>
-			<string>%d lines logged</string>
+			<string>%d 行が記録されました</string>
 		</dict>
 	</dict>
 	<key>settings.lines</key>
@@ -172,10 +154,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>1 line</string>
 			<key>other</key>
-			<string>%d lines</string>
+			<string>%d 行</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.webdav_error2</key>
@@ -188,10 +168,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Could not delete 1 file from your WebDAV server</string>
 			<key>other</key>
-			<string>Could not delete %d files from your WebDAV server</string>
+			<string>WebDAVサーバーから %d 個のファイルを削除できませんでした</string>
 		</dict>
 	</dict>
 	<key>settings.general.after_x_days</key>
@@ -204,10 +182,8 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>After 1 Day</string>
 			<key>other</key>
-			<string>After %d Days</string>
+			<string>%d 日後</string>
 		</dict>
 	</dict>
 </dict>

@@ -90,6 +90,8 @@
 "collections.create_title" = "Créer une collection";
 "collections.picker_title" = "Choisir le document parent";
 "collections.empty_trash" = "Vider la corbeille";
+"collections.show_in_carplay" = "Show in CarPlay";
+"collections.hide_from_carplay" = "Hide from CarPlay";
 "collections.collapse_all" = "Tout réduire";
 "collections.expand_all" = "Tout développer";
 "collections.create_bibliography" = "Créer une bibliographie à partir de la collection";
@@ -140,6 +142,7 @@
 "items.filters.tags" = "Marqueurs";
 "items.toolbar_saved" = "%d / %d enregistré";
 "items.toolbar_downloaded" = "%d / %d téléchargé";
+"items.toolbar_failed" = "Failed %d";
 "items.generating_bib" = "Génération de la bibliographie";
 "items.creator_summary.and" = "%@ et %@";
 "items.creator_summary.etal" = "%@ et al.";
@@ -147,6 +150,7 @@
 "items.collections_select_prompt" = "Sélectionner une collection";
 
 "lookup.title" = "Entrer des ISBN, DOI, PMID, arXiv ID ou bibcodes ADS à ajouter à votre bibliothèque :";
+"lookup.continue" = "Continue";
 
 "citation.title" = "Aperçu de la citation";
 "citation.copy_citation" = "Copier la citation";
@@ -283,6 +287,49 @@
 "pdf.previous_viewport" = "Viewport précédent";
 "pdf.next_viewport" = "Viewport suivant";
 
+"reader.settings.zoom.title" = "Zoom";
+"reader.settings.zoom.zoom_in" = "Zoom In";
+"reader.settings.zoom.zoom_out" = "Zoom Out";
+"reader.settings.zoom.reset" = "Reset Zoom";
+
+"accessibility_popup.show_reader" = "Mode lecture";
+"accessibility_popup.show_speech" = "Lire à haute voix";
+"speech.title" = "Lire à haute voix";
+"speech.voice" = "Voice";
+"speech.speak" = "Lire à haute voix";
+"speech.automatic" = "Automatique";
+"speech.no_voices_for_tier" = "No voices found for detected language %@ in this tier. Pick a different tier or choose language manually.";
+"speech.onboarding.title" = "Choose your preferred Read Aloud voice:";
+"speech.onboarding.tier_premium" = "Premium";
+"speech.onboarding.tier_standard" = "Standard";
+"speech.onboarding.tier_local" = "Local";
+"speech.onboarding.description_premium_1" = "Highest-quality voices";
+"speech.onboarding.description_premium_2" = "Only available with an internet connection";
+"speech.onboarding.description_premium_3" = "Broad language selection";
+"speech.onboarding.description_premium_4" = "Multilingual support";
+"speech.onboarding.description_premium_5" = "Source text is processed by external text-to-speech providers";
+"speech.onboarding.description_premium_6" = "{ -subscription-name } plans include monthly Premium Voice minutes";
+"speech.onboarding.description_premium_" = "Request credits for additional minutes during beta";
+"speech.onboarding.description_standard_1" = "Natural-sounding voices";
+"speech.onboarding.description_standard_2" = "Only available with an internet connection";
+"speech.onboarding.description_standard_3" = "Limited language selection";
+"speech.onboarding.description_standard_4" = "No multilingual support";
+"speech.onboarding.description_standard_5" = "Source text doesn't leave { -app-name } servers";
+"speech.onboarding.description_standard_6" = "Unlimited use with a { -subscription-name } subscription";
+"speech.onboarding.description_local_1" = "Voices provided by your operating system";
+"speech.onboarding.description_local_2" = "Available without an internet connection";
+"speech.onboarding.description_local_3" = "Free to use";
+"speech.voices" = "Voices";
+"speech.region" = "Region";
+"speech.local_sample" = "I am the local voice %@.";
+"speech.language" = "Langue";
+"speech.speech_rate" = "Speech Rate";
+"speech.switch" = "Switch";
+"speech.stop" = "Stop";
+"speech.add_time" = "Add More Time";
+"speech.continue_standard" = "Continue Reading With Standard Voices";
+"speech.continue_local" = "Continue Reading With Local Voices";
+
 "settings.title" = "Paramètres";
 "settings.logout" = "Se déconnecter";
 "settings.logout_warning" = "Toutes les données locales qui n'ont pas été synchronisées seront supprimées. Voulez-vous vraiment vous déconnecter ?";
@@ -300,6 +347,7 @@
 "settings.sync.file_syncing_type_message" = "Synchroniser les fichiers joints de Ma bibliothèque en utilisant";
 "settings.sync.account" = "Compte";
 "settings.sync.manage_account" = "Gérer le compte";
+"settings.sync.account_settings" = "Account Settings";
 "settings.sync.delete_account" = "Supprimer le compte";
 "settings.sync.username" = "Nom d'utilisateur";
 "settings.sync.password" = "Mot de passe";
@@ -368,7 +416,7 @@
 "settings.annotation_tools.reset" = "Réinitialiser";
 
 "shareext.save" = "Enregistrer dans Zotero";
-"shareext.resolve_challenge" = "Resolve Challenge";
+"shareext.continue" = "Continue";
 "shareext.decoding_attachment" = "Recherche de documents";
 "shareext.translation.item_selection" = "Choisir un document";
 "shareext.translation.translating_with" = "Enregistrement avec %@";
@@ -391,6 +439,7 @@
 "errors.unknown" = "Erreur inconnue";
 "errors.attachments.cant_unzip_snapshot" = "Impossible de décompresser la capture";
 "errors.attachments.incompatible_attachment" = "Les fichiers liés ne sont pas pris en charge sur les appareils mobiles. Vous pouvez les ouvrir à l'aide de l'application de bureau Zotero.";
+"errors.attachments.invalid_webdav_zip_download" = "The WebDAV server did not return a zipped attachment file.";
 "errors.attachments.cant_open_attachment" = "Impossible de trouver le fichier joint.";
 "errors.attachments.missing_zotero" = "Le fichier joint n'est pas disponible dans la bibliothèque en ligne.";
 "errors.attachments.missing_webdav" = "Le fichier joint n'est pas disponible sur le serveur WebDAV.";
@@ -417,6 +466,7 @@
 "errors.sync_toolbar.conflict_retry_limit" = "Synchronisation à distance en cours. Veuillez essayer à nouveau dans quelques minutes.";
 "errors.sync_toolbar.group_permissions" = "Vous n'avez pas l'autorisation de modifier les groupes.";
 "errors.sync_toolbar.internet_connection" = "Impossible de se connecter au réseau. Veuillez essayer à nouveau.";
+"errors.sync_toolbar.unexpected_my_library_last_read_deletions" = "Sync received unexpected last read settings deletions for My Library.";
 "errors.sync_toolbar.personal_quota_reached" = "Vous avez atteint votre quota de stockage Zotero. Certains fichiers n'ont pas été téléchargés. Les autres données Zotero continueront à être synchronisées.\n\nConsultez les paramètres de votre compte zotero.org pour connaître les options de stockage supplémentaire.";
 "errors.sync_toolbar.group_quota_reached" = "Le groupe \"%@\" a atteint son quota de stockage Zotero. Certains fichiers n'ont pas été téléchargés. Les autres données Zotero continueront à être synchronisées.\n\nLe propriétaire du groupe peut augmenter la capacité de stockage du groupe à partir des ses paramètres de stockage sur zotero.org.";
 "errors.sync_toolbar.insufficient_space" = "Vous ne disposez pas de suffisamment d'espace sur votre serveur WebDAV. Certains fichiers n'ont pas été téléchargés. Les autres données Zotero continueront à se synchroniser.";
@@ -427,7 +477,7 @@
 "errors.sync_toolbar.show_item" = "Afficher le document";
 "errors.sync_toolbar.show_items" = "Afficher les documents";
 "errors.sync_toolbar.forbidden" = "Utilisateur ou mot de passe invalide";
-"errors.sync_toolbar.forbidden_message" = "Le serveur de synchronisation Zotero n'a pas accepté votre nom d'utilisateur et votre mot de passe.\n\nVeuillez vous déconnecter et vous connecter avec des identifiants corrects.";
+"errors.sync_toolbar.forbidden_message" = "The Zotero sync server did not accept your username and password.\n\nPlease log out and log in with correct login information.\n\nIf you log in with different user any local data that was not synced will be deleted.";
 "errors.sync_toolbar.webdav_request_failed" = "Votre serveur WebDAV a renvoyé une erreur HTTP %d pour une requête %@.";
 "errors.items.loading" = "Impossible de charger les documents";
 "errors.items.deletion" = "Impossible de supprimer le document";
@@ -578,13 +628,26 @@
 "accessibility.pdf.show_more_tools" = "Afficher plus";
 "accessibility.htmlepub.search_html" = "Rechercher sur le site web";
 "accessibility.htmlepub.search_epub" = "Rechercher dans les fichiers EPUB";
+"accessibility.speech.show_reader" = "Passer au mode lecture";
+"accessibility.speech.show_speech" = "Commencer à lire à haute voix";
 "accessibility.speech.play" = "Début de la conversation";
 "accessibility.speech.pause" = "Pause dans la conversation";
 "accessibility.speech.forward" = "Aller en avant";
 "accessibility.speech.backward" = "Revenir en arrière";
-"accessibility.speech.title" = "Lire à haute voix";
-"accessibility.show_reader" = "Mode lecture";
-"accessibility.show_reader_accessibility_label" = "Passer au mode lecture";
-"accessibility.show_speech" = "Lire à haute voix";
-"accessibility.show_speech_accessibility_label" = "Commencer à lire à haute voix";
 "accessibility.open_document_accessibility" = "Ouvrir les options d'accessibilité";
+"accessibility.collections.shown_in_carplay" = "Shown in CarPlay";
+
+"carplay.loading" = "Loading…";
+"carplay.logged_out.title" = "Not Logged In";
+"carplay.logged_out.subtitle" = "Log in to Zotero on your iPhone.";
+"carplay.locked.title" = "Unlock Your iPhone";
+"carplay.locked.subtitle" = "Zotero can load your library once your iPhone has been unlocked.";
+"carplay.no_items.title" = "No Readable Items";
+"carplay.no_items.subtitle" = "Items with PDF, EPUB or snapshot files appear here.";
+"carplay.download_failed" = "Couldn't download the file.";
+"carplay.tiers" = "Tiers";
+"carplay.read_aloud_unavailable" = "Read aloud isn't available for this file.";
+"carplay.processing_document" = "Processing document…";
+"carplay.processing_failed" = "Couldn't prepare the document for reading aloud.";
+"carplay.out_of_credits" = "You've run out of read aloud time.";
+"carplay.voice_settings" = "Voice Settings";

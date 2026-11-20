@@ -90,6 +90,8 @@
 "collections.create_title" = "Krijoni Koleksion";
 "collections.picker_title" = "Zgjidhni Mëmë";
 "collections.empty_trash" = "Zbraz Hedhurina";
+"collections.show_in_carplay" = "Show in CarPlay";
+"collections.hide_from_carplay" = "Hide from CarPlay";
 "collections.collapse_all" = "Tkurri Krejt";
 "collections.expand_all" = "Zgjeroji Krejt";
 "collections.create_bibliography" = "Krijoni Bibliografi nga Koleksion";
@@ -140,6 +142,7 @@
 "items.filters.tags" = "Etiketa";
 "items.toolbar_saved" = "U ruajtën %d / %d";
 "items.toolbar_downloaded" = "U shkarkuan %d / %d";
+"items.toolbar_failed" = "Failed %d";
 "items.generating_bib" = "Po prodhohet Bibliografi";
 "items.creator_summary.and" = "%@ dhe %@";
 "items.creator_summary.etal" = "%@ et al.";
@@ -147,6 +150,7 @@
 "items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "Jepni ISBN-ra, DOI-ra, PMID-ra, ID-ra arXiv, ose ADS Bibcodes që të shtohet te biblioteka juaj:";
+"lookup.continue" = "Continue";
 
 "citation.title" = "Paraparje Citimi";
 "citation.copy_citation" = "Kopjoje Citimin";
@@ -283,6 +287,49 @@
 "pdf.previous_viewport" = "Previous Viewport";
 "pdf.next_viewport" = "Next Viewport";
 
+"reader.settings.zoom.title" = "Zoom";
+"reader.settings.zoom.zoom_in" = "Zoom In";
+"reader.settings.zoom.zoom_out" = "Zoom Out";
+"reader.settings.zoom.reset" = "Reset Zoom";
+
+"accessibility_popup.show_reader" = "Mënyra Lexim";
+"accessibility_popup.show_speech" = "Lexoni Me Zë";
+"speech.title" = "Lexoni Me Zë";
+"speech.voice" = "Voice";
+"speech.speak" = "Lexoni Me Zë";
+"speech.automatic" = "Automatike";
+"speech.no_voices_for_tier" = "No voices found for detected language %@ in this tier. Pick a different tier or choose language manually.";
+"speech.onboarding.title" = "Choose your preferred Read Aloud voice:";
+"speech.onboarding.tier_premium" = "Premium";
+"speech.onboarding.tier_standard" = "Standard";
+"speech.onboarding.tier_local" = "Local";
+"speech.onboarding.description_premium_1" = "Highest-quality voices";
+"speech.onboarding.description_premium_2" = "Only available with an internet connection";
+"speech.onboarding.description_premium_3" = "Broad language selection";
+"speech.onboarding.description_premium_4" = "Multilingual support";
+"speech.onboarding.description_premium_5" = "Source text is processed by external text-to-speech providers";
+"speech.onboarding.description_premium_6" = "{ -subscription-name } plans include monthly Premium Voice minutes";
+"speech.onboarding.description_premium_" = "Request credits for additional minutes during beta";
+"speech.onboarding.description_standard_1" = "Natural-sounding voices";
+"speech.onboarding.description_standard_2" = "Only available with an internet connection";
+"speech.onboarding.description_standard_3" = "Limited language selection";
+"speech.onboarding.description_standard_4" = "No multilingual support";
+"speech.onboarding.description_standard_5" = "Source text doesn't leave { -app-name } servers";
+"speech.onboarding.description_standard_6" = "Unlimited use with a { -subscription-name } subscription";
+"speech.onboarding.description_local_1" = "Voices provided by your operating system";
+"speech.onboarding.description_local_2" = "Available without an internet connection";
+"speech.onboarding.description_local_3" = "Free to use";
+"speech.voices" = "Voices";
+"speech.region" = "Region";
+"speech.local_sample" = "I am the local voice %@.";
+"speech.language" = "Gjuhë";
+"speech.speech_rate" = "Speech Rate";
+"speech.switch" = "Switch";
+"speech.stop" = "Stop";
+"speech.add_time" = "Add More Time";
+"speech.continue_standard" = "Continue Reading With Standard Voices";
+"speech.continue_local" = "Continue Reading With Local Voices";
+
 "settings.title" = "Rregullime";
 "settings.logout" = "Dilni";
 "settings.logout_warning" = "Çfarëdo të dhënash vendore që s’qenë njëkohësuar, do të fshihen. Doni vërtet të dilni?";
@@ -300,12 +347,13 @@
 "settings.sync.file_syncing_type_message" = "Kartelat bashkëngjitje në Bibliotekën Time njëkohësoji duke përdorur";
 "settings.sync.account" = "Llogari";
 "settings.sync.manage_account" = "Administroni Llogari";
+"settings.sync.account_settings" = "Account Settings";
 "settings.sync.delete_account" = "Fshije Llogarinë";
 "settings.sync.username" = "Emër përdoruesi";
 "settings.sync.password" = "Fjalëkalim";
 "settings.sync.verify" = "Verifikoni Shërbyes";
 "settings.sync.directory_not_found.title" = "Drejtoria s’u gjet";
-"settings.sync.directory_not_found.message" = "%@ s’ekziston.Doni të krijohet tani?";
+"settings.sync.directory_not_found.message" = "%@ s’ekziston.\n\nDoni të krijohet tani?";
 "settings.sync.verified" = "U verifikua";
 "settings.permission" = "Leje Përdoruesi";
 "settings.permission_subtitle" = "Kërko për leje përdoruesi për çdo veprim shkrimi";
@@ -328,8 +376,8 @@
 "settings.log_alert.title" = "Regjistrat u Dërguan";
 "settings.log_alert.message" = "ID-ja juaj e Diagnostikimit është %@";
 "settings.crash_alert.title" = "Regjistrimi i Vithisjes u Dërgua";
-"settings.crash_alert.message" = "ID-ja e Raportimit tuaj është %@.Ju lutemi, postoi një mesazh te Forume Zotero (forums.zotero.org) me këtë ID Raportimi dhe çfarëdo hapash të nevojshëm për të riprodhuar vithisjen.";
-"settings.crash_alert.message_with_db" = "ID-ja e Raportimit tuaj është %@.Ju lutemi, postoi një mesazh te Forume Zotero (forums.zotero.org) me këtë ID Raportimi dhe çfarëdo hapash të nevojshëm për të riprodhuar vithisjen.Nëse Zotero-ja vithiset në mënyrë të përsëritur, ju lutemi, prekni mbi “Eksportoni Bazë të Dhënash” dhe dërgojini kartelat e eksportuara te support@zotero.org.";
+"settings.crash_alert.message" = "ID-ja e Raportimit tuaj është %@.\n\nJu lutemi, postoi një mesazh te Forume Zotero (forums.zotero.org) me këtë ID Raportimi dhe çfarëdo hapash të nevojshëm për të riprodhuar vithisjen.";
+"settings.crash_alert.message_with_db" = "ID-ja e Raportimit tuaj është %@.\n\nJu lutemi, postoi një mesazh te Forume Zotero (forums.zotero.org) me këtë ID Raportimi dhe çfarëdo hapash të nevojshëm për të riprodhuar vithisjen.\n\nNëse Zotero-ja vithiset në mënyrë të përsëritur, ju lutemi, prekni mbi “Eksportoni Bazë të Dhënash” dhe dërgojini kartelat e eksportuara te support@zotero.org.";
 "settings.crash_alert.submit_forum" = "Parashtrojeni te Forume Zoteri";
 "settings.crash_alert.export_db" = "Kopjoni dhe Eksportoni Bazën e të Dhënave";
 "settings.crash_alert.copy" = "Kopjoje në të Papastër";
@@ -341,8 +389,8 @@
 "settings.websocket_connect" = "Lidhu me Shërbyesin";
 "settings.storage" = "Depozitim Vendor";
 "settings.storage.delete_all" = "Fshi Krejt Kartelat Vendore Bashkëngjitjesh";
-"settings.storage.delete_all_question" = "Jeni i sigurt se doni të fshihen krejt kartelat bashkëngjitje prej kësaj pajisjeje?Pajisje të tjera të njëkohësuara s’do të preken.";
-"settings.storage.delete_library_question" = "Jeni i sigurt se doni të fshihen krejt kartelat bashkëngjitje te %@ prej kësaj pajisjeje?Pajisje të tjera të njëkohësuara s’do të preken.";
+"settings.storage.delete_all_question" = "Jeni i sigurt se doni të fshihen krejt kartelat bashkëngjitje prej kësaj pajisjeje?\n\nPajisje të tjera të njëkohësuara s’do të preken.";
+"settings.storage.delete_library_question" = "Jeni i sigurt se doni të fshihen krejt kartelat bashkëngjitje te %@ prej kësaj pajisjeje?\n\nPajisje të tjera të njëkohësuara s’do të preken.";
 "settings.saving.title" = "Saving";
 "settings.saving.files_title" = "Ruaji Kartelat";
 "settings.saving.files_message" = "Kur ruhen objekte, bashkëngjit automatikisht PDF-të dhe kartela të tjera të lidhura";
@@ -368,7 +416,7 @@
 "settings.annotation_tools.reset" = "Reset";
 
 "shareext.save" = "Ruaje në Zotero";
-"shareext.resolve_challenge" = "Resolve Challenge";
+"shareext.continue" = "Continue";
 "shareext.decoding_attachment" = "Po kërkohet për objekte";
 "shareext.translation.item_selection" = "Zgjidhni një objekt";
 "shareext.translation.translating_with" = "Po ruhet me %@";
@@ -383,7 +431,7 @@
 "searchbar.accessibility_cancel" = "Anuloje Kërkimin";
 "searchbar.accessibility_clear" = "Spastroje Kërkimin";
 
-"errors.schema" = "S\"u shkarkuan dot disa të dhëna te Biblioteka Ime. Mund të jenë ruajtur me një version më të ri të Zotero-s.Për të dhënat e tjera do të vazhdojë njëkohësimi.";
+"errors.schema" = "S\"u shkarkuan dot disa të dhëna te Biblioteka Ime. Mund të jenë ruajtur me një version më të ri të Zotero-s.\n\nPër të dhënat e tjera do të vazhdojë njëkohësimi.";
 "errors.parsing" = "S’u analizuan dot disa të dhëna. Për të dhënat e tjera do të vazhdojë njëkohësimi.";
 "errors.api" = "Përgjigje e dështuar API: %@";
 "errors.db" = "S’u lidh dot te bazë të dhënash. Depozita e pajisjes mund të jetë plot.";
@@ -391,6 +439,7 @@
 "errors.unknown" = "Gabim i panjohur";
 "errors.attachments.cant_unzip_snapshot" = "S’arrihet të shpaketohet fotografim zip";
 "errors.attachments.incompatible_attachment" = "Në pajisje celulare s’mbulohen kartela të lidhura. Ato mund t’i hapni duke përdorur aplikacionin Zotero për desktop.";
+"errors.attachments.invalid_webdav_zip_download" = "The WebDAV server did not return a zipped attachment file.";
 "errors.attachments.cant_open_attachment" = "S’u gjet dot kartela e bashkëngjitur.";
 "errors.attachments.missing_zotero" = "Kartela e bashkëngjitur s’është te biblioteka në internet.";
 "errors.attachments.missing_webdav" = "Kartela e bashkëngjitur s’është te shërbyesi WebDAV.";
@@ -407,7 +456,7 @@
 "errors.sync.group_removed" = "Grupi “%@” s’është më i përdorshëm. Ç’do të donit të bënit?";
 "errors.sync.metadata_write_denied" = "S’mund të shkruani më te grupi “%@”. Ç’do të donit të bëni?";
 "errors.sync.revert_to_original" = "Riktheje te origjinali";
-"errors.sync.file_write_denied" = "S’keni më hyrje për përpunim kartelash për grupin “%@” dhe kartelat që keni ndryshuar lokalisht s’mund të ngarkohen. Nëse vazhdoni, krejt kartelat e grupit do të rikthehen në gjendjen e tyre më %@.Nëse do të donit një shans për të kopjuar gjetkë kartelat e ndryshuara, ose të kërkoni hyrje për përpunim kartelash nga një përgjegjës grupi, mund të anashkaloni tani njëkohësimin e grupit.";
+"errors.sync.file_write_denied" = "S’keni më hyrje për përpunim kartelash për grupin “%@” dhe kartelat që keni ndryshuar lokalisht s’mund të ngarkohen. Nëse vazhdoni, krejt kartelat e grupit do të rikthehen në gjendjen e tyre më %@.\n\nNëse do të donit një shans për të kopjuar gjetkë kartelat e ndryshuara, ose të kërkoni hyrje për përpunim kartelash nga një përgjegjës grupi, mund të anashkaloni tani njëkohësimin e grupit.";
 "errors.sync.reset_group_files" = "Rikthe Kartela Grupi te Parazgjedhjet dhe Njëkohëso";
 "errors.sync.skip_group" = "Anashkaloje Grupin";
 "errors.sync_toolbar.finished_with_errors" = "U përfundua njëkohësimi (%@)";
@@ -417,8 +466,9 @@
 "errors.sync_toolbar.conflict_retry_limit" = "Njëkohësim i largët  në kryerje e sipër. Ju lutemi, riprovoni pas pak minutash.";
 "errors.sync_toolbar.group_permissions" = "S’keni leje të përpunoni grupe.";
 "errors.sync_toolbar.internet_connection" = "S’arrihet të lidhet te rrjeti. Ju lutemi, riprovoni.";
-"errors.sync_toolbar.personal_quota_reached" = "Keni plotësuar kuotat tuaja për Depozitim Zotero. Disa kartela s’u ngarkuan. Të tjera të dhëna Zotero do të vazhdohet të njëkohësohen.Për mundësi depozitimi shtesë, shihni rregullimet e llogarisë tuaj zotero.org.";
-"errors.sync_toolbar.group_quota_reached" = "Grupi “%@” ka plotësuar kuotat e tij për Depozitim Zotero. Disa kartela s’u ngarkuan. Të tjera të dhëna Zotero do të vazhdohet të njëkohësohen. I zoti i grupit mund të rrisë kapacitetin e depozitimit për grupin që nga rregullimet e tij të depozitimit, te zotero.org.";
+"errors.sync_toolbar.unexpected_my_library_last_read_deletions" = "Sync received unexpected last read settings deletions for My Library.";
+"errors.sync_toolbar.personal_quota_reached" = "Keni plotësuar kuotat tuaja për Depozitim Zotero. Disa kartela s’u ngarkuan. Të tjera të dhëna Zotero do të vazhdohet të njëkohësohen.\n\nPër mundësi depozitimi shtesë, shihni rregullimet e llogarisë tuaj zotero.org.";
+"errors.sync_toolbar.group_quota_reached" = "Grupi “%@” ka plotësuar kuotat e tij për Depozitim Zotero. Disa kartela s’u ngarkuan. Të tjera të dhëna Zotero do të vazhdohet të njëkohësohen.\n\nI zoti i grupit mund të rrisë kapacitetin e depozitimit për grupin që nga rregullimet e tij të depozitimit, te zotero.org.";
 "errors.sync_toolbar.insufficient_space" = "Keni hapësirë të pamjaftueshme në shërbyesin tuaj WebDAV. Disa kartela s’u ngarkuan. Të tjera të dhëna Zotero do të vazhdohet të njëkohësohen.";
 "errors.sync_toolbar.quota_reached_short" = "U plotësuan Kuotat.";
 "errors.sync_toolbar.unavailable" = "Shërbimet Zotero janë përkohësisht të papërdorshme. Ju lutemi, riprovoni, pas pak minutash.";
@@ -427,7 +477,7 @@
 "errors.sync_toolbar.show_item" = "Shfaqe Objektin";
 "errors.sync_toolbar.show_items" = "Shfaqi Objektet";
 "errors.sync_toolbar.forbidden" = "Emër përdoruesi, ose fjalëkalim i pavlefshëm";
-"errors.sync_toolbar.forbidden_message" = "Shërbyesi i njëkohësimeve Zotero s’pranoi emrin tuaj të përdoruesit dhe fjalëkalimin tuaj.Ju lutemi, bëni daljen nga llogaria dhe hyni me informacion të saktë hyrjeje.";
+"errors.sync_toolbar.forbidden_message" = "The Zotero sync server did not accept your username and password.\n\nPlease log out and log in with correct login information.\n\nIf you log in with different user any local data that was not synced will be deleted.";
 "errors.sync_toolbar.webdav_request_failed" = "Shërbyesi juaj WebDAV u përgjigj me një gabim HTTP %d për një kërkesë %@.";
 "errors.items.loading" = "S’u ngarkuan dot objekte";
 "errors.items.deletion" = "S’u hoq dot objekti";
@@ -441,7 +491,7 @@
 "errors.items.generating_bib" = "S’u prodhua dot bibliografi";
 "errors.citation_preview" = "S’u prodhua dot paraparje citimi";
 "errors.item_detail.dropped_fields_title" = "Ndryshoni Lloj Objekti";
-"errors.item_detail.dropped_fields_message" = "Jeni i sigurt se doni të ndryshoni llojin e objektit?Fushat vijuese do të humbasin:%@";
+"errors.item_detail.dropped_fields_message" = "Jeni i sigurt se doni të ndryshoni llojin e objektit?\n\nFushat vijuese do të humbasin:\n\n%@";
 "errors.item_detail.cant_load_data" = "S’u ngarkuan dot të dhëna. Ju lutemi, riprovoni.";
 "errors.item_detail.cant_create_attachments_with_names" = "S’u krijua dot bashkëngjitje: %@";
 "errors.item_detail.cant_create_attachments" = "S’u krijuan dot bashkëngjitjents";
@@ -451,7 +501,7 @@
 "errors.item_detail.cant_save_tags" = "S’u ruajtën dot etiketa";
 "errors.item_detail.unsupported_type" = "Lloji “%@” s’mbulohet";
 "errors.settings.storage" = "S’u grumbulluan dot të dhëna depozitim";
-"errors.settings.webdav.file_missing_after_upload" = "U gjet një problem potencial me shërbyesin tuaj WebDAV.Një kartelë e ngarkuar s’qe menjëherë gati për shkarkim. Mund të ketë një vonesë të shkurtër mes kohës kur ngarkoni kartela dhe kur ato janë gati për përdorim, veçanërisht nëse po përdorni një shërbim depozitimi në re.Nëse njëkohësimi Zotero i kartelave duket se funksionon normalisht, mund ta shpërfillni këtë mesazh. Nëse keni problem, ju lutemi, postoni te Forumet e Zotero-s.";
+"errors.settings.webdav.file_missing_after_upload" = "U gjet një problem potencial me shërbyesin tuaj WebDAV.\n\nNjë kartelë e ngarkuar s’qe menjëherë gati për shkarkim. Mund të ketë një vonesë të shkurtër mes kohës kur ngarkoni kartela dhe kur ato janë gati për përdorim, veçanërisht nëse po përdorni një shërbim depozitimi në re.\n\nNëse njëkohësimi Zotero i kartelave duket se funksionon normalisht, mund ta shpërfillni këtë mesazh. Nëse keni problem, ju lutemi, postoni te Forumet e Zotero-s.";
 "errors.settings.webdav.invalid_url" = "Gabim verifikimi WebDAV";
 "errors.settings.webdav.no_password" = "Gabim verifikimi WebDAV";
 "errors.settings.webdav.no_url" = "Gabim verifikimi WebDAV";
@@ -478,8 +528,8 @@
 "errors.shareext.file_not_pdf" = "S’arrihet të ruhet PDF-ja";
 "errors.shareext.api_error" = "Gabim në ngarkim objekti. Objekti qe ruajtur te biblioteka juaj vendore.";
 "errors.shareext.webdav_error" = "Gabim ngarkimi bashkëngjitjeje te shërbyes WebDAV";
-"errors.shareext.personal_quota_reached" = "Keni plotësuar kuotat tuaja Depozitim Zotero dhe kartela s’mund të ngarkohet. Për mundësi depozitimi shtesë, shihni rregullimet e llogarisë tuaj.Kartela u ruajt te biblioteka juaj vendore.";
-"errors.shareext.group_quota_reached" = "Për grupin “%@” janë plotësuar kuotat e tij për Depozitim Zotero dhe kartela s’u ngarkua dot. I zoti i grupit mund të shohë rregullimet e llogarive përkatëse për mundësi shtesë depozitimi.Kartela u ruajt te biblioteka vendore.";
+"errors.shareext.personal_quota_reached" = "Keni plotësuar kuotat tuaja Depozitim Zotero dhe kartela s’mund të ngarkohet. Për mundësi depozitimi shtesë, shihni rregullimet e llogarisë tuaj.\n\nKartela u ruajt te biblioteka juaj vendore.";
+"errors.shareext.group_quota_reached" = "Për grupin “%@” janë plotësuar kuotat e tij për Depozitim Zotero dhe kartela s’u ngarkua dot. I zoti i grupit mund të shohë rregullimet e llogarive përkatëse për mundësi shtesë depozitimi.\n\nKartela u ruajt te biblioteka vendore.";
 "errors.shareext.forbidden" = "S’keni lejet e nevojshme për të shtuar këtë objekt te %@.";
 "errors.shareext.webdav_not_verified" = "Gabim verifikimi WebDAV";
 "errors.shareext.requires_browser" = "Kjo lëndë mund të ngarkohet në një shfletues, që të ndahet me Zotero. Hapeni në shfletuesin tuaj dhe përdorni butonin “Ndajeni me të tjerë” të shfletuesit tuaj.";
@@ -578,13 +628,26 @@
 "accessibility.pdf.show_more_tools" = "Shfaq më tepër";
 "accessibility.htmlepub.search_html" = "Kërko në Sajt";
 "accessibility.htmlepub.search_epub" = "Search EPUB";
+"accessibility.speech.show_reader" = "Kalo te mënyra lexim";
+"accessibility.speech.show_speech" = "Filloni të lexoni me zë";
 "accessibility.speech.play" = "Filloni të flisni";
 "accessibility.speech.pause" = "Ndaleni të folurën";
 "accessibility.speech.forward" = "Skip forward";
 "accessibility.speech.backward" = "Skip backward";
-"accessibility.speech.title" = "Lexoni Me Zë";
-"accessibility.show_reader" = "Mënyra Lexim";
-"accessibility.show_reader_accessibility_label" = "Kalo te mënyra lexim";
-"accessibility.show_speech" = "Lexoni Me Zë";
-"accessibility.show_speech_accessibility_label" = "Filloni të lexoni me zë";
 "accessibility.open_document_accessibility" = "Open accessibility options";
+"accessibility.collections.shown_in_carplay" = "Shown in CarPlay";
+
+"carplay.loading" = "Loading…";
+"carplay.logged_out.title" = "Not Logged In";
+"carplay.logged_out.subtitle" = "Log in to Zotero on your iPhone.";
+"carplay.locked.title" = "Unlock Your iPhone";
+"carplay.locked.subtitle" = "Zotero can load your library once your iPhone has been unlocked.";
+"carplay.no_items.title" = "No Readable Items";
+"carplay.no_items.subtitle" = "Items with PDF, EPUB or snapshot files appear here.";
+"carplay.download_failed" = "Couldn't download the file.";
+"carplay.tiers" = "Tiers";
+"carplay.read_aloud_unavailable" = "Read aloud isn't available for this file.";
+"carplay.processing_document" = "Processing document…";
+"carplay.processing_failed" = "Couldn't prepare the document for reading aloud.";
+"carplay.out_of_credits" = "You've run out of read aloud time.";
+"carplay.voice_settings" = "Voice Settings";

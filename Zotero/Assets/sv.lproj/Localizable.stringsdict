@@ -13,9 +13,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 Collection Selected</string>
+			<string>1 samling vald</string>
 			<key>other</key>
-			<string>%d Collections Selected</string>
+			<string>%d samlingar valda</string>
 		</dict>
 	</dict>
 	<key>items.delete_question</key>
@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to delete the selected item?</string>
+			<string>Vill du verkligen ta bort den valda posten?</string>
 			<key>other</key>
-			<string>Are you sure you want to delete the selected items?</string>
+			<string>Vill du verkligen ta bort de valda posterna?</string>
 		</dict>
 	</dict>
 	<key>items.remove_from_collection_question</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to remove the selected item from this collection?</string>
+			<string>Vill du verkligen ta bort den valda posten från den här samlingen?</string>
 			<key>other</key>
-			<string>Are you sure you want to remove the selected items from this collection?</string>
+			<string>Vill du verkligen ta bort de valda posterna från den här samlingen?</string>
 		</dict>
 	</dict>
 	<key>items.toolbar_filter</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Filter: 1 item</string>
+			<string>Filter: 1 post</string>
 			<key>other</key>
-			<string>Filter: %d items</string>
+			<string>Filter: %d poster</string>
 		</dict>
 	</dict>
 	<key>pdf.search.matches</key>
@@ -77,9 +77,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Found 1 match</string>
+			<string>Hittade 1 träff</string>
 			<key>other</key>
-			<string>Found %d matches</string>
+			<string>Hittade %d träffar</string>
 		</dict>
 	</dict>
 	<key>settings.storage.files_size_and_unit</key>
@@ -93,9 +93,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 file</string>
+			<string>1 fil</string>
 			<key>other</key>
-			<string>%d files</string>
+			<string>%d filer</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.errors</key>
@@ -109,9 +109,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 issue</string>
+			<string>1 problem</string>
 			<key>other</key>
-			<string>%d issues</string>
+			<string>%d problem</string>
 		</dict>
 	</dict>
 	<key>tag_picker.tags_selected</key>
@@ -125,9 +125,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 tag selected</string>
+			<string>1 etikett vald</string>
 			<key>other</key>
-			<string>%d tags selected</string>
+			<string>%d etiketter valda</string>
 		</dict>
 	</dict>
 	<key>tag_picker.confirm_deletion</key>
@@ -141,9 +141,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+			<string>Vill du verkligen ta bort 1 automatisk etikett i det här biblioteket?
+
+Åtgärden kan inte ångras.</string>
 			<key>other</key>
-			<string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+			<string>Vill du verkligen ta bort %d automatiska etiketter i det här biblioteket?
+
+Åtgärden kan inte ångras.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>
@@ -157,9 +161,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 line logged</string>
+			<string>1 rad loggad</string>
 			<key>other</key>
-			<string>%d lines logged</string>
+			<string>%d rader loggade</string>
 		</dict>
 	</dict>
 	<key>settings.lines</key>
@@ -173,9 +177,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 line</string>
+			<string>1 rad</string>
 			<key>other</key>
-			<string>%d lines</string>
+			<string>%d rader</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.webdav_error2</key>
@@ -189,9 +193,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Could not delete 1 file from your WebDAV server</string>
+			<string>Kunde inte ta bort 1 fil från din WebDAV-server</string>
 			<key>other</key>
-			<string>Could not delete %d files from your WebDAV server</string>
+			<string>Kunde inte ta bort %d filer från din WebDAV-server</string>
 		</dict>
 	</dict>
 	<key>settings.general.after_x_days</key>
@@ -205,9 +209,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>After 1 Day</string>
+			<string>Efter 1 dag</string>
 			<key>other</key>
-			<string>After %d Days</string>
+			<string>Efter %d dagar</string>
 		</dict>
 	</dict>
 </dict>

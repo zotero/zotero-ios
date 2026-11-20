@@ -157,11 +157,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Vuoi eliminare 1 tag automatico in questa biblioteca?\n\nQuesta operazione non può essere annullata.</string>
+			<string>Vuoi eliminare 1 tag automatico in questa biblioteca?
+
+Questa operazione non può essere annullata.</string>
 			<key>many</key>
-			<string>Vuoi eliminare %d tag automatici in questa biblioteca?\n\nQuesta operazione non può essere annullata.</string>
+			<string>Vuoi eliminare %d tag automatici in questa biblioteca?
+
+Questa operazione non può essere annullata.</string>
 			<key>other</key>
-			<string>Vuoi eliminare %d tag automatici in questa biblioteca?\n\nQuesta operazione non può essere annullata.</string>
+			<string>Vuoi eliminare %d tag automatici in questa biblioteca?
+
+Questa operazione non può essere annullata.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>

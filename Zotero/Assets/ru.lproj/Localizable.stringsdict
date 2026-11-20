@@ -13,9 +13,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 Collection Selected</string>
+			<string>1 Коллекция выбрана</string>
+			<key>few</key>
+			<string>%d Коллекций выбрано</string>
+			<key>many</key>
+			<string>%d  Коллекций выбрано</string>
 			<key>other</key>
-			<string>%d Collections Selected</string>
+			<string>%d Коллекций выбрано</string>
 		</dict>
 	</dict>
 	<key>items.delete_question</key>
@@ -29,9 +33,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to delete the selected item?</string>
+			<string>Вы уверены, что хотите удалить выбранный элемент?</string>
+			<key>few</key>
+			<string>Вы уверены, что хотите удалить выбранные элементы?</string>
+			<key>many</key>
+			<string>Вы уверены, что хотите удалить выбранные элементы?</string>
 			<key>other</key>
-			<string>Are you sure you want to delete the selected items?</string>
+			<string>Вы уверены, что хотите удалить выбранные элементы?</string>
 		</dict>
 	</dict>
 	<key>items.remove_from_collection_question</key>
@@ -45,9 +53,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to remove the selected item from this collection?</string>
+			<string>Вы уверены, что хотите удалить выбранный элемент из этой коллекции?</string>
+			<key>few</key>
+			<string>Вы уверены, что хотите удалить выбранные элементы из этой коллекции?</string>
+			<key>many</key>
+			<string>Вы уверены, что хотите удалить выбранные элементы из этой коллекции?</string>
 			<key>other</key>
-			<string>Are you sure you want to remove the selected items from this collection?</string>
+			<string>Вы уверены, что хотите удалить выбранные элементы из этой коллекции?</string>
 		</dict>
 	</dict>
 	<key>items.toolbar_filter</key>
@@ -61,9 +73,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Filter: 1 item</string>
+			<string>Фильтр: 1 элемент</string>
+			<key>few</key>
+			<string>Фильтр: %d элементов</string>
+			<key>many</key>
+			<string>Фильтр: %d элементов</string>
 			<key>other</key>
-			<string>Filter: %d items</string>
+			<string>Фильтр: %d элементов</string>
 		</dict>
 	</dict>
 	<key>pdf.search.matches</key>
@@ -77,9 +93,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Found 1 match</string>
+			<string>Найдено 1 совпадение</string>
+			<key>few</key>
+			<string>Найдено %d совпадения</string>
+			<key>many</key>
+			<string>Найдено %d совпадений</string>
 			<key>other</key>
-			<string>Found %d matches</string>
+			<string>Найдено %d совпадений</string>
 		</dict>
 	</dict>
 	<key>settings.storage.files_size_and_unit</key>
@@ -93,9 +113,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 file</string>
+			<string>1 файл</string>
+			<key>few</key>
+			<string>%d файла</string>
+			<key>many</key>
+			<string>%d файлов</string>
 			<key>other</key>
-			<string>%d files</string>
+			<string>%d файлов</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.errors</key>
@@ -109,9 +133,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 issue</string>
+			<string>1 проблема</string>
+			<key>few</key>
+			<string>%d проблемы</string>
+			<key>many</key>
+			<string>%d проблем</string>
 			<key>other</key>
-			<string>%d issues</string>
+			<string>%d проблем</string>
 		</dict>
 	</dict>
 	<key>tag_picker.tags_selected</key>
@@ -125,9 +153,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 tag selected</string>
+			<string>Выбран 1 тег</string>
+			<key>few</key>
+			<string>Выбрано %d тега</string>
+			<key>many</key>
+			<string>Выбрано %d тегов</string>
 			<key>other</key>
-			<string>%d tags selected</string>
+			<string>Выбрано %d тегов</string>
 		</dict>
 	</dict>
 	<key>tag_picker.confirm_deletion</key>
@@ -141,9 +173,21 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+			<string>Вы уверены, что хотите удалить 1 автоматический тег в этой библиотеке?
+
+Это действие нельзя отменить.</string>
+			<key>few</key>
+			<string>Вы уверены, что хотите удалить %d автоматических тегов в этой библиотеке?
+
+Это действие нельзя отменить.</string>
+			<key>many</key>
+			<string>Вы уверены, что хотите удалить %d автоматических тегов в этой библиотеке?
+
+Это действие нельзя отменить.</string>
 			<key>other</key>
-			<string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+			<string>Вы уверены, что хотите удалить %d автоматических тегов в этой библиотеке?
+
+Это действие нельзя отменить.</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>
@@ -157,9 +201,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 line logged</string>
+			<string>1 строка залогирована</string>
+			<key>few</key>
+			<string>%d строк залогировано</string>
+			<key>many</key>
+			<string>%d строк залогировано</string>
 			<key>other</key>
-			<string>%d lines logged</string>
+			<string>%d строк залогировано</string>
 		</dict>
 	</dict>
 	<key>settings.lines</key>
@@ -173,9 +221,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 line</string>
+			<string>1 строка</string>
+			<key>few</key>
+			<string>%d строки</string>
+			<key>many</key>
+			<string>%d строк</string>
 			<key>other</key>
-			<string>%d lines</string>
+			<string>%d строк</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.webdav_error2</key>
@@ -189,9 +241,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Could not delete 1 file from your WebDAV server</string>
+			<string>Не удалось удалить 1 файл с вашего сервера WebDAV.</string>
+			<key>few</key>
+			<string>Не удалось удалить %d файла с вашего сервера WebDAV</string>
+			<key>many</key>
+			<string>Не удалось удалить %d файлов с вашего сервера WebDAV</string>
 			<key>other</key>
-			<string>Could not delete %d files from your WebDAV server</string>
+			<string>Не удалось удалить %d файлов с вашего сервера WebDAV</string>
 		</dict>
 	</dict>
 	<key>settings.general.after_x_days</key>
@@ -205,9 +261,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>After 1 Day</string>
+			<string>Через 1 день</string>
+			<key>few</key>
+			<string>Через %d дней</string>
+			<key>many</key>
+			<string>Через %d дней</string>
 			<key>other</key>
-			<string>After %d Days</string>
+			<string>Через %d дней</string>
 		</dict>
 	</dict>
 </dict>

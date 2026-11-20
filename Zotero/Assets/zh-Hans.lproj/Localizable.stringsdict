@@ -127,7 +127,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>确定要删除此文库中的 %d 个自动标签吗？\n\n该操作无法撤消。</string>
+			<string>确定要删除此文库中的 %d 个自动标签吗？
+
+该操作无法撤消。</string>
 		</dict>
 	</dict>
 	<key>settings.lines_logged</key>
