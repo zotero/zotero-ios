@@ -418,6 +418,12 @@ class WebViewHandler: NSObject {
         return ["cf_clearance"]
     }
 
+    /// Whether requests that carry cookies from `webView` (`additionalCookieNames(for:)`) should be sent with `webView`'s User-Agent, unless the request
+    /// sets its own. Clearance cookies, such as Cloudflare's `cf_clearance`, are only accepted together with the User-Agent that obtained them.
+    func shouldUseWebViewUserAgentWithWebViewCookies(for url: URL) -> Bool {
+        return false
+    }
+
     /// Lets a new lookup try each browser challenge once again. Challenges still in progress keep running, and new requests to their sites
     /// wait for them instead of starting a second challenge.
     func resetBrowserChallengeAttempts() {
@@ -477,10 +483,11 @@ class WebViewHandler: NSObject {
     private func sendRequest(context: HTTPRequestContext, messageId: Int) {
         guard activeRequests[messageId] === context, let url = context.request.url else { return }
         let host = url.host(percentEncoded: false) ?? ""
-        addAdditionalCookies(for: url, host: host, existingHeaders: context.headers) { [weak self, weak context] headers in
+        addAdditionalCookies(for: url, host: host, existingHeaders: context.headers) { [weak self, weak context] headers, addedWebViewCookies in
             guard let self, let context, activeRequests[messageId] === context else { return }
             var request = context.request
-            applyHeaders(to: &request, headers: headers, url: url)
+            let useWebViewUserAgent = addedWebViewCookies && shouldUseWebViewUserAgentWithWebViewCookies(for: url)
+            applyHeaders(to: &request, headers: headers, url: url, useWebViewUserAgent: useWebViewUserAgent)
             context.attemptCount += 1
             context.attemptDate = Date()
             let hasTurnstileCookie = request.value(forHTTPHeaderField: "Cookie")?.contains("turnstile_passed=") == true
@@ -502,12 +509,14 @@ class WebViewHandler: NSObject {
         }
     }
 
-    private func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?) {
+    private func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?, useWebViewUserAgent: Bool) {
         headers.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
         }
         if headers["User-Agent"] == nil {
-            if let url, shouldUsePlainUserAgent(for: url), let browserUserAgent {
+            if useWebViewUserAgent, let webViewUserAgent = webView?.customUserAgent, !webViewUserAgent.isEmpty {
+                request.setValue(webViewUserAgent, forHTTPHeaderField: "User-Agent")
+            } else if let url, shouldUsePlainUserAgent(for: url), let browserUserAgent {
                 request.setValue(browserUserAgent, forHTTPHeaderField: "User-Agent")
             } else if let userAgent {
                 request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
@@ -750,19 +759,20 @@ class WebViewHandler: NSObject {
         }
     }
 
-    private func addAdditionalCookies(for url: URL, host: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
+    /// Adds cookies named by `additionalCookieNames(for:)` from `webView`'s cookie store. The completion's flag is `true` if any were added.
+    private func addAdditionalCookies(for url: URL, host: String, existingHeaders: [String: String], completion: @escaping ([String: String], Bool) -> Void) {
         let names = additionalCookieNames(for: url)
-        guard !names.isEmpty, let webView else { return completion(existingHeaders) }
+        guard !names.isEmpty, let webView else { return completion(existingHeaders, false) }
         let store = webView.configuration.websiteDataStore.httpCookieStore
         store.getCookies(host: host, names: names) { matchingCookies in
-            guard !matchingCookies.isEmpty else { return completion(existingHeaders) }
+            guard !matchingCookies.isEmpty else { return completion(existingHeaders, false) }
             var cookieString = matchingCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
             var headers = existingHeaders
             if let existingCookie = headers["Cookie"], !existingCookie.isEmpty {
                 cookieString = existingCookie + "; " + cookieString
             }
             headers["Cookie"] = cookieString
-            completion(headers)
+            completion(headers, true)
         }
     }
 
