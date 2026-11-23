@@ -2073,8 +2073,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Update database keys based on realm notification
         var updatedKeys: [PDFReaderAnnotationKey] = []
         // Collect modified, deleted and inserted annotations to update the `Document`
-        // Document annotations with their database annotation, and whether geometry should be updated as well.
-        var updatedPdfAnnotations: [(PSPDFKit.Annotation, PDFDatabaseAnnotation, Bool)] = []
+        // Document annotations with their database annotation.
+        var updatedPdfAnnotations: [(PSPDFKit.Annotation, PDFDatabaseAnnotation)] = []
         var deletedPdfAnnotations: [PSPDFKit.Annotation] = []
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
         var shouldRecomputeDefaultAnnotationPageLabel = false
@@ -2140,7 +2140,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             for pdfAnnotation in partAnnotations {
-                updatedPdfAnnotations.append((pdfAnnotation, annotation, item.changeType == .sync))
+                updatedPdfAnnotations.append((pdfAnnotation, annotation))
             }
         }
 
@@ -2276,11 +2276,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Temporarily disable PDF notifications, because these changes were made by sync and they don't need to be translated back to the database
         pdfDisposeBag = DisposeBag()
         // Update annotations in `Document`
-        for (pdfAnnotation, annotation, includeGeometry) in updatedPdfAnnotations {
+        for (pdfAnnotation, annotation) in updatedPdfAnnotations {
             update(
                 pdfAnnotation: pdfAnnotation,
                 with: annotation,
-                includeGeometry: includeGeometry,
                 parentKey: viewModel.state.key,
                 libraryId: viewModel.state.library.identifier,
                 appearance: viewModel.state.appearance,
@@ -2400,13 +2399,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    /// Applies properties of database annotation to document annotation, those which differ.
-    /// - parameter includeGeometry: Whether rects, paths, bounding box and line width are applied as well. They are only changed in this document,
-    ///                              or remotely, other readers (reading mode) change other properties only.
+    /// Applies properties of database annotation to document annotation, those which differ. Geometry is compared with the same rounding the
+    /// database values are converted with, so that only actual changes (e.g. a resize in reading mode, or a remote change) are applied.
+    /// Not used for changes still being written from this document, the document is ahead of the database for those.
     private func update(
         pdfAnnotation: PSPDFKit.Annotation,
         with annotation: PDFDatabaseAnnotation,
-        includeGeometry: Bool,
         parentKey: String,
         libraryId: LibraryIdentifier,
         appearance: Appearance,
@@ -2435,9 +2433,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         switch annotation.type {
-        case _ where !includeGeometry:
-            break
-
         case .highlight, .underline:
             // Document annotation can be either part of an annotation spanning a page break.
             let newRects = pdfAnnotation.crossPagePart == .next ? annotation.nextPageRects(boundingBoxConverter: boundingBoxConverter) : annotation.rects(boundingBoxConverter: boundingBoxConverter)
