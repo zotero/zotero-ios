@@ -806,8 +806,10 @@ final class ExtensionViewModel {
         DDLogInfo("ExtensionViewModel: continue after challenge")
         challengePendingOriginalURL = nil
         state.attachmentState = .decoding
-        // Stop the challenge page's own navigations, such as Cloudflare's reload, so they don't overlap with loading the original page.
-        webView?.stopLoading()
+        // Replace the challenge page with a blank one, which also cancels its pending loads. Stopping them isn't enough: the challenge page's scripts
+        // keep running, and a navigation they start (e.g. Cloudflare's redirect after verification) would cancel loading the original page (-999)
+        // if it happened before that page commits. The blank page commits before `load(webUrl:)` starts loading, as that load is delayed.
+        webView?.loadHTMLString("", baseURL: nil)
         webView?.isHidden = true
         process(remoteUrl: originalURL)
     }
