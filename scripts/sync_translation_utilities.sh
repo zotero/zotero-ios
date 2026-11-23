@@ -16,11 +16,34 @@ UTILITIES_SUBMODULE_DIR="$SCRIPT_DIR/../utilities"
 TRANSLATE_MODULES_DIR="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/translation/translate/modules"
 DESTINATION_DIR="$TRANSLATE_MODULES_DIR/utilities"
 
+# Only the files that are used: the scripts loaded by translation/index.html and translation/lookup.html, dateFormats.json,
+# which is read natively, and the license. Keep in sync with the HTML files.
+FILES="
+COPYING
+cachedTypes.js
+date.js
+openurl.js
+schema.js
+utilities.js
+utilities_item.js
+xregexp-all.js
+xregexp-unicode-zotero.js
+resource/zoteroTypeSchemaData.js
+resource/dateFormats.json
+"
+
 if [ ! -f "$UTILITIES_SUBMODULE_DIR/resource/zoteroTypeSchemaData.js" ]; then
     echo "error: The utilities submodule is not initialized. Run:"
-    echo "    git submodule update --init --recursive utilities"
+    echo "    git submodule update --init utilities"
     exit 1
 fi
+
+for FILE in $FILES; do
+    if [ ! -f "$UTILITIES_SUBMODULE_DIR/$FILE" ]; then
+        echo "error: utilities/$FILE not found"
+        exit 1
+    fi
+done
 
 if [ ! -d "$TRANSLATE_MODULES_DIR" ]; then
     echo "error: $TRANSLATE_MODULES_DIR not found"
@@ -28,10 +51,7 @@ if [ ! -d "$TRANSLATE_MODULES_DIR" ]; then
 fi
 
 rm -rf "$DESTINATION_DIR"
-mkdir -p "$DESTINATION_DIR"
-cp -R "$UTILITIES_SUBMODULE_DIR"/[!.]* "$DESTINATION_DIR"
-
-# Remove files not needed at runtime
-for i in 'test' 'package.json' 'package-lock.json' 'README.md' 'resource/README.md' 'resource/schema'; do
-    rm -rf "$DESTINATION_DIR/$i"
+for FILE in $FILES; do
+    mkdir -p "$DESTINATION_DIR/`dirname "$FILE"`"
+    cp "$UTILITIES_SUBMODULE_DIR/$FILE" "$DESTINATION_DIR/$FILE"
 done
