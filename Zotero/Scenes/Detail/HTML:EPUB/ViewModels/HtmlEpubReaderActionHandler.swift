@@ -726,7 +726,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         guard let textParams = viewModel.state.selectedTextParams?["annotation"] as? [String: Any], let params = params(fromTextParams: textParams, type: type) else {
             return
         }
-        let annotations = parse(annotations: [params], author: viewModel.state.username, isAuthor: true)
+        let annotations = parse(annotations: [params], in: viewModel)
         update(viewModel: viewModel) { state in
             state.selectedTextParams = nil
 
@@ -774,7 +774,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         guard !storedAnnotations.isEmpty else { return }
 
-        let annotations = parse(annotations: storedAnnotations, author: viewModel.state.username, isAuthor: true)
+        let annotations = parse(annotations: storedAnnotations, in: viewModel)
 
         guard !annotations.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: could not parse annotations")
@@ -832,7 +832,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         guard let annotation else { return }
 
-        let annotations = parse(annotations: [annotation], author: viewModel.state.username, isAuthor: true)
+        let annotations = parse(annotations: [annotation], in: viewModel)
 
         guard !annotations.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: could not parse read aloud session annotation")
@@ -861,7 +861,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func parse(annotations: [[String: Any]], author: String, isAuthor: Bool) -> [HtmlEpubAnnotation] {
+    /// Parses annotations saved by the document. An annotation which already exists keeps its author, any other one was just created by the current user.
+    private func parse(annotations: [[String: Any]], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> [HtmlEpubAnnotation] {
         return annotations.compactMap { data -> HtmlEpubAnnotation? in
             guard let id = data["id"] as? String,
                   let dateAdded = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
@@ -881,13 +882,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 else { return nil }
                 return Tag(name: name, color: color)
             })
+            let existing = viewModel.state.annotations[id]
             return HtmlEpubAnnotation(
                 key: id,
                 type: type,
                 pageLabel: pageLabel,
                 position: position,
-                author: author,
-                isAuthor: isAuthor,
+                author: existing?.author ?? viewModel.state.username,
+                isAuthor: existing?.isAuthor ?? true,
                 color: color,
                 comment: comment,
                 text: text,
@@ -1035,7 +1037,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             var annotations: [String: HtmlEpubAnnotation] = [:]
             var jsons: [[String: Any]] = []
             for item in items {
-                guard let (annotation, json) = item.htmlEpubAnnotation else { continue }
+                guard let (annotation, json) = item.htmlEpubAnnotation(currentUserId: viewModel.state.userId) else { continue }
                 jsons.append(json)
                 sortedKeys.append(annotation.key)
                 annotations[item.key] = annotation
@@ -1142,7 +1144,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             }
 
             let key = keys[index]
-            guard let item = objects.filter(.key(key)).first, let (annotation, json) = item.htmlEpubAnnotation else { continue }
+            guard let item = objects.filter(.key(key)).first, let (annotation, json) = item.htmlEpubAnnotation(currentUserId: viewModel.state.userId) else { continue }
 
             DDLogInfo("HtmlEpubReaderActionHandler: update Html/Epub annotation \(key)")
             annotations[key] = annotation
@@ -1218,7 +1220,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             let item = objects[index]
 
-            guard let (annotation, json) = item.htmlEpubAnnotation else {
+            guard let (annotation, json) = item.htmlEpubAnnotation(currentUserId: viewModel.state.userId) else {
                 DDLogWarn("HtmlEpubReaderActionHandler: tried adding invalid annotation")
                 shouldCancelUpdate = true
                 break
@@ -1311,7 +1313,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 }
 
 extension RItem {
-    fileprivate var htmlEpubAnnotation: (HtmlEpubAnnotation, [String: Any])? {
+    fileprivate func htmlEpubAnnotation(currentUserId: Int) -> (HtmlEpubAnnotation, [String: Any])? {
         var type: AnnotationType?
         var position: [String: Any] = [:]
         var text: String?
@@ -1392,6 +1394,17 @@ extension RItem {
             return Tag(name: typedTag.tag?.name ?? "", color: color ?? "")
         }))
 
+        // In a group library, only annotations created by the current user can be edited, the same as in the PDF reader.
+        let isAuthor: Bool
+        if libraryId == .custom(.myLibrary) {
+            isAuthor = true
+        } else if let createdBy {
+            isAuthor = createdBy.identifier == currentUserId
+        } else {
+            DDLogWarn("HtmlEpubReaderActionHandler: annotation \(key) has no author")
+            isAuthor = false
+        }
+
         var json: [String: Any] = [
             "id": key,
             "dateCreated": DateFormatter.iso8601WithFractionalSeconds.string(from: dateAdded),
@@ -1404,7 +1417,9 @@ extension RItem {
             "comment": comment ?? "",
             "color": color ?? "",
             "position": position,
-            "tags": tags.map({ ["name": $0.name, "color": $0.color] })
+            "tags": tags.map({ ["name": $0.name, "color": $0.color] }),
+            // The reader doesn't let the user change a read-only annotation.
+            "readOnly": !isAuthor
         ]
         for (key, value) in unknown {
             json[key] = value
@@ -1416,7 +1431,7 @@ extension RItem {
             pageLabel: pageLabel ?? "",
             position: position,
             author: createdBy?.username ?? "",
-            isAuthor: true,
+            isAuthor: isAuthor,
             color: color ?? "",
             comment: comment ?? "",
             text: text,
