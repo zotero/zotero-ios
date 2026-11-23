@@ -212,6 +212,8 @@ class WebViewHandler: NSObject {
     /// The navigation `webDidLoad` waits for. Other navigations in `webView`, such as a challenge page's own reloads, are ignored, so they can't
     /// resolve or fail a load they didn't start.
     private var pendingNavigation: WKNavigation?
+    /// Identifies the latest `load(fileUrl:)` or `load(webUrl:)` call, so that an earlier load can't affect it.
+    private var loadIdentifier = 0
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
     private(set) var cookies: String?
@@ -331,8 +333,9 @@ class WebViewHandler: NSObject {
             DDLogError("WebViewHandler: navigation not started for \(fileUrl.lastPathComponent)")
             return .error(Error.navigationNotStarted)
         }
+        loadIdentifier += 1
         pendingNavigation = navigation
-        return createWebLoadedSingle()
+        return createWebLoadedSingle(loadIdentifier: loadIdentifier)
     }
 
     func load(webUrl: URL) -> Single<()> {
@@ -340,12 +343,15 @@ class WebViewHandler: NSObject {
             DDLogError("WebViewHandler: web view is nil")
             return .error(Error.webViewMissing)
         }
+        loadIdentifier += 1
+        let urlLoadIdentifier = loadIdentifier
         let request = URLRequest(url: webUrl)
         // Until the delayed load below starts, no navigation may resolve or fail this load.
         pendingNavigation = nil
         // Share extension started crashing when `load()` was called immediately, a little delay fixed the crash (##616)
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [weak self] in
-            guard let self, let webView else { return }
+            // Skip if this load was disposed or a newer load started in the meantime.
+            guard let self, loadIdentifier == urlLoadIdentifier, webDidLoad != nil, let webView else { return }
             let navigation = webView.load(request)
             guard let navigation else {
                 DDLogError("WebViewHandler: navigation not started for \(webUrl.absoluteString)")
@@ -354,7 +360,7 @@ class WebViewHandler: NSObject {
             }
             pendingNavigation = navigation
         }
-        return createWebLoadedSingle()
+        return createWebLoadedSingle(loadIdentifier: urlLoadIdentifier)
     }
 
     func call(javascript: String) -> Single<Any> {
@@ -394,11 +400,13 @@ class WebViewHandler: NSObject {
     }
 
     /// Create single which is fired when webview loads a resource or fails.
-    private func createWebLoadedSingle() -> Single<()> {
+    private func createWebLoadedSingle(loadIdentifier identifier: Int) -> Single<()> {
         return .create { [weak self] subscriber -> Disposable in
             self?.webDidLoad = subscriber
-            return Disposables.create {
-                self?.webDidLoad = nil
+            return Disposables.create { [weak self] in
+                // Don't clear the subscriber of a newer load.
+                guard let self, loadIdentifier == identifier else { return }
+                webDidLoad = nil
             }
         }
     }
