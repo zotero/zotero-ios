@@ -27,6 +27,7 @@ class WebViewHandler: NSObject {
         case webViewMissing
         case urlMissingTranslators
         case navigationNotStarted
+        case webContentProcessTerminated
     }
 
     private enum InitializationState {
@@ -842,6 +843,14 @@ extension WebViewHandler: WKNavigationDelegate {
         DDLogError("WebViewHandler: did fail provisional navigation - \(error)")
         pendingNavigation = nil
         webDidLoad?(.failure(error))
+    }
+
+    public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        DDLogError("WebViewHandler: web content process terminated")
+        // The pending navigation may not get a finish or fail callback, so fail its load here.
+        guard pendingNavigation != nil else { return }
+        pendingNavigation = nil
+        webDidLoad?(.failure(Error.webContentProcessTerminated))
     }
 
     private func isPending(_ navigation: WKNavigation?) -> Bool {
