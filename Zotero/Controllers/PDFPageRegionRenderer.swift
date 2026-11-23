@@ -24,12 +24,45 @@ protocol PDFPageRegionRenderer: AnyObject {
 }
 
 final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
+    /// Regions requested together. They're reported together when all of their render tasks finish, or not at all when they're cancelled.
+    private final class Batch {
+        let group = DispatchGroup()
+        private let lock = NSLock()
+        private var images: [String]
+        private var isCancelled = false
+
+        init(count: Int) {
+            images = [String](repeating: "", count: count)
+        }
+
+        func set(image: String, at index: Int) {
+            lock.lock()
+            images[index] = image
+            lock.unlock()
+        }
+
+        func cancel() {
+            lock.lock()
+            isCancelled = true
+            lock.unlock()
+        }
+
+        /// Rendered images, `nil` if the batch was cancelled.
+        var result: [String]? {
+            lock.lock()
+            defer { lock.unlock() }
+            return isCancelled ? nil : images
+        }
+    }
+
     private let document: PSPDFKit.Document
     /// Cap on a rendered region, so that a huge region or resolution can't produce an unreasonable image.
     private static let maximumPixelsPerSide: CGFloat = 3000
-    /// Render tasks which were scheduled and haven't finished yet. They run on PSPDFKit's shared render queue, which outlives the reader, so they're
-    /// cancelled when the renderer is released. Access is guarded by `tasksLock`, since `cancelRendering()` can be called from any thread.
-    private var tasks: [ObjectIdentifier: RenderTask] = [:]
+    /// Render tasks which were scheduled and haven't finished yet, with the batch they belong to. They run on PSPDFKit's shared render queue, which
+    /// outlives the reader, so they're cancelled when the renderer is released. Each task holds its batch's dispatch group entered until it's removed from
+    /// here, either by its completion handler or by `cancelRendering()`, so that whichever removes it leaves the group exactly once. Access is guarded by
+    /// `tasksLock`, since `cancelRendering()` can be called from any thread.
+    private var tasks: [ObjectIdentifier: (task: RenderTask, batch: Batch)] = [:]
     private let tasksLock = NSLock()
     /// Render tasks report their results on the main thread. Encoding a large image takes long enough to block scrolling, so it's moved to this queue.
     private let encodingQueue = DispatchQueue(label: "org.zotero.PSPDFKitPageRegionRenderer.encoding", qos: .userInitiated, attributes: .concurrent)
@@ -45,13 +78,16 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
     /// Cancels all scheduled render tasks. Their completions aren't reported.
     func cancelRendering() {
         tasksLock.lock()
-        let tasks = Array(self.tasks.values)
-        self.tasks.removeAll()
+        let entries = Array(tasks.values)
+        tasks.removeAll()
         tasksLock.unlock()
-        guard !tasks.isEmpty else { return }
-        DDLogInfo("PSPDFKitPageRegionRenderer: cancelling \(tasks.count) render tasks")
-        for task in tasks {
+        guard !entries.isEmpty else { return }
+        DDLogInfo("PSPDFKitPageRegionRenderer: cancelling \(entries.count) render tasks")
+        for (task, batch) in entries {
             task.cancel()
+            // PSPDFKit doesn't call the completion handler of a cancelled task, so its batch is finished here.
+            batch.cancel()
+            batch.group.leave()
         }
     }
 
@@ -61,10 +97,7 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
             return
         }
 
-        var images = [String](repeating: "", count: rects.count)
-        // Render tasks complete on arbitrary threads, so the results are collected under a lock.
-        let lock = NSLock()
-        let group = DispatchGroup()
+        let batch = Batch(count: rects.count)
 
         for (index, rect) in rects.enumerated() {
             guard let request = createRequest(pageIndex: pageIndex, rect: rect, scale: scale) else { continue }
@@ -72,51 +105,44 @@ final class PSPDFKitPageRegionRenderer: PDFPageRegionRenderer {
             do {
                 let task = try RenderTask(request: request)
                 task.priority = .userInitiated
-                group.enter()
                 let taskId = ObjectIdentifier(task)
                 task.completionHandler = { [weak self] image, error in
-                    guard let self else {
-                        group.leave()
-                        return
-                    }
-                    unregisterTask(with: taskId)
+                    // The task is missing when it was cancelled, its batch is already finished then.
+                    guard let self, takeTask(with: taskId) != nil else { return }
                     encodingQueue.async {
                         if let data = image?.pngData() {
-                            let url = "data:image/png;base64,\(data.base64EncodedString())"
-                            lock.lock()
-                            images[index] = url
-                            lock.unlock()
+                            batch.set(image: "data:image/png;base64,\(data.base64EncodedString())", at: index)
                         } else {
                             DDLogError("PSPDFKitPageRegionRenderer: could not render region \(index) of page \(pageIndex) - \(String(describing: error))")
                         }
-                        group.leave()
+                        batch.group.leave()
                     }
                 }
-                registerTask(task, with: taskId)
+                batch.group.enter()
+                register(task: task, batch: batch, with: taskId)
                 PSPDFKit.SDK.shared.renderManager.renderQueue.schedule(task)
             } catch let error {
                 DDLogError("PSPDFKitPageRegionRenderer: can't create render task for region \(index) of page \(pageIndex) - \(error)")
             }
         }
 
-        group.notify(queue: encodingQueue) {
-            lock.lock()
-            let result = images
-            lock.unlock()
+        batch.group.notify(queue: encodingQueue) {
+            guard let result = batch.result else { return }
             completion(result)
         }
     }
 
-    private func registerTask(_ task: RenderTask, with id: ObjectIdentifier) {
+    private func register(task: RenderTask, batch: Batch, with id: ObjectIdentifier) {
         tasksLock.lock()
-        tasks[id] = task
+        tasks[id] = (task, batch)
         tasksLock.unlock()
     }
 
-    private func unregisterTask(with id: ObjectIdentifier) {
+    /// Removes a task which finished. Returns `nil` if it was already removed by `cancelRendering()`.
+    private func takeTask(with id: ObjectIdentifier) -> (task: RenderTask, batch: Batch)? {
         tasksLock.lock()
-        tasks[id] = nil
-        tasksLock.unlock()
+        defer { tasksLock.unlock() }
+        return tasks.removeValue(forKey: id)
     }
 
     private func createRequest(pageIndex: Int, rect: [Double], scale: Double) -> MutableRenderRequest? {
