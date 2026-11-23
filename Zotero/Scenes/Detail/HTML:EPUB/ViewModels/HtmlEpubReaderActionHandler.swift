@@ -109,13 +109,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .deselectSelectedAnnotation(let dismissPopover):
             update(viewModel: viewModel) { state in
                 _select(key: nil, didSelectInDocument: false, state: &state)
-                if state.annotationPopoverKey != nil || state.annotationPopoverRect != nil {
-                    state.annotationPopoverKey = nil
-                    state.annotationPopoverRect = nil
-                    if dismissPopover {
-                        state.changes.insert(.popover)
-                    }
-                }
+                clearAnnotationPopover(notify: dismissPopover, state: &state)
             }
 
         case .parseAndCacheComment(key: let key, comment: let comment):
@@ -363,9 +357,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         if viewModel.state.selectedAnnotationKey == key {
             update(viewModel: viewModel) { state in
                 _select(key: nil, didSelectInDocument: false, state: &state)
-                state.annotationPopoverKey = nil
-                state.annotationPopoverRect = nil
-                state.changes.insert(.popover)
+                clearAnnotationPopover(notify: true, state: &state)
             }
         }
         remove(keys: [key], in: viewModel)
@@ -601,6 +593,17 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             update(viewModel: viewModel) { state in
                 state.error = .cantUpdateAnnotation
             }
+        }
+    }
+
+    /// Clears the stored annotation popover. `notify` adds the `popover` change, so that the popover is dismissed, which isn't needed when UIKit
+    /// has already dismissed it.
+    private func clearAnnotationPopover(notify: Bool, state: inout HtmlEpubReaderState) {
+        guard state.annotationPopoverKey != nil || state.annotationPopoverRect != nil else { return }
+        state.annotationPopoverKey = nil
+        state.annotationPopoverRect = nil
+        if notify {
+            state.changes.insert(.popover)
         }
     }
 
@@ -1244,9 +1247,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             // Update selection
             if selectionDeleted {
                 _select(key: nil, didSelectInDocument: true, state: &state)
-                state.annotationPopoverKey = nil
-                state.annotationPopoverRect = nil
-                state.changes.insert(.popover)
+                clearAnnotationPopover(notify: true, state: &state)
             }
 
             // Disable sidebar editing if there are no results
