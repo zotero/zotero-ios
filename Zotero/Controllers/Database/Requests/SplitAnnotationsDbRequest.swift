@@ -205,6 +205,8 @@ struct SplitAnnotationsDbRequest: DbResponseRequest {
         new.key = KeyGenerator.newKey
         new.rawType = item.rawType
         new.annotationType = item.annotationType
+        // Indexed copy of the sort index field, which annotations are queried and sorted by. A split moved to the next page gets its own later.
+        new.annotationSortIndex = item.annotationSortIndex
         new.localizedType = item.localizedType
         new.dateAdded = item.dateAdded
         new.dateModified = item.dateModified
