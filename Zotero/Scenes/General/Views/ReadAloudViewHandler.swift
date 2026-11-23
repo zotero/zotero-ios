@@ -84,8 +84,6 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     private var currentMenuContentState: MenuContentState?
     var isHighlighterOverlayVisible: Bool { highlighterOverlay != nil }
     weak var delegate: ReadAloudViewDelegate?
-    var menuWillPresent: (() -> Void)?
-    var menuDidDismiss: (() -> Void)?
     var isFormSheet: Bool {
         // Detecting horizontalSizeClass == .compact is not reliable, as the controller can still be shown as formSheet even when horizontalSizeClass is .regular. Therefore the safest way to check
         // whether the controller is shown as form sheet or popover is to check view size. However the controller doesn't have to be visible all the time, so when the controller is not visible,
@@ -597,8 +595,6 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             settingsMenu: createReadAloudMenu(),
             highlighterAction: highlighterAction
         )
-        overlay.menuWillPresent = { [weak self] in self?.menuWillPresent?() }
-        overlay.menuDidDismiss = { [weak self] in self?.menuDidDismiss?() }
         activeOverlay = overlay
 
         switch type {
@@ -701,11 +697,9 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         }
         overlay.onMenuPresented = { [weak self] in
             self?.speechManager.stopHighlightInactivityTimer()
-            self?.menuWillPresent?()
         }
         overlay.onMenuDismissed = { [weak self] in
             self?.speechManager.startHighlightInactivityTimer()
-            self?.menuDidDismiss?()
         }
         speechManager.onHighlightSessionTimedOut = { [weak self] in
             self?.dismissHighlighterOverlay(confirm: true)
