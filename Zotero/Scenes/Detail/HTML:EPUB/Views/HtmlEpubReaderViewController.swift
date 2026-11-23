@@ -486,11 +486,13 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
         }
 
         func hidePopover() {
-            guard let presented = navigationController?.presentedViewController,
+            // The popover is always wrapped in a navigation controller, whose root is the popover even when a sub-screen is pushed. Dismissing
+            // from the presenter also dismisses anything the popover itself has presented.
+            guard let presented = navigationController?.presentedViewController as? UINavigationController,
                   !presented.isBeingDismissed,
-                  presented is AnnotationPopover || (presented as? UINavigationController)?.topViewController is AnnotationPopover
+                  presented.viewControllers.first is AnnotationPopover
             else { return }
-            presented.dismiss(animated: true)
+            navigationController?.dismiss(animated: true)
         }
 
         func observe(key: String, popoverObservable observable: PublishSubject<AnnotationPopoverState>?) {
