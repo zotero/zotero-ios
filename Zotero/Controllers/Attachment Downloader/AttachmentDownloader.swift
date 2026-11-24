@@ -91,6 +91,7 @@ final class AttachmentDownloader: NSObject {
     }
 
     private static let maxConcurrentDownloads = 4
+    private static let signedFileHost = "files.zotero.net"
     private static let sessionId = "AttachmentDownloaderBackgroundSession"
     private let userId: Int
     private unowned let apiClient: ApiClient
@@ -918,6 +919,14 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         case 404:
             error = createError(from: downloadTask, statusCode: 404, response: "Not Found")
 
+        case 410:
+            error = createError(from: downloadTask, statusCode: 410, response: "Gone")
+            // The signed files.zotero.net URL, which the API `/file` request redirects to, can expire before it's used (e.g. when the background session retries it
+            // after a dropped connection). Retrying the task would hit the expired URL again, so retry the original `/file` request to get a freshly signed URL.
+            if activeDownload.retryIfNeeded, downloadTask.currentRequest?.url?.host == Self.signedFileHost {
+                retryDelay = .progressive()
+            }
+
         case 429:
             error = createError(from: downloadTask, statusCode: 429, response: "Too Many Requests")
             if activeDownload.retryIfNeeded {
@@ -932,8 +941,12 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
                 }
             }
 
-        default:
+        case 200..<300:
             error = checkFileResponse(for: downloadedFile, fileStorage: fileStorage, downloadTask: downloadTask)
+
+        default:
+            // Any other non-2xx response is a failure, otherwise the response body would be stored as the attachment file.
+            error = createError(from: downloadTask, statusCode: statusCode, response: HTTPURLResponse.localizedString(forStatusCode: statusCode))
         }
         if let data = activeDownload.logData {
             logResponse(for: data, task: downloadTask, error: error)
