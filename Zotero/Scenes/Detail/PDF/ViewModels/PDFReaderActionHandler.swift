@@ -1791,46 +1791,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>) -> NotificationToken {
-            let keyPaths = [
-                "key",
-                "rawType",
-                "annotationType",
-                "annotationSortIndex",
-                "deleted",
-                "syncState",
-                "dateAdded",
-                "dateModified",
-                "createdBy",
-                "createdBy.identifier",
-                "createdBy.name",
-                "createdBy.username",
-                "fields",
-                "fields.key",
-                "fields.value",
-                "tags",
-                "tags.type",
-                "tags.tag",
-                "tags.tag.name",
-                "tags.tag.color",
-                "tags.tag.emojiGroup",
-                "rects",
-                "rects.minX",
-                "rects.minY",
-                "rects.maxX",
-                "rects.maxY",
-                "nextPageRects",
-                "nextPageRects.minX",
-                "nextPageRects.minY",
-                "nextPageRects.maxX",
-                "nextPageRects.maxY",
-                "paths",
-                "paths.sortIndex",
-                "paths.coordinates",
-                "paths.coordinates.value",
-                "paths.coordinates.sortIndex"
-            ]
-
-            return items.observe(keyPaths: keyPaths) { [weak self, weak viewModel] change in
+            return items.observe(keyPaths: RItem.observableKeypathsForAnnotations) { [weak self, weak viewModel] change in
                 guard let self, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):

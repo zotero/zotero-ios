@@ -61,6 +61,46 @@ final class RItem: Object {
         "tags"
     ]
     static let observableKeypathsForItemDetail: [String] = ["version", "changeType", "children.version"]
+    /// Properties which make up an annotation in the readers. Observing only these keeps writes to the parent attachment (e.g. its last read date or
+    /// sync state) from reporting every annotation as modified.
+    static let observableKeypathsForAnnotations: [String] = [
+        "key",
+        "rawType",
+        "annotationType",
+        "annotationSortIndex",
+        "deleted",
+        "syncState",
+        "dateAdded",
+        "dateModified",
+        "createdBy",
+        "createdBy.identifier",
+        "createdBy.name",
+        "createdBy.username",
+        "fields",
+        "fields.key",
+        "fields.value",
+        "tags",
+        "tags.type",
+        "tags.tag",
+        "tags.tag.name",
+        "tags.tag.color",
+        "tags.tag.emojiGroup",
+        "rects",
+        "rects.minX",
+        "rects.minY",
+        "rects.maxX",
+        "rects.maxY",
+        "nextPageRects",
+        "nextPageRects.minX",
+        "nextPageRects.minY",
+        "nextPageRects.maxX",
+        "nextPageRects.maxY",
+        "paths",
+        "paths.sortIndex",
+        "paths.coordinates",
+        "paths.coordinates.value",
+        "paths.coordinates.sortIndex"
+    ]
 
     @Persisted(indexed: true) var key: String
     @Persisted var rawType: String

@@ -1082,7 +1082,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
 
         func observe(items: Results<RItem>, viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> NotificationToken {
-            return items.observe { [weak self, weak viewModel] change in
+            return items.observe(keyPaths: RItem.observableKeypathsForAnnotations) { [weak self, weak viewModel] change in
                 guard let self, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):
