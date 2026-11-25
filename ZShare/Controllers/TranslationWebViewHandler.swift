@@ -200,6 +200,11 @@ final class TranslationWebViewHandler: WebViewHandler {
         itemSelectionMessageId = nil
     }
 
+    /// The User-Agent of the shared page is Safari's, but clearance cookies in the web view's store were obtained with the web view's User-Agent.
+    override func shouldUseWebViewUserAgentWithWebViewCookies(for url: URL) -> Bool {
+        return true
+    }
+
     override func sendHttpResponse(responseText: String, statusCode: Int, url: URL?, isSuccess: Bool, headers: [AnyHashable: Any], for messageId: Int) {
         if !isSuccess, !isChallengePending, isCloudflareChallenge(statusCode: statusCode, headers: headers, responseText: responseText) {
             isChallengePending = true

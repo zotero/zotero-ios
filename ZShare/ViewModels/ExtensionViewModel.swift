@@ -806,6 +806,10 @@ final class ExtensionViewModel {
         DDLogInfo("ExtensionViewModel: continue after challenge")
         challengePendingOriginalURL = nil
         state.attachmentState = .decoding
+        // Replace the challenge page with a blank one, which also cancels its pending loads. Stopping them isn't enough: the challenge page's scripts
+        // keep running, and a navigation they start (e.g. Cloudflare's redirect after verification) would cancel loading the original page (-999)
+        // if it happened before that page commits. The blank page commits before `load(webUrl:)` starts loading, as that load is delayed.
+        webView?.loadHTMLString("", baseURL: nil)
         webView?.isHidden = true
         process(remoteUrl: originalURL)
     }
@@ -864,7 +868,7 @@ final class ExtensionViewModel {
         state.processedAttachment = .item(item)
         self.state = state
 
-        addCloudflareCookie(host: url.host(percentEncoded: false) ?? "", existingCookies: cookies) { [weak self] cookies in
+        addCloudflareCookie(host: url.host(percentEncoded: false) ?? "", existingCookies: cookies, userAgent: userAgent) { [weak self] cookies, userAgent in
             guard let self else { return }
             download(url: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
                 .observe(on: MainScheduler.instance)
@@ -877,16 +881,20 @@ final class ExtensionViewModel {
                 .disposed(by: disposeBag)
         }
 
-        func addCloudflareCookie(host: String, existingCookies: String?, completion: @escaping (String?) -> Void) {
-            guard let webView else { return completion(existingCookies) }
+        /// Adds Cloudflare clearance cookies from the web view. Cloudflare only accepts them together with the User-Agent that obtained them,
+        /// so the web view's User-Agent replaces the given one when they're added.
+        func addCloudflareCookie(host: String, existingCookies: String?, userAgent: String?, completion: @escaping (String?, String?) -> Void) {
+            guard let webView else { return completion(existingCookies, userAgent) }
+            let webViewUserAgent = webView.customUserAgent
             let store = webView.configuration.websiteDataStore.httpCookieStore
             store.getCloudflareCookies(host: host) { cloudflareCookies in
-                guard !cloudflareCookies.isEmpty else { return completion(existingCookies) }
+                guard !cloudflareCookies.isEmpty else { return completion(existingCookies, userAgent) }
                 var cookieString = cloudflareCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
                 if let existingCookies, !existingCookies.isEmpty {
                     cookieString = existingCookies + "; " + cookieString
                 }
-                completion(cookieString)
+                let clearanceUserAgent = webViewUserAgent.flatMap({ $0.isEmpty ? nil : $0 }) ?? userAgent
+                completion(cookieString, clearanceUserAgent)
             }
         }
     }
