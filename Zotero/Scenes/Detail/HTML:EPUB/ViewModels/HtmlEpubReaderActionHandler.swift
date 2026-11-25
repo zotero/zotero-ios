@@ -43,6 +43,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
 
+    deinit {
+        DDLogInfo("HtmlEpubReaderActionHandler deinitialized")
+    }
+
     func process(action: HtmlEpubReaderAction, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         switch action {
         case .toggleTool(let tool):
@@ -945,7 +949,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         do {
             guard let (item, annotationItems, rawPage, lastReadAloudPosition) = loadItemAnnotationsAndPage(in: viewModel) else { return }
 
-            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel) {
                 return
             }
 
@@ -1099,22 +1103,22 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 guard let self, let viewModel else { return }
                 switch change {
                 case .change(let item, _):
-                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self)
+                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel)
 
                 case .deleted, .error:
                     break
                 }
             }
         }
+    }
 
-        @discardableResult
-        func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<HtmlEpubReaderActionHandler>, handler: HtmlEpubReaderActionHandler) -> Bool {
-            guard let md5 = cachedMD5(from: viewModel.state.originalFile.createUrl(), using: fileStorage.fileManager), !item.backendMd5.isEmpty, item.backendMd5 != md5 else { return false }
-            handler.update(viewModel: viewModel) { state in
-                state.changes = .md5
-            }
-            return true
+    @discardableResult
+    private func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> Bool {
+        guard let md5 = cachedMD5(from: viewModel.state.originalFile.createUrl(), using: fileStorage.fileManager), !item.backendMd5.isEmpty, item.backendMd5 != md5 else { return false }
+        update(viewModel: viewModel) { state in
+            state.changes = .md5
         }
+        return true
     }
 
     private func update(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], viewModel: ViewModel<HtmlEpubReaderActionHandler>) {

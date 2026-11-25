@@ -145,34 +145,34 @@ class HtmlEpubAnnotationsViewController: UIViewController {
                 viewModel.process(action: .removeAnnotation(key))
             }
         }
+    }
 
-        func setup(cell: AnnotationCell, with annotation: HtmlEpubAnnotation, state: HtmlEpubReaderState) {
-            let selected = annotation.key == state.selectedAnnotationKey
-            let comment = AnnotationView.Comment(attributedString: loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
+    private func setup(cell: AnnotationCell, with annotation: HtmlEpubAnnotation, state: HtmlEpubReaderState) {
+        let selected = annotation.key == state.selectedAnnotationKey
+        let comment = AnnotationView.Comment(attributedString: loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
 
-            // TODO: - add attributed text
-            let text = annotation.text.flatMap({ NSAttributedString(string: $0) })
-            let reconfiguringForSameAnnotation = annotation.key == cell.key
-            cell.setup(
-                with: annotation,
-                text: text,
-                comment: comment,
-                selected: selected,
-                availableWidth: PDFReaderLayout.sidebarWidth,
-                library: state.library,
-                isEditing: false,
-                currentUserId: state.userId,
-                state: state
-            )
-            if !reconfiguringForSameAnnotation {
-                let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
-                    self?.perform(action: action, annotationKey: annotation.key)
-                })
-                _ = cell.disposeBag?.insert(actionSubscription)
-            }
-            // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
+        // TODO: - add attributed text
+        let text = annotation.text.flatMap({ NSAttributedString(string: $0) })
+        let reconfiguringForSameAnnotation = annotation.key == cell.key
+        cell.setup(
+            with: annotation,
+            text: text,
+            comment: comment,
+            selected: selected,
+            availableWidth: PDFReaderLayout.sidebarWidth,
+            library: state.library,
+            isEditing: false,
+            currentUserId: state.userId,
+            state: state
+        )
+        if !reconfiguringForSameAnnotation {
+            let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
+                self?.perform(action: action, annotationKey: annotation.key)
+            })
+            _ = cell.disposeBag?.insert(actionSubscription)
         }
-        
+        // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
+
         func loadAttributedComment(for annotation: HtmlEpubAnnotation) -> NSAttributedString? {
             let comment = annotation.comment
 
@@ -384,7 +384,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
             filter.rx.tap
                 .subscribe(onNext: { [weak self, weak filter] _ in
                     guard let self, let filter else { return }
-                    showFilterPopup(from: filter, viewModel: viewModel, coordinatorDelegate: coordinatorDelegate)
+                    showFilterPopup(from: filter)
                 })
                 .disposed(by: disposeBag)
             items.insert(filter, at: 0)
@@ -399,45 +399,45 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         items.append(select)
 
         toolbar.items = items
+    }
 
-        func showFilterPopup(from barButton: UIBarButtonItem, viewModel: ViewModel<HtmlEpubReaderActionHandler>, coordinatorDelegate: ReaderSidebarCoordinatorDelegate?) {
-            var colors: Set<String> = []
-            var tags: Set<Tag> = []
+    private func showFilterPopup(from barButton: UIBarButtonItem) {
+        var colors: Set<String> = []
+        var tags: Set<Tag> = []
 
-            for (_, annotation) in viewModel.state.annotations {
-                colors.insert(annotation.color)
-                for tag in annotation.tags {
-                    tags.insert(tag)
-                }
+        for (_, annotation) in viewModel.state.annotations {
+            colors.insert(annotation.color)
+            for tag in annotation.tags {
+                tags.insert(tag)
             }
-
-            let sortedTags = tags.sorted(by: { lTag, rTag -> Bool in
-                if lTag.color.isEmpty == rTag.color.isEmpty {
-                    return lTag.name.localizedCaseInsensitiveCompare(rTag.name) == .orderedAscending
-                }
-                if !lTag.color.isEmpty && rTag.color.isEmpty {
-                    return true
-                }
-                return false
-            })
-            var sortedColors: [String] = []
-            AnnotationsConfig.allColors.forEach { color in
-                if colors.contains(color) {
-                    sortedColors.append(color)
-                }
-            }
-
-            coordinatorDelegate?.showFilterPopup(
-                from: barButton,
-                filter: viewModel.state.annotationFilter,
-                availableColors: sortedColors,
-                availableTags: sortedTags,
-                userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
-                completed: { [weak self] filter in
-                    self?.viewModel.process(action: .changeFilter(filter))
-                }
-            )
         }
+
+        let sortedTags = tags.sorted(by: { lTag, rTag -> Bool in
+            if lTag.color.isEmpty == rTag.color.isEmpty {
+                return lTag.name.localizedCaseInsensitiveCompare(rTag.name) == .orderedAscending
+            }
+            if !lTag.color.isEmpty && rTag.color.isEmpty {
+                return true
+            }
+            return false
+        })
+        var sortedColors: [String] = []
+        AnnotationsConfig.allColors.forEach { color in
+            if colors.contains(color) {
+                sortedColors.append(color)
+            }
+        }
+
+        coordinatorDelegate?.showFilterPopup(
+            from: barButton,
+            filter: viewModel.state.annotationFilter,
+            availableColors: sortedColors,
+            availableTags: sortedTags,
+            userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
+            completed: { [weak self] filter in
+                self?.viewModel.process(action: .changeFilter(filter))
+            }
+        )
     }
 }
 
