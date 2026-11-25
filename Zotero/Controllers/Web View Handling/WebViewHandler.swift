@@ -28,7 +28,6 @@ class WebViewHandler: NSObject {
         case urlMissingTranslators
         case navigationNotStarted
         case webContentProcessTerminated
-        case loadTimedOut
     }
 
     private enum InitializationState {
@@ -81,8 +80,6 @@ class WebViewHandler: NSObject {
         var challengeCookiePollInterval: RxTimeInterval = .milliseconds(250)
         /// Scales HTTP retry waits without changing the retry budget.
         var httpRetryDelayScale: Double = 1
-        /// Fails a web view load whose navigation never gets a finish or fail callback.
-        var loadTimeout: RxTimeInterval = .seconds(60)
 
         static let mainApp = Timing()
         /// The cookie store observer is the primary clearance signal, so the share extension polls only as an infrequent backup.
@@ -403,25 +400,16 @@ class WebViewHandler: NSObject {
         sendMessaging(response: ["error": ["message": error]], for: messageId)
     }
 
-    /// Create single which is fired when webview loads a resource or fails, or times out after `timing.loadTimeout`.
+    /// Create single which is fired when webview loads a resource or fails.
     private func createWebLoadedSingle(loadIdentifier identifier: Int) -> Single<()> {
         return .create { [weak self] subscriber -> Disposable in
             self?.webDidLoad = subscriber
             return Disposables.create { [weak self] in
-                // Don't clear the subscriber or navigation of a newer load.
+                // Don't clear the subscriber of a newer load.
                 guard let self, loadIdentifier == identifier else { return }
                 webDidLoad = nil
-                pendingNavigation = nil
             }
         }
-        .timeout(
-            timing.loadTimeout,
-            other: .deferred {
-                DDLogError("WebViewHandler: load timed out")
-                return .error(Error.loadTimedOut)
-            },
-            scheduler: MainScheduler.instance
-        )
     }
 
     func removeFromSuperviewAsynchronously() {
