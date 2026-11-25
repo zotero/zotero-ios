@@ -198,6 +198,7 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
 
         if !localChanges.contains(.rects) {
             StoreItemDbRequest.sync(rects: response.rects ?? [], in: item, database: database)
+            StoreItemDbRequest.sync(nextPageRects: response.nextPageRects ?? [], in: item, database: database)
         }
 
         if !localChanges.contains(.paths) {

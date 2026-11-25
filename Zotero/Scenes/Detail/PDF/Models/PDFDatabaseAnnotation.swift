@@ -162,6 +162,23 @@ struct PDFDatabaseAnnotation {
             .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(page))?.rounded(to: 3) })
     }
 
+    var hasNextPagePart: Bool {
+        switch type {
+        case .highlight, .underline:
+            return !item.nextPageRects.isEmpty
+
+        case .note, .image, .ink, .freeText:
+            return false
+        }
+    }
+
+    func nextPageRects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect] {
+        guard hasNextPagePart, let page = _page else { return [] }
+        return item.nextPageRects
+            .map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
+            .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(page + 1))?.rounded(to: 3) })
+    }
+
     func paths(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]] {
         guard let page = _page else { return [] }
         let pageIndex = PageIndex(page)

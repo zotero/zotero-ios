@@ -88,6 +88,15 @@ extension PSPDFKit.Annotation {
         case document
     }
 
+    /// Part of a Zotero annotation which spans a page break. PDF annotations can't span pages, so such annotation is represented by
+    /// two document annotations with the same `key`, one for each page.
+    enum CrossPagePart: String {
+        /// Part on the annotation's page (`rects`).
+        case first
+        /// Part on the following page (`nextPageRects`).
+        case next
+    }
+
     /// Defines internal Zotero key. PDFs which were previously exported by Zotero may include this flag.
     var key: String? {
         get {
@@ -138,6 +147,24 @@ extension PSPDFKit.Annotation {
                 }
             } else {
                 customData?[AnnotationsConfig.sourceKey] = newValue?.rawValue
+            }
+        }
+    }
+
+    /// Indicates which part of a Zotero annotation spanning a page break this document annotation is. `nil` for annotations on a single page.
+    var crossPagePart: CrossPagePart? {
+        get {
+            guard let rawValue = customData?[AnnotationsConfig.crossPagePartKey] as? String else { return nil }
+            return CrossPagePart(rawValue: rawValue)
+        }
+
+        set {
+            if customData == nil {
+                if let newValue {
+                    customData = [AnnotationsConfig.crossPagePartKey: newValue.rawValue]
+                }
+            } else {
+                customData?[AnnotationsConfig.crossPagePartKey] = newValue?.rawValue
             }
         }
     }

@@ -361,7 +361,17 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
 
-    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, readerURL: URL?, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
+    func createHtmlEpubController(
+        key: String,
+        parentKey: String?,
+        libraryId: LibraryIdentifier,
+        url: URL,
+        readerURL: URL?,
+        preselectedAnnotationKey: String? = nil,
+        kind: HtmlEpubReaderState.Kind = .document,
+        pageRegionRenderer: PDFPageRegionRenderer? = nil,
+        sourceContext: ReadingModeSourceContext? = nil
+    ) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         let coordinator = HtmlEpubCoordinator(
@@ -371,6 +381,9 @@ final class DetailCoordinator: Coordinator {
             url: url,
             readerURL: readerURL,
             preselectedAnnotationKey: preselectedAnnotationKey,
+            kind: kind,
+            pageRegionRenderer: pageRegionRenderer,
+            sourceContext: sourceContext,
             navigationController: navigationController,
             controllers: controllers
         )

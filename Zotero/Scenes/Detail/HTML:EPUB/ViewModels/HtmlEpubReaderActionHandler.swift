@@ -43,6 +43,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
 
+    deinit {
+        DDLogInfo("HtmlEpubReaderActionHandler deinitialized")
+    }
+
     func process(action: HtmlEpubReaderAction, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         switch action {
         case .toggleTool(let tool):
@@ -338,6 +342,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             state.settings = settings
             state.changes.insert(.settings)
         }
+        // Standalone reading mode uses the settings of the source document reader, which stores them.
+        guard !viewModel.state.kind.isStandaloneReadingMode else { return }
         Defaults.shared.htmlEpubSettings = settings
     }
 
@@ -449,6 +455,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             DDLogError("HtmlEpubReaderActionHandler: invalid params - \(params)")
             return
         }
+
+        // Standalone reading mode is a different view of a document which has its own reader, and that reader owns the
+        // reading position. Its stored page is a page index, which it refuses to reopen if anything else is stored
+        // there, so neither page nor scale are written here.
+        guard !viewModel.state.kind.isStandaloneReadingMode else { return }
 
         if let scale = state["scale"] as? Double {
             let readerScale = scale == 1 ? nil : scale
@@ -719,7 +730,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         guard let textParams = viewModel.state.selectedTextParams?["annotation"] as? [String: Any], let params = params(fromTextParams: textParams, type: type) else {
             return
         }
-        let annotations = parse(annotations: [params], author: viewModel.state.username, isAuthor: true)
+        let annotations = parse(annotations: [params], in: viewModel)
         update(viewModel: viewModel) { state in
             state.selectedTextParams = nil
 
@@ -767,7 +778,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         guard !storedAnnotations.isEmpty else { return }
 
-        let annotations = parse(annotations: storedAnnotations, author: viewModel.state.username, isAuthor: true)
+        let annotations = parse(annotations: storedAnnotations, in: viewModel)
 
         guard !annotations.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: could not parse annotations")
@@ -825,7 +836,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         guard let annotation else { return }
 
-        let annotations = parse(annotations: [annotation], author: viewModel.state.username, isAuthor: true)
+        let annotations = parse(annotations: [annotation], in: viewModel)
 
         guard !annotations.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: could not parse read aloud session annotation")
@@ -854,7 +865,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func parse(annotations: [[String: Any]], author: String, isAuthor: Bool) -> [HtmlEpubAnnotation] {
+    /// Parses annotations saved by the document. An annotation which already exists keeps its author, any other one was just created by the current user.
+    private func parse(annotations: [[String: Any]], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> [HtmlEpubAnnotation] {
         return annotations.compactMap { data -> HtmlEpubAnnotation? in
             guard let id = data["id"] as? String,
                   let dateAdded = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
@@ -874,20 +886,22 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 else { return nil }
                 return Tag(name: name, color: color)
             })
+            let existing = viewModel.state.annotations[id]
             return HtmlEpubAnnotation(
                 key: id,
                 type: type,
                 pageLabel: pageLabel,
                 position: position,
-                author: author,
-                isAuthor: isAuthor,
+                author: existing?.author ?? viewModel.state.username,
+                isAuthor: existing?.isAuthor ?? true,
                 color: color,
                 comment: comment,
                 text: text,
                 sortIndex: sortIndex,
                 dateAdded: dateAdded,
                 dateModified: dateModified,
-                tags: tags
+                tags: tags,
+                onlyTextOrComment: (data["onlyTextOrComment"] as? Bool) ?? false
             )
         }
     }
@@ -906,10 +920,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             for file in readerFiles {
                 try fileStorage.copy(from: file, to: viewModel.state.readerDirectory.copy(withName: file.name, ext: file.ext))
             }
-            // Copy document files (in case of snapshot there can be multiple files) to temporary sub-directory
-            let documentFiles: [File] = try fileStorage.contentsOfDirectory(at: viewModel.state.originalFile.directory)
-            for file in documentFiles {
-                try fileStorage.copy(from: file, to: viewModel.state.documentFile.copy(withName: file.name, ext: file.ext))
+            // Copy document files (in case of snapshot there can be multiple files) to temporary sub-directory. In
+            // standalone reading mode the web view displays the structured text instead of the document, so there is
+            // nothing for it to read and the document (a whole PDF) isn't copied.
+            if !viewModel.state.kind.isStandaloneReadingMode {
+                let documentFiles: [File] = try fileStorage.contentsOfDirectory(at: viewModel.state.originalFile.directory)
+                for file in documentFiles {
+                    try fileStorage.copy(from: file, to: viewModel.state.documentFile.copy(withName: file.name, ext: file.ext))
+                }
             }
 
             lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
@@ -931,20 +949,40 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         do {
             guard let (item, annotationItems, rawPage, lastReadAloudPosition) = loadItemAnnotationsAndPage(in: viewModel) else { return }
 
-            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel) {
                 return
             }
 
             let (sortedKeys, annotations, json) = processAnnotations(items: annotationItems)
-            let (type, page) = try loadTypeAndPage(from: viewModel.state.documentFile, rawPage: rawPage)
-            let documentData = HtmlEpubReaderState.DocumentData(
-                type: type,
-                url: viewModel.state.documentFile.createUrl(),
-                annotationsJson: json,
-                page: page,
-                scale: item.readerScale ?? 1,
-                selectedAnnotationKey: viewModel.state.selectedAnnotationKey
-            )
+            let documentData: HtmlEpubReaderState.DocumentData
+            switch viewModel.state.kind {
+            case .document:
+                let (type, page) = try loadTypeAndPage(from: viewModel.state.documentFile, rawPage: rawPage)
+                documentData = HtmlEpubReaderState.DocumentData(
+                    type: type,
+                    sourceType: nil,
+                    url: viewModel.state.documentFile.createUrl(),
+                    annotationsJson: json,
+                    page: page,
+                    initialPageIndex: nil,
+                    scale: item.readerScale ?? 1,
+                    selectedAnnotationKey: viewModel.state.selectedAnnotationKey
+                )
+
+            case .standaloneReadingMode(let sourceType):
+                // The structured document text pack is the document, handed over separately once it's extracted, so
+                // there is no url and no stored page - the reader of the source document owns the reading position.
+                documentData = HtmlEpubReaderState.DocumentData(
+                    type: "sdt",
+                    sourceType: sourceType,
+                    url: nil,
+                    annotationsJson: json,
+                    page: nil,
+                    initialPageIndex: viewModel.state.initialPageIndex,
+                    scale: 1,
+                    selectedAnnotationKey: viewModel.state.selectedAnnotationKey
+                )
+            }
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
@@ -1003,7 +1041,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             var annotations: [String: HtmlEpubAnnotation] = [:]
             var jsons: [[String: Any]] = []
             for item in items {
-                guard let (annotation, json) = item.htmlEpubAnnotation else { continue }
+                guard let (annotation, json) = item.htmlEpubAnnotation(currentUserId: viewModel.state.userId) else { continue }
                 jsons.append(json)
                 sortedKeys.append(annotation.key)
                 annotations[item.key] = annotation
@@ -1048,7 +1086,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
 
         func observe(items: Results<RItem>, viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> NotificationToken {
-            return items.observe { [weak self, weak viewModel] change in
+            return items.observe(keyPaths: RItem.observableKeypathsForAnnotations) { [weak self, weak viewModel] change in
                 guard let self, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):
@@ -1065,22 +1103,22 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 guard let self, let viewModel else { return }
                 switch change {
                 case .change(let item, _):
-                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self)
+                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel)
 
                 case .deleted, .error:
                     break
                 }
             }
         }
+    }
 
-        @discardableResult
-        func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<HtmlEpubReaderActionHandler>, handler: HtmlEpubReaderActionHandler) -> Bool {
-            guard let md5 = cachedMD5(from: viewModel.state.originalFile.createUrl(), using: fileStorage.fileManager), !item.backendMd5.isEmpty, item.backendMd5 != md5 else { return false }
-            handler.update(viewModel: viewModel) { state in
-                state.changes = .md5
-            }
-            return true
+    @discardableResult
+    private func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> Bool {
+        guard let md5 = cachedMD5(from: viewModel.state.originalFile.createUrl(), using: fileStorage.fileManager), !item.backendMd5.isEmpty, item.backendMd5 != md5 else { return false }
+        update(viewModel: viewModel) { state in
+            state.changes = .md5
         }
+        return true
     }
 
     private func update(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -1110,7 +1148,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             }
 
             let key = keys[index]
-            guard let item = objects.filter(.key(key)).first, let (annotation, json) = item.htmlEpubAnnotation else { continue }
+            guard let item = objects.filter(.key(key)).first, let (annotation, json) = item.htmlEpubAnnotation(currentUserId: viewModel.state.userId) else { continue }
 
             DDLogInfo("HtmlEpubReaderActionHandler: update Html/Epub annotation \(key)")
             annotations[key] = annotation
@@ -1186,7 +1224,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             let item = objects[index]
 
-            guard let (annotation, json) = item.htmlEpubAnnotation else {
+            guard let (annotation, json) = item.htmlEpubAnnotation(currentUserId: viewModel.state.userId) else {
                 DDLogWarn("HtmlEpubReaderActionHandler: tried adding invalid annotation")
                 shouldCancelUpdate = true
                 break
@@ -1222,6 +1260,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.sortedKeys = filteredKeys(from: keys, term: state.annotationSearchTerm, filter: state.annotationFilter, state: state)
             }
             state.annotations = annotations
+            // The document saves annotations with a delay, so a save scheduled before an annotation was deleted (e.g. by sync) could recreate it.
+            // An annotation which sync brought back to the database can be saved again.
+            state.ignoredAnnotationKeys.formUnion(deletedPdfAnnotations)
+            state.ignoredAnnotationKeys.subtract(insertions.map({ objects[$0] }).filter({ $0.changeType != .user }).map({ $0.key }))
             state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: deletedPdfAnnotations, insertions: insertedPdfAnnotations, modifications: updatedPdfAnnotations)
             state.comments = comments
             state.texts = texts
@@ -1275,7 +1317,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 }
 
 extension RItem {
-    fileprivate var htmlEpubAnnotation: (HtmlEpubAnnotation, [String: Any])? {
+    fileprivate func htmlEpubAnnotation(currentUserId: Int) -> (HtmlEpubAnnotation, [String: Any])? {
         var type: AnnotationType?
         var position: [String: Any] = [:]
         var text: String?
@@ -1288,7 +1330,13 @@ extension RItem {
         for field in fields {
             switch (field.key, field.baseKey) {
             case (_, FieldKeys.Item.Annotation.position):
-                if field.value.first == "{", let json = field.value.data(using: .utf8).flatMap({ try? JSONSerialization.jsonObject(with: $0) }) {
+                // Coerce to the type the reader expects, the same way `UpdatableObject.createAnnotationPosition` does.
+                // PDF positions in particular carry a numeric `pageIndex`, which the reader can't use as a string.
+                if let value = Int(field.value) {
+                    position[field.key] = value
+                } else if let value = Double(field.value) {
+                    position[field.key] = value
+                } else if let json = field.value.data(using: .utf8).flatMap({ try? JSONSerialization.jsonObject(with: $0, options: .allowFragments) }) {
                     position[field.key] = json
                 } else {
                     position[field.key] = field.value
@@ -1320,6 +1368,26 @@ extension RItem {
             }
         }
 
+        // A PDF source position (standalone reading mode) keeps its rects (and `nextPageRects` of an annotation which
+        // continues on the next page) in separate lists instead of fields, so that the rest of the app and the sync can use
+        // them. Annotations of HTML/EPUB documents are anchored by selectors and have no rects, so this is skipped for them.
+        if !rects.isEmpty {
+            position[FieldKeys.Item.Annotation.Position.rects] = rectArray(from: rects)
+        }
+        if !nextPageRects.isEmpty {
+            position[FieldKeys.Item.Annotation.Position.nextPageRects] = rectArray(from: nextPageRects)
+        }
+
+        // Built as a plain array of arrays, the way `UpdatableObject.createAnnotationPosition` does it. Mapping the
+        // Realm list directly leaves a value which can't be bridged, and serializing the annotation then throws.
+        func rectArray(from rects: List<RRect>) -> [[Double]] {
+            var rectArray: [[Double]] = []
+            for rect in rects {
+                rectArray.append([rect.minX, rect.minY, rect.maxX, rect.maxY])
+            }
+            return rectArray
+        }
+
         guard let type, let sortIndex, !position.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: can't create html/epub annotation, type=\(String(describing: type));sortIndex=\(String(describing: sortIndex));position=\(position)")
             return nil
@@ -1329,6 +1397,17 @@ extension RItem {
             let color: String? = (typedTag.tag?.color ?? "").isEmpty ? nil : typedTag.tag?.color
             return Tag(name: typedTag.tag?.name ?? "", color: color ?? "")
         }))
+
+        // In a group library, only annotations created by the current user can be edited, the same as in the PDF reader.
+        let isAuthor: Bool
+        if libraryId == .custom(.myLibrary) {
+            isAuthor = true
+        } else if let createdBy {
+            isAuthor = createdBy.identifier == currentUserId
+        } else {
+            DDLogWarn("HtmlEpubReaderActionHandler: annotation \(key) has no author")
+            isAuthor = false
+        }
 
         var json: [String: Any] = [
             "id": key,
@@ -1342,7 +1421,9 @@ extension RItem {
             "comment": comment ?? "",
             "color": color ?? "",
             "position": position,
-            "tags": tags.map({ ["name": $0.name, "color": $0.color] })
+            "tags": tags.map({ ["name": $0.name, "color": $0.color] }),
+            // The reader doesn't let the user change a read-only annotation.
+            "readOnly": !isAuthor
         ]
         for (key, value) in unknown {
             json[key] = value
@@ -1354,7 +1435,7 @@ extension RItem {
             pageLabel: pageLabel ?? "",
             position: position,
             author: createdBy?.username ?? "",
-            isAuthor: true,
+            isAuthor: isAuthor,
             color: color ?? "",
             comment: comment ?? "",
             text: text,
