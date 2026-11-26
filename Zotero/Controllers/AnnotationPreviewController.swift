@@ -12,6 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 typealias AnnotationPreviewUpdate = (annotationKey: String, attachmentKey: String, image: UIImage)
+typealias AnnotationPreviewDeletion = (annotationKeys: Set<String>, attachmentKey: String)
 
 final class AnnotationPreviewController: NSObject {
     fileprivate struct EnqueuedData {
@@ -91,6 +92,8 @@ final class AnnotationPreviewController: NSObject {
     }
 
     let observable: PublishSubject<AnnotationPreviewUpdate>
+    /// Reports deleted cached previews, after their files are removed, so that they can also be removed from memory caches.
+    let deletionObservable: PublishSubject<AnnotationPreviewDeletion>
     private let previewSize: CGSize
     private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
@@ -106,6 +109,7 @@ final class AnnotationPreviewController: NSObject {
         scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.AnnotationPreviewController.scheduler")
         subscribers = [:]
         observable = PublishSubject()
+        deletionObservable = PublishSubject()
         super.init()
     }
 }
@@ -191,6 +195,15 @@ extension AnnotationPreviewController {
             guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation else { return nil }
             return annotation.previewId
         })
+        delete(keys: Set(keys), parentKey: parentKey, libraryId: libraryId)
+    }
+
+    /// Deletes cached previews for given annotation keys, e.g. for annotations that are not loaded in the document.
+    /// - parameter keys: Keys of annotations.
+    /// - parameter parentKey: Key of PDF item.
+    /// - parameter libraryId: Library identifier of item.
+    func delete(keys: Set<String>, parentKey: String, libraryId: LibraryIdentifier) {
+        guard !keys.isEmpty else { return }
         queue.async { [weak self] in
             guard let self else { return }
             for key in keys {
@@ -198,6 +211,7 @@ extension AnnotationPreviewController {
                 try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, appearance: .light))
                 try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, appearance: .sepia))
             }
+            deletionObservable.on(.next((keys, parentKey)))
         }
     }
 
